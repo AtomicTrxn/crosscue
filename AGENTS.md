@@ -6,14 +6,23 @@
 - **Security-First:** Treat all imported files as untrusted. Validate dimensions, size, and types before parsing.
 - **Legal Guardrails:** Never implement automated downloaders for "prohibited" or "needs_review" sources (e.g., NYT, LA Times, The Guardian) without explicit permission.
 
+## Deployment & Debugging
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full runbook covering:
+- Running on the emulator (Pixel 9, `emulator-5554`)
+- Building and installing debug APKs manually
+- Capturing and filtering logcat output
+- Deploying to GitHub
+- Debugging common crashes (FocusNode conflict, Stream.periodic, Freezed errors, file picker freeze, Riverpod 3.x gotchas)
+
 ## Tech Stack & Dev Commands
-- **Language:** Dart / Flutter
+- **Language:** Dart / Flutter (`/Users/tomhess/flutter/bin/flutter`)
 - **State Management:** Riverpod + Freezed (use immutable patterns)
 - **Database:** Drift (SQLite) — **Do not use Hive or Isar**.
 - **Navigation:** `go_router`
-- **Code Generation:** `flutter pub run build_runner build` (Always run this after changing `@freezed` or `drift` models).
+- **Code Generation:** `flutter pub run build_runner build --delete-conflicting-outputs` (Always run this after changing `@freezed` or `drift` models).
 - **Splash Screen:** `dart run flutter_native_splash:create` (Run after updating `flutter_native_splash` config).
-- **Linting:** `flutter analyze`
+- **Linting:** `flutter analyze` — target **0 issues** before every commit.
 
 ## Engineering Guidelines
 - **Architecture:** Clean Architecture (Data $\to$ $Domain$ $\to$ Presentation).
