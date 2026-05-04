@@ -1,0 +1,22 @@
+# Flutter / Dart
+.build/
+.dart_tool/
+.packages
+pubspec.lock
+build/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Opencode config (IMPORTANT - contains API keys)
+opencode.json

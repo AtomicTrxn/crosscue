@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:amuselabs.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:amuselabs.github.io)",
+      "WebFetch(domain:www.theguardian.com)",
+      "Bash(flutter pub *)",
+      "Read(//Users/tomhess/**)",
+      "Read(//Users/tomhess/flutter/**)",
+      "Bash(~/development/bin/flutter --version)",
+      "Bash(/Users/tomhess/development/bin/flutter --version)",
+      "Bash(/Users/tomhess/flutter/bin/flutter pub *)",
+      "Bash(/Users/tomhess/flutter/bin/dart run *)",
+      "Bash(/Users/tomhess/flutter/bin/flutter analyze *)",
+      "Bash(/Users/tomhess/flutter/bin/flutter emulators *)",
+      "Bash(/Users/tomhess/flutter/bin/flutter devices *)",
+      "Bash(/Users/tomhess/flutter/bin/flutter run *)",
+      "Bash(curl -sL \"https://www.brendanemmettquigley.com\")",
+      "Bash(curl -sL \"https://www.brendanemmettquigley.com/files/1884ThemelessMonday.puz\" -o /Users/tomhess/Claude/Crossword/test-puzzles/beq-themeless.puz)",
+      "Bash(curl -L \"https://www.brendanemmettquigley.com/files/1884ThemelessMonday.puz\" -o /Users/tomhess/Claude/Crossword/test-puzzles/beq-themeless.puz)",
+      "Bash(xxd /Users/tomhess/Claude/Crossword/test-puzzles/beq-themeless.puz)"
+    ]
+  }
+}
