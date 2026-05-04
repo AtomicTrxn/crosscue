@@ -30,7 +30,7 @@ class ImportRepositoryImpl {
       }
     }
     if (parser == null) {
-      return ImportJobResult.failure(ParseError.invalidFormat);
+      return const ImportJobResult.failure(ParseError.invalidFormat);
     }
 
     // Parse

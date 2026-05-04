@@ -5,7 +5,7 @@ import 'enums.dart';
 part 'focus_position.freezed.dart';
 
 @freezed
-class FocusPosition with _$FocusPosition {
+abstract class FocusPosition with _$FocusPosition {
   const factory FocusPosition({
     required int row,
     required int col,

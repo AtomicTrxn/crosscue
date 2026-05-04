@@ -10,7 +10,7 @@ part 'solution_cell.freezed.dart';
 /// [number]   – the clue number printed in the cell corner, or null.
 /// [circled]  – whether the cell has a circle annotation (GEXT flag 0x80).
 @freezed
-class SolutionCell with _$SolutionCell {
+abstract class SolutionCell with _$SolutionCell {
   const factory SolutionCell({
     @Default(false) bool isBlack,
     @Default('') String solution,

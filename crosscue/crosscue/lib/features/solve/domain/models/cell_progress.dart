@@ -6,7 +6,7 @@ part 'cell_progress.freezed.dart';
 
 /// The player's current state for one grid cell.
 @freezed
-class CellProgress with _$CellProgress {
+abstract class CellProgress with _$CellProgress {
   const factory CellProgress({
     /// Whatever the user typed (empty string = blank).
     @Default('') String letter,
@@ -15,5 +15,5 @@ class CellProgress with _$CellProgress {
   }) = _CellProgress;
 
   /// Convenience: an untouched blank cell.
-  const factory CellProgress.blank() = _BlankCell;
+  static const CellProgress blank = CellProgress();
 }

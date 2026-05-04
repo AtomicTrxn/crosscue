@@ -16,10 +16,10 @@ class ImportScreen extends ConsumerStatefulWidget {
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   @override
   Widget build(BuildContext context) {
-    final importState = ref.watch(importNotifierProvider);
+    final importState = ref.watch(importProvider);
 
     // Listen for success / errors to show feedback then navigate/dismiss.
-    ref.listen<ImportState>(importNotifierProvider, (prev, next) {
+    ref.listen<ImportState>(importProvider, (prev, next) {
       if (next is ImportSuccess) {
         _showSuccessAndNavigate(next);
       } else if (next is ImportDuplicate) {
@@ -75,7 +75,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 onPressed: isLoading
                     ? null
                     : () => ref
-                        .read(importNotifierProvider.notifier)
+                        .read(importProvider.notifier)
                         .pickAndImport(),
                 icon: isLoading
                     ? const SizedBox(
@@ -103,12 +103,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       ),
     );
     // Reset state then pop back to home
-    ref.read(importNotifierProvider.notifier).reset();
+    ref.read(importProvider.notifier).reset();
     if (mounted) context.go(Routes.home);
   }
 
   void _showDuplicateSheet(String fileName) {
-    ref.read(importNotifierProvider.notifier).reset();
+    ref.read(importProvider.notifier).reset();
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => _InfoSheet(
@@ -123,7 +123,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   void _showErrorSheet(String message) {
-    ref.read(importNotifierProvider.notifier).reset();
+    ref.read(importProvider.notifier).reset();
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => _InfoSheet(

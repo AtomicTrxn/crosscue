@@ -27,6 +27,7 @@ sealed class Result<T, E> {
 }
 
 final class Ok<T, E> extends Result<T, E> {
+  @override
   final T value;
   const Ok(this.value);
 
@@ -35,6 +36,7 @@ final class Ok<T, E> extends Result<T, E> {
 }
 
 final class Err<T, E> extends Result<T, E> {
+  @override
   final E error;
   const Err(this.error);
 

@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../data/repositories/import_repository_impl.dart';
+import '../../domain/models/parse_error.dart';
 import '../providers/import_providers.dart';
 
 part 'import_notifier.g.dart';
@@ -57,11 +58,19 @@ class ImportNotifier extends _$ImportNotifier {
   Future<void> pickAndImport() async {
     state = const ImportPicking();
 
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['puz', 'ipuz', 'jpz'],
-      withData: true,
-    );
+    FilePickerResult? result;
+    try {
+      // FileType.any is required on Android because .puz/.ipuz/.jpz have no
+      // registered MIME types — FileType.custom with those extensions produces
+      // an empty MIME list and throws a PlatformException.
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        withData: true,
+      );
+    } catch (e) {
+      state = ImportFailure('Could not open file picker: $e');
+      return;
+    }
 
     if (result == null || result.files.isEmpty) {
       state = const ImportIdle();
@@ -69,6 +78,16 @@ class ImportNotifier extends _$ImportNotifier {
     }
 
     final file = result.files.first;
+
+    // Validate extension client-side since we can't filter server-side.
+    final ext = file.extension?.toLowerCase() ?? '';
+    if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) {
+      state = const ImportFailure(
+        'Unsupported file type. Please choose a .puz or .ipuz file.',
+      );
+      return;
+    }
+
     final bytes = file.bytes;
     if (bytes == null) {
       state = const ImportFailure('Could not read file data.');

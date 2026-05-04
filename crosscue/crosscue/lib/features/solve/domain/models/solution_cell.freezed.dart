@@ -14,24 +14,86 @@ T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$SolutionCell {
+  bool get isBlack;
+  String get solution;
+  int? get number;
+  bool get circled;
+
+  /// Create a copy of SolutionCell
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $SolutionCellCopyWith<SolutionCell> get copyWith =>
+      _$SolutionCellCopyWithImpl<SolutionCell>(
+          this as SolutionCell, _$identity);
+
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is SolutionCell);
+        (other.runtimeType == runtimeType &&
+            other is SolutionCell &&
+            (identical(other.isBlack, isBlack) || other.isBlack == isBlack) &&
+            (identical(other.solution, solution) ||
+                other.solution == solution) &&
+            (identical(other.number, number) || other.number == number) &&
+            (identical(other.circled, circled) || other.circled == circled));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode =>
+      Object.hash(runtimeType, isBlack, solution, number, circled);
 
   @override
   String toString() {
-    return 'SolutionCell()';
+    return 'SolutionCell(isBlack: $isBlack, solution: $solution, number: $number, circled: $circled)';
   }
 }
 
 /// @nodoc
-class $SolutionCellCopyWith<$Res> {
-  $SolutionCellCopyWith(SolutionCell _, $Res Function(SolutionCell) __);
+abstract mixin class $SolutionCellCopyWith<$Res> {
+  factory $SolutionCellCopyWith(
+          SolutionCell value, $Res Function(SolutionCell) _then) =
+      _$SolutionCellCopyWithImpl;
+  @useResult
+  $Res call({bool isBlack, String solution, int? number, bool circled});
+}
+
+/// @nodoc
+class _$SolutionCellCopyWithImpl<$Res> implements $SolutionCellCopyWith<$Res> {
+  _$SolutionCellCopyWithImpl(this._self, this._then);
+
+  final SolutionCell _self;
+  final $Res Function(SolutionCell) _then;
+
+  /// Create a copy of SolutionCell
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? isBlack = null,
+    Object? solution = null,
+    Object? number = freezed,
+    Object? circled = null,
+  }) {
+    return _then(_self.copyWith(
+      isBlack: null == isBlack
+          ? _self.isBlack
+          : isBlack // ignore: cast_nullable_to_non_nullable
+              as bool,
+      solution: null == solution
+          ? _self.solution
+          : solution // ignore: cast_nullable_to_non_nullable
+              as String,
+      number: freezed == number
+          ? _self.number
+          : number // ignore: cast_nullable_to_non_nullable
+              as int?,
+      circled: null == circled
+          ? _self.circled
+          : circled // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
 }
 
 /// Adds pattern-matching-related methods to [SolutionCell].
@@ -51,15 +113,12 @@ extension SolutionCellPatterns on SolutionCell {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>(
     TResult Function(_SolutionCell value)? $default, {
-    TResult Function(_BlackCell value)? black,
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _SolutionCell() when $default != null:
         return $default(_that);
-      case _BlackCell() when black != null:
-        return black(_that);
       case _:
         return orElse();
     }
@@ -80,15 +139,12 @@ extension SolutionCellPatterns on SolutionCell {
 
   @optionalTypeArgs
   TResult map<TResult extends Object?>(
-    TResult Function(_SolutionCell value) $default, {
-    required TResult Function(_BlackCell value) black,
-  }) {
+    TResult Function(_SolutionCell value) $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _SolutionCell():
         return $default(_that);
-      case _BlackCell():
-        return black(_that);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -108,15 +164,12 @@ extension SolutionCellPatterns on SolutionCell {
 
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>(
-    TResult? Function(_SolutionCell value)? $default, {
-    TResult? Function(_BlackCell value)? black,
-  }) {
+    TResult? Function(_SolutionCell value)? $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _SolutionCell() when $default != null:
         return $default(_that);
-      case _BlackCell() when black != null:
-        return black(_that);
       case _:
         return null;
     }
@@ -138,7 +191,6 @@ extension SolutionCellPatterns on SolutionCell {
   TResult maybeWhen<TResult extends Object?>(
     TResult Function(bool isBlack, String solution, int? number, bool circled)?
         $default, {
-    TResult Function()? black,
     required TResult orElse(),
   }) {
     final _that = this;
@@ -146,8 +198,6 @@ extension SolutionCellPatterns on SolutionCell {
       case _SolutionCell() when $default != null:
         return $default(
             _that.isBlack, _that.solution, _that.number, _that.circled);
-      case _BlackCell() when black != null:
-        return black();
       case _:
         return orElse();
     }
@@ -169,16 +219,13 @@ extension SolutionCellPatterns on SolutionCell {
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
     TResult Function(bool isBlack, String solution, int? number, bool circled)
-        $default, {
-    required TResult Function() black,
-  }) {
+        $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _SolutionCell():
         return $default(
             _that.isBlack, _that.solution, _that.number, _that.circled);
-      case _BlackCell():
-        return black();
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -199,16 +246,13 @@ extension SolutionCellPatterns on SolutionCell {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
     TResult? Function(bool isBlack, String solution, int? number, bool circled)?
-        $default, {
-    TResult? Function()? black,
-  }) {
+        $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _SolutionCell() when $default != null:
         return $default(
             _that.isBlack, _that.solution, _that.number, _that.circled);
-      case _BlackCell() when black != null:
-        return black();
       case _:
         return null;
     }
@@ -219,19 +263,26 @@ extension SolutionCellPatterns on SolutionCell {
 
 class _SolutionCell implements SolutionCell {
   const _SolutionCell(
-      {required this.isBlack,
-      required this.solution,
+      {this.isBlack = false,
+      this.solution = '',
       this.number,
       this.circled = false});
 
+  @override
+  @JsonKey()
   final bool isBlack;
+  @override
+  @JsonKey()
   final String solution;
+  @override
   final int? number;
+  @override
   @JsonKey()
   final bool circled;
 
   /// Create a copy of SolutionCell
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   _$SolutionCellCopyWith<_SolutionCell> get copyWith =>
@@ -265,6 +316,7 @@ abstract mixin class _$SolutionCellCopyWith<$Res>
   factory _$SolutionCellCopyWith(
           _SolutionCell value, $Res Function(_SolutionCell) _then) =
       __$SolutionCellCopyWithImpl;
+  @override
   @useResult
   $Res call({bool isBlack, String solution, int? number, bool circled});
 }
@@ -279,6 +331,7 @@ class __$SolutionCellCopyWithImpl<$Res>
 
   /// Create a copy of SolutionCell
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @pragma('vm:prefer-inline')
   $Res call({
     Object? isBlack = null,
@@ -304,26 +357,6 @@ class __$SolutionCellCopyWithImpl<$Res>
           : circled // ignore: cast_nullable_to_non_nullable
               as bool,
     ));
-  }
-}
-
-/// @nodoc
-
-class _BlackCell implements SolutionCell {
-  const _BlackCell();
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _BlackCell);
-  }
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-
-  @override
-  String toString() {
-    return 'SolutionCell.black()';
   }
 }
 

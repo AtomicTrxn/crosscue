@@ -40,7 +40,7 @@ class IpuzParser implements PuzzleParser {
     try {
       return _doParse(bytes);
     } catch (e) {
-      return Err(ParseError.unknown);
+      return const Err(ParseError.unknown);
     }
   }
 
@@ -49,36 +49,36 @@ class IpuzParser implements PuzzleParser {
     try {
       text = utf8.decode(bytes);
     } catch (_) {
-      return Err(ParseError.encodingError);
+      return const Err(ParseError.encodingError);
     }
 
     final Map<String, dynamic> json;
     try {
       json = jsonDecode(text) as Map<String, dynamic>;
     } catch (_) {
-      return Err(ParseError.invalidFormat);
+      return const Err(ParseError.invalidFormat);
     }
 
     // --- dimensions ---
     final dimensions = json['dimensions'] as Map<String, dynamic>?;
-    if (dimensions == null) return Err(ParseError.missingData);
+    if (dimensions == null) return const Err(ParseError.missingData);
     final width = (dimensions['width'] as num?)?.toInt();
     final height = (dimensions['height'] as num?)?.toInt();
     if (width == null || height == null || width <= 0 || height <= 0) {
-      return Err(ParseError.missingData);
+      return const Err(ParseError.missingData);
     }
 
     // --- solution grid ---
     final solutionRaw = json['solution'] as List<dynamic>?;
-    if (solutionRaw == null) return Err(ParseError.missingData);
-    if (solutionRaw.length != height) return Err(ParseError.missingData);
+    if (solutionRaw == null) return const Err(ParseError.missingData);
+    if (solutionRaw.length != height) return const Err(ParseError.missingData);
 
     final cells = <SolutionCell>[];
     final solutionStrings = <String>[]; // for checksum
 
     for (var r = 0; r < height; r++) {
       final row = solutionRaw[r] as List<dynamic>;
-      if (row.length != width) return Err(ParseError.missingData);
+      if (row.length != width) return const Err(ParseError.missingData);
       for (var c = 0; c < width; c++) {
         final val = row[c];
         if (val == _blackCell || val == null) {
@@ -167,7 +167,7 @@ class IpuzParser implements PuzzleParser {
 
     // --- clues ---
     final cluesRaw = json['clues'] as Map<String, dynamic>?;
-    if (cluesRaw == null) return Err(ParseError.missingData);
+    if (cluesRaw == null) return const Err(ParseError.missingData);
 
     final clues = <Clue>[];
     _parseClueList(cluesRaw, 'Across', Direction.across, grid, clues);

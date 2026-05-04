@@ -14,24 +14,79 @@ T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$CellProgress {
+  /// Whatever the user typed (empty string = blank).
+  String get letter;
+  CellState get state;
+  bool get isPencil;
+
+  /// Create a copy of CellProgress
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $CellProgressCopyWith<CellProgress> get copyWith =>
+      _$CellProgressCopyWithImpl<CellProgress>(
+          this as CellProgress, _$identity);
+
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is CellProgress);
+        (other.runtimeType == runtimeType &&
+            other is CellProgress &&
+            (identical(other.letter, letter) || other.letter == letter) &&
+            (identical(other.state, state) || other.state == state) &&
+            (identical(other.isPencil, isPencil) ||
+                other.isPencil == isPencil));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, letter, state, isPencil);
 
   @override
   String toString() {
-    return 'CellProgress()';
+    return 'CellProgress(letter: $letter, state: $state, isPencil: $isPencil)';
   }
 }
 
 /// @nodoc
-class $CellProgressCopyWith<$Res> {
-  $CellProgressCopyWith(CellProgress _, $Res Function(CellProgress) __);
+abstract mixin class $CellProgressCopyWith<$Res> {
+  factory $CellProgressCopyWith(
+          CellProgress value, $Res Function(CellProgress) _then) =
+      _$CellProgressCopyWithImpl;
+  @useResult
+  $Res call({String letter, CellState state, bool isPencil});
+}
+
+/// @nodoc
+class _$CellProgressCopyWithImpl<$Res> implements $CellProgressCopyWith<$Res> {
+  _$CellProgressCopyWithImpl(this._self, this._then);
+
+  final CellProgress _self;
+  final $Res Function(CellProgress) _then;
+
+  /// Create a copy of CellProgress
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? letter = null,
+    Object? state = null,
+    Object? isPencil = null,
+  }) {
+    return _then(_self.copyWith(
+      letter: null == letter
+          ? _self.letter
+          : letter // ignore: cast_nullable_to_non_nullable
+              as String,
+      state: null == state
+          ? _self.state
+          : state // ignore: cast_nullable_to_non_nullable
+              as CellState,
+      isPencil: null == isPencil
+          ? _self.isPencil
+          : isPencil // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
 }
 
 /// Adds pattern-matching-related methods to [CellProgress].
@@ -51,15 +106,12 @@ extension CellProgressPatterns on CellProgress {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>(
     TResult Function(_CellProgress value)? $default, {
-    TResult Function(_BlankCell value)? blank,
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _CellProgress() when $default != null:
         return $default(_that);
-      case _BlankCell() when blank != null:
-        return blank(_that);
       case _:
         return orElse();
     }
@@ -80,15 +132,12 @@ extension CellProgressPatterns on CellProgress {
 
   @optionalTypeArgs
   TResult map<TResult extends Object?>(
-    TResult Function(_CellProgress value) $default, {
-    required TResult Function(_BlankCell value) blank,
-  }) {
+    TResult Function(_CellProgress value) $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _CellProgress():
         return $default(_that);
-      case _BlankCell():
-        return blank(_that);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -108,15 +157,12 @@ extension CellProgressPatterns on CellProgress {
 
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>(
-    TResult? Function(_CellProgress value)? $default, {
-    TResult? Function(_BlankCell value)? blank,
-  }) {
+    TResult? Function(_CellProgress value)? $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _CellProgress() when $default != null:
         return $default(_that);
-      case _BlankCell() when blank != null:
-        return blank(_that);
       case _:
         return null;
     }
@@ -137,15 +183,12 @@ extension CellProgressPatterns on CellProgress {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
     TResult Function(String letter, CellState state, bool isPencil)? $default, {
-    TResult Function()? blank,
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _CellProgress() when $default != null:
         return $default(_that.letter, _that.state, _that.isPencil);
-      case _BlankCell() when blank != null:
-        return blank();
       case _:
         return orElse();
     }
@@ -166,15 +209,12 @@ extension CellProgressPatterns on CellProgress {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(String letter, CellState state, bool isPencil) $default, {
-    required TResult Function() blank,
-  }) {
+    TResult Function(String letter, CellState state, bool isPencil) $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _CellProgress():
         return $default(_that.letter, _that.state, _that.isPencil);
-      case _BlankCell():
-        return blank();
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -194,16 +234,12 @@ extension CellProgressPatterns on CellProgress {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(String letter, CellState state, bool isPencil)?
-        $default, {
-    TResult? Function()? blank,
-  }) {
+    TResult? Function(String letter, CellState state, bool isPencil)? $default,
+  ) {
     final _that = this;
     switch (_that) {
       case _CellProgress() when $default != null:
         return $default(_that.letter, _that.state, _that.isPencil);
-      case _BlankCell() when blank != null:
-        return blank();
       case _:
         return null;
     }
@@ -217,15 +253,19 @@ class _CellProgress implements CellProgress {
       {this.letter = '', this.state = CellState.empty, this.isPencil = false});
 
   /// Whatever the user typed (empty string = blank).
+  @override
   @JsonKey()
   final String letter;
+  @override
   @JsonKey()
   final CellState state;
+  @override
   @JsonKey()
   final bool isPencil;
 
   /// Create a copy of CellProgress
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
   _$CellProgressCopyWith<_CellProgress> get copyWith =>
@@ -257,6 +297,7 @@ abstract mixin class _$CellProgressCopyWith<$Res>
   factory _$CellProgressCopyWith(
           _CellProgress value, $Res Function(_CellProgress) _then) =
       __$CellProgressCopyWithImpl;
+  @override
   @useResult
   $Res call({String letter, CellState state, bool isPencil});
 }
@@ -271,6 +312,7 @@ class __$CellProgressCopyWithImpl<$Res>
 
   /// Create a copy of CellProgress
   /// with the given fields replaced by the non-null parameter values.
+  @override
   @pragma('vm:prefer-inline')
   $Res call({
     Object? letter = null,
@@ -291,26 +333,6 @@ class __$CellProgressCopyWithImpl<$Res>
           : isPencil // ignore: cast_nullable_to_non_nullable
               as bool,
     ));
-  }
-}
-
-/// @nodoc
-
-class _BlankCell implements CellProgress {
-  const _BlankCell();
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _BlankCell);
-  }
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-
-  @override
-  String toString() {
-    return 'CellProgress.blank()';
   }
 }
 

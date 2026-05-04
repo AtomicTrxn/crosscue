@@ -12,7 +12,7 @@ part 'puzzle.freezed.dart';
 /// Grid<T> is a plain Dart class (generics are incompatible with Freezed
 /// unions), so we wrap it with a custom equality/hashCode pair.
 @freezed
-class Puzzle with _$Puzzle {
+abstract class Puzzle with _$Puzzle {
   const Puzzle._(); // enables custom getters
 
   const factory Puzzle({

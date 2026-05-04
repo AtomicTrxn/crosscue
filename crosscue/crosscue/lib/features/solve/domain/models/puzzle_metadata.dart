@@ -7,7 +7,7 @@ part 'puzzle_metadata.freezed.dart';
 /// Lightweight metadata about a puzzle (no grid / clue data).
 /// Stored in the DB puzzles table; displayed in list views.
 @freezed
-class PuzzleMetadata with _$PuzzleMetadata {
+abstract class PuzzleMetadata with _$PuzzleMetadata {
   const factory PuzzleMetadata({
     required String id,
     required String sourceId,

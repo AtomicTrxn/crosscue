@@ -6,7 +6,7 @@ part 'clue.freezed.dart';
 
 /// A single clue entry.
 @freezed
-class Clue with _$Clue {
+abstract class Clue with _$Clue {
   const factory Clue({
     required int number,
     required Direction direction,

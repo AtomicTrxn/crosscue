@@ -45,25 +45,25 @@ class PuzParser implements PuzzleParser {
     try {
       return _doParse(bytes);
     } catch (e) {
-      return Err(ParseError.unknown);
+      return const Err(ParseError.unknown);
     }
   }
 
   Result<Puzzle, ParseError> _doParse(Uint8List bytes) {
-    if (!canParse(bytes)) return Err(ParseError.invalidFormat);
+    if (!canParse(bytes)) return const Err(ParseError.invalidFormat);
 
     // --- header fields ---
     final width = bytes[_widthOffset];
     final height = bytes[_heightOffset];
-    if (width == 0 || height == 0) return Err(ParseError.missingData);
+    if (width == 0 || height == 0) return const Err(ParseError.missingData);
 
     final numClues = _readUint16LE(bytes, _numCluesOffset);
     final scramble = _readUint16LE(bytes, _scrambleOffset);
-    if (scramble != 0) return Err(ParseError.unsupportedFormat);
+    if (scramble != 0) return const Err(ParseError.unsupportedFormat);
 
     final cellCount = width * height;
     if (bytes.length < _gridOffset + cellCount * 2) {
-      return Err(ParseError.missingData);
+      return const Err(ParseError.missingData);
     }
 
     // --- solution grid ---
