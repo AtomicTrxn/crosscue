@@ -38,8 +38,8 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | `ImportNotifier` + sealed `ImportState` | ✅ | `import/presentation/notifiers/import_notifier.dart` |
 | `ImportScreen` UI | ✅ | `import/presentation/screens/import_screen.dart` |
 | `HomeScreen` puzzle list + `puzzleListProvider` | ✅ | `home/presentation/screens/home_screen.dart` |
-| Parser unit tests with fixture | ⏸ | Deferred to Sprint 6 |
-| `PuzzleSource` / `SourceRegistry` abstraction | ⏸ | Deferred to Sprint 6 |
+| Parser unit tests with fixture | ⏸ | Deferred to Sprint 8 |
+| `PuzzleSource` / `SourceRegistry` abstraction | ⏸ | Deferred to Sprint 8 |
 
 **Known constraints resolved in this sprint:**
 - Android file picker: `FileType.any` required (`.puz`/`.ipuz`/`.jpz` have no registered MIME types)
@@ -70,9 +70,11 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 **Goal:** Progress is saved to DB. Resuming a puzzle restores the exact state.
 
+**Read before starting:** [topic-02](research/topic-02-drift-database-schema.md) (`solve_sessions` + `cell_progress` schema detail), [topic-11](research/topic-11-game-mechanics-feedback.md) (pause/resume rules), [topic-17](research/topic-17-ux-missing-details.md) §4 (timer pause/background behaviour)
+
 | Task | Status | Notes |
 |------|--------|-------|
-| `SolveSessionDao` — create/update session, save cell progress | ⬜ | Tables already defined |
+| `SolveSessionDao` — create/update session, save cell progress | ⬜ | Tables already defined in `core/database/tables/` |
 | `SolveNotifier` auto-save on every cell change (debounced ~500 ms) | ⬜ | |
 | Resume detection in `build()` — load existing session if found | ⬜ | |
 | Pause timer when app goes to background (`AppLifecycleListener`) | ⬜ | |
@@ -85,6 +87,8 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 **Goal:** User can check or reveal a letter, word, or the full grid.
 
+**Read before starting:** [topic-11](research/topic-11-game-mechanics-feedback.md) (check/reveal/hint rules, CellState transitions, mistake counting), [topic-17](research/topic-17-ux-missing-details.md) §3 (keyboard Check key scope), §8 (ClueBar tap-to-toggle)
+
 | Task | Status | Notes |
 |------|--------|-------|
 | `SolveNotifier.checkCell/Word/Grid()` — set `CellState.checkedCorrect/Incorrect` | ⬜ | |
@@ -92,13 +96,15 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | Update `PuzzleStatus` to `solvedWithHelp` on completion with assistance | ⬜ | |
 | Check/Reveal menu in `SolveScreen` AppBar | ⬜ | |
 | `solve_sessions.check_count`, `reveal_count`, `used_check`, `used_reveal` tracking | ⬜ | |
-| Prevent clean-solve flag if check/reveal used | ⬜ | |
+| Set `solve_sessions.clean_solve_eligible = false` when check/reveal used | ⬜ | Column already defined |
 
 ---
 
-## Sprint 6 — Onboarding & Settings ⬜
+## Sprint 6 — Onboarding, Settings & Polish ⬜
 
-**Goal:** Real onboarding flow, persistent settings, app polish.
+**Goal:** Real onboarding flow, persistent settings, accessibility pass, app polish.
+
+**Read before starting:** [topic-16](research/topic-16-first-run-phase1.md) (onboarding flow, sample puzzle policy), [topic-17](research/topic-17-ux-missing-details.md) §7 (onboarding format), §10 (post-completion review), §19 (mock grid design), [topic-10](research/topic-10-design-ux-research.md) (animations, haptics, completion feedback), [topic-03](research/topic-03-canvas-accessibility.md) (CustomPainter TalkBack semantics)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -107,12 +113,16 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | `SettingsScreen` — theme toggle, data management | ⬜ | |
 | Completion animation / confetti on solve | ⬜ | |
 | App icon + splash screen | ⬜ | `flutter_native_splash` already in deps |
+| CustomPainter accessibility semantics (TalkBack) | ⬜ | See topic-03 |
+| Haptic feedback on cell tap + completion | ⬜ | |
 
 ---
 
 ## Sprint 7 — Archive & Stats ⬜
 
 **Goal:** Solved puzzles are browsable; basic solving stats are displayed.
+
+**Read before starting:** [topic-15](research/topic-15-streak-stats-algorithm.md) (streak algorithm, completion types, personal bests, milestones), [topic-17](research/topic-17-ux-missing-details.md) §5 (Archive Phase 1 list view), §20 (orphan session handling)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -126,6 +136,8 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 ## Sprint 8 — Parser Tests & Source Registry ⬜
 
 **Goal:** Hardened parsers with regression tests; foundation for future puzzle sources.
+
+**Read before starting:** [topic-14](research/topic-14-puzzle-parser-spec.md) (field-by-field parser spec, test fixture requirements), [topic-01](research/topic-01-puzzle-source-endpoints.md) (source endpoints and downloader strategy), [topic-07](research/topic-07-legal-tos-puzzle-sources.md) (**legal guardrail — read before any source work**)
 
 | Task | Status | Notes |
 |------|--------|-------|

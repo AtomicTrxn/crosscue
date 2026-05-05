@@ -42,6 +42,29 @@ lib/
 
 ---
 
+## Feature: `home`
+
+Lists imported puzzles and launches the import flow.
+
+```
+home/
+└── presentation/
+    └── screens/
+        └── home_screen.dart   # HomeScreen + _PuzzleList + _PuzzleTile + _EmptyState
+                               # puzzleListProvider (@riverpod Future<List<PuzzleMetadata>>)
+                               # Invalidated by ImportNotifier after successful import
+```
+
+**Data flow:**
+```
+HomeScreen (ref.watch puzzleListProvider)
+  → ImportRepositoryImpl.getAllMetadata()   # sorted by createdAt DESC
+  → _PuzzleTile.onTap
+      → context.push('/solve/${Uri.encodeComponent(puzzle.id)}')
+```
+
+---
+
 ## Feature: `import`
 
 Handles the full pipeline from raw bytes → parsed puzzle → persisted in DB.
@@ -94,6 +117,9 @@ solve/
 │       ├── focus_position.dart   # @freezed abstract class
 │       ├── puzzle_metadata.dart  # @freezed abstract class
 │       └── puzzle.dart           # @freezed abstract class — full puzzle (metadata + grid + clues)
+│   # NOTE: solve has no data/ layer yet. Sprint 4 adds:
+│   #   data/daos/solve_session_dao.dart   — autosave + resume
+│   #   data/repositories/solve_repository_impl.dart
 └── presentation/
     ├── notifiers/
     │   ├── solve_state.dart      # Plain immutable class (not Freezed — contains Grid<T>)
@@ -217,3 +243,7 @@ import/.../import_providers.dart
 6. **Route** — add path constant to `routes.dart`, add `GoRoute` to `app_router.dart`
 
 7. **`flutter analyze`** — must be clean before committing
+
+8. **Update `SPRINTS.md`** — mark tasks ✅ as they land; update the sprint goal if scope changed
+
+9. **Update `research/INDEX.md`** — mark topics ✅ / 🔄 as their conclusions are implemented

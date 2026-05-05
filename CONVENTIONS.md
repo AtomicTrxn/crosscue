@@ -10,6 +10,7 @@ a real bug or wasted significant debugging time.
 ### Null safety
 - Never use `!` (bang) on a value you haven't explicitly checked. Use `??`, `if (x == null) return`, or pattern matching.
 - Never suppress null-safety warnings with `// ignore: null_check_on_nullable_value_use`.
+- Never use `dynamic`. Use `Object?`, generics, or sealed classes. `dynamic` disables type checking silently.
 
 ### Immutability
 - All domain models are immutable. Mutate by calling `.copyWith(...)`.
@@ -345,11 +346,32 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 ---
 
+## `Result<T, E>` Usage
+
+Use `Result` for any operation that can fail with a typed error. Never throw and
+catch across layer boundaries. Parsers and repository methods return `Result`;
+notifiers translate `Result` to sealed `State` variants.
+
+```dart
+// ✅ Correct — typed failure path
+Future<Result<Puzzle, ParseError>> parse(Uint8List bytes);
+
+// ❌ Wrong — callers must catch and guess what went wrong
+Future<Puzzle> parse(Uint8List bytes); // throws on failure
+```
+
+See `core/utils/result.dart` for the full definition and MODELS.md for usage examples.
+
+---
+
 ## What to Run Before Every Commit
 
 ```bash
+# Run all commands from the project root:
+# /Users/tomhess/Claude/Crossword/crosscue/crosscue/
+
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
-flutter pub run build_runner build --delete-conflicting-outputs
+/Users/tomhess/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs
 
 # 2. Lint — must be 0 issues
 /Users/tomhess/flutter/bin/flutter analyze

@@ -4,6 +4,8 @@ All 18 topics are **Resolved** (research complete). Implementation status reflec
 
 Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒 Active Guardrail
 
+> ⚠️ **Legal Guardrail:** [topic-07](topic-07-legal-tos-puzzle-sources.md) classifies puzzle sources as `prohibited`, `needs_review`, `openLicense`, `explicitPermission`, or `userImport`. **Read topic-07 before writing any code that fetches, downloads, or automates access to puzzle content from external sources.** NYT, LA Times, and The Guardian are `prohibited`. This rule is permanent and applies to all sprints.
+
 ---
 
 ## By Sprint
@@ -75,23 +77,23 @@ Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒
 
 ## All Topics
 
-| # | File | Owner | Topic |
-|---|------|-------|-------|
-| 1 | [topic-01](topic-01-puzzle-source-endpoints.md) | Claude | Puzzle source endpoints |
-| 2 | [topic-02](topic-02-drift-database-schema.md) | Codex | Drift database schema |
-| 3 | [topic-03](topic-03-canvas-accessibility.md) | Codex | Canvas + TalkBack/VoiceOver accessibility |
-| 4 | [topic-04](topic-04-monetization-model.md) | Codex | Monetization model |
-| 5 | [topic-05](topic-05-analytics-crash-reporting.md) | Codex | Analytics & crash reporting |
-| 6 | [topic-06](topic-06-push-notification-architecture.md) | Codex | Push notification architecture |
-| 7 | [topic-07](topic-07-legal-tos-puzzle-sources.md) | Codex | Legal / ToS for puzzle sources |
-| 8 | [topic-08](topic-08-cicd-release-pipeline.md) | Codex | CI/CD & release pipeline |
-| 9 | [topic-09](topic-09-backend-sync-decision.md) | Claude | Backend sync decision |
-| 10 | [topic-10](topic-10-design-ux-research.md) | Claude | Design & UX research |
-| 11 | [topic-11](topic-11-game-mechanics-feedback.md) | Codex | Game mechanics & input feedback |
-| 12 | [topic-12](topic-12-flutter-project-structure.md) | Claude | Flutter project structure |
-| 13 | [topic-13](topic-13-screen-inventory-routes.md) | Claude | Screen inventory & navigation routes |
-| 14 | [topic-14](topic-14-puzzle-parser-spec.md) | Claude | Puzzle file format parser spec |
-| 15 | [topic-15](topic-15-streak-stats-algorithm.md) | Codex | Streak & stats algorithm |
-| 16 | [topic-16](topic-16-first-run-phase1.md) | Codex | Phase 1 first-run & import-only experience |
-| 17 | [topic-17](topic-17-ux-missing-details.md) | Claude | UX missing details |
-| 18 | [topic-18](topic-18-privacy-policy-store-compliance.md) | Claude | Privacy policy & store compliance |
+| # | File | Topic | Impl. Status |
+|---|------|-------|--------------|
+| 1 | [topic-01](topic-01-puzzle-source-endpoints.md) | Puzzle source endpoints | ⬜ Sprint 8 |
+| 2 | [topic-02](topic-02-drift-database-schema.md) | Drift database schema | ✅ Sprint 1 |
+| 3 | [topic-03](topic-03-canvas-accessibility.md) | Canvas + TalkBack/VoiceOver accessibility | ⬜ Sprint 6 |
+| 4 | [topic-04](topic-04-monetization-model.md) | Monetization model | ⬜ Post-MVP |
+| 5 | [topic-05](topic-05-analytics-crash-reporting.md) | Analytics & crash reporting | ⬜ Post-MVP |
+| 6 | [topic-06](topic-06-push-notification-architecture.md) | Push notification architecture | ⬜ Post-MVP |
+| 7 | [topic-07](topic-07-legal-tos-puzzle-sources.md) | Legal / ToS for puzzle sources | 🔒 Active guardrail |
+| 8 | [topic-08](topic-08-cicd-release-pipeline.md) | CI/CD & release pipeline | ⬜ Post-MVP |
+| 9 | [topic-09](topic-09-backend-sync-decision.md) | Backend sync decision | ⬜ Post-MVP |
+| 10 | [topic-10](topic-10-design-ux-research.md) | Design & UX research | 🔄 Sprint 6 |
+| 11 | [topic-11](topic-11-game-mechanics-feedback.md) | Game mechanics & input feedback | 🔄 Sprint 5 |
+| 12 | [topic-12](topic-12-flutter-project-structure.md) | Flutter project structure | ✅ Sprint 1 |
+| 13 | [topic-13](topic-13-screen-inventory-routes.md) | Screen inventory & navigation routes | ✅ Sprint 1 |
+| 14 | [topic-14](topic-14-puzzle-parser-spec.md) | Puzzle file format parser spec | ✅ Sprint 2 |
+| 15 | [topic-15](topic-15-streak-stats-algorithm.md) | Streak & stats algorithm | ⬜ Sprint 7 |
+| 16 | [topic-16](topic-16-first-run-phase1.md) | Phase 1 first-run & import-only experience | 🔄 Sprint 6 |
+| 17 | [topic-17](topic-17-ux-missing-details.md) | UX missing details (20 decisions) | 🔄 Sprints 4–7 |
+| 18 | [topic-18](topic-18-privacy-policy-store-compliance.md) | Privacy policy & store compliance | ⬜ Store submission |

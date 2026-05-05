@@ -161,6 +161,7 @@ the DB holds `canonicalJson` and the grid is reconstructed via `GridSerializer.f
 
 ## `SolveState` — `solve/presentation/notifiers/solve_state.dart`
 
+**Presentation layer only** — lives in `presentation/notifiers/`, not in `domain/`.
 Plain immutable class (not Freezed — contains `Grid<T>`).
 
 ```dart
@@ -250,7 +251,58 @@ Sealed class (prefixed `Job` to avoid collision with UI `ImportState`):
 
 ```dart
 sealed class ImportJobResult { ... }
-final class JobSuccess  extends ImportJobResult { final Puzzle puzzle; }
+final class JobSuccess   extends ImportJobResult { final Puzzle puzzle; }
 final class JobDuplicate extends ImportJobResult { }
-final class JobFailure  extends ImportJobResult { final ParseError error; }
+final class JobFailure   extends ImportJobResult { final ParseError error; }
 ```
+
+---
+
+## `ImportState` — `import/presentation/notifiers/import_notifier.dart`
+
+Freezed union (multi-factory → plain `class`, not `abstract class`):
+
+```dart
+@freezed
+class ImportState with _$ImportState {
+  const factory ImportState.idle()                          = ImportIdle;
+  const factory ImportState.loading()                      = ImportLoading;
+  const factory ImportState.success(PuzzleMetadata puzzle) = ImportSuccess;
+  const factory ImportState.duplicate()                    = ImportDuplicate;
+  const factory ImportState.failure(String message)        = ImportFailure;
+}
+```
+
+`ImportNotifier` exposes `state` as `ImportState` and calls
+`ref.invalidate(puzzleListProvider)` after a successful import so the home list
+refreshes automatically.
+
+---
+
+## `Result<T, E>` — `core/utils/result.dart`
+
+Lightweight result type used in parsers and repository methods to avoid
+exception-based control flow:
+
+```dart
+sealed class Result<T, E> { ... }
+final class Ok<T, E>  extends Result<T, E> { final T value; }
+final class Err<T, E> extends Result<T, E> { final E error; }
+```
+
+Usage pattern:
+```dart
+// Returning a result:
+return Ok(parsedPuzzle);
+return Err(ParseError.invalidFormat);
+
+// Consuming a result:
+final result = await parser.parse(bytes);
+switch (result) {
+  case Ok(:final value): // use value
+  case Err(:final error): // handle error
+}
+```
+
+`PuzzleParser.parse()` returns `Result<Puzzle, ParseError>`.
+`ImportRepositoryImpl.importBytes()` internally maps this to `ImportJobResult`.

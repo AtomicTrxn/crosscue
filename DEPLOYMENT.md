@@ -33,6 +33,7 @@ Key commands while `flutter run` is active:
 
 ### Run headless (background, logs to file)
 ```bash
+truncate -s 0 /tmp/flutter_debug.log   # clear stale output first
 /Users/tomhess/flutter/bin/flutter run -d emulator-5554 --no-pub >> /tmp/flutter_debug.log 2>&1 &
 ```
 Then tail the log:
@@ -116,11 +117,19 @@ Target: **0 issues**. Fix all errors and warnings before committing.
 
 ## Deploying to GitHub
 
-```bash
-git add <files>
-git commit -m "your message
+Run from the **repo root** (`/Users/tomhess/Claude/Crossword/`), not the project subdirectory.
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+```bash
+git add <specific files — never git add .>
+git commit -m "$(cat <<'EOF'
+Short imperative summary (≤ 72 chars)
+
+Longer explanation of why, not what.
+Reference sprint if relevant.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
 git push origin main
 ```
 Remote: `https://github.com/AtomicTrxn/crossque.git`

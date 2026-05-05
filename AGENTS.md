@@ -40,9 +40,11 @@ Before writing any code, read these documents in order:
 
 ## Dev Commands
 
+All commands must be run from the **project root**: `/Users/tomhess/Claude/Crossword/crosscue/crosscue/`
+
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
-flutter pub run build_runner build --delete-conflicting-outputs
+/Users/tomhess/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs
 
 # Lint — must be 0 issues before committing
 /Users/tomhess/flutter/bin/flutter analyze
@@ -55,6 +57,8 @@ flutter pub run build_runner build --delete-conflicting-outputs
 adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
+When adding packages, reference **`pubspec-starter.yaml`** in the repo root — it lists all Phase 1 packages with pinned versions and Phase 2 packages commented out.
+
 ---
 
 ## Before Every Commit
@@ -63,6 +67,12 @@ adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
 2. `flutter analyze` — 0 issues required
 3. Stage only app source files — never commit `.claude/settings.local.json`, `*.save`, or temp files
 4. Follow the commit message style in CONVENTIONS.md
+
+---
+
+## Research
+
+**[research/INDEX.md](./research/INDEX.md)** maps each sprint to the research topics that inform it. Before starting any sprint, open INDEX.md and read the topics listed under that sprint heading. Topic-07 (legal/ToS) is a permanent guardrail — read it before touching any puzzle source code.
 
 ---
 
