@@ -13,7 +13,6 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | # | Type | Title | Sprint Target | Notes |
 |---|------|-------|---------------|-------|
 | 3 | ✨ | In-app puzzle downloader for free/licensed sources | Sprint 8+ | See detail below; legal review required before any source ships |
-| 4 | 🐛 | Keyboard appearance causes grid/layout to shift | Sprint 7 | See detail below; clunky UX when soft keyboard slides in/out |
 
 ---
 
@@ -160,3 +159,4 @@ interfering with grid swipe gestures.
 |---|------|-------|---------|-------|
 | 1 | ✨ | Reset puzzle option in ⋮ menu | Sprint 5 | Confirmation dialog; clears grid, resets timer and all counters |
 | 2 | ✨ | Long-press grid cell → contextual Check/Reveal menu | Sprint 6 | `onLongPressStart` in `CrosswordGrid`; `showMenu` anchored near cell |
+| 4 | 🐛 | Keyboard appearance causes grid/layout to shift | Sprint 6 hotfix | `resizeToAvoidBottomInset: false` + `viewInsets.bottom` padding on clue panel |

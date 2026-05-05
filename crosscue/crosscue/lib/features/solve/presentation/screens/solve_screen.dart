@@ -106,6 +106,11 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             solveState.status == PuzzleStatus.revealed;
 
         return Scaffold(
+          // Keep layout stable when the soft keyboard appears. The hidden
+          // TextField that drives input sits at (-200,-200) off-screen, so the
+          // keyboard can overlay the bottom of the screen without reflowing the
+          // grid. See ISSUES.md #4.
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(
             leading: BackButton(onPressed: () => context.pop()),
             title: Column(
@@ -168,11 +173,14 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     ),
                   ),
 
-                  // Clue panel at bottom
+                  // Clue panel at bottom. Pad by the keyboard inset so the
+                  // panel lifts above the soft keyboard without reflowing the
+                  // grid (resizeToAvoidBottomInset is false — see ISSUES #4).
                   CluePanel(solveState: solveState),
-
-                  // Bottom safe area
-                  SizedBox(height: MediaQuery.of(context).padding.bottom),
+                  SizedBox(
+                    height: MediaQuery.of(context).viewInsets.bottom +
+                        MediaQuery.of(context).padding.bottom,
+                  ),
                 ],
               ),
 
