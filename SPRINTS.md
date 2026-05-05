@@ -66,7 +66,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 4 — Solve Persistence ⬜
+## Sprint 4 — Solve Persistence ✅
 
 **Goal:** Progress is saved to DB. Resuming a puzzle restores the exact state.
 
@@ -74,12 +74,12 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| `SolveSessionDao` — create/update session, save cell progress | ⬜ | Tables already defined in `core/database/tables/` |
-| `SolveNotifier` auto-save on every cell change (debounced ~500 ms) | ⬜ | |
-| Resume detection in `build()` — load existing session if found | ⬜ | |
-| Pause timer when app goes to background (`AppLifecycleListener`) | ⬜ | |
-| Elapsed time persistence (`solve_sessions.elapsed_ms`) | ⬜ | |
-| Focus position persistence (`focus_row`, `focus_col`, `direction`) | ⬜ | |
+| `SolveSessionDao` — create/update session, save cell progress | ✅ | `solve/data/daos/solve_session_dao.dart` |
+| `SolveNotifier` auto-save on every cell change (debounced ~500 ms) | ✅ | 500 ms `Timer` debounce in `_scheduleSave()` |
+| Resume detection in `build()` — load existing session if found | ✅ | `SolveRepositoryImpl.createOrResumeSession()` |
+| Pause timer when app goes to background (`AppLifecycleListener`) | ✅ | `WidgetsBindingObserver` in `SolveScreen` |
+| Elapsed time persistence (`solve_sessions.elapsed_ms`) | ✅ | Restored in `build()`; saved on every autosave |
+| Focus position persistence (`focus_row`, `focus_col`, `direction`) | ✅ | Restored in `build()`; saved on every autosave |
 
 ---
 
