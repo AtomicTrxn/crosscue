@@ -83,7 +83,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 5 — Check & Reveal ⬜
+## Sprint 5 — Check & Reveal ✅
 
 **Goal:** User can check or reveal a letter, word, or the full grid.
 
@@ -91,12 +91,12 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| `SolveNotifier.checkCell/Word/Grid()` — set `CellState.checkedCorrect/Incorrect` | ⬜ | |
-| `SolveNotifier.revealCell/Word/Grid()` — set `CellState.revealed`, fill letter | ⬜ | |
-| Update `PuzzleStatus` to `solvedWithHelp` on completion with assistance | ⬜ | |
-| Check/Reveal menu in `SolveScreen` AppBar | ⬜ | |
-| `solve_sessions.check_count`, `reveal_count`, `used_check`, `used_reveal` tracking | ⬜ | |
-| Set `solve_sessions.clean_solve_eligible = false` when check/reveal used | ⬜ | Column already defined |
+| `SolveNotifier.checkCell/Word/Grid()` — set `CellState.checkedCorrect/Incorrect` | ✅ | |
+| `SolveNotifier.revealCell/Word/Grid()` — set `CellState.revealed`, fill letter | ✅ | `revealPuzzle` sets `status = revealed` (no streak) |
+| Update `PuzzleStatus` to `solvedWithHelp` on completion with assistance | ✅ | Derived from `usedCheck`/`usedReveal` flags |
+| Check/Reveal menu in `SolveScreen` AppBar | ✅ | `⋮` overflow menu; Reveal puzzle has confirmation dialog |
+| `solve_sessions.check_count`, `reveal_count`, `used_check`, `used_reveal` tracking | ✅ | Persisted on every autosave; restored on resume |
+| Set `solve_sessions.clean_solve_eligible = false` when check/reveal used | ✅ | Set on first reveal action |
 
 ---
 
