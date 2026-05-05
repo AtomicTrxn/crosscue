@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/routing/routes.dart';
 import '../../../../core/settings/settings_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -126,12 +128,19 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    await ref.read(appDatabaseProvider).close();
-    // Re-open by recreating the provider; easiest approach is to invalidate
-    // all providers and let the app rebuild from a fresh DB.
-    // For now we delete the file and restart via invalidating core providers.
-    // ignore: unused_result
-    ref.invalidate(appDatabaseProvider);
+
+    // Delete all puzzles (cascades to clues, sessions, cell_progress) and all
+    // settings rows. Sources seed row is preserved by cascade direction.
+    final db = ref.read(appDatabaseProvider);
+    await db.clearAllUserData();
+
+    // Invalidate cached settings so the router re-reads has_seen_onboarding
+    // (now false) and redirects to onboarding on the next build.
+    ref.invalidate(hasSeenOnboardingProvider);
+    ref.invalidate(themeModeProvider);
+    ref.invalidate(hapticsEnabledProvider);
+
+    if (context.mounted) context.go(Routes.home);
   }
 }
 

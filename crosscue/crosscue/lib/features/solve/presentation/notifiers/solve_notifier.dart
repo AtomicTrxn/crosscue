@@ -128,12 +128,8 @@ class SolveNotifier extends _$SolveNotifier {
     // Do not overwrite a revealed cell (topic-11)
     if (s.progress.cell(r, c).state == CellState.revealed) return;
 
-    // Clear checkedIncorrect when the user replaces the letter (topic-11)
-    var currentState = s.progress.cell(r, c).state;
-    if (currentState == CellState.checkedIncorrect) {
-      currentState = CellState.filled;
-    }
-
+    // Any typed letter resets the cell to plain filled — clears checkedIncorrect,
+    // checkedCorrect, and pencil marks alike (topic-11).
     final newProgress = s.progress.withCell(
       r,
       c,

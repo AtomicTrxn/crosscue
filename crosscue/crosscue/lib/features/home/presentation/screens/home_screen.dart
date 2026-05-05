@@ -133,10 +133,7 @@ class _PuzzleTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        final puzzleId = Uri.encodeComponent(puzzle.id);
-        context.push('/solve/$puzzleId');
-      },
+      onTap: () => context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id))),
     );
   }
 }

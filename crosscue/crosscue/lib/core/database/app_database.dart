@@ -55,6 +55,19 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
+  /// Deletes all user-generated data (puzzles, progress, settings) while
+  /// preserving the seed rows in [SourcesTable].
+  ///
+  /// Cascade rules mean deleting from [PuzzlesTable] automatically removes all
+  /// dependent [CluesTable], [SolveSessionsTable], and [CellProgressTable] rows.
+  /// Called from the Settings → "Clear all data" action.
+  Future<void> clearAllUserData() async {
+    await transaction(() async {
+      await delete(puzzlesTable).go();
+      await delete(appSettingsTable).go();
+    });
+  }
+
   /// Insert the built-in 'local_import' pseudo-source on first launch.
   Future<void> _seedLocalImportSource() async {
     final now = DateTime.now().toUtc();
