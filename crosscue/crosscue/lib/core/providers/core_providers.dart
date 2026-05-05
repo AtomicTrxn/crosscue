@@ -22,6 +22,6 @@ SyncAdapter syncAdapter(Ref ref) => const NoOpSyncAdapter();
 EntitlementService entitlementService(Ref ref) =>
     const FreeEntitlementService();
 
-/// Crash reporter — no-op until Sentry is wired in Sprint 7.
+/// Crash reporter — no-op until Sentry is wired (post-MVP).
 @Riverpod(keepAlive: true)
 CrashReporter crashReporter(Ref ref) => const NoOpCrashReporter();

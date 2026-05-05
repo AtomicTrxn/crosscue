@@ -13,6 +13,7 @@ lib/
 │   ├── database/                    # Drift DB definition + all tables
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
+│   ├── settings/                    # AppSettingsDao, AppSettingsRepository, settings providers
 │   ├── theme/                       # Material 3 theme + CrosswordTheme extension
 │   ├── utils/                       # Result<T,E> type
 │   ├── entitlement/                 # License / paywall stubs (Phase 1: free only)
@@ -22,10 +23,10 @@ lib/
     ├── home/                        # Puzzle list screen
     ├── import/                      # File pick → parse → persist pipeline
     ├── solve/                       # Interactive solve screen (grid + clues + timer)
-    ├── archive/                     # Solved puzzles history (stub)
-    ├── stats/                       # Solve statistics (stub)
-    ├── settings/                    # App settings (stub)
-    └── onboarding/                  # First-launch onboarding (in-memory flag; Phase 5)
+    ├── archive/                     # Solved puzzles history with sort/filter/delete
+    ├── stats/                       # Solve statistics (streaks, times, personal bests)
+    ├── settings/                    # App settings screen (theme, haptics, clear data)
+    └── onboarding/                  # 3-step interactive first-launch onboarding
 ```
 
 ---
@@ -72,14 +73,19 @@ Handles the full pipeline from raw bytes → parsed puzzle → persisted in DB.
 ```
 import/
 ├── domain/
-│   ├── models/parse_error.dart          # ParseError enum
-│   └── repositories/puzzle_parser.dart  # PuzzleParser abstract interface
+│   ├── models/parse_error.dart          # ParseError enum (invalidFormat, fileTooLarge, etc.)
+│   └── repositories/
+│       ├── puzzle_parser.dart           # PuzzleParser abstract interface
+│       └── puzzle_source.dart          # PuzzleSource abstract interface (id, licenseStatus, etc.)
 ├── data/
-│   ├── parsers/puz_parser.dart          # .puz binary parser (rebus, circles)
-│   ├── parsers/ipuz_parser.dart         # .ipuz JSON parser
+│   ├── parsers/puz_parser.dart          # .puz binary parser (rebus, circles, 5 MB guard)
+│   ├── parsers/ipuz_parser.dart         # .ipuz JSON parser (5 MB guard)
 │   ├── daos/puzzle_dao.dart             # Drift DAO: insert/get/delete puzzles + clues
 │   ├── daos/grid_serializer.dart        # Grid<SolutionCell> ↔ JSON string (for DB storage)
-│   └── repositories/import_repository_impl.dart  # Orchestrates parse + duplicate check + persist
+│   ├── repositories/import_repository_impl.dart  # Orchestrates parse + duplicate check + persist
+│   └── sources/
+│       ├── source_registry.dart         # SourceRegistry + SourceRegistrationException
+│       └── local_import_source.dart     # LocalImportSource (id='local_import', userImport)
 └── presentation/
     ├── providers/import_providers.dart  # importRepositoryProvider (keepAlive)
     ├── notifiers/import_notifier.dart   # ImportNotifier + ImportState sealed class
@@ -109,25 +115,26 @@ Owns all domain models (other features import from here). Handles the interactiv
 solve/
 ├── domain/
 │   └── models/
-│       ├── enums.dart            # Direction, CellState, PuzzleStatus, PuzzleFormat, etc.
+│       ├── enums.dart            # Direction, CellState, PuzzleStatus, PuzzleFormat, LicenseStatus, etc.
 │       ├── grid.dart             # Grid<T> — plain Dart class (NOT Freezed — generics)
 │       ├── solution_cell.dart    # @freezed abstract class — one cell in the solution
 │       ├── cell_progress.dart    # @freezed abstract class — one cell of user progress
 │       ├── clue.dart             # @freezed abstract class
 │       ├── focus_position.dart   # @freezed abstract class
-│       ├── puzzle_metadata.dart  # @freezed abstract class
+│       ├── puzzle_metadata.dart  # @freezed abstract class (includes publishDate)
 │       └── puzzle.dart           # @freezed abstract class — full puzzle (metadata + grid + clues)
-│   # NOTE: solve has no data/ layer yet. Sprint 4 adds:
-│   #   data/daos/solve_session_dao.dart   — autosave + resume
-│   #   data/repositories/solve_repository_impl.dart
+├── data/
+│   ├── daos/solve_session_dao.dart          # Autosave, resume, getLatestSession()
+│   └── repositories/solve_repository_impl.dart  # createOrResumeSession + save
 └── presentation/
+    ├── providers/solve_providers.dart  # solveRepositoryProvider (keepAlive)
     ├── notifiers/
     │   ├── solve_state.dart      # Plain immutable class (not Freezed — contains Grid<T>)
     │   └── solve_notifier.dart   # @riverpod AsyncNotifier family (puzzleId: String)
     ├── screens/
-    │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + CluePanel
+    │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + CluePanel + completion sheet
     └── widgets/
-        ├── crossword_grid.dart         # ConsumerStatefulWidget — tap + keyboard input
+        ├── crossword_grid.dart         # ConsumerStatefulWidget — tap + long-press + keyboard input
         ├── crossword_grid_painter.dart # CustomPainter — cell rendering
         └── clue_panel.dart             # Active clue + cross clue display
 ```
@@ -149,11 +156,56 @@ SolveScreen (ref.watch solveProvider(puzzleId))
 
 ---
 
+---
+
+## Feature: `archive`
+
+Lists all imported puzzles with their latest solve session status.
+
+```
+archive/
+├── domain/models/archive_entry.dart            # ArchiveEntry (metadata + latest session status)
+├── data/repositories/archive_repository_impl.dart  # getArchiveEntries(), deletePuzzle()
+└── presentation/
+    ├── providers/archive_providers.dart         # archiveRepositoryProvider (keepAlive), archiveEntriesProvider
+    └── screens/archive_screen.dart              # Sort (import/puzzle date/title) + filter chips + long-press delete
+```
+
+---
+
+## Feature: `stats`
+
+Aggregated solve statistics for the current user.
+
+```
+stats/
+├── domain/models/stats_data.dart               # StatsData plain immutable class
+├── data/
+│   ├── daos/stats_dao.dart                     # @DriftAccessor join — returns CompletedSessionStat records
+│   └── repositories/stats_repository_impl.dart # Pure Dart computation (no Drift dependency)
+└── presentation/
+    ├── providers/stats_providers.dart           # statsRepositoryProvider (keepAlive), statsDataProvider
+    └── screens/stats_screen.dart               # Streak, totals, times, personal bests, completion rate cards
+```
+
+**`CompletedSessionStat` typedef** (Dart 3 record, defined in `stats_dao.dart`):
+```dart
+typedef CompletedSessionStat = ({
+  String? completionType,
+  int elapsedMs,
+  String? solvedDateLocal,
+  int width,
+  int height,
+});
+```
+
+---
+
 ## Core: Database
 
 ```
 core/database/
-├── app_database.dart           # @DriftDatabase declaration + PuzzleDao accessor
+├── app_database.dart           # @DriftDatabase declaration; PuzzleDao, SolveSessionDao, StatsDao accessors
 └── tables/
     ├── sources_table.dart      # Puzzle sources (e.g. 'local_import')
     ├── puzzles_table.dart      # One row per imported puzzle
@@ -207,15 +259,32 @@ SolveNotifier receives: `Uri.decodeComponent(puzzleId)` before DB lookup.
 
 ```
 core/providers/core_providers.dart
-  appDatabaseProvider  — @Riverpod(keepAlive: true) AppDatabase
-                         opens the Drift DB at app start
+  appDatabaseProvider        — @Riverpod(keepAlive: true) AppDatabase
+  syncAdapterProvider        — @Riverpod(keepAlive: true) NoOpSyncAdapter (Phase 1)
+  entitlementServiceProvider — @Riverpod(keepAlive: true) FreeEntitlementService (Phase 1)
+  crashReporterProvider      — @Riverpod(keepAlive: true) NoOpCrashReporter (Phase 1)
+
+core/settings/settings_providers.dart
+  hasSeenOnboardingProvider  — @riverpod Future<bool>
+  themeModeProvider          — @riverpod class ThemeModeNotifier
+  hapticsEnabledProvider     — @riverpod class HapticsEnabledNotifier
 
 import/.../import_providers.dart
-  importRepositoryProvider — @Riverpod(keepAlive: true) ImportRepositoryImpl
-                              depends on appDatabaseProvider
+  importRepositoryProvider   — @Riverpod(keepAlive: true) ImportRepositoryImpl
+
+solve/.../solve_providers.dart
+  solveRepositoryProvider    — @Riverpod(keepAlive: true) SolveRepositoryImpl
+
+archive/.../archive_providers.dart
+  archiveRepositoryProvider  — @Riverpod(keepAlive: true) ArchiveRepositoryImpl
+  archiveEntriesProvider     — @riverpod Future<List<ArchiveEntry>>
+
+stats/.../stats_providers.dart
+  statsRepositoryProvider    — @Riverpod(keepAlive: true) StatsRepositoryImpl
+  statsDataProvider          — @riverpod Future<StatsData>
 ```
 
-`keepAlive: true` on both — these must survive navigation and never be disposed.
+`keepAlive: true` on all repository and infrastructure providers — these must survive navigation.
 
 ---
 

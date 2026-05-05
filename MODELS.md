@@ -124,6 +124,7 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
     required int height,
     required int totalClues,
     required DateTime importedAt,
+    DateTime? publishDate,        // original publication date (from .ipuz date field or .puz notes)
     String? notes,
     String? checksum,             // full SHA-256 hex string for duplicate detection
   }) = _PuzzleMetadata;
@@ -172,6 +173,14 @@ class SolveState {
   final PuzzleStatus status;
   final int elapsedSeconds;
   final bool isPaused;
+  final int? sessionId;           // DB row id for autosave; null before first save
+
+  // Check / reveal counters (topic-11)
+  final int checkCount;           // times any check action was triggered
+  final int revealCount;          // times any reveal action was triggered
+  final bool usedCheck;           // true once any check is used
+  final bool usedReveal;          // true once any reveal is used
+  final bool cleanSolveEligible;  // false once reveal is used; disqualifies PB
 
   // Derived (computed, not stored):
   Clue? get activeClue        // clue matching focus cell + direction
@@ -184,7 +193,7 @@ class SolveState {
 
   static bool cellInClue(int row, int col, Clue clue)  // public static for cross-file use
 
-  SolveState copyWith({progress, focus, status, elapsedSeconds, isPaused})
+  SolveState copyWith({progress, focus, status, elapsedSeconds, isPaused, ...})
 }
 ```
 
@@ -212,8 +221,9 @@ class SolveState {
 | `puzzles` row | `PuzzleMetadata` | `PuzzleDao._rowToMetadata()` |
 | `puzzles.canonical_json` | `Grid<SolutionCell>` | `GridSerializer.fromJson()` |
 | `clues` row | `Clue` | `PuzzleDao._clueRowToClue()` |
-| `solve_sessions` row | `SolveState` fields | Sprint 4 — not yet implemented |
-| `cell_progress` row | `CellProgress` | Sprint 4 — not yet implemented |
+| `solve_sessions` row | `SolveState` fields | `SolveRepositoryImpl.createOrResumeSession()` |
+| `cell_progress` row | `CellProgress` | `SolveSessionDao` (save/load per cell) |
+| join `solve_sessions` + `puzzles` | `CompletedSessionStat` record | `StatsDao.getCompletedSessionsWithPuzzle()` |
 
 ---
 
@@ -239,6 +249,8 @@ enum ParseError {
   unsupportedFormat,  // scrambled / locked puzzle
   missingData,        // incomplete or corrupted file
   encodingError,      // character encoding failure
+  fileTooLarge,       // file exceeds 5 MB limit
+  checksumMismatch,   // file-level checksum doesn't match content
   unknown,            // catch-all for unexpected exceptions
 }
 ```
@@ -306,3 +318,89 @@ switch (result) {
 
 `PuzzleParser.parse()` returns `Result<Puzzle, ParseError>`.
 `ImportRepositoryImpl.importBytes()` internally maps this to `ImportJobResult`.
+
+---
+
+## `ArchiveEntry` — `archive/domain/models/archive_entry.dart`
+
+Plain Dart class combining puzzle metadata with its latest session status.
+
+```dart
+class ArchiveEntry {
+  final PuzzleMetadata metadata;
+  final SolveSessionRow? latestSession;  // null → never started
+
+  // Convenience helpers:
+  bool get isNotStarted   // latestSession == null
+  bool get isInProgress   // status == inProgress
+  bool get isCompleted    // status == solved || solvedWithHelp
+  bool get isRevealed     // status == revealed
+  bool get isCleanSolve   // completionType == clean
+  String get sizeLabel    // 'Mini' / '15×15' / '21×21' / 'N×M'
+}
+```
+
+---
+
+## `StatsData` — `stats/domain/models/stats_data.dart`
+
+Plain immutable class with all aggregated statistics. `StatsData.empty` is the sentinel
+when no puzzles have been solved yet.
+
+```dart
+class StatsData {
+  final int currentStreak;        // days including today (or yesterday if not yet solved today)
+  final int longestStreak;        // longest consecutive-day run ever
+  final int totalSolved;          // completed + revealed
+  final int cleanSolves;          // no check or reveal used
+  final int hintedCheckedSolves;  // check used, reveal not used
+  final int revealedCount;        // at least one reveal used
+  final int? averageElapsedMs;    // null when no completed sessions
+  final int? sevenDayAverageMs;
+  final int? personalBest15x15Ms; // clean solves only, 15×15 grid
+  final int? personalBest21x21Ms;
+  final int? personalBestMiniMs;  // grid ≤ 7×7
+  final double completionRate;    // completed / started
+  final int startedCount;
+
+  static const StatsData empty = StatsData(...);
+}
+```
+
+---
+
+## `PuzzleSource` — `import/domain/repositories/puzzle_source.dart`
+
+Abstract interface every puzzle source must implement.
+
+```dart
+abstract class PuzzleSource {
+  String get id;                    // stable id matching sources table
+  String get displayName;
+  LicenseStatus get licenseStatus;  // drives SourceRegistry enforcement
+  bool get enabled;
+  bool get attributionRequired;
+  bool get commercialUseAllowed;
+  bool get rawPayloadRetention;     // false → only canonical JSON retained
+}
+```
+
+`SourceRegistry` enforces that `prohibited` sources can never be registered.
+`needsReview` sources are registered but excluded from `enabledSources`.
+
+---
+
+## `SourceRegistry` — `import/data/sources/source_registry.dart`
+
+```dart
+class SourceRegistry {
+  void register(PuzzleSource source)  // throws SourceRegistrationException for prohibited
+  PuzzleSource? getSource(String id)
+  List<PuzzleSource> get allSources          // all registered (including needsReview)
+  List<PuzzleSource> get enabledSources      // cleared (not needsReview/prohibited) + enabled == true
+}
+
+class SourceRegistrationException implements Exception {
+  final String message;  // contains the offending source id
+}
+```

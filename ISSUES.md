@@ -111,7 +111,7 @@ manually finding and importing a file. Only sources with `LicenseStatus` of
 
 **Type:** Bug / UX  
 **Reported:** 2026-05-04  
-**Target:** Sprint 7
+**Shipped:** Sprint 6 hotfix
 
 **Description:**  
 When the user taps a cell, the soft keyboard slides up and the entire solve

@@ -1,4 +1,4 @@
-/// Crash reporting interface. Sentry integration added in Sprint 7.
+/// Crash reporting interface. Sentry integration added in post-MVP.
 /// All callers use this interface so the vendor can be swapped without
 /// touching feature code.
 ///
@@ -10,7 +10,7 @@ abstract class CrashReporter {
   Future<void> setEnabled(bool enabled);
 }
 
-/// No-op crash reporter used until Sentry is wired in Sprint 7.
+/// No-op crash reporter used until Sentry is wired in post-MVP.
 class NoOpCrashReporter implements CrashReporter {
   const NoOpCrashReporter();
 

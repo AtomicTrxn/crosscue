@@ -117,8 +117,8 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | Haptic feedback on cell tap + completion + long-press | ✅ | `flutter/services.dart` `HapticFeedback`; reads `hapticsEnabledProvider` |
 | Long-press grid cell → contextual Check/Reveal popup (ISSUES #2) | ✅ | `crossword_grid.dart` `onLongPressStart` → `showMenu` |
 | Keyboard overlay — grid no longer shifts on keyboard show/hide (ISSUES #4) | ✅ | `resizeToAvoidBottomInset: false`; `viewInsets.bottom` pad on clue panel |
-| App icon + splash screen | ⏸ | Deferred to Sprint 7 |
-| CustomPainter accessibility semantics (TalkBack) | ⏸ | Deferred to Sprint 7 (topic-03) |
+| App icon + splash screen | ⏸ | Deferred to Post-MVP |
+| CustomPainter accessibility semantics (TalkBack) | ⏸ | Deferred to Post-MVP (topic-03) |
 
 ---
 
