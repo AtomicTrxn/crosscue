@@ -8,6 +8,7 @@ import '../../domain/models/cell_progress.dart';
 import '../../domain/models/clue.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/focus_position.dart';
+import '../../domain/models/grid.dart';
 import 'solve_state.dart';
 
 part 'solve_notifier.g.dart';
@@ -171,6 +172,58 @@ class SolveNotifier extends _$SolveNotifier {
       }
     }
     _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reset
+  // ---------------------------------------------------------------------------
+
+  /// Clears all progress, counters, and the timer back to a fresh state.
+  /// Reuses the existing session row (overwrites it) rather than creating a new one.
+  void resetPuzzle() {
+    final s = _s;
+    if (s == null) return;
+
+    // Find first non-black cell for focus
+    FocusPosition focus = const FocusPosition(
+      row: 0,
+      col: 0,
+      direction: Direction.across,
+    );
+    outer:
+    for (var r = 0; r < s.puzzle.height; r++) {
+      for (var c = 0; c < s.puzzle.width; c++) {
+        if (!s.puzzle.grid.cell(r, c).isBlack) {
+          focus = FocusPosition(row: r, col: c, direction: Direction.across);
+          break outer;
+        }
+      }
+    }
+
+    final blank = Grid<CellProgress>.generate(
+      s.puzzle.width,
+      s.puzzle.height,
+      (_, __) => CellProgress.blank,
+    );
+
+    // Restart timer
+    _timerSub?.cancel();
+    _startTimer();
+
+    state = AsyncData(s.copyWith(
+      progress: blank,
+      focus: focus,
+      status: PuzzleStatus.inProgress,
+      elapsedSeconds: 0,
+      isPaused: false,
+      checkCount: 0,
+      revealCount: 0,
+      usedCheck: false,
+      usedReveal: false,
+      cleanSolveEligible: true,
+    ));
+
+    _saveNow(); // Persist the reset immediately
   }
 
   // ---------------------------------------------------------------------------

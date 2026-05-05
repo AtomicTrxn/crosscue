@@ -224,6 +224,8 @@ enum _CheckRevealOption {
   revealLetter,
   revealWord,
   revealPuzzle,
+  divider2,
+  resetPuzzle,
 }
 
 class _CheckRevealMenu extends ConsumerWidget {
@@ -261,6 +263,11 @@ class _CheckRevealMenu extends ConsumerWidget {
         PopupMenuItem(
           value: _CheckRevealOption.revealPuzzle,
           child: Text('Reveal puzzle'),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _CheckRevealOption.resetPuzzle,
+          child: Text('Reset puzzle'),
         ),
       ],
     );
@@ -306,7 +313,32 @@ class _CheckRevealMenu extends ConsumerWidget {
           ),
         );
         if (confirmed == true) notifier.revealPuzzle();
+      case _CheckRevealOption.resetPuzzle:
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Reset puzzle?'),
+            content: const Text(
+              'All your progress, checks, and reveals will be cleared. The timer will restart from zero.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Reset'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) notifier.resetPuzzle();
       case _CheckRevealOption.divider:
+      case _CheckRevealOption.divider2:
         break;
     }
   }
