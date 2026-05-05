@@ -4,6 +4,9 @@ This plan converts the files in `design/` into implementation work for the
 Flutter app at `crosscue/crosscue/`. The HTML files are high-fidelity visual
 references, not production code to copy directly.
 
+Status as of Sprint 12: Sprints 9 and 12 are complete. Sprints 10, 11, and 13
+remain the active design implementation backlog.
+
 ## Decisions
 
 - Commit the `design/` folder as the source handoff for the redesign.
@@ -38,6 +41,8 @@ references, not production code to copy directly.
 
 Goal: make the app's global visual language match the design handoff without
 changing core workflows.
+
+Status: Complete.
 
 - Add `design_tokens.dart` to `lib/core/theme/`.
 - Adapt `AppTheme` to the new typography, app bar, nav bar, button, chip,
@@ -80,6 +85,8 @@ Goal: bring the main tab surfaces into the flat list-based design language.
 Goal: align secondary flows with the new design and make Settings the home for
 import/source management.
 
+Status: Complete.
+
 - Redesign Settings rows, theme controls, haptics toggle, and destructive
   actions.
 - Add Settings entry points for local import and future source/downloader
@@ -110,4 +117,3 @@ Goal: finish polish and visual verification.
 - Downloader/source management is discoverable from Settings, not Home.
 - `flutter analyze` reports 0 issues.
 - `flutter test` passes.
-

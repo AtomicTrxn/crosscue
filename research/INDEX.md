@@ -18,10 +18,10 @@ Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒
 | 12 | [topic-12](topic-12-flutter-project-structure.md) | `lib/` folder layout, naming conventions | ✅ Sprint 1 — superseded by ARCHITECTURE.md |
 | 13 | [topic-13](topic-13-screen-inventory-routes.md) | Screen inventory, go_router setup, route table | ✅ Sprint 1 — superseded by ARCHITECTURE.md |
 | 14 | [topic-14](topic-14-puzzle-parser-spec.md) | `.puz` / `.ipuz` parser field-by-field spec | ✅ Sprint 2 — superseded by MODELS.md + code |
-| 16 | [topic-16](topic-16-first-run-phase1.md) | Phase 1 import-first launch path, empty states | 🔄 Sprint 1–3 done; onboarding detail needed for Sprint 6 |
-| 11 | [topic-11](topic-11-game-mechanics-feedback.md) | Letter placement, auto-advance, check/reveal rules | 🔄 Basic input done Sprint 3; check/reveal pending Sprint 5 |
-| 17 | [topic-17](topic-17-ux-missing-details.md) | 20 UX gap decisions: back nav, completion sheet, keyboard, etc. | 🔄 Some decisions shipped Sprint 3; remainder drives Sprints 4–6 |
-| 10 | [topic-10](topic-10-design-ux-research.md) | Typography, colour system, micro-interactions, branding | 🔄 Theme + grid colours shipped Sprints 1/3; animations pending Sprint 6 |
+| 16 | [topic-16](topic-16-first-run-phase1.md) | Phase 1 import-first launch path, empty states | ✅ Sprints 1–6; Settings/source placement refreshed Sprint 12 |
+| 11 | [topic-11](topic-11-game-mechanics-feedback.md) | Letter placement, auto-advance, check/reveal rules | ✅ Sprints 3–5; hint/rebus/pencil enhancements deferred |
+| 17 | [topic-17](topic-17-ux-missing-details.md) | 20 UX gap decisions: back nav, completion sheet, keyboard, etc. | 🔄 Core decisions shipped Sprints 3–7; ClueBar redesign, accessibility, and icon polish remain |
+| 10 | [topic-10](topic-10-design-ux-research.md) | Typography, colour system, micro-interactions, branding | 🔄 Tokens and secondary flows shipped through Sprint 12; broader redesign continues in Sprints 10–13 |
 
 ### Sprint 4 — Solve Persistence
 
@@ -58,7 +58,7 @@ Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒
 
 | # | File | Topic | Status |
 |---|------|-------|--------|
-| 14 | [topic-14](topic-14-puzzle-parser-spec.md) | Test fixture requirements | ✅ Sprint 8 — PuzFixtureBuilder + 78 tests |
+| 14 | [topic-14](topic-14-puzzle-parser-spec.md) | Test fixture requirements | ✅ Sprint 8 — PuzFixtureBuilder + parser regression tests |
 | 1 | [topic-01](topic-01-puzzle-source-endpoints.md) | Source fetch URLs, response formats, downloader strategy | ⬜ Post-MVP — SourceRegistry foundation laid; actual downloaders blocked by topic-07 legal review |
 | 7 | [topic-07](topic-07-legal-tos-puzzle-sources.md) | Per-source ToS risk, prohibited/needs-review classification | 🔒 Active guardrail — read before any source work |
 
@@ -88,12 +88,12 @@ Status key: ✅ Implemented · 🔄 Partially Implemented · ⬜ Pending · 🔒
 | 7 | [topic-07](topic-07-legal-tos-puzzle-sources.md) | Legal / ToS for puzzle sources | 🔒 Active guardrail |
 | 8 | [topic-08](topic-08-cicd-release-pipeline.md) | CI/CD & release pipeline | ⬜ Post-MVP |
 | 9 | [topic-09](topic-09-backend-sync-decision.md) | Backend sync decision | ⬜ Post-MVP |
-| 10 | [topic-10](topic-10-design-ux-research.md) | Design & UX research | ✅ Sprints 1–6 (haptics, completion sheet; animations post-MVP) |
+| 10 | [topic-10](topic-10-design-ux-research.md) | Design & UX research | 🔄 Sprints 1–12 (tokens, haptics, completion, onboarding/settings/import); solve/main-tab redesign and animation polish remain |
 | 11 | [topic-11](topic-11-game-mechanics-feedback.md) | Game mechanics & input feedback | ✅ Sprints 3–5 |
 | 12 | [topic-12](topic-12-flutter-project-structure.md) | Flutter project structure | ✅ Sprint 1 |
 | 13 | [topic-13](topic-13-screen-inventory-routes.md) | Screen inventory & navigation routes | ✅ Sprint 1 |
 | 14 | [topic-14](topic-14-puzzle-parser-spec.md) | Puzzle file format parser spec | ✅ Sprints 2 + 8 |
 | 15 | [topic-15](topic-15-streak-stats-algorithm.md) | Streak & stats algorithm | ✅ Sprint 7 |
-| 16 | [topic-16](topic-16-first-run-phase1.md) | Phase 1 first-run & import-only experience | ✅ Sprint 6 |
-| 17 | [topic-17](topic-17-ux-missing-details.md) | UX missing details (20 decisions) | ✅ Sprints 4–7 (app icon + TalkBack deferred post-MVP) |
+| 16 | [topic-16](topic-16-first-run-phase1.md) | Phase 1 first-run & import-only experience | ✅ Sprints 6 + 12 |
+| 17 | [topic-17](topic-17-ux-missing-details.md) | UX missing details (20 decisions) | 🔄 Sprints 4–7; ClueBar redesign, app icon, and TalkBack/semantics remain |
 | 18 | [topic-18](topic-18-privacy-policy-store-compliance.md) | Privacy policy & store compliance | ⬜ Store submission |

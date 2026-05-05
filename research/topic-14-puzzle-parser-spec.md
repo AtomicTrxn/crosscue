@@ -1,7 +1,7 @@
 # Research Topic #14 — Puzzle File Format Parser Spec
 
 Status: Resolved
-Implementation Status: ✅ Implemented — Sprint 2 (PuzParser + IpuzParser); superseded by MODELS.md + source code. Test fixtures still needed for Sprint 8.
+Implementation Status: ✅ Implemented — Sprint 2 parsers plus Sprint 8 regression tests/fixtures; superseded by MODELS.md + source code
 Owner: Claude
 
 ## Research Question
