@@ -13,6 +13,7 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | # | Type | Title | Sprint Target | Notes |
 |---|------|-------|---------------|-------|
 | 3 | ✨ | In-app puzzle downloader for free/licensed sources | Sprint 8+ | See detail below; legal review required before any source ships |
+| 4 | 🐛 | Keyboard appearance causes grid/layout to shift | Sprint 7 | See detail below; clunky UX when soft keyboard slides in/out |
 
 ---
 
@@ -104,6 +105,52 @@ manually finding and importing a file. Only sources with `LicenseStatus` of
 - `features/import/data/sources/amuselabs_source.dart`
 - `features/import/data/sources/indie_feed_source.dart`
 - `features/import/presentation/screens/browse_sources_screen.dart`
+
+---
+
+### #4 — Keyboard appearance causes grid/layout to shift
+
+**Type:** Bug / UX  
+**Reported:** 2026-05-04  
+**Target:** Sprint 7
+
+**Description:**  
+When the user taps a cell, the soft keyboard slides up and the entire solve
+layout (grid + clue panel) is pushed upward to avoid being occluded. The
+result is a jarring jump: the grid shrinks, shifts position, and then snaps
+back when the keyboard is dismissed. On a puzzle that's already filling most
+of the screen this is particularly disorienting.
+
+**Root cause:**  
+`Scaffold` defaults to `resizeToAvoidBottomInset: true`, which causes the
+body to shrink by the keyboard height on every appearance/disappearance.
+The grid is inside an `Expanded` widget, so it reflows each time.
+
+**Preferred fix — keep keyboard behind the layout (overlay model):**  
+Set `resizeToAvoidBottomInset: false` on the `SolveScreen` `Scaffold`.
+The hidden `TextField` that drives the soft keyboard lives at `(-200, -200)`
+off-screen, so the keyboard can appear without affecting layout at all.
+The user sees the grid stay perfectly still; only the system keyboard
+overlaps the bottom of the screen (which is acceptable — the clue panel
+sits above the keyboard safe area anyway).
+
+**Implementation notes:**
+- In `SolveScreen.build()`, add `resizeToAvoidBottomInset: false` to the
+  `Scaffold`.
+- Verify the clue panel remains visible above the keyboard. If it gets
+  clipped, wrap the `CluePanel` row in a `Padding` that adds
+  `MediaQuery.of(context).viewInsets.bottom` when non-zero.
+- The hidden `TextField` is positioned absolutely at `(-200, -200)` so it
+  is unaffected by inset changes.
+- Test by tapping a cell, typing several letters, then dismissing — the
+  grid must not move at all during the keyboard animation.
+
+**Alternative considered:**  
+`KeyboardDismissBehavior.onDrag` on a wrapping `ScrollView` — rejected
+because the grid is not scrollable and we do not want drag-to-dismiss
+interfering with grid swipe gestures.
+
+**Key file:** `lib/features/solve/presentation/screens/solve_screen.dart`
 
 ---
 
