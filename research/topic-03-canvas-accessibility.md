@@ -1,7 +1,7 @@
 # Research Topic #3 — Canvas + TalkBack/VoiceOver Accessibility
 
 Status: Resolved
-Implementation Status: ⬜ Pending — Sprint 6
+Implementation Status: ⬜ Pending — Deferred/Post-MVP; basic keyboard and touch interaction shipped, full CustomPainter semantics still needed
 Owner: Codex
 
 ## Research Question

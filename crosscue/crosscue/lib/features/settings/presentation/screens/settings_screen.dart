@@ -110,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('Crosscue'),
-            subtitle: Text('v0.1.0-sprint6'),
+            subtitle: Text('v0.1.0'),
           ),
         ],
       ),

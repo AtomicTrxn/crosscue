@@ -158,7 +158,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | `LocalImportSource` wrapping existing parsers | ✅ | `id='local_import'`, `licenseStatus=userImport`, always enabled |
 | Parser hardening | ✅ | 5 MB size guard + `fileTooLarge` error; fixed GEXT circle bit (`0x80` → `0x10`) |
 
-**Test results:** 78/78 passing (`source_registry_test`: 22, `ipuz_parser_test`: 22+, `puz_parser_test`: 25+)
+**Test results:** Current full suite 79/79 passing (`source_registry_test`, `ipuz_parser_test`, `puz_parser_test`, widget smoke test)
 
 ---
 

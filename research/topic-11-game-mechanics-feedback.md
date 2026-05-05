@@ -1,7 +1,7 @@
 # Research Topic #11 — Game Mechanics & Input Feedback
 
 Status: Resolved
-Implementation Status: 🔄 Partially Implemented — basic letter input + auto-advance shipped Sprint 3; check/reveal/hint rules + mistake counting pending Sprint 5
+Implementation Status: 🔄 Partially Implemented — letter input, auto-advance, check/reveal, counters, and completion types shipped by Sprint 5; hint/rebus/pencil enhancements remain deferred
 Owner: Codex
 
 ## Research Question

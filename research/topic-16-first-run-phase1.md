@@ -1,7 +1,7 @@
 # Research Topic #16 — Phase 1 First-Run & Import-Only Experience
 
 Status: Resolved
-Implementation Status: 🔄 Partially Implemented — import flow + home empty state shipped Sprints 1–3; onboarding (in-memory flag) pending Sprint 6 for persistent AppSettingsDao
+Implementation Status: ✅ Implemented — import flow, persistent onboarding, local-source Settings placement, and neutral empty states shipped by Sprint 12
 Owner: Codex
 
 ## Research Question

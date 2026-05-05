@@ -1,7 +1,7 @@
 # Research Topic #17 — UX Missing Details
 
 Status: Resolved
-Implementation Status: 🔄 Partially Implemented — back nav, timer display, load failure state shipped Sprint 3; §3 Check key, §4 timer pause, §5 Archive, §7 onboarding, §8 ClueBar toggle, §10 post-completion, §19 mock grid pending Sprints 4–7
+Implementation Status: 🔄 Partially Implemented — Sprints 3–7 shipped back nav, timer, load failure, check/reveal, timer pause, Archive, onboarding, completion sheet, and mock grid; ClueBar redesign remains Sprint 10; accessibility and icon polish remain deferred/Sprint 13
 Owner: Claude
 
 ## Research Question
