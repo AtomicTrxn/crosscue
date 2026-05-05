@@ -186,7 +186,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 10 — Solve Redesign ⬜
+## Sprint 10 — Solve Redesign ✅
 
 **Goal:** Rebuild the solve experience to match the high-fidelity design references.
 
@@ -194,13 +194,22 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Compact 48dp solve app bar | ⬜ | Back, source/title, timer, overflow |
-| Add `ClueBar` above grid | ⬜ | Tappable across/down toggle |
-| Full-width grid layout | ⬜ | Cell size based on screen width / puzzle width |
-| Painter visual refresh | ⬜ | Borders, active cell, active word, cross highlight, check/reveal states |
-| Two-column clue panel | ⬜ | Across/down columns with active clue highlighting |
-| Custom QWERTY keyboard | ⬜ | Letter keys, delete, check-word key; preserve physical keyboard support |
-| 15x15 + mini layout QA | ⬜ | Verify light and dark mode |
+| Compact 48dp solve app bar | ✅ | `_SolveAppBar` PreferredSizeWidget; centred title, timer + ⋮ trailing |
+| Add `ClueBar` above grid | ✅ | `clue_bar.dart`; direction arrow ↔/↕, clue number, clue text; tap calls `toggleDirection()` |
+| Full-width grid layout | ✅ | `cellSize = maxWidth / puzzle.width`; `CrosswordGrid` self-sizes height via `SizedBox` |
+| Painter visual refresh | ✅ | Letter factor `0.62→0.52`, number factor `0.27→0.22` via `CrosscueTypography` tokens |
+| Two-column clue panel | ✅ | `clue_panel.dart` rewritten; Across/Down `ListView` columns; active/cross bg; 150 ms auto-scroll |
+| Custom QWERTY keyboard | ✅ | `crossword_keyboard.dart`; ⌫ delete, ✓ check-word; physical keyboard preserved via hidden TextField |
+| 15x15 + mini layout QA | ✅ | analyze 0 issues · 79/79 tests · debug APK built |
+
+**Key files changed:**
+- `lib/features/solve/presentation/notifiers/solve_notifier.dart` — `toggleDirection()` method
+- `lib/features/solve/presentation/screens/solve_screen.dart` — full layout rebuild
+- `lib/features/solve/presentation/widgets/clue_bar.dart` — new
+- `lib/features/solve/presentation/widgets/clue_panel.dart` — rewritten two-column
+- `lib/features/solve/presentation/widgets/crossword_grid.dart` — full-width layout
+- `lib/features/solve/presentation/widgets/crossword_grid_painter.dart` — design-token font factors
+- `lib/features/solve/presentation/widgets/crossword_keyboard.dart` — new
 
 ---
 
