@@ -28,6 +28,12 @@ class PuzParser implements PuzzleParser {
   static const _scrambleOffset = 0x32;
   static const _gridOffset = 0x34;
 
+  /// Maximum accepted file size (5 MiB).  Real .puz files are ≤ 100 KB.
+  static const _maxBytes = 5 * 1024 * 1024;
+
+  /// GEXT flag bit indicating a circled cell (standard .puz spec).
+  static const _gextCircledBit = 0x10;
+
   // Extension block tags
   static const _extGrbs = 'GRBS';
   static const _extRtbl = 'RTBL';
@@ -50,6 +56,7 @@ class PuzParser implements PuzzleParser {
   }
 
   Result<Puzzle, ParseError> _doParse(Uint8List bytes) {
+    if (bytes.length > _maxBytes) return const Err(ParseError.fileTooLarge);
     if (!canParse(bytes)) return const Err(ParseError.invalidFormat);
 
     // --- header fields ---
@@ -146,7 +153,7 @@ class PuzParser implements PuzzleParser {
       } else {
         solution = latin1.decode([b]);
       }
-      final circled = (gextFlags[i] ?? 0) & 0x80 != 0;
+      final circled = (gextFlags[i] ?? 0) & _gextCircledBit != 0;
       cells.add(SolutionCell(
         isBlack: false,
         solution: solution,

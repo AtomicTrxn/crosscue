@@ -143,7 +143,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 8 — Parser Tests & Source Registry ⬜
+## Sprint 8 — Parser Tests & Source Registry ✅
 
 **Goal:** Hardened parsers with regression tests; foundation for future puzzle sources.
 
@@ -151,11 +151,14 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| `.puz` parser unit tests with known-good BEQ fixture | ⬜ | |
-| `.ipuz` parser unit tests | ⬜ | |
-| `PuzzleSource` abstract class | ⬜ | Deferred from Sprint 2 |
-| `SourceRegistry` with `LicenseStatus` enforcement | ⬜ | |
-| `LocalImportSource` wrapping existing parsers | ⬜ | |
+| `.puz` parser unit tests with known-good BEQ fixture | ✅ | `PuzFixtureBuilder` synthesizes binary fixtures in memory; 25 tests |
+| `.ipuz` parser unit tests | ✅ | 22 tests covering golden path, rebus, object clues, error cases |
+| `PuzzleSource` abstract class | ✅ | Deferred from Sprint 2; `lib/features/import/domain/repositories/puzzle_source.dart` |
+| `SourceRegistry` with `LicenseStatus` enforcement | ✅ | Throws `SourceRegistrationException` for `prohibited` sources; excludes `needsReview` from `enabledSources` |
+| `LocalImportSource` wrapping existing parsers | ✅ | `id='local_import'`, `licenseStatus=userImport`, always enabled |
+| Parser hardening | ✅ | 5 MB size guard + `fileTooLarge` error; fixed GEXT circle bit (`0x80` → `0x10`) |
+
+**Test results:** 78/78 passing (`source_registry_test`: 22, `ipuz_parser_test`: 22+, `puz_parser_test`: 25+)
 
 ---
 

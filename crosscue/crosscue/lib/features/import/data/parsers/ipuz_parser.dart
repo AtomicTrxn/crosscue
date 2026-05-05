@@ -17,6 +17,9 @@ import '../../domain/repositories/puzzle_parser.dart';
 class IpuzParser implements PuzzleParser {
   const IpuzParser();
 
+  /// Maximum accepted file size (5 MiB).
+  static const _maxBytes = 5 * 1024 * 1024;
+
   static const _blackCell = '#';
 
   @override
@@ -45,6 +48,8 @@ class IpuzParser implements PuzzleParser {
   }
 
   Result<Puzzle, ParseError> _doParse(Uint8List bytes) {
+    if (bytes.length > _maxBytes) return const Err(ParseError.fileTooLarge);
+
     final String text;
     try {
       text = utf8.decode(bytes);

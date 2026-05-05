@@ -12,6 +12,12 @@ enum ParseError {
   /// The file could not be decoded to text (encoding issue).
   encodingError,
 
+  /// File exceeds the maximum permitted size (5 MB).
+  fileTooLarge,
+
+  /// File-level checksum does not match the content (truncated / corrupt).
+  checksumMismatch,
+
   /// Something unexpected happened during parsing.
   unknown,
 }
