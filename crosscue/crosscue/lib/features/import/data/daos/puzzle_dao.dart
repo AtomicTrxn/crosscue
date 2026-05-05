@@ -143,6 +143,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase>
       height: row.height,
       totalClues: 0, // loaded lazily
       importedAt: row.createdAt,
+      publishDate: row.publishDate,
       notes: row.notes,
       checksum: row.checksum,
     );
