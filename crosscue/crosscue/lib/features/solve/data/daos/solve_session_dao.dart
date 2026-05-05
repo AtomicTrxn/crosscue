@@ -27,6 +27,16 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
             ..limit(1))
           .getSingleOrNull();
 
+  /// Returns the most recent session for [puzzleId] regardless of status,
+  /// or null if no session has ever been started for this puzzle.
+  /// Used by the Archive screen to determine puzzle status.
+  Future<SolveSessionRow?> getLatestSession(String puzzleId) =>
+      (select(solveSessionsTable)
+            ..where((t) => t.puzzleId.equals(puzzleId))
+            ..orderBy([(t) => OrderingTerm.desc(t.lastPlayedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
   /// Creates a new session and returns its auto-increment id.
   Future<int> createSession(String puzzleId) {
     final now = DateTime.now().toUtc();

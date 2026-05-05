@@ -122,7 +122,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 7 — Archive & Stats ⬜
+## Sprint 7 — Archive & Stats ✅
 
 **Goal:** Solved puzzles are browsable; basic solving stats are displayed.
 
@@ -130,10 +130,16 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| `ArchiveScreen` — list of completed sessions, tap to view | ⬜ | |
-| `StatsScreen` — solve count, average time, streak | ⬜ | |
-| Streak algorithm using `solved_date_local` + `solved_timezone` | ⬜ | See `solve_sessions_table` comment |
-| `CompletionType` breakdown (clean / checked / hinted / revealed) | ⬜ | |
+| `ArchiveScreen` — all puzzles with latest session status, sort/filter chips, long-press delete | ✅ | `archive/presentation/screens/archive_screen.dart`; uses `archiveEntriesProvider` |
+| `StatsScreen` — streak, solve counts, avg times, personal bests, completion rate | ✅ | `stats/presentation/screens/stats_screen.dart`; uses `statsDataProvider` |
+| `StatsDao` — join sessions + puzzles; streak dates; session count | ✅ | `stats/data/daos/stats_dao.dart`; returns typed `CompletedSessionStat` records |
+| Streak algorithm using `solved_date_local` (current + longest) | ✅ | Implemented in `StatsRepositoryImpl`; yesterday-not-yet-today rule applied |
+| `CompletionType` breakdown (clean / checked / hinted / revealed) | ✅ | Derived from `solve_sessions.completion_type`; all four shown in Stats screen |
+| `ArchiveRepositoryImpl` — latest session per puzzle (orphan-safe) | ✅ | `SolveSessionDao.getLatestSession()`; N+1 acceptable for Phase 1 |
+| Personal bests by grid size (mini ≤7×7, 15×15, 21×21) | ✅ | Clean solves only per topic-15 |
+| `publishDate` added to `PuzzleMetadata` | ✅ | Enables sort-by-puzzle-date in Archive |
+| Sort (import date / puzzle date / title) + filter chips (All / In Progress / Completed / Not Started) | ✅ | Client-side in `ArchiveScreen` state |
+| Single-puzzle long-press delete with confirmation dialog | ✅ | Cascades to clues/sessions/cell_progress via FK; invalidates `archiveEntriesProvider` |
 
 ---
 

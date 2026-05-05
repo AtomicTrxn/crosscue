@@ -24,6 +24,7 @@ mixin _$PuzzleMetadata {
   int get height;
   int get totalClues;
   DateTime get importedAt;
+  DateTime? get publishDate;
   String? get notes;
   String? get checksum;
 
@@ -54,6 +55,8 @@ mixin _$PuzzleMetadata {
                 other.totalClues == totalClues) &&
             (identical(other.importedAt, importedAt) ||
                 other.importedAt == importedAt) &&
+            (identical(other.publishDate, publishDate) ||
+                other.publishDate == publishDate) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.checksum, checksum) ||
                 other.checksum == checksum));
@@ -72,12 +75,13 @@ mixin _$PuzzleMetadata {
       height,
       totalClues,
       importedAt,
+      publishDate,
       notes,
       checksum);
 
   @override
   String toString() {
-    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, totalClues: $totalClues, importedAt: $importedAt, notes: $notes, checksum: $checksum)';
+    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, totalClues: $totalClues, importedAt: $importedAt, publishDate: $publishDate, notes: $notes, checksum: $checksum)';
   }
 }
 
@@ -98,6 +102,7 @@ abstract mixin class $PuzzleMetadataCopyWith<$Res> {
       int height,
       int totalClues,
       DateTime importedAt,
+      DateTime? publishDate,
       String? notes,
       String? checksum});
 }
@@ -125,6 +130,7 @@ class _$PuzzleMetadataCopyWithImpl<$Res>
     Object? height = null,
     Object? totalClues = null,
     Object? importedAt = null,
+    Object? publishDate = freezed,
     Object? notes = freezed,
     Object? checksum = freezed,
   }) {
@@ -169,6 +175,10 @@ class _$PuzzleMetadataCopyWithImpl<$Res>
           ? _self.importedAt
           : importedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      publishDate: freezed == publishDate
+          ? _self.publishDate
+          : publishDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       notes: freezed == notes
           ? _self.notes
           : notes // ignore: cast_nullable_to_non_nullable
@@ -285,6 +295,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             int height,
             int totalClues,
             DateTime importedAt,
+            DateTime? publishDate,
             String? notes,
             String? checksum)?
         $default, {
@@ -304,6 +315,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.height,
             _that.totalClues,
             _that.importedAt,
+            _that.publishDate,
             _that.notes,
             _that.checksum);
       case _:
@@ -337,6 +349,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             int height,
             int totalClues,
             DateTime importedAt,
+            DateTime? publishDate,
             String? notes,
             String? checksum)
         $default,
@@ -355,6 +368,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.height,
             _that.totalClues,
             _that.importedAt,
+            _that.publishDate,
             _that.notes,
             _that.checksum);
       case _:
@@ -387,6 +401,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             int height,
             int totalClues,
             DateTime importedAt,
+            DateTime? publishDate,
             String? notes,
             String? checksum)?
         $default,
@@ -405,6 +420,7 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.height,
             _that.totalClues,
             _that.importedAt,
+            _that.publishDate,
             _that.notes,
             _that.checksum);
       case _:
@@ -427,6 +443,7 @@ class _PuzzleMetadata implements PuzzleMetadata {
       required this.height,
       required this.totalClues,
       required this.importedAt,
+      this.publishDate,
       this.notes,
       this.checksum});
 
@@ -450,6 +467,8 @@ class _PuzzleMetadata implements PuzzleMetadata {
   final int totalClues;
   @override
   final DateTime importedAt;
+  @override
+  final DateTime? publishDate;
   @override
   final String? notes;
   @override
@@ -482,6 +501,8 @@ class _PuzzleMetadata implements PuzzleMetadata {
                 other.totalClues == totalClues) &&
             (identical(other.importedAt, importedAt) ||
                 other.importedAt == importedAt) &&
+            (identical(other.publishDate, publishDate) ||
+                other.publishDate == publishDate) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.checksum, checksum) ||
                 other.checksum == checksum));
@@ -500,12 +521,13 @@ class _PuzzleMetadata implements PuzzleMetadata {
       height,
       totalClues,
       importedAt,
+      publishDate,
       notes,
       checksum);
 
   @override
   String toString() {
-    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, totalClues: $totalClues, importedAt: $importedAt, notes: $notes, checksum: $checksum)';
+    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, totalClues: $totalClues, importedAt: $importedAt, publishDate: $publishDate, notes: $notes, checksum: $checksum)';
   }
 }
 
@@ -528,6 +550,7 @@ abstract mixin class _$PuzzleMetadataCopyWith<$Res>
       int height,
       int totalClues,
       DateTime importedAt,
+      DateTime? publishDate,
       String? notes,
       String? checksum});
 }
@@ -555,6 +578,7 @@ class __$PuzzleMetadataCopyWithImpl<$Res>
     Object? height = null,
     Object? totalClues = null,
     Object? importedAt = null,
+    Object? publishDate = freezed,
     Object? notes = freezed,
     Object? checksum = freezed,
   }) {
@@ -599,6 +623,10 @@ class __$PuzzleMetadataCopyWithImpl<$Res>
           ? _self.importedAt
           : importedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      publishDate: freezed == publishDate
+          ? _self.publishDate
+          : publishDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       notes: freezed == notes
           ? _self.notes
           : notes // ignore: cast_nullable_to_non_nullable
