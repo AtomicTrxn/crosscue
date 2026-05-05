@@ -37,12 +37,12 @@ class CrosswordGridPainter extends CustomPainter {
     final bgPaint = Paint()..style = PaintingStyle.fill;
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = theme.gridLineColor
-      ..strokeWidth = 1.0;
+      ..color = theme.gridBorder
+      ..strokeWidth = 0.5;
     final outerBorderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = theme.gridLineColor
-      ..strokeWidth = 2.5;
+      ..color = theme.gridOuterBorder
+      ..strokeWidth = 2.0;
 
     for (var r = 0; r < puzzle.height; r++) {
       for (var c = 0; c < puzzle.width; c++) {
@@ -56,7 +56,7 @@ class CrosswordGridPainter extends CustomPainter {
         final cell = puzzle.grid.cell(r, c);
 
         if (cell.isBlack) {
-          bgPaint.color = theme.blackCellColor;
+          bgPaint.color = theme.gridBlack;
           canvas.drawRect(rect, bgPaint);
           continue;
         }
@@ -65,11 +65,11 @@ class CrosswordGridPainter extends CustomPainter {
 
         // Background color
         if (solveState.isFocused(r, c)) {
-          bgPaint.color = theme.focusCellColor;
+          bgPaint.color = theme.cellActive;
         } else if (solveState.isWordHighlighted(r, c)) {
-          bgPaint.color = theme.wordHighlightColor;
+          bgPaint.color = theme.wordHighlight;
         } else if (solveState.isCrossHighlighted(r, c)) {
-          bgPaint.color = theme.crossHighlightColor;
+          bgPaint.color = theme.crossHighlight;
         } else {
           bgPaint.color = _cellBg(prog);
         }
@@ -92,7 +92,7 @@ class CrosswordGridPainter extends CustomPainter {
         if (cell.circled) {
           final circlePaint = Paint()
             ..style = PaintingStyle.stroke
-            ..color = theme.gridLineColor
+            ..color = theme.gridBorder
             ..strokeWidth = 1.5;
           canvas.drawCircle(
             rect.center,
@@ -103,7 +103,7 @@ class CrosswordGridPainter extends CustomPainter {
 
         // User letter
         if (prog.letter.isNotEmpty) {
-          _paintLetter(canvas, prog.letter, rect, cellSize, prog);
+          _paintLetter(canvas, prog.letter, rect, cellSize);
         }
       }
     }
@@ -117,10 +117,10 @@ class CrosswordGridPainter extends CustomPainter {
 
   Color _cellBg(CellProgress prog) {
     return switch (prog.state) {
-      CellState.checkedCorrect => theme.checkedCorrectColor,
-      CellState.checkedIncorrect => theme.checkedIncorrectColor,
-      CellState.revealed => theme.revealedCellColor,
-      _ => Colors.white,
+      CellState.checkedCorrect => theme.stateCorrect,
+      CellState.checkedIncorrect => theme.stateIncorrect,
+      CellState.revealed => theme.stateRevealed,
+      _ => theme.gridEmpty,
     };
   }
 
@@ -136,7 +136,7 @@ class CrosswordGridPainter extends CustomPainter {
         text: '$number',
         style: TextStyle(
           fontSize: fontSize,
-          color: theme.cellNumberColor,
+          color: theme.cellNumber,
           fontWeight: FontWeight.w600,
           height: 1.0,
         ),
@@ -155,12 +155,11 @@ class CrosswordGridPainter extends CustomPainter {
     String letter,
     Rect cellRect,
     double cellSize,
-    CellProgress prog,
   ) {
     final fontSize = (cellSize * 0.62).clamp(10.0, 32.0);
-    final color = prog.state == CellState.revealed
-        ? theme.revealedLetterColor
-        : theme.userLetterColor;
+    // Revealed cells use standard cellText — the stateRevealed background
+    // (pale yellow) communicates the revealed state visually.
+    final color = theme.cellText;
 
     final tp = TextPainter(
       text: TextSpan(

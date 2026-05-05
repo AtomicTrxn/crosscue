@@ -72,17 +72,37 @@ class SettingsScreen extends ConsumerWidget {
           const _SectionHeader('Feedback'),
           SwitchListTile(
             value: hapticsEnabled,
-            onChanged: (_) => ref.read(hapticsEnabledProvider.notifier).toggle(),
+            onChanged: (_) =>
+                ref.read(hapticsEnabledProvider.notifier).toggle(),
             title: const Text('Haptic feedback'),
             subtitle: const Text('Vibrate on cell tap and puzzle events'),
+          ),
+          const Divider(),
+
+          // ── Puzzles ─────────────────────────────────────────────────────
+          const _SectionHeader('Puzzles'),
+          ListTile(
+            leading: const Icon(Icons.folder_open_outlined),
+            title: const Text('Import local puzzle'),
+            subtitle:
+                const Text('Choose a .puz or .ipuz file from this device'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.import_),
+          ),
+          ListTile(
+            leading: const Icon(Icons.source_outlined),
+            title: const Text('Puzzle sources'),
+            subtitle: const Text('Manage local import and future sources'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.sourceManagement),
           ),
           const Divider(),
 
           // ── Data ────────────────────────────────────────────────────────
           const _SectionHeader('Data'),
           ListTile(
-            leading: const Icon(Icons.delete_forever_outlined,
-                color: Colors.red),
+            leading:
+                const Icon(Icons.delete_forever_outlined, color: Colors.red),
             title: const Text('Clear all data',
                 style: TextStyle(color: Colors.red)),
             subtitle: const Text('Delete all puzzles, progress and settings'),

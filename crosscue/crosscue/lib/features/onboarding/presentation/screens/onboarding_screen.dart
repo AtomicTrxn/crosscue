@@ -232,13 +232,13 @@ class _MockGrid extends StatelessWidget {
 
                   Color bg;
                   if (isBlack) {
-                    bg = xwTheme.blackCellColor;
+                    bg = xwTheme.gridBlack;
                   } else if (isFocused) {
-                    bg = xwTheme.focusCellColor;
+                    bg = xwTheme.cellActive;
                   } else if (isWord) {
-                    bg = xwTheme.wordHighlightColor;
+                    bg = xwTheme.wordHighlight;
                   } else {
-                    bg = Colors.white;
+                    bg = xwTheme.gridEmpty;
                   }
 
                   return Expanded(
@@ -247,7 +247,7 @@ class _MockGrid extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: bg,
-                          border: Border.all(color: xwTheme.gridLineColor),
+                          border: Border.all(color: xwTheme.gridBorder),
                         ),
                         child: isBlack
                             ? null
@@ -257,7 +257,7 @@ class _MockGrid extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: xwTheme.userLetterColor,
+                                    color: xwTheme.cellText,
                                   ),
                                 ),
                               ),

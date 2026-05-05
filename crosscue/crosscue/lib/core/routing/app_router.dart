@@ -5,6 +5,7 @@ import '../../features/archive/presentation/screens/archive_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/import/presentation/screens/import_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/settings/presentation/screens/source_management_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/solve/presentation/screens/solve_screen.dart';
 import '../../features/stats/presentation/screens/stats_screen.dart';
@@ -44,6 +45,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: Routes.import_,
         builder: (context, state) => const ImportScreen(),
+      ),
+      GoRoute(
+        path: Routes.sourceManagement,
+        builder: (context, state) => const SourceManagementScreen(),
       ),
       GoRoute(
         path: Routes.solve,

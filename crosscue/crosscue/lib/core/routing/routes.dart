@@ -9,6 +9,7 @@ abstract final class Routes {
   // Full-page routes (push over shell)
   static const onboarding = '/onboarding';
   static const import_ = '/import';
+  static const sourceManagement = '/settings/sources';
   static const solve = '/solve/:puzzleId';
 
   /// Build the solve route for a specific puzzle ID.

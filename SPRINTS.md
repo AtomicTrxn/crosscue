@@ -162,7 +162,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 9 — Design Foundation ⬜
+## Sprint 9 — Design Foundation ✅
 
 **Goal:** Adopt the design handoff's token system and global Material styling without changing workflows.
 
@@ -170,12 +170,19 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Commit `design/` handoff files | ⬜ | Source of truth for visual references during redesign |
-| Add `design_tokens.dart` under `lib/core/theme/` | ⬜ | Adapt to existing architecture rather than copy blindly |
-| Update `AppTheme` global styling | ⬜ | App bars, nav, buttons, chips, dividers, lists, typography |
-| Expand `CrosswordTheme` tokens | ⬜ | Grid, clue bar, clue panel, keyboard, check/reveal states |
-| Dynamic Color policy | ⬜ | App chrome may adapt; crossword grid/keyboard/state colors stay stable |
-| Light + dark mode verification | ⬜ | Required before moving to screen implementation |
+| Commit `design/` handoff files | ✅ | Committed in f6523a1 — source of truth for visual references |
+| Add `design_tokens.dart` under `lib/core/theme/` | ✅ | `CrosscueColors`, `CrosscueTypography`, `CrosscueSpacing` — all raw values |
+| Update `AppTheme` global styling | ✅ | AppBar, nav bar, buttons, chips, dividers, list tiles, full text theme, `TimerStyle` extension |
+| Expand `CrosswordTheme` tokens | ✅ | 12 → 22 tokens; renamed fields; added ClueBar, keyboard, gridEmpty, gridOuterBorder; callers updated |
+| Dynamic Color policy | ✅ | `CrosswordTheme.of(scheme)` uses only `scheme.brightness` — grid/clue/keyboard colors are fixed |
+| Light + dark mode verification | ✅ | `flutter analyze` 0 issues; 79/79 tests passing (widget smoke test passes) |
+
+**Key files changed:**
+- `lib/core/theme/design_tokens.dart` — new
+- `lib/core/theme/app_theme.dart` — full rewrite
+- `lib/core/theme/crossword_theme.dart` — expanded from 12 to 22 tokens, new field names
+- `lib/features/solve/presentation/widgets/crossword_grid_painter.dart` — updated to new token names; outer border now `gridOuterBorder`; `gridEmpty` replaces `Colors.white`; `cellText` used for all letter states
+- `lib/features/onboarding/presentation/screens/onboarding_screen.dart` — updated to new token names
 
 ---
 
