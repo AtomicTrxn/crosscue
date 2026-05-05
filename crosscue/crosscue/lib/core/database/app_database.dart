@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../features/import/data/daos/puzzle_dao.dart';
 import '../../features/solve/data/daos/solve_session_dao.dart';
 import '../../features/solve/domain/models/enums.dart';
+import '../settings/app_settings_dao.dart';
 import 'tables/app_settings_table.dart';
 import 'tables/cell_progress_table.dart';
 import 'tables/clues_table.dart';
@@ -34,6 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// DAO accessors
   PuzzleDao get puzzleDao => PuzzleDao(this);
   SolveSessionDao get solveSessionDao => SolveSessionDao(this);
+  AppSettingsDao get appSettingsDao => AppSettingsDao(this);
 
   @override
   int get schemaVersion => 1;

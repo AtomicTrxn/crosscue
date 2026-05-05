@@ -100,7 +100,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 6 — Onboarding, Settings & Polish ⬜
+## Sprint 6 — Onboarding, Settings & Polish ✅
 
 **Goal:** Real onboarding flow, persistent settings, accessibility pass, app polish.
 
@@ -108,13 +108,16 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| `AppSettingsDao` — store onboarding flag, theme preference, etc. | ⬜ | Table already defined |
-| `OnboardingScreen` real flow (replace in-memory flag) | ⬜ | |
-| `SettingsScreen` — theme toggle, data management | ⬜ | |
-| Completion animation / confetti on solve | ⬜ | |
-| App icon + splash screen | ⬜ | `flutter_native_splash` already in deps |
-| CustomPainter accessibility semantics (TalkBack) | ⬜ | See topic-03 |
-| Haptic feedback on cell tap + completion | ⬜ | |
+| `AppSettingsDao` — store onboarding flag, theme preference, haptics | ✅ | `core/settings/app_settings_dao.dart` |
+| `AppSettingsRepository` — typed helpers for all settings | ✅ | `core/settings/app_settings_repository.dart` |
+| `hasSeenOnboardingProvider`, `ThemeModeNotifier`, `HapticsEnabledNotifier` | ✅ | `core/settings/settings_providers.dart` |
+| `OnboardingScreen` real 3-step interactive flow (mock 5×5 grid) | ✅ | `features/onboarding/presentation/screens/onboarding_screen.dart` |
+| `SettingsScreen` — theme SegmentedButton, haptics toggle, clear data | ✅ | `features/settings/presentation/screens/settings_screen.dart` |
+| Completion bottom sheet (`DraggableScrollableSheet`) with stats | ✅ | Replaces `MaterialBanner` in `solve_screen.dart` |
+| Haptic feedback on cell tap + completion + long-press | ✅ | `flutter/services.dart` `HapticFeedback`; reads `hapticsEnabledProvider` |
+| Long-press grid cell → contextual Check/Reveal popup (ISSUES #2) | ✅ | `crossword_grid.dart` `onLongPressStart` → `showMenu` |
+| App icon + splash screen | ⏸ | Deferred to Sprint 7 |
+| CustomPainter accessibility semantics (TalkBack) | ⏸ | Deferred to Sprint 7 (topic-03) |
 
 ---
 

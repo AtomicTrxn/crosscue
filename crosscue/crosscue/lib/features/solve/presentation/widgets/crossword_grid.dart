@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/crossword_theme.dart';
 import '../notifiers/solve_notifier.dart';
 import '../notifiers/solve_state.dart';
@@ -10,7 +11,8 @@ import 'crossword_grid_painter.dart';
 /// The interactive crossword grid.
 ///
 /// Handles:
-///  - Touch/tap → cell focus
+///  - Tap → cell focus + optional haptic feedback
+///  - Long-press → contextual Check/Reveal popup menu (ISSUES #2)
 ///  - Physical keyboard → letter input / backspace
 ///  - Soft keyboard → via hidden TextField overlay
 class CrosswordGrid extends ConsumerStatefulWidget {
@@ -51,21 +53,73 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
     _focusNode.requestFocus();
   }
 
+  bool get _hapticsOn {
+    final async = ref.read(hapticsEnabledProvider);
+    return async.when(data: (v) => v, loading: () => true, error: (_, __) => true);
+  }
+
   void _onTap(BuildContext context, Offset localPosition, double cellSize,
       double offsetX, double offsetY) {
     final puzzle = widget.solveState.puzzle;
     final col = ((localPosition.dx - offsetX) / cellSize).floor();
     final row = ((localPosition.dy - offsetY) / cellSize).floor();
 
-    if (row < 0 ||
-        row >= puzzle.height ||
-        col < 0 ||
-        col >= puzzle.width) {
-      return;
-    }
+    if (row < 0 || row >= puzzle.height || col < 0 || col >= puzzle.width) return;
 
+    if (_hapticsOn) HapticFeedback.selectionClick();
     ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
     _requestFocus();
+  }
+
+  void _onLongPress(BuildContext context, Offset localPosition, double cellSize,
+      double offsetX, double offsetY) {
+    final puzzle = widget.solveState.puzzle;
+    final col = ((localPosition.dx - offsetX) / cellSize).floor();
+    final row = ((localPosition.dy - offsetY) / cellSize).floor();
+
+    if (row < 0 || row >= puzzle.height || col < 0 || col >= puzzle.width) return;
+    // Don't show menu on black cells
+    if (puzzle.grid.cell(row, col).isBlack) return;
+
+    if (_hapticsOn) HapticFeedback.mediumImpact();
+
+    // Focus the tapped cell first
+    ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
+    _requestFocus();
+
+    // Show contextual menu near the long-press location
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final RenderBox box = context.findRenderObject()! as RenderBox;
+    final globalPos = box.localToGlobal(localPosition);
+
+    showMenu<_CellAction>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(globalPos.dx, globalPos.dy, 1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: const [
+        PopupMenuItem(value: _CellAction.checkLetter, child: Text('Check letter')),
+        PopupMenuItem(value: _CellAction.checkWord, child: Text('Check word')),
+        PopupMenuDivider(),
+        PopupMenuItem(value: _CellAction.revealLetter, child: Text('Reveal letter')),
+        PopupMenuItem(value: _CellAction.revealWord, child: Text('Reveal word')),
+      ],
+    ).then((action) {
+      if (action == null) return;
+      final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
+      switch (action) {
+        case _CellAction.checkLetter:
+          notifier.checkCell();
+        case _CellAction.checkWord:
+          notifier.checkWord();
+        case _CellAction.revealLetter:
+          notifier.revealCell();
+        case _CellAction.revealWord:
+          notifier.revealWord();
+      }
+    });
   }
 
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
@@ -73,8 +127,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
       return KeyEventResult.ignored;
     }
 
-    final notifier =
-        ref.read(solveProvider(widget.puzzleId).notifier);
+    final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
 
     if (event.logicalKey == LogicalKeyboardKey.backspace ||
         event.logicalKey == LogicalKeyboardKey.delete) {
@@ -94,8 +147,8 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
   @override
   Widget build(BuildContext context) {
     final puzzle = widget.solveState.puzzle;
-    final xwTheme = Theme.of(context).extension<CrosswordTheme>() ??
-        CrosswordTheme.light();
+    final xwTheme =
+        Theme.of(context).extension<CrosswordTheme>() ?? CrosswordTheme.light();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -111,6 +164,13 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
             // Grid painter
             GestureDetector(
               onTapDown: (details) => _onTap(
+                context,
+                details.localPosition,
+                cellSize,
+                offsetX,
+                offsetY,
+              ),
+              onLongPressStart: (details) => _onLongPress(
                 context,
                 details.localPosition,
                 cellSize,
@@ -170,3 +230,6 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
     );
   }
 }
+
+// Actions available from the long-press cell menu
+enum _CellAction { checkLetter, checkWord, revealLetter, revealWord }

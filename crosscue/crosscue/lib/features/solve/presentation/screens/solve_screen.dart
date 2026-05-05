@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/settings/settings_providers.dart';
 import '../../domain/models/enums.dart';
 import '../notifiers/solve_notifier.dart';
+import '../notifiers/solve_state.dart';
 import '../widgets/clue_panel.dart';
 import '../widgets/crossword_grid.dart';
 
@@ -18,6 +21,8 @@ class SolveScreen extends ConsumerStatefulWidget {
 
 class _SolveScreenState extends ConsumerState<SolveScreen>
     with WidgetsBindingObserver {
+  bool _completionSheetShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +45,41 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     }
   }
 
+  bool get _hapticsOn {
+    final async = ref.read(hapticsEnabledProvider);
+    return async.when(data: (v) => v, loading: () => true, error: (_, __) => true);
+  }
+
+  void _maybeShowCompletionSheet(SolveState solveState) {
+    final isComplete = solveState.status == PuzzleStatus.solved ||
+        solveState.status == PuzzleStatus.solvedWithHelp ||
+        solveState.status == PuzzleStatus.revealed;
+    if (!isComplete || _completionSheetShown) return;
+
+    _completionSheetShown = true;
+
+    if (_hapticsOn) {
+      HapticFeedback.heavyImpact();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showModalBottomSheet<void>(
+        context: context,
+        isDismissible: true,
+        enableDrag: true,
+        isScrollControlled: true,
+        builder: (ctx) => _CompletionSheet(
+          solveState: solveState,
+          onDone: () {
+            Navigator.of(ctx).pop();
+            if (mounted) context.pop();
+          },
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final solveAsync = ref.watch(solveProvider(widget.puzzleId));
@@ -58,9 +98,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         ),
       ),
       data: (solveState) {
+        _maybeShowCompletionSheet(solveState);
+
         final puzzle = solveState.puzzle;
         final isComplete = solveState.status == PuzzleStatus.solved ||
-            solveState.status == PuzzleStatus.solvedWithHelp;
+            solveState.status == PuzzleStatus.solvedWithHelp ||
+            solveState.status == PuzzleStatus.revealed;
 
         return Scaffold(
           appBar: AppBar(
@@ -114,22 +157,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             children: [
               Column(
                 children: [
-                  // Completion banner
-                  if (isComplete)
-                    MaterialBanner(
-                      content: Text(
-                        solveState.status == PuzzleStatus.solved
-                            ? '🎉 Solved!'
-                            : '✅ Completed with help!',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => context.pop(),
-                          child: const Text('Done'),
-                        ),
-                      ],
-                    ),
-
                   // Grid — takes remaining space
                   Expanded(
                     child: Padding(
@@ -165,6 +192,166 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 }
 
 // ---------------------------------------------------------------------------
+// Completion bottom sheet (topic-17 §2)
+// ---------------------------------------------------------------------------
+
+class _CompletionSheet extends StatelessWidget {
+  const _CompletionSheet({
+    required this.solveState,
+    required this.onDone,
+  });
+
+  final SolveState solveState;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = solveState.status;
+    final isClean = status == PuzzleStatus.solved;
+    final isRevealed = status == PuzzleStatus.revealed;
+
+    final (emoji, headline, subline) = switch (status) {
+      PuzzleStatus.solved => (
+          '🎉',
+          'Puzzle solved!',
+          'Clean solve — no hints used.'
+        ),
+      PuzzleStatus.solvedWithHelp => (
+          '✅',
+          'Completed!',
+          'Solved with checks or reveals.'
+        ),
+      PuzzleStatus.revealed => (
+          '👁️',
+          'Puzzle revealed',
+          'Full puzzle was revealed.'
+        ),
+      _ => ('✅', 'Done!', ''),
+    };
+
+    final m = solveState.elapsedSeconds ~/ 60;
+    final s = solveState.elapsedSeconds % 60;
+    final timeStr =
+        '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.45,
+      minChildSize: 0.3,
+      maxChildSize: 0.7,
+      expand: false,
+      builder: (ctx, scrollController) => SingleChildScrollView(
+        controller: scrollController,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            20,
+            24,
+            24 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Emoji + headline
+              Text(emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(
+                headline,
+                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              if (subline.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  subline,
+                  style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // Stats row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _StatChip(
+                    icon: Icons.timer_outlined,
+                    label: 'Time',
+                    value: timeStr,
+                  ),
+                  if (!isRevealed)
+                    _StatChip(
+                      icon: isClean
+                          ? Icons.emoji_events_outlined
+                          : Icons.check_circle_outline,
+                      label: isClean ? 'Clean solve' : 'With help',
+                      value: isClean ? '⭐' : '✓',
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: onDone,
+                  child: const Text('Done'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 28, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(height: 4),
+        Text(value,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        Text(label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                )),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Pause overlay (topic-17 §4)
 // ---------------------------------------------------------------------------
 
@@ -186,7 +373,10 @@ class _PauseOverlay extends StatelessWidget {
             Icon(
               Icons.pause_circle_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.9),
             ),
             const SizedBox(height: 16),
             Text(
@@ -319,7 +509,8 @@ class _CheckRevealMenu extends ConsumerWidget {
           builder: (ctx) => AlertDialog(
             title: const Text('Reset puzzle?'),
             content: const Text(
-              'All your progress, checks, and reveals will be cleared. The timer will restart from zero.',
+              'All your progress, checks, and reveals will be cleared. '
+              'The timer will restart from zero.',
             ),
             actions: [
               TextButton(
