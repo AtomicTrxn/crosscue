@@ -25,16 +25,13 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Crosscue')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(Routes.import_),
-        tooltip: 'Import puzzle',
-        child: const Icon(Icons.add),
-      ),
       body: puzzlesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) => puzzles.isEmpty
-            ? _EmptyState(onImport: () => context.push(Routes.import_))
+            ? _EmptyState(
+                onOpenSources: () => context.push(Routes.sourceManagement),
+              )
             : _PuzzleList(puzzles: puzzles),
       ),
     );
@@ -46,8 +43,8 @@ class HomeScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onImport});
-  final VoidCallback onImport;
+  const _EmptyState({required this.onOpenSources});
+  final VoidCallback onOpenSources;
 
   @override
   Widget build(BuildContext context) {
@@ -67,16 +64,16 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Import a .puz or .ipuz file to get started.',
+            'Add local puzzles from Settings to get started.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            icon: const Icon(Icons.file_open_outlined),
-            label: const Text('Import Puzzle'),
-            onPressed: onImport,
+            icon: const Icon(Icons.source_outlined),
+            label: const Text('Open Puzzle Sources'),
+            onPressed: onOpenSources,
           ),
         ],
       ),
@@ -113,8 +110,7 @@ class _PuzzleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor:
-            Theme.of(context).colorScheme.primaryContainer,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         child: Text(
           '${puzzle.width}×${puzzle.height}',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -133,7 +129,8 @@ class _PuzzleTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id))),
+      onTap: () =>
+          context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id))),
     );
   }
 }

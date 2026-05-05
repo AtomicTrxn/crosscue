@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../import/domain/repositories/puzzle_source.dart';
 import '../../../import/presentation/providers/source_registry_provider.dart';
 import '../../../solve/domain/models/enums.dart';
@@ -19,6 +20,7 @@ class SourceManagementScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Puzzle sources')),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
           const _SectionHeader('Import'),
           ListTile(
@@ -51,7 +53,12 @@ class SourceManagementScreen extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              CrosscueSpacing.screenH,
+              8,
+              CrosscueSpacing.screenH,
+              24,
+            ),
             child: Text(
               'Crosscue only enables user imports or sources with explicit '
               'permission or open-license terms. Sources pending review stay '
@@ -123,7 +130,12 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionTop,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionBot,
+      ),
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(

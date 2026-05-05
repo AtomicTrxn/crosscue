@@ -220,7 +220,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 12 — Settings, Import & Onboarding Redesign ⬜
+## Sprint 12 — Settings, Import & Onboarding Redesign ✅
 
 **Goal:** Align secondary flows with the redesign and make Settings the home for import/source management.
 
@@ -228,12 +228,12 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Settings visual refresh | ⬜ | Rows, toggles, segmented theme control, destructive actions |
-| Move import management into Settings | ⬜ | Keep local import discoverable without making downloader a Home affordance |
-| Add future source/downloader area | ⬜ | Disabled/absent until source is `openLicense` or `explicitPermission` |
-| Import screen restyle | ⬜ | Keep Android file picker constraints |
-| Onboarding restyle | ⬜ | Use token system and neutral/local examples |
-| Legal guardrail copy audit | ⬜ | No uncleared source names as built-in examples |
+| Settings visual refresh | ✅ | Token spacing, flat rows, segmented theme control, haptics toggle, destructive action styling |
+| Move import management into Settings | ✅ | Home no longer exposes import directly; local import and source management live under Settings |
+| Add future source/downloader area | ✅ | Present as disabled/legal-guarded until a source is `openLicense` or `explicitPermission` |
+| Import screen restyle | ✅ | Token spacing, local-only copy, Android `FileType.any` pipeline unchanged |
+| Onboarding restyle | ✅ | Token spacing, refreshed mock grid/instruction sheet, neutral/local examples |
+| Legal guardrail copy audit | ✅ | Production UI has no uncleared publisher names as built-in examples |
 
 ---
 

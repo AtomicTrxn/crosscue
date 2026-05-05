@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/crossword_theme.dart';
+import '../../../../core/theme/design_tokens.dart';
 
 // ---------------------------------------------------------------------------
 // Mock 5×5 grid data (hardcoded, never stored in Drift — topic-17 §7)
@@ -20,7 +21,6 @@ const _grid = [
   [null, null, 'C', null, 'A'],
   ['P', 'U', 'Z', 'Z', 'L'],
 ];
-
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -108,15 +108,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar: Skip + step dots
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: CrosscueSpacing.screenH,
+                vertical: 8,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const SizedBox(width: 60),
-                  if (_step < 3)
-                    _StepDots(current: _step, total: 3),
+                  if (_step < 3) _StepDots(current: _step, total: 3),
                   TextButton(
                     onPressed: _skip,
                     child: const Text('Skip'),
@@ -124,11 +125,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ],
               ),
             ),
-
-            // Mock grid
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(
+                  CrosscueSpacing.screenH,
+                  24,
+                  CrosscueSpacing.screenH,
+                  16,
+                ),
                 child: _MockGrid(
                   focusRow: _focusRow,
                   focusCol: _focusCol,
@@ -137,8 +141,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
             ),
-
-            // Bottom instruction card
             _InstructionCard(
               step: _step,
               step1Done: _step1Done,
@@ -310,14 +312,21 @@ class _InstructionCard extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(CrosscueSpacing.sheetRadius),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        24,
+      ),
       child: switch (step) {
         0 => _Step1Card(done: step1Done, onLetter: onLetter, onNext: onNext),
         1 => _Step2Card(done: step2Done, onNext: onNext),
@@ -354,7 +363,7 @@ class _Step1Card extends StatelessWidget {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: done ? onNext : null,
-          child: const Text('Next →'),
+          child: const Text('Next'),
         ),
       ],
     );
@@ -382,7 +391,7 @@ class _Step2Card extends StatelessWidget {
         const SizedBox(height: 16),
         FilledButton(
           onPressed: done ? onNext : null,
-          child: const Text('Next →'),
+          child: const Text('Next'),
         ),
       ],
     );
@@ -403,11 +412,11 @@ class _Step3Card extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
-          'Tap the ⋮ menu while solving to check your answers or reveal letters.',
+          'Use the solve menu to check answers or reveal letters when you want help.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
-        FilledButton(onPressed: onNext, child: const Text('Next →')),
+        FilledButton(onPressed: onNext, child: const Text('Next')),
       ],
     );
   }
@@ -470,11 +479,11 @@ class _LetterStrip extends StatelessWidget {
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(6),
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius:
+                      BorderRadius.circular(CrosscueSpacing.buttonRadius),
                 ),
-                child: Text(l,
-                    style: Theme.of(context).textTheme.labelLarge),
+                child: Text(l, style: Theme.of(context).textTheme.labelLarge),
               ),
             ),
           );

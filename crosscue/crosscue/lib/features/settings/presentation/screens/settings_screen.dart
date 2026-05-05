@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/settings/settings_providers.dart';
+import '../../../../core/theme/design_tokens.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -28,11 +29,16 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          // ── Appearance ──────────────────────────────────────────────────
           const _SectionHeader('Appearance'),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(
+              CrosscueSpacing.screenH,
+              8,
+              CrosscueSpacing.screenH,
+              12,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -67,50 +73,39 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const Divider(),
-
-          // ── Feedback ────────────────────────────────────────────────────
           const _SectionHeader('Feedback'),
           SwitchListTile(
             value: hapticsEnabled,
             onChanged: (_) =>
                 ref.read(hapticsEnabledProvider.notifier).toggle(),
+            secondary: const Icon(Icons.vibration_outlined),
             title: const Text('Haptic feedback'),
             subtitle: const Text('Vibrate on cell tap and puzzle events'),
           ),
           const Divider(),
-
-          // ── Puzzles ─────────────────────────────────────────────────────
           const _SectionHeader('Puzzles'),
-          ListTile(
-            leading: const Icon(Icons.folder_open_outlined),
-            title: const Text('Import local puzzle'),
-            subtitle:
-                const Text('Choose a .puz or .ipuz file from this device'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.import_),
-          ),
           ListTile(
             leading: const Icon(Icons.source_outlined),
             title: const Text('Puzzle sources'),
-            subtitle: const Text('Manage local import and future sources'),
+            subtitle: const Text('Import local files and manage sources'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.sourceManagement),
           ),
           const Divider(),
-
-          // ── Data ────────────────────────────────────────────────────────
           const _SectionHeader('Data'),
           ListTile(
-            leading:
-                const Icon(Icons.delete_forever_outlined, color: Colors.red),
-            title: const Text('Clear all data',
-                style: TextStyle(color: Colors.red)),
+            leading: Icon(
+              Icons.delete_forever_outlined,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(
+              'Clear all data',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
             subtitle: const Text('Delete all puzzles, progress and settings'),
             onTap: () => _confirmClearAll(context, ref),
           ),
           const Divider(),
-
-          // ── About ───────────────────────────────────────────────────────
           const _SectionHeader('About'),
           const ListTile(
             leading: Icon(Icons.info_outline),
@@ -138,7 +133,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(ctx).colorScheme.error,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -171,7 +166,12 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionTop,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionBot,
+      ),
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(

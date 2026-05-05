@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/routes.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../notifiers/import_notifier.dart';
 
@@ -37,31 +38,38 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         title: const Text('Import Puzzle'),
         leading: BackButton(onPressed: () => context.pop()),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            CrosscueSpacing.screenH,
+            32,
+            CrosscueSpacing.screenH,
+            24,
+          ),
           children: [
             Icon(
               Icons.file_open_outlined,
-              size: 72,
+              size: 64,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 24),
             Text(
-              'Import a crossword puzzle',
-              style: Theme.of(context).textTheme.headlineSmall,
+              'Import local puzzle',
+              style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Supports .puz and .ipuz file formats.\nPuzzles are stored locally on your device.',
+              'Choose a crossword file from this device. Crosscue validates '
+              'the file before storing the parsed puzzle locally.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 28),
+            const _FormatRow(),
+            const SizedBox(height: 32),
             if (importState is ImportParsing) ...[
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
@@ -74,9 +82,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               FilledButton.icon(
                 onPressed: isLoading
                     ? null
-                    : () => ref
-                        .read(importProvider.notifier)
-                        .pickAndImport(),
+                    : () => ref.read(importProvider.notifier).pickAndImport(),
                 icon: isLoading
                     ? const SizedBox(
                         width: 20,
@@ -85,6 +91,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                       )
                     : const Icon(Icons.folder_open),
                 label: const Text('Choose File'),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Supported formats: .puz and .ipuz',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ],
@@ -133,6 +145,38 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
         actionLabel: 'Dismiss',
         onAction: () => Navigator.of(ctx).pop(),
       ),
+    );
+  }
+}
+
+class _FormatRow extends StatelessWidget {
+  const _FormatRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _FormatChip(label: '.puz'),
+        _FormatChip(label: '.ipuz'),
+        _FormatChip(label: 'Local only'),
+      ],
+    );
+  }
+}
+
+class _FormatChip extends StatelessWidget {
+  const _FormatChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: const Icon(Icons.check_circle_outline, size: 16),
+      label: Text(label),
     );
   }
 }
