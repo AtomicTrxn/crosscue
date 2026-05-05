@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/settings/settings_providers.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/design_tokens.dart' show CrosscueSpacing;
 import '../../domain/models/enums.dart';
 import '../notifiers/solve_notifier.dart';
 import '../notifiers/solve_state.dart';
+import '../widgets/clue_bar.dart';
 import '../widgets/clue_panel.dart';
 import '../widgets/crossword_grid.dart';
+import '../widgets/crossword_keyboard.dart';
 
 class SolveScreen extends ConsumerStatefulWidget {
   const SolveScreen({super.key, required this.puzzleId});
@@ -106,81 +110,58 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             solveState.status == PuzzleStatus.revealed;
 
         return Scaffold(
-          // Keep layout stable when the soft keyboard appears. The hidden
-          // TextField that drives input sits at (-200,-200) off-screen, so the
-          // keyboard can overlay the bottom of the screen without reflowing the
-          // grid. See ISSUES.md #4.
+          // Keep layout stable when the soft keyboard appears.
+          // The hidden TextField driving input is off-screen at (-200,-200);
+          // the grid never reflects when the OS keyboard slides up.
+          // See ISSUES.md #4.
           resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            leading: BackButton(onPressed: () => context.pop()),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  puzzle.metadata.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (puzzle.metadata.author.isNotEmpty)
-                  Text(
-                    puzzle.metadata.author,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-            actions: [
-              // Timer — tap to pause/resume (topic-17 §4)
-              GestureDetector(
-                onTap: () {
-                  final notifier =
-                      ref.read(solveProvider(widget.puzzleId).notifier);
-                  if (solveState.isPaused) {
-                    notifier.resume();
-                  } else {
-                    notifier.pause();
-                  }
-                },
-                child: Center(
-                  child: _TimerDisplay(
-                    seconds: solveState.elapsedSeconds,
-                    isPaused: solveState.isPaused,
-                  ),
-                ),
-              ),
-              // Check / Reveal overflow menu (topic-11)
-              if (!isComplete)
-                _CheckRevealMenu(puzzleId: widget.puzzleId),
-              const SizedBox(width: 4),
-            ],
+          appBar: _SolveAppBar(
+            puzzleId: widget.puzzleId,
+            title: puzzle.metadata.title,
+            solveState: solveState,
+            isComplete: isComplete,
           ),
           body: Stack(
             children: [
               Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Grid — takes remaining space
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: CrosswordGrid(
-                        puzzleId: widget.puzzleId,
-                        solveState: solveState,
-                      ),
-                    ),
+                  // ClueBar — tappable to toggle direction
+                  ClueBar(
+                    solveState: solveState,
+                    onToggleDirection: () => ref
+                        .read(solveProvider(widget.puzzleId).notifier)
+                        .toggleDirection(),
                   ),
 
-                  // Clue panel at bottom. Pad by the keyboard inset so the
-                  // panel lifts above the soft keyboard without reflowing the
-                  // grid (resizeToAvoidBottomInset is false — see ISSUES #4).
-                  CluePanel(solveState: solveState),
-                  SizedBox(
-                    height: MediaQuery.of(context).viewInsets.bottom +
-                        MediaQuery.of(context).padding.bottom,
+                  // Full-width grid — self-sizes its height
+                  CrosswordGrid(
+                    puzzleId: widget.puzzleId,
+                    solveState: solveState,
                   ),
+
+                  // Two-column clue panel — takes remaining vertical space
+                  Expanded(
+                    child: CluePanel(solveState: solveState),
+                  ),
+
+                  // Custom QWERTY keyboard
+                  if (!isComplete)
+                    CrosswordKeyboard(
+                      hapticsEnabled: _hapticsOn,
+                      onLetter: (l) => ref
+                          .read(solveProvider(widget.puzzleId).notifier)
+                          .inputLetter(l),
+                      onBackspace: () => ref
+                          .read(solveProvider(widget.puzzleId).notifier)
+                          .backspace(),
+                      onCheckWord: () => ref
+                          .read(solveProvider(widget.puzzleId).notifier)
+                          .checkWord(),
+                    ),
+
+                  // Bottom safe-area padding
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
                 ],
               ),
 
@@ -195,6 +176,67 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           ),
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Compact solve AppBar (48dp, Sprint 10)
+// ---------------------------------------------------------------------------
+
+class _SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  const _SolveAppBar({
+    required this.puzzleId,
+    required this.title,
+    required this.solveState,
+    required this.isComplete,
+  });
+
+  final String puzzleId;
+  final String title;
+  final SolveState solveState;
+  final bool isComplete;
+
+  @override
+  Size get preferredSize =>
+      const Size.fromHeight(CrosscueSpacing.appBarHeightSolve);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AppBar(
+      toolbarHeight: CrosscueSpacing.appBarHeightSolve,
+      leading: BackButton(onPressed: () => context.pop()),
+      centerTitle: true,
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 15,
+            ),
+        overflow: TextOverflow.ellipsis,
+      ),
+      actions: [
+        // Timer — tap to pause/resume (topic-17 §4)
+        GestureDetector(
+          onTap: () {
+            final notifier = ref.read(solveProvider(puzzleId).notifier);
+            if (solveState.isPaused) {
+              notifier.resume();
+            } else {
+              notifier.pause();
+            }
+          },
+          child: Center(
+            child: _TimerDisplay(
+              seconds: solveState.elapsedSeconds,
+              isPaused: solveState.isPaused,
+            ),
+          ),
+        ),
+        // Check / Reveal overflow menu
+        if (!isComplete) _CheckRevealMenu(puzzleId: puzzleId),
+        const SizedBox(width: 4),
+      ],
     );
   }
 }
@@ -261,8 +303,8 @@ class _CompletionSheet extends StatelessWidget {
             children: [
               // Drag handle
               Container(
-                width: 40,
-                height: 4,
+                width: CrosscueSpacing.dragHandleW,
+                height: CrosscueSpacing.dragHandleH,
                 decoration: BoxDecoration(
                   color: Theme.of(ctx).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
@@ -270,7 +312,6 @@ class _CompletionSheet extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Emoji + headline
               Text(emoji, style: const TextStyle(fontSize: 48)),
               const SizedBox(height: 12),
               Text(
@@ -291,7 +332,6 @@ class _CompletionSheet extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // Stats row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -490,7 +530,6 @@ class _CheckRevealMenu extends ConsumerWidget {
       case _CheckRevealOption.revealWord:
         notifier.revealWord();
       case _CheckRevealOption.revealPuzzle:
-        // Confirm before revealing the whole puzzle (topic-11)
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -564,15 +603,14 @@ class _TimerDisplay extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isPaused) ...[
-          const Icon(Icons.pause, size: 16),
-          const SizedBox(width: 4),
+          const Icon(Icons.pause, size: 14),
+          const SizedBox(width: 3),
         ],
         Text(
           text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontFamily: 'RobotoMono',
-              ),
+          style: context.timerStyle,
         ),
+        const SizedBox(width: 8),
       ],
     );
   }

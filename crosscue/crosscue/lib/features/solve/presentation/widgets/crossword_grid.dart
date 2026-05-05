@@ -152,41 +152,42 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cellSize = (constraints.maxWidth / puzzle.width)
-            .clamp(0.0, constraints.maxHeight / puzzle.height);
-        final totalW = cellSize * puzzle.width;
-        final totalH = cellSize * puzzle.height;
-        final offsetX = (constraints.maxWidth - totalW) / 2;
-        final offsetY = (constraints.maxHeight - totalH) / 2;
+        // Full-width layout: cell size driven by screen width (Sprint 10).
+        // The widget sizes itself to exactly gridH tall so the parent Column
+        // never needs to know the grid dimensions.
+        final cellSize = constraints.maxWidth / puzzle.width;
+        final gridH = cellSize * puzzle.height;
 
-        return Stack(
-          children: [
-            // Grid painter
-            GestureDetector(
-              onTapDown: (details) => _onTap(
-                context,
-                details.localPosition,
-                cellSize,
-                offsetX,
-                offsetY,
-              ),
-              onLongPressStart: (details) => _onLongPress(
-                context,
-                details.localPosition,
-                cellSize,
-                offsetX,
-                offsetY,
-              ),
-              child: CustomPaint(
-                size: Size(constraints.maxWidth, constraints.maxHeight),
-                painter: CrosswordGridPainter(
-                  puzzle: puzzle,
-                  progress: widget.solveState.progress,
-                  solveState: widget.solveState,
-                  theme: xwTheme,
+        return SizedBox(
+          height: gridH,
+          child: Stack(
+            children: [
+              // Grid painter
+              GestureDetector(
+                onTapDown: (details) => _onTap(
+                  context,
+                  details.localPosition,
+                  cellSize,
+                  0, // no horizontal offset — full width
+                  0, // no vertical offset — exact height
+                ),
+                onLongPressStart: (details) => _onLongPress(
+                  context,
+                  details.localPosition,
+                  cellSize,
+                  0,
+                  0,
+                ),
+                child: CustomPaint(
+                  size: Size(constraints.maxWidth, gridH),
+                  painter: CrosswordGridPainter(
+                    puzzle: puzzle,
+                    progress: widget.solveState.progress,
+                    solveState: widget.solveState,
+                    theme: xwTheme,
+                  ),
                 ),
               ),
-            ),
 
             // Hidden TextField — sole owner of _focusNode.
             // Physical keyboard is handled via _focusNode.onKeyEvent (set in
@@ -224,6 +225,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid> {
               ),
             ),
           ],
+          ),
         );
       },
     );

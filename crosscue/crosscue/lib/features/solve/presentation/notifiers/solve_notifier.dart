@@ -89,6 +89,19 @@ class SolveNotifier extends _$SolveNotifier {
   // Cell tap / direction toggle
   // ---------------------------------------------------------------------------
 
+  /// Toggles the solve direction (across ↔ down) at the current focus cell.
+  /// Used by the ClueBar tap gesture (Sprint 10).
+  void toggleDirection() {
+    final s = _s;
+    if (s == null) return;
+    final newDir = s.focus.direction == Direction.across
+        ? Direction.down
+        : Direction.across;
+    if (_hasWord(s, s.focus.row, s.focus.col, newDir)) {
+      state = AsyncData(s.copyWith(focus: s.focus.copyWith(direction: newDir)));
+    }
+  }
+
   void tapCell(int row, int col) {
     final s = _s;
     if (s == null) return;

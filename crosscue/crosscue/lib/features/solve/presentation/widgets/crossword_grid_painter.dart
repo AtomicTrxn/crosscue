@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/crossword_theme.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../domain/models/cell_progress.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/grid.dart';
@@ -128,7 +129,7 @@ class CrosswordGridPainter extends CustomPainter {
     Rect cellRect,
     double cellSize,
   ) {
-    final fontSize = (cellSize * 0.27).clamp(7.0, 14.0);
+    final fontSize = (cellSize * CrosscueTypography.cellNumberFactor).clamp(7.0, 14.0);
     final tp = TextPainter(
       text: TextSpan(
         text: '$number',
@@ -154,7 +155,7 @@ class CrosswordGridPainter extends CustomPainter {
     Rect cellRect,
     double cellSize,
   ) {
-    final fontSize = (cellSize * 0.62).clamp(10.0, 32.0);
+    final fontSize = (cellSize * CrosscueTypography.cellLetterFactor).clamp(10.0, 32.0);
     // Revealed cells use standard cellText — the stateRevealed background
     // (pale yellow) communicates the revealed state visually.
     final color = theme.cellText;
