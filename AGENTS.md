@@ -41,7 +41,7 @@ Before writing any code, read these documents in order:
 
 ## Dev Commands
 
-All commands must be run from the **project root**: `/Users/tomhess/Claude/Crossword/crosscue/crosscue/`
+All commands must be run from the **project root**: `/Users/tomhess/Claude/Crossword/crosscue/`
 
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)

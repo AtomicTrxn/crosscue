@@ -1,6 +1,6 @@
 # Domain Models Reference — Crosscue
 
-All models live under `crosscue/crosscue/lib/features/solve/domain/models/` unless noted.
+All models live under `crosscue/lib/features/solve/domain/models/` unless noted.
 Generated files (`.freezed.dart`, `.g.dart`) are never edited by hand.
 
 ---

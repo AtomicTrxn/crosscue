@@ -1,7 +1,7 @@
 # Crosscue Design Implementation Plan
 
 This plan converts the files in `design/` into implementation work for the
-Flutter app at `crosscue/crosscue/`. The HTML files are high-fidelity visual
+Flutter app at `crosscue/`. The HTML files are high-fidelity visual
 references, not production code to copy directly.
 
 Status as of Sprint 13.5: Sprints 9-12 are complete. Sprint 13.5 cleanup is in

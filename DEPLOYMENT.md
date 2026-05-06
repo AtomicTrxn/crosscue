@@ -7,7 +7,7 @@
 | Flutter SDK | `/Users/tomhess/flutter/bin/flutter` |
 | ADB | `adb` (on `$PATH` via Android SDK) |
 | Target emulator | Pixel 9 — `emulator-5554` (`sdk gphone64 arm64`) |
-| Project root | `/Users/tomhess/Claude/Crossword/crosscue/crosscue/` |
+| Project root | `/Users/tomhess/Claude/Crossword/crosscue/` |
 
 All `flutter` and `adb` commands below assume you are **inside the project root** unless stated otherwise.
 

@@ -378,7 +378,7 @@ See `core/utils/result.dart` for the full definition and MODELS.md for usage exa
 
 ```bash
 # Run all commands from the project root:
-# /Users/tomhess/Claude/Crossword/crosscue/crosscue/
+# /Users/tomhess/Claude/Crossword/crosscue/
 
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
 /Users/tomhess/flutter/bin/flutter pub run build_runner build
