@@ -228,6 +228,8 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
               // Hidden TextField — sole owner of _focusNode.
               // Physical keyboard is handled via _focusNode.onKeyEvent (set in
               // initState). Soft keyboard input comes through onChanged.
+              // keyboardType.none suppresses the system keyboard so our custom
+              // CrosswordKeyboard widget is the only visible input surface.
               Positioned(
                 left: -200,
                 top: -200,
@@ -237,7 +239,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
                   child: TextField(
                     focusNode: _focusNode,
                     controller: _textController,
-                    keyboardType: TextInputType.text,
+                    keyboardType: TextInputType.none,
                     textCapitalization: TextCapitalization.characters,
                     autocorrect: false,
                     enableSuggestions: false,
