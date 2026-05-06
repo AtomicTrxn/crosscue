@@ -343,7 +343,7 @@ class _PuzzleRow extends StatelessWidget {
         ),
         const Divider(
           height: 1,
-          indent: 20 + 12 + CrosscueSpacing.screenH,
+          indent: 50, // 16 screenH + 20 icon + 12 gap + 2 extra = 50 per spec
           endIndent: 0,
           color: CrosscueColors.dividerLight,
         ),

@@ -212,7 +212,7 @@ class _ClueColumn extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: isActive || isCross
               ? xwTheme.clueBarDirection
-              : xwTheme.cellNumber,
+              : CrosscueColors.onSurface3Light, // #999999 per spec
           height: 1.3,
         );
         final textStyle = TextStyle(

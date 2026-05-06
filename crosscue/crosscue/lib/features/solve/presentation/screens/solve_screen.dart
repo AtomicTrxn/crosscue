@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/routes.dart';
 import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/design_tokens.dart' show CrosscueSpacing;
+import '../../../../core/theme/design_tokens.dart';
+import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../domain/models/enums.dart';
 import '../notifiers/solve_notifier.dart';
 import '../notifiers/solve_state.dart';
@@ -73,11 +75,14 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         isDismissible: true,
         enableDrag: true,
         isScrollControlled: true,
+        // Deep navy overlay (spec §08: rgba(10,42,110,0.88))
+        barrierColor: const Color(0xE10A2A6E),
         builder: (ctx) => _CompletionSheet(
           solveState: solveState,
-          onDone: () {
+          onViewGrid: () => Navigator.of(ctx).pop(),
+          onNextPuzzle: () {
             Navigator.of(ctx).pop();
-            if (mounted) context.pop();
+            if (mounted) context.go(Routes.home);
           },
         ),
       );
@@ -242,41 +247,31 @@ class _SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Completion bottom sheet (topic-17 §2)
+// Completion bottom sheet — spec §08
 // ---------------------------------------------------------------------------
 
-class _CompletionSheet extends StatelessWidget {
+class _CompletionSheet extends ConsumerWidget {
   const _CompletionSheet({
     required this.solveState,
-    required this.onDone,
+    required this.onViewGrid,
+    required this.onNextPuzzle,
   });
 
   final SolveState solveState;
-  final VoidCallback onDone;
+  final VoidCallback onViewGrid;
+  final VoidCallback onNextPuzzle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = solveState.status;
-    final isClean = status == PuzzleStatus.solved;
     final isRevealed = status == PuzzleStatus.revealed;
 
-    final (emoji, headline, subline) = switch (status) {
-      PuzzleStatus.solved => (
-          '🎉',
-          'Puzzle solved!',
-          'Clean solve — no hints used.'
-        ),
-      PuzzleStatus.solvedWithHelp => (
-          '✅',
-          'Completed!',
-          'Solved with checks or reveals.'
-        ),
-      PuzzleStatus.revealed => (
-          '👁️',
-          'Puzzle revealed',
-          'Full puzzle was revealed.'
-        ),
-      _ => ('✅', 'Done!', ''),
+    // Solve label per spec §08 + topic-11 completion types
+    final solveLabel = switch (status) {
+      PuzzleStatus.solved => 'Clean solve',
+      PuzzleStatus.solvedWithHelp => 'Solved with checks',
+      PuzzleStatus.revealed => 'Puzzle revealed',
+      _ => 'Completed',
     };
 
     final m = solveState.elapsedSeconds ~/ 60;
@@ -284,117 +279,166 @@ class _CompletionSheet extends StatelessWidget {
     final timeStr =
         '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.45,
-      minChildSize: 0.3,
-      maxChildSize: 0.7,
-      expand: false,
-      builder: (ctx, scrollController) => SingleChildScrollView(
-        controller: scrollController,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            20,
-            24,
-            24 + MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Container(
-                width: CrosscueSpacing.dragHandleW,
-                height: CrosscueSpacing.dragHandleH,
-                decoration: BoxDecoration(
-                  color: Theme.of(ctx).colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
+    // Read streak from stats (may or may not include this solve yet)
+    final statsAsync = ref.watch(statsDataProvider);
+    final streak = statsAsync.asData?.value.currentStreak ?? 0;
 
-              Text(emoji, style: const TextStyle(fontSize: 48)),
-              const SizedBox(height: 12),
-              Text(
-                headline,
-                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              if (subline.isNotEmpty) ...[
-                const SizedBox(height: 6),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.48,
+      minChildSize: 0.35,
+      maxChildSize: 0.75,
+      expand: false,
+      builder: (ctx, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(CrosscueSpacing.sheetRadius),
+          ),
+        ),
+        child: SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              CrosscueSpacing.screenH,
+              12,
+              CrosscueSpacing.screenH,
+              24 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle — 36×4dp (spec §08)
+                Container(
+                  width: CrosscueSpacing.dragHandleW,
+                  height: CrosscueSpacing.dragHandleH,
+                  decoration: BoxDecoration(
+                    color: CrosscueColors.dividerLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Solve label — 14px w600 #1A1A1A (spec §08)
                 Text(
-                  subline,
-                  style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  solveLabel,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: CrosscueColors.onSurface1Light,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Time — 52px Roboto Mono w700 letterSpacing -2 (spec §08)
+                Text(
+                  timeStr,
+                  style: const TextStyle(
+                    fontFamily: CrosscueTypography.robotoMono,
+                    fontSize: CrosscueTypography.timerLarge,
+                    fontWeight: FontWeight.w700,
+                    color: CrosscueColors.onSurface1Light,
+                    letterSpacing: -2,
+                    height: 1,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: CrosscueColors.dividerLight),
+                const SizedBox(height: 12),
+
+                // Streak row — 🔥 + "N-day streak" 15px w600 (spec §08)
+                if (streak > 0) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$streak-day streak',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: CrosscueColors.onSurface1Light,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: CrosscueColors.dividerLight),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Share result — outlined, hidden if revealed (spec §08)
+                if (!isRevealed) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sharing coming soon'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: CrosscueColors.onSurface2Light,
+                        side: const BorderSide(
+                          color: CrosscueColors.dividerLight,
+                          width: 1,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        minimumSize: const Size.fromHeight(46),
+                      ),
+                      child: const Text('Share result'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
+                // View filled grid — text button 13px #999999 (spec §08)
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: onViewGrid,
+                    style: TextButton.styleFrom(
+                      foregroundColor: CrosscueColors.onSurface3Light,
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    child: const Text('View filled grid'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Next puzzle — filled #1565C0 15px w600 (spec §08)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: onNextPuzzle,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: CrosscueColors.primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(46),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    child: const Text('Next puzzle'),
+                  ),
                 ),
               ],
-
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _StatChip(
-                    icon: Icons.timer_outlined,
-                    label: 'Time',
-                    value: timeStr,
-                  ),
-                  if (!isRevealed)
-                    _StatChip(
-                      icon: isClean
-                          ? Icons.emoji_events_outlined
-                          : Icons.check_circle_outline,
-                      label: isClean ? 'Clean solve' : 'With help',
-                      value: isClean ? '⭐' : '✓',
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 28),
-
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onDone,
-                  child: const Text('Done'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 28, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 4),
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold)),
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                )),
-      ],
     );
   }
 }

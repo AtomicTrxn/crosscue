@@ -224,7 +224,7 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
         decoration: BoxDecoration(
-          color: selected ? CrosscueColors.wordHLLight : Colors.transparent,
+          color: selected ? CrosscueColors.primaryContLight : Colors.transparent,
           border: Border.all(
             color: selected ? CrosscueColors.wordHLLight : CrosscueColors.dividerLight,
           ),
@@ -407,7 +407,7 @@ class _ArchiveRow extends StatelessWidget {
         ),
         const Divider(
           height: 1,
-          indent: CrosscueSpacing.screenH + 22 + 10,
+          indent: 52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
           endIndent: 0,
           color: CrosscueColors.dividerLight,
         ),
