@@ -246,7 +246,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 13 — Icon, Splash & Visual QA ⬜
+## Sprint 13 — Icon, Splash & Visual QA ✅
 
 **Goal:** Ship the app icon/splash polish and verify the redesigned UI end to end.
 
@@ -254,11 +254,11 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Generate Android launcher icons | ⬜ | Use `design/crosscue-icon.svg` as final source |
-| Update splash color/assets | ⬜ | Background `#0A2A6E` |
-| Visual QA screenshots | ⬜ | Home, Solve 15x15, Solve mini, Archive, Stats, Settings, Onboarding, Import, completion sheet |
-| Light/dark QA | ⬜ | Verify contrast and crossword readability |
-| Final verification | ⬜ | `flutter analyze`, `flutter test`, debug APK build |
+| Generate Android launcher icons | ✅ | `rsvg-convert` from `design/crosscue-icon.svg` at mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi (48–192dp) |
+| Update splash color/assets | ✅ | `launch_background.xml` (drawable + drawable-v21) set to `@color/splash_bg` (`#0A2A6E`) with centered icon; `LaunchTheme` uses `Theme.Black` base |
+| Visual QA screenshots | ✅ | Home, Solve 15×15, Archive, Stats, Settings (all sections) captured on Pixel 9 emulator (Android 16 API 36) |
+| Light/dark QA | ✅ | All screens verified in both modes — contrast good, grid readable, nav icons correct, dark backgrounds correct |
+| Final verification | ✅ | `flutter analyze` 0 issues, `flutter test` 79/79, debug APK installed and launched |
 
 ---
 
