@@ -136,8 +136,8 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       clueBarText:     isLight ? CrosscueColors.onSurface1Light  : CrosscueColors.onSurface1Dark,
       activeClueBg:    isLight ? CrosscueColors.wordHLLight      : CrosscueColors.wordHLDark,
       crossClueBg:     isLight ? CrosscueColors.crossHLLight     : CrosscueColors.crossHLDark,
-      keyboardBg:      CrosscueColors.keyboardBg,
-      keyDefault:      CrosscueColors.surfaceLight,
+      keyboardBg:      isLight ? CrosscueColors.keyboardBg : const Color(0xFF1E1E1E),
+      keyDefault:      isLight ? CrosscueColors.surfaceLight : const Color(0xFF2C2C2C),
       keySpecial:      CrosscueColors.keyDelete,
       keyCheck:        isLight ? CrosscueColors.primary          : CrosscueColors.primaryLight,
     );

@@ -19,16 +19,16 @@ enum CellState {
 /// via TypeConverter to solve_sessions.status.
 ///
 /// DB string mapping (TypeConverter):
-///   unsolved       → "not_started"
-///   inProgress     → "in_progress"
-///   solved         → "completed"   (completion_type = "clean" or "checked")
-///   solvedWithHelp → "completed"   (completion_type = "hinted")
-///   revealed       → "revealed"
+///   unsolved          → "not_started"
+///   inProgress        → "in_progress"
+///   solved            → "completed"   (completion_type = "clean")
+///   solvedWithHelp    → "completed"   (completion_type = "checked")
+///   solvedWithReveal  → "completed"   (completion_type = "hinted")
+///   revealed          → "revealed"
 ///
-/// solvedWithHelp is the combined "any assistance" bucket — covers checked
-/// and hinted completions. The completion_type column in Drift carries the
-/// finer distinction (clean / checked / hinted / revealed).
-enum PuzzleStatus { unsolved, inProgress, solved, solvedWithHelp, revealed }
+/// solvedWithHelp  = completed using check operations only (no reveals).
+/// solvedWithReveal = completed where ≥1 cell was revealed (hints used).
+enum PuzzleStatus { unsolved, inProgress, solved, solvedWithHelp, solvedWithReveal, revealed }
 
 /// Entry mode for the current cell. Pencil mode is deferred post-MVP but
 /// included here to avoid a future breaking change.

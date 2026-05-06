@@ -96,6 +96,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
           width: puzzle.metadata.width,
           height: puzzle.metadata.height,
           checksum: puzzle.metadata.checksum ?? '',
+          difficulty: Value(puzzle.metadata.difficulty),
           canonicalJson: canonical,
           createdAt: now,
           updatedAt: now,
@@ -144,6 +145,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
       publishDate: row.publishDate,
       notes: row.notes,
       checksum: row.checksum,
+      difficulty: row.difficulty,
     );
   }
 

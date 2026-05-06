@@ -183,6 +183,7 @@ class IpuzParser implements PuzzleParser {
     final author = (json['author'] as String? ?? '');
     final copyright = (json['copyright'] as String? ?? '');
     final notes = (json['intro'] as String? ?? '');
+    final difficulty = json['difficulty'] as String?;
 
     final canonicalJson =
         '{"w":$width,"h":$height,"s":${jsonEncode(solutionStrings.join())},"t":${jsonEncode(title)}}';
@@ -202,6 +203,7 @@ class IpuzParser implements PuzzleParser {
       importedAt: DateTime.now().toUtc(),
       notes: notes.isEmpty ? null : notes,
       checksum: digest,
+      difficulty: difficulty,
     );
 
     return Ok(Puzzle(

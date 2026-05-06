@@ -78,8 +78,8 @@ class HomeScreen extends ConsumerWidget {
 
           return ListView(
             children: [
-              // ── Today / Current section ──────────────────────────────
-              const _SectionHeader('Current'),
+              // ── Today section ────────────────────────────────────────
+              const _SectionHeader('Today'),
               _FeaturedPuzzle(
                 puzzle: featured,
                 entry: entryMap[featured.id],
@@ -179,12 +179,12 @@ class _FeaturedPuzzle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _ctaLabel(entry);
-    final sub = [
-      if (puzzle.author.isNotEmpty) puzzle.author,
-      puzzle.width == puzzle.height
-          ? '${puzzle.width}×${puzzle.height}'
-          : '${puzzle.width}×${puzzle.height}',
-    ].join(' · ');
+    // Subtitle: size (+ difficulty if present) — spec §01 "source · size · difficulty"
+    final sizeParts = ['${puzzle.width}×${puzzle.height}'];
+    if (puzzle.difficulty != null && puzzle.difficulty!.isNotEmpty) {
+      sizeParts.add(puzzle.difficulty!);
+    }
+    final sub = sizeParts.join(' · ');
 
     final elapsed = entry?.elapsedMs;
     final elapsedStr = elapsed != null && elapsed > 0
@@ -205,13 +205,22 @@ class _FeaturedPuzzle extends StatelessWidget {
               height: 1.25,
             ),
           ),
-          if (sub.isNotEmpty) ...[
-            const SizedBox(height: 4),
+          const SizedBox(height: 4),
+          Text(
+            sub,
+            style: TextStyle(
+              fontSize: CrosscueTypography.bodySmall,
+              color: _onSurface2(context),
+            ),
+          ),
+          // Constructor line — separate 12px #999 per spec §01
+          if (puzzle.author.isNotEmpty) ...[
+            const SizedBox(height: 2),
             Text(
-              sub,
+              puzzle.author,
               style: TextStyle(
-                fontSize: CrosscueTypography.bodySmall,
-                color: _onSurface2(context),
+                fontSize: CrosscueTypography.label,
+                color: _onSurface3(context),
               ),
             ),
           ],
@@ -359,9 +368,11 @@ class _PuzzleRow extends StatelessWidget {
   }
 
   String? _subtitle(ArchiveEntry? e, PuzzleMetadata p) {
-    final parts = <String>[];
+    final parts = <String>['${p.width}×${p.height}'];
+    if (p.difficulty != null && p.difficulty!.isNotEmpty) {
+      parts.add(p.difficulty!);
+    }
     if (p.author.isNotEmpty) parts.add(p.author);
-    parts.add('${p.width}×${p.height}');
     return parts.join(' · ');
   }
 }

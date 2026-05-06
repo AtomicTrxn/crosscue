@@ -605,9 +605,12 @@ class SolveNotifier extends _$SolveNotifier {
     _timerSub?.cancel();
     _saveDebounce?.cancel();
 
-    final finalStatus = (s.usedCheck || s.usedReveal)
-        ? PuzzleStatus.solvedWithHelp
-        : PuzzleStatus.solved;
+    // Distinguish reveal-assisted from check-only from clean (spec §08)
+    final finalStatus = s.usedReveal
+        ? PuzzleStatus.solvedWithReveal
+        : s.usedCheck
+            ? PuzzleStatus.solvedWithHelp
+            : PuzzleStatus.solved;
     final completed = s.copyWith(status: finalStatus);
     state = AsyncData(completed);
 
@@ -650,6 +653,7 @@ class SolveNotifier extends _$SolveNotifier {
   bool _isTerminal(PuzzleStatus status) =>
       status == PuzzleStatus.solved ||
       status == PuzzleStatus.solvedWithHelp ||
+      status == PuzzleStatus.solvedWithReveal ||
       status == PuzzleStatus.revealed;
 
   int? _personalBestForSize({

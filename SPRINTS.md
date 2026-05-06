@@ -372,7 +372,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 15 — Design Gap Remediation ⬜
+## Sprint 15 — Design Gap Remediation ✅
 
 **Goal:** Close all spec-vs-implementation gaps found during the post-Sprint 13 design review. Every item here has a clear spec citation in `design/README.md`.
 
@@ -382,41 +382,41 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Nav tab 0 label: "Home" → "Today"** | ⬜ | `app_shell.dart` `NavigationDestination` label. Spec §BottomNav says tab 0 is "Today" |
-| **AppBar bottom border: hardcoded `dividerLight`** | ⬜ | `app_theme.dart` line 63 uses `CrosscueColors.dividerLight` regardless of brightness; should be `isLight ? dividerLight : dividerDark` |
+| **Nav tab 0 label: "Home" → "Today"** | ✅ | `app_shell.dart` label updated |
+| **AppBar bottom border: hardcoded `dividerLight`** | ✅ | `app_theme.dart` — brightness-aware `isLight ? dividerLight : dividerDark` |
 
 ### Home Screen (§01)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Section header "Current" → "Today"** | ⬜ | `home_screen.dart` `_SectionHeader('Current')` → `_SectionHeader('Today')` |
-| **Puzzle subtitle: add difficulty** | ⬜ | Spec: `"LA Times · 15×15 · Medium"`. Requires: (1) add `difficulty` field to `PuzzleMetadata` Freezed model + Drift column; (2) populate from `.puz`/`.ipuz` parsers; (3) surface in subtitle if non-null |
-| **Separate constructor line below subtitle** | ⬜ | Spec: constructor shown as separate `12px #999999` line. Currently merged into subtitle with `·`. Split: subtitle = source·size·difficulty; second line = author at `12px #999999` |
+| **Section header "Current" → "Today"** | ✅ | `home_screen.dart` updated |
+| **Puzzle subtitle: add difficulty** | ✅ | `difficulty` field added to `PuzzleMetadata` Freezed model; `PuzzlesTable` column already existed; DAO + ipuz parser updated; subtitle shows `size · difficulty` |
+| **Separate constructor line below subtitle** | ✅ | Author rendered as separate `12px #999` line below subtitle in featured card and list rows |
 
 ### Solve Screen (§02)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Keyboard dark mode** | ⬜ | `crossword_theme.dart` lines 139–140: `keyboardBg` and `keyDefault` are hardcoded to light values (`#ECEFF1` / `#FFFFFF`). Add dark variants: `keyboardBg = isLight ? #ECEFF1 : #1E1E1E`; `keyDefault = isLight ? #FFFFFF : #2C2C2C` |
+| **Keyboard dark mode** | ✅ | `crossword_theme.dart` — `keyboardBg: #1E1E1E`, `keyDefault: #2C2C2C` in dark mode |
 
 ### Stats Screen (§05)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **TIMES section: third column empty** | ⬜ | `stats_screen.dart` line 220 is a placeholder `SizedBox`. Spec shows 3 equal Roboto Mono time columns. Third column should display overall best time (`min(personalBestMiniMs, personalBest15x15Ms, personalBest21x21Ms)`) labeled `"BEST"` / sub `"all time"` |
+| **TIMES section: third column empty** | ✅ | Third column now shows overall best time (`min` of all personalBest values) labeled `"BEST"` / sub `"all time"` |
 
 ### Completion Sheet (§08)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **"Solved with hints" label** | ⬜ | Spec lists 4 labels: "Clean solve" / "Solved with checks" / "Solved with hints" / "Puzzle revealed". Code conflates checks+reveals into `solvedWithHelp → "Solved with checks"`. Add `solvedWithReveal` to `PuzzleStatus` enum; `SolveNotifier` should emit it when `revealCell/Word/Grid` was used during a completed solve. Map: `solved→"Clean solve"`, `solvedWithHelp→"Solved with checks"`, `solvedWithReveal→"Solved with hints"`, `revealed→"Puzzle revealed"` |
-| **Confetti animation** | ⬜ | Spec: "Puzzle complete: grid wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)". Confetti burst not implemented. Add `confetti` package; trigger 800ms confetti after wave resolves, before sheet shows. Gate on `disableAnimations` |
+| **"Solved with hints" label** | ✅ | Added `solvedWithReveal` to `PuzzleStatus` enum; `SolveNotifier` emits it when ≥1 reveal used; label map: `solved→"Clean solve"`, `solvedWithHelp→"Solved with checks"`, `solvedWithReveal→"Solved with hints"`, `revealed→"Puzzle revealed"` |
+| **Confetti animation** | ✅ | `ConfettiWidget` added to solve screen Stack (top-center, explosive, 20 particles); 500ms wave → 800ms confetti → sheet slide-up; gated on `!disableAnimations` |
 
 ### Final Verification
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Final verification** | ⬜ | `flutter analyze` 0 issues, `flutter test` all pass, deploy to emulator, visual check in light + dark |
+| **Final verification** | ✅ | `flutter analyze` 0 issues, `flutter test` 79/79 pass, APK built and deployed to emulator |
 
 ---
 

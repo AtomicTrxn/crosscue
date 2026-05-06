@@ -217,13 +217,30 @@ class _TimesSection extends StatelessWidget {
                 ),
               ),
               _VerticalDivider(),
-              const Expanded(child: SizedBox()), // placeholder third column
+              Expanded(
+                child: _TimeCell(
+                  value: _bestTime(stats),
+                  label: 'BEST',
+                  sub: 'all time',
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
   }
+}
+
+/// Returns the best (lowest) personal best across all puzzle sizes, formatted.
+String _bestTime(StatsData stats) {
+  final candidates = [
+    stats.personalBestMiniMs,
+    stats.personalBest15x15Ms,
+    stats.personalBest21x21Ms,
+  ].whereType<int>();
+  if (candidates.isEmpty) return '–';
+  return formatMs(candidates.reduce((a, b) => a < b ? a : b));
 }
 
 class _TimeCell extends StatelessWidget {

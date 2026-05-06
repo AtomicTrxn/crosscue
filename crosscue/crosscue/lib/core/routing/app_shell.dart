@@ -21,7 +21,7 @@ class AppShell extends StatelessWidget {
           NavigationDestination(
             icon: CrosscueNavIcon.home(selected: false),
             selectedIcon: CrosscueNavIcon.home(selected: true),
-            label: 'Home',
+            label: 'Today',
           ),
           NavigationDestination(
             icon: CrosscueNavIcon.archive(selected: false),

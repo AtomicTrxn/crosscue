@@ -196,6 +196,7 @@ class SolveRepositoryImpl implements SolveRepository {
         PuzzleStatus.inProgress => 'in_progress',
         PuzzleStatus.solved => 'completed',
         PuzzleStatus.solvedWithHelp => 'completed',
+        PuzzleStatus.solvedWithReveal => 'completed',
         PuzzleStatus.revealed => 'revealed',
       };
 }
