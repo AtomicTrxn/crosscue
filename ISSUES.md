@@ -18,11 +18,11 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | 7 | ✨ | Completed words/letters: soft green fill color | Next | Apply a muted green (`#C8E6C9` bg / `#2E7D32` text) to fully correct words; distinct from the check-correct state |
 | 8 | 🐛 | Settings → How to Play does not launch onboarding | Next | Tapping "How to Play" in Settings should push `OnboardingScreen` via `context.push(Routes.onboarding)` |
 | 9 | ✨ | About screen: icon + description + GitHub link | Next | Currently a stub. Add app icon, 2-line tagline, version string, and a tappable GitHub URL. See detail. |
-| 10 | 🐛 | Export and import data not implemented or wired up | Backlog | "Export data" and "Import data" in Settings show a stub toast. Needs design decision on format (JSON dump of DB?) before implementing. |
+| 10 | 🐛 | Export and import data not implemented or wired up | Next | JSON export of completed session records; additive import. See detail. |
 | 11 | ✨ | Clear data modal: cancel button larger and blue | Next | The cancel button in the "Clear All Data" confirmation dialog should be the same size/style as the destructive button but in `#1565C0` blue |
 | 12 | 🐛 | Crash reporting saves nothing — wire up local log | Next | `CrashReporter` is a no-op stub. Phase 1 target: capture crash/error details to a local file in `getApplicationDocumentsDirectory()`. No transmission yet. See detail. |
-| 13 | 🐛 | Colorblind mode toggle has no effect | Backlog | Setting is persisted but `CrosswordTheme` / `CrosswordGridPainter` do not read it. Define alternate palette and gate on the provider. |
-| 14 | 🐛 | Sounds setting has no effect | Backlog | Toggle is persisted but no audio is played anywhere. Needs `audioplayers` or `just_audio` package + sound asset decisions before implementing. |
+| 13 | 🐛 | Colorblind mode (Deuteranopia) not implemented | Next | Dot in upper-right corner of cell = correct letter. Extensible for future types. Settings note explaining the dot. See detail. |
+| 14 | 🐛 | Sounds not implemented; merge with haptics into "Touch & Sound" section | Next | `audioplayers` package; programmatically generated soft beep; mirrors haptics trigger points. See detail. |
 | 15 | ✨ | Reveal puzzle dialog: cancel button blue | Next | Cancel in the "Reveal Puzzle" confirmation dialog should be blue (`#1565C0`), matching the primary action style, so both buttons are visually equal weight |
 | 16 | 🐛 | Revealing entire puzzle does not mark puzzle as complete | Next | `SolveNotifier.revealGrid()` fills all cells but `_checkCompletion()` is not called afterward. Should set status to `PuzzleStatus.revealed` and trigger completion sheet. |
 | 17 | ✨ | Clue panel: auto-center active clue and tappable rows | Next | Scroll active clue to center of visible list on focus change. Tapping any clue row should move focus to that word's first empty cell. See detail. |
@@ -151,6 +151,92 @@ status = PuzzleStatus.revealed
 and call `_markComplete(CompletionType.revealed)` so the session is persisted and the completion sheet is triggered.
 
 **Key file:** `solve_notifier.dart` — `revealGrid()` method
+
+---
+
+### #10 — Export / Import session stats
+
+**Type:** Bug / Enhancement
+**Reported:** 2026-05-06
+**Decisions:** 2026-05-06
+
+**Scope:** Completed `solve_sessions` rows only — not puzzle files, not cell progress, not incomplete sessions.
+
+**Format:** JSON array of session objects:
+```json
+[
+  {
+    "completionType": "clean",
+    "elapsedMs": 312000,
+    "solvedDateLocal": "2026-05-06",
+    "solvedTimezone": "CST",
+    "width": 15,
+    "height": 15,
+    "puzzleTitle": "Themeless Monday #875"
+  }
+]
+```
+
+**Export:** Query all rows in `solve_sessions` where `status = 'completed'` or `'revealed'`, serialize to JSON, share via Android share sheet (`share_plus`, already in stack).
+
+**Import:** Parse JSON, for each record insert into `solve_sessions` if no existing row matches `(puzzleTitle + solvedDateLocal)` — additive, never replaces. After import, invalidate `statsDataProvider` so the stats screen recomputes. No changes needed to `StatsRepositoryImpl` — it runs over the larger dataset automatically.
+
+**Rationale for detail over summary:** `StatsRepositoryImpl` computes every stat (streak, personal best, completion rate) from raw session rows. Exporting summary numbers would force a second codepath in stats; streak calculation requires per-day `solvedDateLocal` dates that can't be reconstructed from aggregated values.
+
+**Key files:** `settings_screen.dart` (wire up the stubs), new `StatsExportService` in `features/stats/data/`, `stats_dao.dart` (add `getAllCompletedSessions()` query)
+
+---
+
+### #13 — Colorblind mode: Deuteranopia dot indicator
+
+**Type:** Bug / Enhancement
+**Reported:** 2026-05-06
+**Decisions:** 2026-05-06
+
+**Visual:** When colorblind mode is enabled, draw a small filled circle (dot) in the upper-right corner of any cell whose `CellState == checkedCorrect` or whose letter matches the solution. Dot color: `#1565C0` (navy — safely distinguishable for deuteranopes). No palette swaps needed.
+
+**Extensibility:** Define a `ColorblindMode` enum in `enums.dart`:
+```dart
+enum ColorblindMode { none, deuteranopia }
+// Future values: protanopia, tritanopia, highContrast
+```
+Store the selected value in `AppSettingsRepository` (replace the current `bool` with the enum string). `CrosswordGridPainter` reads the mode and dispatches to a `_paintAccessibilityOverlay(canvas, cell, rect, mode)` method — adding a new type is one new case in that switch.
+
+**Settings screen note** (below the toggle/picker):
+> "When enabled, a dot appears in the corner of correct letters."
+
+**Key files:** `crossword_grid_painter.dart` (dot rendering), `enums.dart` (new enum), `app_settings_repository.dart` / `app_settings_repository_impl.dart` (store enum), `settings_screen.dart` (add explanatory subtitle), `settings_providers.dart` (update notifier type)
+
+---
+
+### #14 — Sounds: programmatic beeps via audioplayers; merge with haptics
+
+**Type:** Bug / Enhancement
+**Reported:** 2026-05-06
+**Decisions:** 2026-05-06
+
+**Package:** `audioplayers` — add to `pubspec.yaml`.
+
+**Sound generation:** Generate soft sine-wave beep at app startup, cache as `Uint8List`, play via `AudioPlayer.play(BytesSource(...))`. Parameters:
+- Frequency: 440 Hz (A4) — warm, not sharp
+- Duration: 80ms
+- Envelope: 5ms attack, 60ms sustain, 15ms release
+- Amplitude: 0.4 (gentle, not jarring at max volume)
+
+One sound variant is enough for all events. Volume/pitch variation (e.g. higher note on word complete) is a future enhancement.
+
+**Trigger points** — mirror haptic trigger points exactly:
+| Event | Haptic | Sound |
+|-------|--------|-------|
+| Key tap | `lightImpact` | soft beep |
+| Word complete | `mediumImpact` | soft beep |
+| Puzzle complete | `vibrate` (pulse) | soft beep |
+| Check correct | *(none)* | soft beep |
+| Check incorrect | `vibrate` | *(no sound — haptic only)* |
+
+**Settings section rename:** Rename the current "Sounds" / "Haptics" area in `settings_screen.dart` to **"Touch & Sound"**. Group haptics toggle and sounds toggle together under that header. The name avoids confusion with "Send Feedback" type affordances.
+
+**Key files:** `pubspec.yaml` (add `audioplayers`), new `core/audio/sound_player.dart`, `settings_screen.dart` (rename section, group toggles), `solve_screen.dart` / `crossword_keyboard.dart` (wire sound calls alongside haptic calls)
 
 ---
 
