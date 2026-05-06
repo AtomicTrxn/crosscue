@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,15 +34,20 @@ class SolveScreen extends ConsumerStatefulWidget {
 class _SolveScreenState extends ConsumerState<SolveScreen>
     with WidgetsBindingObserver {
   bool _completionSheetShown = false;
+  late final ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _confettiController = ConfettiController(
+      duration: const Duration(milliseconds: 800),
+    );
   }
 
   @override
   void dispose() {
+    _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -65,6 +71,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   void _maybeShowCompletionSheet(SolveState solveState) {
     final isComplete = solveState.status == PuzzleStatus.solved ||
         solveState.status == PuzzleStatus.solvedWithHelp ||
+        solveState.status == PuzzleStatus.solvedWithReveal ||
         solveState.status == PuzzleStatus.revealed;
     if (!isComplete || _completionSheetShown) return;
 
@@ -74,7 +81,11 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       unawaited(_pulseCompletionHaptics());
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Spec §08: wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)
+    final animationsDisabled =
+        MediaQuery.of(context).disableAnimations;
+
+    Future<void> showSheet() async {
       if (!mounted) return;
       showModalBottomSheet<void>(
         context: context,
@@ -92,6 +103,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           },
         ),
       );
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (animationsDisabled) {
+        await showSheet();
+        return;
+      }
+      // Wait for grid wave flash (500ms), then run confetti (800ms)
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      _confettiController.play();
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      await showSheet();
     });
   }
 
@@ -195,6 +221,24 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   onResume: () => ref
                       .read(solveProvider(widget.puzzleId).notifier)
                       .resume(),
+                ),
+
+              // Confetti overlay — triggered on puzzle complete (spec §08)
+              if (!MediaQuery.of(context).disableAnimations)
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    numberOfParticles: 20,
+                    gravity: 0.3,
+                    colors: const [
+                      Color(0xFF1565C0),
+                      Color(0xFFFDD835),
+                      Color(0xFF4CAF50),
+                      Color(0xFFEF5350),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -301,6 +345,7 @@ class _CompletionSheet extends ConsumerWidget {
     final solveLabel = switch (status) {
       PuzzleStatus.solved => 'Clean solve',
       PuzzleStatus.solvedWithHelp => 'Solved with checks',
+      PuzzleStatus.solvedWithReveal => 'Solved with hints',
       PuzzleStatus.revealed => 'Puzzle revealed',
       _ => 'Completed',
     };

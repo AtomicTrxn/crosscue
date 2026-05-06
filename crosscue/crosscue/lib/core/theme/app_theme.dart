@@ -58,9 +58,9 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
         // 1px bottom border on every AppBar (spec §01–06)
-        shape: const Border(
+        shape: Border(
           bottom: BorderSide(
-            color: CrosscueColors.dividerLight,
+            color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
             width: 1,
           ),
         ),

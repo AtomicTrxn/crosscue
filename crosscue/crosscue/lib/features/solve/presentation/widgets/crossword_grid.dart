@@ -399,6 +399,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   bool _isTerminal(PuzzleStatus status) =>
       status == PuzzleStatus.solved ||
       status == PuzzleStatus.solvedWithHelp ||
+      status == PuzzleStatus.solvedWithReveal ||
       status == PuzzleStatus.revealed;
 
   bool _isWordComplete(SolveState state, Clue clue) {

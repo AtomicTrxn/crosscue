@@ -22,5 +22,6 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
     DateTime? publishDate,
     String? notes,
     String? checksum,
+    String? difficulty,
   }) = _PuzzleMetadata;
 }
