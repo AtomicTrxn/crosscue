@@ -149,17 +149,17 @@ final class EntitlementServiceProvider extends $FunctionalProvider<
 String _$entitlementServiceHash() =>
     r'8b777f0857c0b0277e787bd83e737e8c2d1556d2';
 
-/// Crash reporter — no-op until Sentry is wired in Sprint 7.
+/// Crash reporter — no-op until Sentry is wired (post-MVP).
 
 @ProviderFor(crashReporter)
 final crashReporterProvider = CrashReporterProvider._();
 
-/// Crash reporter — no-op until Sentry is wired in Sprint 7.
+/// Crash reporter — no-op until Sentry is wired (post-MVP).
 
 final class CrashReporterProvider
     extends $FunctionalProvider<CrashReporter, CrashReporter, CrashReporter>
     with $Provider<CrashReporter> {
-  /// Crash reporter — no-op until Sentry is wired in Sprint 7.
+  /// Crash reporter — no-op until Sentry is wired (post-MVP).
   CrashReporterProvider._()
       : super(
           from: null,

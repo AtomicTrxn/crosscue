@@ -108,7 +108,7 @@ Stored in `SolveState.focus`. Direction toggles on repeated tap of same cell.
 
 ---
 
-## `PuzzleMetadata` — `puzzle_metadata.dart`
+## `PuzzleMetadata` — `core/domain/models/puzzle_metadata.dart`
 
 ```dart
 @freezed

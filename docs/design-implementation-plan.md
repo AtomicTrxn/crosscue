@@ -4,8 +4,8 @@ This plan converts the files in `design/` into implementation work for the
 Flutter app at `crosscue/crosscue/`. The HTML files are high-fidelity visual
 references, not production code to copy directly.
 
-Status as of Sprint 12: Sprints 9 and 12 are complete. Sprints 10, 11, and 13
-remain the active design implementation backlog.
+Status as of Sprint 13.5: Sprints 9-12 are complete. Sprint 13.5 cleanup is in
+progress, and Sprints 13-14 remain the active design implementation backlog.
 
 ## Decisions
 

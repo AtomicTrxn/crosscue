@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/crossword_theme.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/utils/time_format.dart';
 import '../../domain/models/archive_entry.dart';
 import '../providers/archive_providers.dart';
 
@@ -35,8 +35,6 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   @override
   Widget build(BuildContext context) {
     final archiveAsync = ref.watch(archiveEntriesProvider);
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -61,6 +59,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           final sorted = _applySort(filtered, _sort);
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Filter chips
               _FilterChips(
@@ -93,6 +92,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Filter / sort
+  // ---------------------------------------------------------------------------
+
   static List<ArchiveEntry> _applyFilter(
       List<ArchiveEntry> entries, _FilterMode filter) {
     return switch (filter) {
@@ -121,6 +124,10 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     }
     return copy;
   }
+
+  // ---------------------------------------------------------------------------
+  // Delete
+  // ---------------------------------------------------------------------------
 
   Future<void> _confirmDelete(BuildContext context, ArchiveEntry entry) async {
     final confirmed = await showDialog<bool>(
@@ -167,14 +174,15 @@ class _FilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: CrosscueColors.dividerLight, width: 1),
+          bottom: BorderSide(color: _divider(context), width: 1),
         ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: CrosscueSpacing.screenH, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+            horizontal: CrosscueSpacing.screenH, vertical: 10),
         child: Row(
           children: _FilterMode.values
               .map((f) => Padding(
@@ -217,9 +225,9 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
         decoration: BoxDecoration(
-          color: selected ? CrosscueColors.primaryContLight : Colors.transparent,
+          color: selected ? _primaryContainer(context) : Colors.transparent,
           border: Border.all(
-            color: selected ? CrosscueColors.wordHLLight : CrosscueColors.dividerLight,
+            color: selected ? _wordHighlight(context) : _divider(context),
           ),
           borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
         ),
@@ -228,9 +236,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: CrosscueTypography.bodySmall,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected
-                ? CrosscueColors.primary
-                : CrosscueColors.onSurface3Light,
+            color: selected ? CrosscueColors.primary : _onSurface3(context),
           ),
         ),
       ),
@@ -264,9 +270,9 @@ class _SortBar extends StatelessWidget {
         children: [
           Text(
             '$count ${count == 1 ? 'puzzle' : 'puzzles'}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: CrosscueTypography.label,
-              color: CrosscueColors.onSurface3Light,
+              color: _onSurface3(context),
             ),
           ),
           const Spacer(),
@@ -326,9 +332,10 @@ class _ArchiveRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (iconData, iconColor) = _iconAndColor(entry);
+    final (iconData, iconColor) = _iconAndColor(context, entry);
     final subtitle = _subtitleParts(entry).join(' · ');
-    final (statusNote, statusColor) = _statusNote(entry);
+    final (statusNote, statusColor) = _statusNote(context, entry);
+    final onSurface3 = _onSurface3(context);
 
     return Column(
       children: [
@@ -358,10 +365,10 @@ class _ArchiveRow extends StatelessWidget {
                         entry.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: CrosscueTypography.body,
                           fontWeight: FontWeight.w500,
-                          color: CrosscueColors.onSurface1Light,
+                          color: _onSurface1(context),
                         ),
                       ),
                       if (subtitle.isNotEmpty)
@@ -369,9 +376,9 @@ class _ArchiveRow extends StatelessWidget {
                           subtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: CrosscueTypography.label,
-                            color: CrosscueColors.onSurface3Light,
+                            color: onSurface3,
                           ),
                         ),
                       if (statusNote != null)
@@ -389,36 +396,37 @@ class _ArchiveRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   size: 18,
-                  color: CrosscueColors.onSurface3Light,
+                  color: onSurface3,
                 ),
               ],
             ),
           ),
         ),
-        const Divider(
+        Divider(
           height: 1,
-          indent: 52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
+          indent:
+              52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
           endIndent: 0,
-          color: CrosscueColors.dividerLight,
+          color: _divider(context),
         ),
       ],
     );
   }
 
-  (IconData, Color) _iconAndColor(ArchiveEntry e) {
+  (IconData, Color) _iconAndColor(BuildContext context, ArchiveEntry e) {
     if (e.isCleanSolve) {
       return (Icons.star_rounded, CrosscueColors.primary);
     }
     if (e.isCompleted || e.isRevealed) {
-      return (Icons.check_circle_outline_rounded, CrosscueColors.correctLight);
+      return (Icons.check_circle_outline_rounded, _correct(context));
     }
     if (e.isInProgress) {
       return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
     }
-    return (Icons.radio_button_unchecked_rounded, CrosscueColors.onSurface3Light);
+    return (Icons.radio_button_unchecked_rounded, _onSurface3(context));
   }
 
   List<String> _subtitleParts(ArchiveEntry e) {
@@ -429,65 +437,24 @@ class _ArchiveRow extends StatelessWidget {
     return parts;
   }
 
-  (String?, Color) _statusNote(ArchiveEntry e) {
+  (String?, Color) _statusNote(BuildContext context, ArchiveEntry e) {
     if (e.isNotStarted) return (null, Colors.transparent);
     if (e.isInProgress) {
-      final t = e.elapsedMs != null ? _formatMs(e.elapsedMs!) : '';
+      final t = e.elapsedMs != null ? formatMs(e.elapsedMs!) : '';
       return (
         'In progress${t.isNotEmpty ? ' · $t' : ''}',
         CrosscueColors.primaryMid,
       );
     }
     if (e.isCompleted) {
-      final t = e.elapsedMs != null ? _formatMs(e.elapsedMs!) : '';
+      final t = e.elapsedMs != null ? formatMs(e.elapsedMs!) : '';
       return (
         'Completed${t.isNotEmpty ? ' · $t' : ''}',
-        CrosscueColors.correctLight,
+        _correct(context),
       );
     }
-    if (e.isRevealed) return ('Revealed', CrosscueColors.onSurface2Light);
+    if (e.isRevealed) return ('Revealed', _onSurface2(context));
     return (null, Colors.transparent);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Status icon (semantic)
-// ---------------------------------------------------------------------------
-
-class _StatusIcon extends StatelessWidget {
-  const _StatusIcon({required this.entry});
-
-  final ArchiveEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final (iconData, iconColor) = _iconAndColor(entry);
-
-    return Icon(
-      iconData,
-      size: 24,
-      color: iconColor,
-    );
-  }
-
-  (IconData, Color) _iconAndColor(ArchiveEntry e) {
-    if (e.isCleanSolve) {
-      return (Icons.star_rounded, CrosscueColors.primary);
-    }
-    if (e.isCompleted || e.isRevealed) {
-      return (Icons.check_circle_outline_rounded, CrosscueColors.correctLight);
-    }
-    if (e.isInProgress) {
-      return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
-    }
-    return (Icons.radio_button_unchecked_rounded, CrosscueColors.onSurface3Light);
-  }
-
-  Color _getStatusColor(ArchiveEntry entry) {
-    if (entry.isCleanSolve) return colorScheme.primary;
-    if (entry.isCompleted || entry.isRevealed) return colorScheme.primary;
-    if (entry.isInProgress) return colorScheme.secondary;
-    return colorScheme.onSurfaceVariant;
   }
 }
 
@@ -500,32 +467,21 @@ class _EmptyArchive extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 48,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          Icon(Icons.inbox_outlined,
+              size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(height: 16),
+          Text('No puzzles yet',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
-            'No puzzles yet',
-            style: theme.textTheme.titleMedium?.copyWith(
-              height: 1.25,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
             'Import a puzzle to get started.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.3,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
         ],
       ),
@@ -538,18 +494,12 @@ class _EmptyFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
+    return Center(
       child: Text(
         'No puzzles match this filter.',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          height: 1.4,
-        ),
-        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
       ),
     );
   }
@@ -559,13 +509,32 @@ class _EmptyFilter extends StatelessWidget {
 // Helpers
 // ---------------------------------------------------------------------------
 
-String _formatMs(int ms) {
-  final total = ms ~/ 1000;
-  final h = total ~/ 3600;
-  final m = (total % 3600) ~/ 60;
-  final s = total % 60;
-  if (h > 0) {
-    return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-  return '$m:${s.toString().padLeft(2, '0')}';
-}
+bool _isLight(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.light;
+
+Color _onSurface1(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface1Light
+    : CrosscueColors.onSurface1Dark;
+
+Color _onSurface2(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface2Light
+    : CrosscueColors.onSurface2Dark;
+
+Color _onSurface3(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface3Light
+    : CrosscueColors.onSurface3Dark;
+
+Color _divider(BuildContext context) => _isLight(context)
+    ? CrosscueColors.dividerLight
+    : CrosscueColors.dividerDark;
+
+Color _primaryContainer(BuildContext context) => _isLight(context)
+    ? CrosscueColors.primaryContLight
+    : CrosscueColors.primaryContDark;
+
+Color _wordHighlight(BuildContext context) =>
+    _isLight(context) ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark;
+
+Color _correct(BuildContext context) => _isLight(context)
+    ? CrosscueColors.correctLight
+    : CrosscueColors.correctDark;

@@ -1,11 +1,12 @@
 import 'package:intl/intl.dart';
 
 import '../../domain/models/stats_data.dart';
+import '../../domain/repositories/stats_repository.dart';
 import '../daos/stats_dao.dart';
 
 /// Fetches raw session data from [StatsDao] and computes all aggregated stats
 /// (streaks, averages, personal bests) in pure Dart.
-class StatsRepositoryImpl {
+class StatsRepositoryImpl implements StatsRepository {
   const StatsRepositoryImpl({required this.dao});
 
   final StatsDao dao;
@@ -14,6 +15,7 @@ class StatsRepositoryImpl {
   // Public API
   // ---------------------------------------------------------------------------
 
+  @override
   Future<StatsData> getStats() async {
     final completedRows = await dao.getCompletedSessionsWithPuzzle();
     final streakDatesList = await dao.getStreakDates();
@@ -30,6 +32,7 @@ class StatsRepositoryImpl {
     var checked = 0;
     var hinted = 0;
     var revealed = 0;
+    final difficultyBreakdown = <String, int>{};
 
     final allSolvedElapsed = <int>[];
     final sevenDayElapsed = <int>[];
@@ -40,6 +43,11 @@ class StatsRepositoryImpl {
 
     for (final row in completedRows) {
       final ct = row.completionType;
+      final difficulty = _normalizeDifficulty(row.difficulty);
+      if (difficulty != null) {
+        difficultyBreakdown[difficulty] =
+            (difficultyBreakdown[difficulty] ?? 0) + 1;
+      }
 
       switch (ct) {
         case 'clean':
@@ -91,9 +99,8 @@ class StatsRepositoryImpl {
         : (sevenDayElapsed.reduce((a, b) => a + b) / sevenDayElapsed.length)
             .round();
 
-    final completionRate = totalStarted == 0
-        ? 0.0
-        : (totalSolved + revealed) / totalStarted;
+    final completionRate =
+        totalStarted == 0 ? 0.0 : (totalSolved + revealed) / totalStarted;
 
     return StatsData(
       currentStreak: currentStreak,
@@ -109,6 +116,7 @@ class StatsRepositoryImpl {
       personalBest15x15Ms: pb15x15,
       personalBest21x21Ms: pb21x21,
       personalBestMiniMs: pbMini,
+      difficultyBreakdown: difficultyBreakdown,
     );
   }
 
@@ -163,7 +171,16 @@ class StatsRepositoryImpl {
     return longest;
   }
 
-  static String _minusDays(String dateStr, int days) =>
-      DateFormat('yyyy-MM-dd')
-          .format(DateTime.parse(dateStr).subtract(Duration(days: days)));
+  static String _minusDays(String dateStr, int days) => DateFormat('yyyy-MM-dd')
+      .format(DateTime.parse(dateStr).subtract(Duration(days: days)));
+
+  static String? _normalizeDifficulty(String? difficulty) {
+    final value = difficulty?.trim().toLowerCase();
+    if (value == null || value.isEmpty) return null;
+    if (value.contains('easy')) return 'easy';
+    if (value.contains('medium')) return 'medium';
+    if (value.contains('hard')) return 'hard';
+    if (value.contains('themeless')) return 'themeless';
+    return 'themeless';
+  }
 }

@@ -8,7 +8,7 @@ import '../../../solve/domain/models/clue.dart';
 import '../../../solve/domain/models/enums.dart';
 import '../../../solve/domain/models/grid.dart';
 import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import '../../../solve/domain/models/solution_cell.dart';
 import '../../domain/models/parse_error.dart';
 import '../../domain/repositories/puzzle_parser.dart';
@@ -74,8 +74,7 @@ class PuzParser implements PuzzleParser {
     }
 
     // --- solution grid ---
-    final solutionBytes =
-        bytes.sublist(_gridOffset, _gridOffset + cellCount);
+    final solutionBytes = bytes.sublist(_gridOffset, _gridOffset + cellCount);
 
     // --- player grid (skip — we don't need it for import) ---
     // bytes[_gridOffset + cellCount .. _gridOffset + cellCount*2]
@@ -98,9 +97,9 @@ class PuzParser implements PuzzleParser {
     final notes = readString();
 
     // --- extension blocks (GRBS, RTBL, GEXT) ---
-    final rebusGrid = <int, int>{};    // cellIndex → rebus slot (1-based)
+    final rebusGrid = <int, int>{}; // cellIndex → rebus slot (1-based)
     final rebusTable = <int, String>{}; // slot → solution string
-    final gextFlags = <int, int>{};    // cellIndex → flags byte
+    final gextFlags = <int, int>{}; // cellIndex → flags byte
 
     while (cursor + 8 <= bytes.length) {
       final tag = latin1.decode(bytes.sublist(cursor, cursor + 4));

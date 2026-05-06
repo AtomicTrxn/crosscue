@@ -8,14 +8,13 @@ import '../../../../core/database/tables/puzzles_table.dart';
 import '../../../solve/domain/models/clue.dart';
 import '../../../solve/domain/models/enums.dart';
 import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import 'grid_serializer.dart';
 
 part 'puzzle_dao.g.dart';
 
 @DriftAccessor(tables: [PuzzlesTable, CluesTable])
-class PuzzleDao extends DatabaseAccessor<AppDatabase>
-    with _$PuzzleDaoMixin {
+class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
   PuzzleDao(super.db);
 
   // ---------------------------------------------------------------------------
@@ -34,8 +33,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase>
 
   /// Returns a single puzzle's metadata, or null if not found.
   Future<PuzzleMetadata?> getMetadata(String id) async {
-    final row = await (select(puzzlesTable)
-          ..where((t) => t.id.equals(id)))
+    final row = await (select(puzzlesTable)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
     return row == null ? null : _rowToMetadata(row);
   }

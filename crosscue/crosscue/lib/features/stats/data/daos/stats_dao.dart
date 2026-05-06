@@ -14,6 +14,7 @@ typedef CompletedSessionStat = ({
   String? solvedDateLocal,
   int width,
   int height,
+  String? difficulty,
 });
 
 /// Provides aggregate and streak-related queries for the Stats screen.
@@ -35,12 +36,11 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     final rows = await (select(solveSessionsTable)
           ..where((t) => t.completionType.isNotNull()))
         .join([
-          innerJoin(
-            puzzlesTable,
-            puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
-          ),
-        ])
-        .get();
+      innerJoin(
+        puzzlesTable,
+        puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+      ),
+    ]).get();
 
     return rows.map((row) {
       final session = row.readTable(solveSessionsTable);
@@ -51,6 +51,7 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
         solvedDateLocal: session.solvedDateLocal,
         width: puzzle.width,
         height: puzzle.height,
+        difficulty: puzzle.difficulty,
       );
     }).toList();
   }

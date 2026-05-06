@@ -1,15 +1,16 @@
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../import/data/daos/puzzle_dao.dart';
 import '../../../solve/data/daos/solve_session_dao.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
 import '../../domain/models/archive_entry.dart';
+import '../../domain/repositories/archive_repository.dart';
 
 /// Provides the Archive screen's data by combining [PuzzleDao] metadata with
 /// the latest [SolveSessionRow] for each puzzle.
 ///
 /// Uses an N+1 pattern (one latestSession query per puzzle) which is
 /// acceptable for Phase 1 (import-only, typically <100 puzzles).
-class ArchiveRepositoryImpl {
+class ArchiveRepositoryImpl implements ArchiveRepository {
   const ArchiveRepositoryImpl({
     required this.puzzleDao,
     required this.sessionDao,
@@ -24,6 +25,7 @@ class ArchiveRepositoryImpl {
 
   /// Returns all puzzles merged with their latest session status, ordered by
   /// import date descending (most recent first).
+  @override
   Future<List<ArchiveEntry>> getArchiveEntries() async {
     final allPuzzles = await puzzleDao.getAllMetadata();
     final entries = <ArchiveEntry>[];
@@ -42,6 +44,7 @@ class ArchiveRepositoryImpl {
 
   /// Deletes [puzzleId] and all dependent rows (clues, sessions, cell_progress)
   /// via the cascade rule defined in the DB schema.
+  @override
   Future<void> deletePuzzle(String puzzleId) =>
       puzzleDao.deletePuzzle(puzzleId);
 

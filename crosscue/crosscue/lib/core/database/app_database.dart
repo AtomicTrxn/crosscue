@@ -6,10 +6,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../features/import/data/daos/puzzle_dao.dart';
+import '../../features/settings/data/daos/app_settings_dao.dart';
 import '../../features/solve/data/daos/solve_session_dao.dart';
-import '../../features/stats/data/daos/stats_dao.dart';
 import '../../features/solve/domain/models/enums.dart';
-import '../settings/app_settings_dao.dart';
+import '../../features/stats/data/daos/stats_dao.dart';
 import 'tables/app_settings_table.dart';
 import 'tables/cell_progress_table.dart';
 import 'tables/clues_table.dart';

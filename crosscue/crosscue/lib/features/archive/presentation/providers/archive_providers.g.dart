@@ -16,9 +16,9 @@ final archiveRepositoryProvider = ArchiveRepositoryProvider._();
 /// Singleton repository for the Archive feature.
 
 final class ArchiveRepositoryProvider extends $FunctionalProvider<
-    ArchiveRepositoryImpl,
-    ArchiveRepositoryImpl,
-    ArchiveRepositoryImpl> with $Provider<ArchiveRepositoryImpl> {
+    ArchiveRepository,
+    ArchiveRepository,
+    ArchiveRepository> with $Provider<ArchiveRepository> {
   /// Singleton repository for the Archive feature.
   ArchiveRepositoryProvider._()
       : super(
@@ -36,25 +36,25 @@ final class ArchiveRepositoryProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $ProviderElement<ArchiveRepositoryImpl> $createElement(
+  $ProviderElement<ArchiveRepository> $createElement(
           $ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  ArchiveRepositoryImpl create(Ref ref) {
+  ArchiveRepository create(Ref ref) {
     return archiveRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ArchiveRepositoryImpl value) {
+  Override overrideWithValue(ArchiveRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ArchiveRepositoryImpl>(value),
+      providerOverride: $SyncValueProvider<ArchiveRepository>(value),
     );
   }
 }
 
-String _$archiveRepositoryHash() => r'12a9125eea5d1975bbf076718eb1a9a8e1852c81';
+String _$archiveRepositoryHash() => r'bdb7747e7fb12f4a230ef450d0ce022de5bc0752';
 
 /// All archive entries (puzzles + their latest session status), import-date desc.
 /// Invalidated by the archive screen after a delete, and by ImportNotifier after

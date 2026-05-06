@@ -15,10 +15,8 @@ final statsRepositoryProvider = StatsRepositoryProvider._();
 
 /// Singleton repository for the Stats feature.
 
-final class StatsRepositoryProvider extends $FunctionalProvider<
-    StatsRepositoryImpl,
-    StatsRepositoryImpl,
-    StatsRepositoryImpl> with $Provider<StatsRepositoryImpl> {
+final class StatsRepositoryProvider extends $FunctionalProvider<StatsRepository,
+    StatsRepository, StatsRepository> with $Provider<StatsRepository> {
   /// Singleton repository for the Stats feature.
   StatsRepositoryProvider._()
       : super(
@@ -36,25 +34,24 @@ final class StatsRepositoryProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $ProviderElement<StatsRepositoryImpl> $createElement(
-          $ProviderPointer pointer) =>
+  $ProviderElement<StatsRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  StatsRepositoryImpl create(Ref ref) {
+  StatsRepository create(Ref ref) {
     return statsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(StatsRepositoryImpl value) {
+  Override overrideWithValue(StatsRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<StatsRepositoryImpl>(value),
+      providerOverride: $SyncValueProvider<StatsRepository>(value),
     );
   }
 }
 
-String _$statsRepositoryHash() => r'36990c0d3d040b3294c42f19bb0997e4979f9ab0';
+String _$statsRepositoryHash() => r'c9fab6d45f2922cf29c95d00f482084b62035d54';
 
 /// Aggregated stats derived from all solve sessions.
 /// Re-fetched each time the provider is watched (no keepAlive),

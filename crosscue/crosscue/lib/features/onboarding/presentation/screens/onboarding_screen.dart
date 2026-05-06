@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/routes.dart';
-import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/crossword_theme.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Mock 5×5 grid data (hardcoded, never stored in Drift — topic-17 §7)
@@ -248,7 +248,8 @@ class _MockGrid extends StatelessWidget {
                   final isBlack = letter == null;
                   final isFocused = focusRow == r && focusCol == c;
                   final isWord = !isBlack && _inActiveWord(r, c);
-                  final isCross = !isBlack && !isFocused && !isWord && _inCrossWord(r, c);
+                  final isCross =
+                      !isBlack && !isFocused && !isWord && _inCrossWord(r, c);
 
                   Color bg;
                   if (isBlack) {
@@ -323,19 +324,27 @@ class _MockGrid extends StatelessWidget {
   bool _inAcrossWordBounds(int r, int anchorC, int testC) {
     // Walk left to find word start
     int start = anchorC;
-    while (start > 0 && _grid[r][start - 1] != null) { start--; }
+    while (start > 0 && _grid[r][start - 1] != null) {
+      start--;
+    }
     // Walk right to find word end
     int end = anchorC;
-    while (end < 4 && _grid[r][end + 1] != null) { end++; }
+    while (end < 4 && _grid[r][end + 1] != null) {
+      end++;
+    }
     return testC >= start && testC <= end;
   }
 
   /// Is row [testR] within the down word that contains row [anchorR] in column [c]?
   bool _inDownWordBounds(int anchorR, int c, int testR) {
     int start = anchorR;
-    while (start > 0 && _grid[start - 1][c] != null) { start--; }
+    while (start > 0 && _grid[start - 1][c] != null) {
+      start--;
+    }
     int end = anchorR;
-    while (end < 4 && _grid[end + 1][c] != null) { end++; }
+    while (end < 4 && _grid[end + 1][c] != null) {
+      end++;
+    }
     return testR >= start && testR <= end;
   }
 }
@@ -490,7 +499,8 @@ class _Step1Card extends StatelessWidget {
         const _StepHeading(
           stepLabel: 'STEP 1',
           title: 'Tap a cell to focus it',
-          body: 'Then type a letter. The cursor advances to the next empty cell automatically.',
+          body:
+              'Then type a letter. The cursor advances to the next empty cell automatically.',
         ),
         const SizedBox(height: 20),
         // Mini A–Z keyboard strip for the mock grid

@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../../../core/routing/routes.dart';
-import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/utils/time_format.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../../stats/presentation/providers/stats_providers.dart';
 import '../../domain/models/enums.dart';
 import '../notifiers/solve_notifier.dart';
@@ -53,7 +58,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 
   bool get _hapticsOn {
     final async = ref.read(hapticsEnabledProvider);
-    return async.when(data: (v) => v, loading: () => true, error: (_, __) => true);
+    return async.when(
+        data: (v) => v, loading: () => true, error: (_, __) => true);
   }
 
   void _maybeShowCompletionSheet(SolveState solveState) {
@@ -65,7 +71,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     _completionSheetShown = true;
 
     if (_hapticsOn) {
-      HapticFeedback.heavyImpact();
+      unawaited(_pulseCompletionHaptics());
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -134,9 +140,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   // ClueBar — tappable to toggle direction
                   ClueBar(
                     solveState: solveState,
-                    onToggleDirection: () => ref
-                        .read(solveProvider(widget.puzzleId).notifier)
-                        .toggleDirection(),
+                    onToggleDirection: () {
+                      if (_hapticsOn) HapticFeedback.selectionClick();
+                      ref
+                          .read(solveProvider(widget.puzzleId).notifier)
+                          .toggleDirection();
+                    },
                   ),
 
                   // Full-width grid — self-sizes its height
@@ -154,15 +163,25 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   if (!isComplete)
                     CrosswordKeyboard(
                       hapticsEnabled: _hapticsOn,
-                      onLetter: (l) => ref
-                          .read(solveProvider(widget.puzzleId).notifier)
-                          .inputLetter(l),
+                      onLetter: (l) {
+                        final wordComplete = ref
+                            .read(solveProvider(widget.puzzleId).notifier)
+                            .inputLetter(l);
+                        if (wordComplete && _hapticsOn) {
+                          HapticFeedback.mediumImpact();
+                        }
+                      },
                       onBackspace: () => ref
                           .read(solveProvider(widget.puzzleId).notifier)
                           .backspace(),
-                      onCheckWord: () => ref
-                          .read(solveProvider(widget.puzzleId).notifier)
-                          .checkWord(),
+                      onCheckWord: () {
+                        final result = ref
+                            .read(solveProvider(widget.puzzleId).notifier)
+                            .checkWord();
+                        if (result.shouldVibrate && _hapticsOn) {
+                          HapticFeedback.vibrate();
+                        }
+                      },
                     ),
 
                   // Bottom safe-area padding
@@ -182,6 +201,18 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         );
       },
     );
+  }
+
+  Future<void> _pulseCompletionHaptics() async {
+    final hasVibrator = await Vibration.hasVibrator();
+    if (hasVibrator == true) {
+      await Vibration.vibrate(
+        pattern: const [0, 35, 55, 55, 65, 80],
+        intensities: const [90, 0, 160, 0, 255, 0],
+      );
+    } else {
+      await HapticFeedback.heavyImpact();
+    }
   }
 }
 
@@ -282,6 +313,11 @@ class _CompletionSheet extends ConsumerWidget {
     // Read streak from stats (may or may not include this solve yet)
     final statsAsync = ref.watch(statsDataProvider);
     final streak = statsAsync.asData?.value.currentStreak ?? 0;
+    final previousBest = solveState.previousPersonalBestMs;
+    final elapsedMs = solveState.elapsedSeconds * 1000;
+    final isNewPersonalBest = status == PuzzleStatus.solved &&
+        previousBest != null &&
+        elapsedMs < previousBest;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.48,
@@ -346,6 +382,20 @@ class _CompletionSheet extends ConsumerWidget {
                 const Divider(height: 1, color: CrosscueColors.dividerLight),
                 const SizedBox(height: 12),
 
+                if (isNewPersonalBest) ...[
+                  Text(
+                    '↑ New personal best — prev. ${formatMs(previousBest)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: CrosscueColors.correctLight,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: CrosscueColors.dividerLight),
+                  const SizedBox(height: 12),
+                ],
+
                 // Streak row — 🔥 + "N-day streak" 15px w600 (spec §08)
                 if (streak > 0) ...[
                   Row(
@@ -375,11 +425,11 @@ class _CompletionSheet extends ConsumerWidget {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Sharing coming soon'),
-                            duration: Duration(seconds: 2),
-                          ),
+                        Share.share(
+                          '${solveState.puzzle.metadata.title}\n'
+                          '$timeStr - $solveLabel\n'
+                          'Solved in Crosscue',
+                          subject: 'Crosscue result',
                         );
                       },
                       style: OutlinedButton.styleFrom(
@@ -564,11 +614,11 @@ class _CheckRevealMenu extends ConsumerWidget {
 
     switch (option) {
       case _CheckRevealOption.checkLetter:
-        notifier.checkCell();
+        _vibrateIfIncorrect(ref, notifier.checkCell());
       case _CheckRevealOption.checkWord:
-        notifier.checkWord();
+        _vibrateIfIncorrect(ref, notifier.checkWord());
       case _CheckRevealOption.checkPuzzle:
-        notifier.checkGrid();
+        _vibrateIfIncorrect(ref, notifier.checkGrid());
       case _CheckRevealOption.revealLetter:
         notifier.revealCell();
       case _CheckRevealOption.revealWord:
@@ -622,6 +672,20 @@ class _CheckRevealMenu extends ConsumerWidget {
       case _CheckRevealOption.divider:
       case _CheckRevealOption.divider2:
         break;
+    }
+  }
+
+  void _vibrateIfIncorrect(
+    WidgetRef ref,
+    CheckResult result,
+  ) {
+    final hapticsOn = ref.read(hapticsEnabledProvider).when(
+          data: (value) => value,
+          loading: () => true,
+          error: (_, __) => true,
+        );
+    if (result.shouldVibrate && hapticsOn) {
+      HapticFeedback.vibrate();
     }
   }
 }

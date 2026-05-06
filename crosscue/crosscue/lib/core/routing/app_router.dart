@@ -9,7 +9,7 @@ import '../../features/settings/presentation/screens/source_management_screen.da
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/solve/presentation/screens/solve_screen.dart';
 import '../../features/stats/presentation/screens/stats_screen.dart';
-import '../settings/settings_providers.dart';
+import '../../features/settings/presentation/providers/settings_providers.dart';
 import 'app_shell.dart';
 import 'routes.dart';
 

@@ -5,38 +5,10 @@ import '../../../solve/domain/models/enums.dart';
 import '../../../solve/domain/models/focus_position.dart';
 import '../../../solve/domain/models/grid.dart';
 import '../../../solve/domain/models/puzzle.dart';
+import '../../../solve/domain/repositories/solve_repository.dart';
 import '../daos/solve_session_dao.dart';
 
-/// Result returned from [SolveRepositoryImpl.createOrResumeSession].
-final class SessionLoadResult {
-  const SessionLoadResult({
-    required this.sessionId,
-    required this.progress,
-    required this.focus,
-    required this.elapsedMs,
-    required this.isPaused,
-    required this.isResumed,
-    this.checkCount = 0,
-    this.revealCount = 0,
-    this.usedCheck = false,
-    this.usedReveal = false,
-    this.cleanSolveEligible = true,
-  });
-
-  final int sessionId;
-  final Grid<CellProgress> progress;
-  final FocusPosition focus;
-  final int elapsedMs;
-  final bool isPaused;
-  final bool isResumed;
-  final int checkCount;
-  final int revealCount;
-  final bool usedCheck;
-  final bool usedReveal;
-  final bool cleanSolveEligible;
-}
-
-class SolveRepositoryImpl {
+class SolveRepositoryImpl implements SolveRepository {
   const SolveRepositoryImpl({required this.dao});
 
   final SolveSessionDao dao;
@@ -47,6 +19,7 @@ class SolveRepositoryImpl {
 
   /// Finds an existing in-progress session for [puzzle.id], or creates one.
   /// Restores cell-progress from DB when resuming.
+  @override
   Future<SessionLoadResult> createOrResumeSession(Puzzle puzzle) async {
     final existing = await dao.findActiveSession(puzzle.id);
 
@@ -113,6 +86,7 @@ class SolveRepositoryImpl {
   // ---------------------------------------------------------------------------
 
   /// Saves session state and all non-empty cell-progress rows.
+  @override
   Future<void> saveProgress({
     required int sessionId,
     required int puzzleWidth,
@@ -147,6 +121,7 @@ class SolveRepositoryImpl {
   }
 
   /// Saves the final completed/revealed state of a session.
+  @override
   Future<void> markComplete({
     required int sessionId,
     required int puzzleWidth,

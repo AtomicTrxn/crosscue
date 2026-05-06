@@ -8,7 +8,7 @@ import '../../../solve/domain/models/clue.dart';
 import '../../../solve/domain/models/enums.dart';
 import '../../../solve/domain/models/grid.dart';
 import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import '../../../solve/domain/models/solution_cell.dart';
 import '../../domain/models/parse_error.dart';
 import '../../domain/repositories/puzzle_parser.dart';
@@ -118,8 +118,7 @@ class IpuzParser implements PuzzleParser {
             if (cell is int && cell > 0) numberedCells[idx] = cell;
             final style = val['style'] as Map<String, dynamic>?;
             if (style != null &&
-                (style['shapebg'] == 'circle' ||
-                    style['color'] == 'circle')) {
+                (style['shapebg'] == 'circle' || style['color'] == 'circle')) {
               circledCells.add(idx);
             }
           } else if (val is int && val > 0) {
@@ -179,7 +178,8 @@ class IpuzParser implements PuzzleParser {
     _parseClueList(cluesRaw, 'Down', Direction.down, grid, clues);
 
     // --- metadata ---
-    final title = (json['title'] as String? ?? '').replaceAll(RegExp(r'<[^>]+>'), '');
+    final title =
+        (json['title'] as String? ?? '').replaceAll(RegExp(r'<[^>]+>'), '');
     final author = (json['author'] as String? ?? '');
     final copyright = (json['copyright'] as String? ?? '');
     final notes = (json['intro'] as String? ?? '');
@@ -228,7 +228,8 @@ class IpuzParser implements PuzzleParser {
         number = int.tryParse(item[0].toString());
         text = item[1].toString();
       } else if (item is Map) {
-        number = int.tryParse((item['number'] ?? item['Number'] ?? '').toString());
+        number =
+            int.tryParse((item['number'] ?? item['Number'] ?? '').toString());
         text = (item['clue'] ?? item['text'] ?? '').toString();
       }
       if (number == null) continue;

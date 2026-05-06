@@ -3,12 +3,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/archive_repository_impl.dart';
 import '../../domain/models/archive_entry.dart';
+import '../../domain/repositories/archive_repository.dart';
 
 part 'archive_providers.g.dart';
 
 /// Singleton repository for the Archive feature.
 @Riverpod(keepAlive: true)
-ArchiveRepositoryImpl archiveRepository(Ref ref) {
+ArchiveRepository archiveRepository(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   return ArchiveRepositoryImpl(
     puzzleDao: db.puzzleDao,

@@ -17,6 +17,7 @@ class StatsData {
     this.personalBest15x15Ms,
     this.personalBest21x21Ms,
     this.personalBestMiniMs,
+    this.difficultyBreakdown = const {},
   });
 
   /// Number of consecutive streak-eligible days ending today (or yesterday).
@@ -57,6 +58,9 @@ class StatsData {
 
   /// Best elapsed_ms for clean mini-grid (≤7×7) solves; null if none.
   final int? personalBestMiniMs;
+
+  /// Completed sessions grouped by puzzle difficulty.
+  final Map<String, int> difficultyBreakdown;
 
   /// Convenience: returns true when the user has solved at least one puzzle.
   bool get hasSolves => totalSolved > 0;

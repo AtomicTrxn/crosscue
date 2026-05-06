@@ -63,7 +63,7 @@ const factory SolutionCell.black() = _BlackCell;
 
 ### Always run build_runner after changing Freezed models
 ```bash
-flutter pub run build_runner build --delete-conflicting-outputs
+flutter pub run build_runner build
 ```
 
 ---
@@ -84,6 +84,16 @@ class SolveNotifier extends _$SolveNotifier { ... }
 Future<List<PuzzleMetadata>> puzzleList(Ref ref) { ... }
 // Generated as: puzzleListProvider
 ```
+
+### `providers/` vs `notifiers/`
+
+Use `presentation/providers/` for pure Riverpod providers: repository providers,
+read/query providers, and other functions that derive or fetch state without
+owning an interaction workflow.
+
+Use `presentation/notifiers/` for stateful `Notifier` / `AsyncNotifier`
+subclasses that own business logic, mutations, timers, or multi-step workflows.
+Features with only read/query state can use `providers/` only.
 
 ### `AsyncValue` — no `valueOrNull` in Riverpod 3
 ```dart
@@ -119,7 +129,7 @@ class SolveNotifier extends _$SolveNotifier {
 
 ### Always run build_runner after changing notifiers
 ```bash
-flutter pub run build_runner build --delete-conflicting-outputs
+flutter pub run build_runner build
 ```
 
 ---
@@ -371,7 +381,7 @@ See `core/utils/result.dart` for the full definition and MODELS.md for usage exa
 # /Users/tomhess/Claude/Crossword/crosscue/crosscue/
 
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
-/Users/tomhess/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs
+/Users/tomhess/flutter/bin/flutter pub run build_runner build
 
 # 2. Lint — must be 0 issues
 /Users/tomhess/flutter/bin/flutter analyze

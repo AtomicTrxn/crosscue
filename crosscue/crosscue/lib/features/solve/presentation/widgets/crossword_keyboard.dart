@@ -69,7 +69,7 @@ class CrosswordKeyboard extends StatelessWidget {
                 color: xwTheme.keySpecial,
                 textColor: Colors.white,
                 onTap: () {
-                  if (hapticsEnabled) HapticFeedback.lightImpact();
+                  if (hapticsEnabled) HapticFeedback.selectionClick();
                   onBackspace();
                 },
               ),

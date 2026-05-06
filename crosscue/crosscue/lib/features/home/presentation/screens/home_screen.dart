@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/crossword_theme.dart';
 import '../../../../core/theme/design_tokens.dart';
-import '../../../import/presentation/providers/import_providers.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
-import '../../../solve/presentation/notifiers/solve_notifier.dart';
-
-part 'home_screen.g.dart';
-
-@riverpod
-Future<List<PuzzleMetadata>> puzzleList(Ref ref) async {
-  final repo = ref.watch(importRepositoryProvider);
-  return repo.getAllMetadata();
-}
+import '../../../../core/utils/time_format.dart';
+import '../../../archive/domain/models/archive_entry.dart';
+import '../../../archive/presentation/providers/archive_providers.dart';
+import '../../../stats/presentation/providers/stats_providers.dart';
+import '../providers/home_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -24,356 +17,95 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final puzzlesAsync = ref.watch(puzzleListProvider);
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final statsAsync = ref.watch(statsDataProvider);
+    final archiveAsync = ref.watch(archiveEntriesProvider);
+
+    final currentStreak = statsAsync.when(
+      data: (s) => s.currentStreak,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Crosscue'),
-        centerTitle: true,
         actions: [
-          _ContinueButton(ref: ref, theme: theme, colorScheme: colorScheme),
+          // Streak indicator
+          if (currentStreak > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🔥', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 3),
+                  Text(
+                    '$currentStreak',
+                    style: TextStyle(
+                      fontFamily: CrosscueTypography.robotoMono,
+                      fontSize: CrosscueTypography.timer,
+                      color: _onSurface2(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
+      floatingActionButton: _ImportFAB(),
       body: puzzlesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) {
-          final hasInProgress = puzzles.any((p) => p.status == PuzzleStatus.inProgress);
-          final hasCompleted = puzzles.any((p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed);
+          if (puzzles.isEmpty) {
+            return _EmptyState(
+              onOpenSources: () => context.push(Routes.sourceManagement),
+            );
+          }
 
-          return Column(
+          // Use archive entries for richer status info; fall back to metadata
+          final entries = archiveAsync.asData?.value ?? [];
+          final entryMap = {for (final e in entries) e.puzzleId: e};
+
+          // Sort by import date (most recent first) to pick "current" puzzle
+          final sorted = List<PuzzleMetadata>.from(puzzles)
+            ..sort((a, b) => b.importedAt.compareTo(a.importedAt));
+
+          final featured = sorted.first;
+          final recent =
+              sorted.length > 1 ? sorted.sublist(1) : <PuzzleMetadata>[];
+
+          return ListView(
             children: [
-              // Current puzzle / Continue section
-              if (hasInProgress || hasCompleted)
-                _ContinueSection(
-                  puzzles: puzzles,
-                  onTap: (p) => context.push(Routes.solveFor(Uri.encodeComponent(p.id))),
-                  theme: theme,
-                  colorScheme: colorScheme,
-                ),
-              // Puzzle list (all puzzles)
-              Expanded(
-                child: puzzles.isEmpty
-                    ? _EmptyState(
-                        onOpenSources: () => context.push(Routes.sourceManagement),
-                        theme: theme,
-                        colorScheme: colorScheme,
-                      )
-                    : _PuzzleList(
-                        puzzles: puzzles,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                      ),
+              // ── Today / Current section ──────────────────────────────
+              const _SectionHeader('Current'),
+              _FeaturedPuzzle(
+                puzzle: featured,
+                entry: entryMap[featured.id],
+                onTap: () => context
+                    .push(Routes.solveFor(Uri.encodeComponent(featured.id))),
               ),
+
+              if (recent.isNotEmpty) ...[
+                Divider(height: 1, color: _divider(context)),
+                const _SectionHeader('Recent'),
+                ...recent.map((p) {
+                  final entry = entryMap[p.id];
+                  return _PuzzleRow(
+                    puzzle: p,
+                    entry: entry,
+                    onTap: () => context
+                        .push(Routes.solveFor(Uri.encodeComponent(p.id))),
+                  );
+                }),
+              ],
+
+              // Bottom padding so FAB doesn't overlap last row
+              const SizedBox(height: 88),
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.onOpenSources,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final VoidCallback onOpenSources;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
-      child: Column(
-        children: [
-          Icon(
-            Icons.grid_on_outlined,
-            size: 48,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No puzzles yet',
-            style: theme.textTheme.titleMedium?.copyWith(
-              height: 1.25,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Import puzzles from Settings to get started.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.source_outlined),
-            label: const Text('Open Puzzle Sources'),
-            onPressed: onOpenSources,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Continue section (current puzzle)
-// ---------------------------------------------------------------------------
-
-class _ContinueSection extends StatelessWidget {
-  const _ContinueSection({
-    required this.puzzles,
-    required this.onTap,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final List<PuzzleMetadata> puzzles;
-  final ValueChanged<PuzzleMetadata> onTap;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final inProgress = puzzles.firstWhere(
-      (p) => p.status == PuzzleStatus.inProgress,
-      orElse: () => puzzles.firstWhere(
-        (p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed,
-        orElse: () => puzzles.first,
-      ),
-    );
-
-    return Container(
-      color: colorScheme.surfaceVariant,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            child: Text(
-              '${inProgress.width}×${inProgress.height}',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          title: Text(
-            inProgress.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            inProgress.author.isNotEmpty ? inProgress.author : 'Unknown author',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Icon(
-            Icons.chevron_right,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          onTap: () => onTap(inProgress),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Puzzle list (recent / all)
-// ---------------------------------------------------------------------------
-
-class _PuzzleList extends StatelessWidget {
-  const _PuzzleList({
-    required this.puzzles,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final List<PuzzleMetadata> puzzles;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        const _SectionHeader('Current'),
-        _FeaturedPuzzle(
-          puzzle: puzzles.first,
-          onTap: () => context.push(
-              Routes.solveFor(Uri.encodeComponent(puzzles.first.id))),
-        ),
-
-        if (puzzles.length > 1) ...[
-          const Divider(height: 1),
-          const _SectionHeader('Recent'),
-          ...puzzles.sublist(1).map((p) {
-            return _PuzzleRow(
-              puzzle: p,
-              onTap: () => context.push(
-                  Routes.solveFor(Uri.encodeComponent(p.id))),
-            );
-          }),
-        ],
-
-        // Bottom padding so FAB doesn't overlap last row
-        const SizedBox(height: 88),
-      ],
-    );
-  }
-}
-
-class _FeaturedPuzzle extends StatelessWidget {
-  const _FeaturedPuzzle({
-    required this.puzzle,
-    required this.onTap,
-  });
-
-  final PuzzleMetadata puzzle;
-  final ValueChanged<PuzzleMetadata> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: colorScheme.surfaceVariant,
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primaryContainer,
-          child: Text(
-            '${puzzle.width}×${puzzle.height}',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          puzzle.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          puzzle.author.isNotEmpty ? puzzle.author : 'Unknown author',
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          size: 18,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _PuzzleRow extends StatelessWidget {
-  const _PuzzleRow({
-    required this.puzzle,
-    required this.onTap,
-  });
-
-  final PuzzleMetadata puzzle;
-  final ValueChanged<PuzzleMetadata> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: colorScheme.surfaceVariant,
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primaryContainer,
-          child: Text(
-            '${puzzle.width}×${puzzle.height}',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          puzzle.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          puzzle.author.isNotEmpty ? puzzle.author : 'Unknown author',
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          size: 18,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Section header
-// ---------------------------------------------------------------------------
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        CrosscueSpacing.screenH,
-        20,
-        CrosscueSpacing.screenH,
-        CrosscueSpacing.sectionBot,
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: const TextStyle(
-          fontSize: CrosscueTypography.label,
-          fontWeight: FontWeight.w600,
-          color: CrosscueColors.onSurface3Light,
-        ),
       ),
     );
   }
@@ -399,42 +131,304 @@ class _ImportFAB extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Continue button (streak indicator)
+// Section header
 // ---------------------------------------------------------------------------
 
-class _ContinueButton extends StatelessWidget {
-  const _ContinueButton({
-    required this.ref,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final WidgetRef ref;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.label);
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.play_arrow),
-      tooltip: 'Continue',
-      onPressed: () async {
-        final puzzlesAsync = ref.watch(puzzleListProvider);
-        final puzzles = await puzzlesAsync;
-        final hasInProgress = puzzles.any((p) => p.status == PuzzleStatus.inProgress);
-        final hasCompleted = puzzles.any((p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed);
-
-        if (hasInProgress || hasCompleted) {
-          final inProgress = puzzles.firstWhere(
-            (p) => p.status == PuzzleStatus.inProgress,
-            orElse: () => puzzles.firstWhere(
-              (p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed,
-              orElse: () => puzzles.first,
-            ),
-          );
-          context.push(Routes.solveFor(Uri.encodeComponent(inProgress.id)));
-        }
-      },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionBot,
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: _onSurface3(context),
+          letterSpacing: 1.0,
+          height: 1.2,
+        ),
+      ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Featured puzzle block (current / top of list)
+// ---------------------------------------------------------------------------
+
+class _FeaturedPuzzle extends StatelessWidget {
+  const _FeaturedPuzzle({
+    required this.puzzle,
+    required this.entry,
+    required this.onTap,
+  });
+
+  final PuzzleMetadata puzzle;
+  final ArchiveEntry? entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _ctaLabel(entry);
+    final sub = [
+      if (puzzle.author.isNotEmpty) puzzle.author,
+      puzzle.width == puzzle.height
+          ? '${puzzle.width}×${puzzle.height}'
+          : '${puzzle.width}×${puzzle.height}',
+    ].join(' · ');
+
+    final elapsed = entry?.elapsedMs;
+    final elapsedStr = elapsed != null && elapsed > 0
+        ? '⏱ ${formatMs(elapsed)} elapsed'
+        : null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: CrosscueSpacing.screenH),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            puzzle.title,
+            style: TextStyle(
+              fontSize: CrosscueTypography.puzzleTitle,
+              fontWeight: FontWeight.w600,
+              color: _onSurface1(context),
+              height: 1.25,
+            ),
+          ),
+          if (sub.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              sub,
+              style: TextStyle(
+                fontSize: CrosscueTypography.bodySmall,
+                color: _onSurface2(context),
+              ),
+            ),
+          ],
+          if (elapsedStr != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              elapsedStr,
+              style: TextStyle(
+                fontSize: CrosscueTypography.bodySmall,
+                color: _onSurface2(context),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: onTap,
+            style: FilledButton.styleFrom(
+              backgroundColor: CrosscueColors.primary,
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(46),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(CrosscueSpacing.buttonRadius),
+              ),
+              textStyle: const TextStyle(
+                fontSize: CrosscueTypography.body,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+              ),
+            ),
+            child: Text(status),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  String _ctaLabel(ArchiveEntry? e) {
+    if (e == null || e.isNotStarted) return 'SOLVE';
+    if (e.isCompleted || e.isRevealed) return 'REVIEW';
+    return 'CONTINUE SOLVING';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recent puzzle row (flat)
+// ---------------------------------------------------------------------------
+
+class _PuzzleRow extends StatelessWidget {
+  const _PuzzleRow({
+    required this.puzzle,
+    required this.entry,
+    required this.onTap,
+  });
+
+  final PuzzleMetadata puzzle;
+  final ArchiveEntry? entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _statusColor(context, entry);
+    final statusIcon = _statusIcon(entry);
+    final sub = _subtitle(entry, puzzle);
+    final onSurface3 = _onSurface3(context);
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: CrosscueSpacing.rowV,
+              horizontal: CrosscueSpacing.screenH,
+            ),
+            child: Row(
+              children: [
+                // Status icon — 20dp wide
+                SizedBox(
+                  width: 20,
+                  child: Icon(statusIcon, size: 16, color: statusColor),
+                ),
+                const SizedBox(width: 12),
+                // Title + subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        puzzle.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: CrosscueTypography.body,
+                          fontWeight: FontWeight.w500,
+                          color: _onSurface1(context),
+                        ),
+                      ),
+                      if (sub != null)
+                        Text(
+                          sub,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: CrosscueTypography.label,
+                            color: onSurface3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: onSurface3,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Divider(
+          height: 1,
+          indent: 50, // 16 screenH + 20 icon + 12 gap + 2 extra = 50 per spec
+          endIndent: 0,
+          color: _divider(context),
+        ),
+      ],
+    );
+  }
+
+  Color _statusColor(BuildContext context, ArchiveEntry? e) {
+    if (e == null || e.isNotStarted) return _onSurface3(context);
+    if (e.isCleanSolve) return CrosscueColors.primary;
+    if (e.isCompleted || e.isRevealed) return _correct(context);
+    return CrosscueColors.primaryMid; // in progress
+  }
+
+  IconData _statusIcon(ArchiveEntry? e) {
+    if (e == null || e.isNotStarted) return Icons.radio_button_unchecked;
+    if (e.isCleanSolve) return Icons.star_rounded;
+    if (e.isCompleted || e.isRevealed) return Icons.check_circle_outline;
+    return Icons.timelapse_rounded; // in progress
+  }
+
+  String? _subtitle(ArchiveEntry? e, PuzzleMetadata p) {
+    final parts = <String>[];
+    if (p.author.isNotEmpty) parts.add(p.author);
+    parts.add('${p.width}×${p.height}');
+    return parts.join(' · ');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onOpenSources});
+  final VoidCallback onOpenSources;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.grid_on_outlined,
+            size: 72,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No puzzles yet',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add local puzzles from Settings to get started.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            icon: const Icon(Icons.source_outlined),
+            label: const Text('Open Puzzle Sources'),
+            onPressed: onOpenSources,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+bool _isLight(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.light;
+
+Color _onSurface1(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface1Light
+    : CrosscueColors.onSurface1Dark;
+
+Color _onSurface2(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface2Light
+    : CrosscueColors.onSurface2Dark;
+
+Color _onSurface3(BuildContext context) => _isLight(context)
+    ? CrosscueColors.onSurface3Light
+    : CrosscueColors.onSurface3Dark;
+
+Color _divider(BuildContext context) => _isLight(context)
+    ? CrosscueColors.dividerLight
+    : CrosscueColors.dividerDark;
+
+Color _correct(BuildContext context) => _isLight(context)
+    ? CrosscueColors.correctLight
+    : CrosscueColors.correctDark;

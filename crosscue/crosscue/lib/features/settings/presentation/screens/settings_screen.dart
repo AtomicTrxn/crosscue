@@ -4,26 +4,19 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/routing/routes.dart';
-import '../../../../core/settings/settings_providers.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../providers/settings_providers.dart';
+
+const _appVersionLabel = 'v1.0.0';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeModeAsync = ref.watch(themeModeProvider);
-    final hapticsAsync = ref.watch(hapticsEnabledProvider);
-
-    final themeMode = themeModeAsync.when(
-      data: (m) => m,
-      loading: () => ThemeMode.system,
-      error: (_, __) => ThemeMode.system,
-    );
-    final hapticsEnabled = hapticsAsync.when(
-      data: (v) => v,
-      loading: () => true,
-      error: (_, __) => true,
+    final themeMode = _value(
+      ref.watch(themeModeProvider),
+      fallback: ThemeMode.system,
     );
 
     return Scaffold(
@@ -63,7 +56,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                   selected: {themeMode},
-                  onSelectionChanged: (Set<ThemeMode> selection) {
+                  onSelectionChanged: (selection) {
                     ref
                         .read(themeModeProvider.notifier)
                         .setMode(selection.first);
@@ -72,45 +65,141 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const Divider(),
-          const _SectionHeader('Feedback'),
-          SwitchListTile(
-            value: hapticsEnabled,
+          _RowDivider(),
+          _SwitchRow(
+            value: _value(ref.watch(colorblindModeProvider), fallback: false),
+            onChanged: (_) {
+              ref.read(colorblindModeProvider.notifier).toggle();
+              _showStub(context, 'Colorblind palette is not wired yet');
+            },
+            leading: Icons.contrast_outlined,
+            title: 'Colorblind mode',
+            subtitle: 'Use alternate puzzle feedback colors',
+          ),
+          const _SectionHeader('Gameplay'),
+          _SwitchRow(
+            value: _value(ref.watch(hapticsEnabledProvider), fallback: true),
             onChanged: (_) =>
                 ref.read(hapticsEnabledProvider.notifier).toggle(),
-            secondary: const Icon(Icons.vibration_outlined),
-            title: const Text('Haptic feedback'),
-            subtitle: const Text('Vibrate on cell tap and puzzle events'),
+            leading: Icons.vibration_outlined,
+            title: 'Haptic feedback',
+            subtitle: 'Vibrate on cell tap and puzzle events',
           ),
-          const Divider(),
+          _SwitchRow(
+            value: _value(ref.watch(soundsEnabledProvider), fallback: false),
+            onChanged: (_) {
+              ref.read(soundsEnabledProvider.notifier).toggle();
+              _showStub(context, 'Sounds are not wired yet');
+            },
+            leading: Icons.volume_up_outlined,
+            title: 'Sounds',
+            subtitle: 'Play subtle feedback sounds',
+          ),
+          _SwitchRow(
+            value: _value(ref.watch(skipFilledCellsProvider), fallback: false),
+            onChanged: (_) =>
+                ref.read(skipFilledCellsProvider.notifier).toggle(),
+            leading: Icons.skip_next_outlined,
+            title: 'Skip filled cells',
+            subtitle: 'Jump over filled letters while typing',
+          ),
+          _NavRow(
+            leading: Icons.keyboard_outlined,
+            title: 'Keyboard layout',
+            subtitle: 'QWERTY',
+            onTap: () =>
+                _showStub(context, 'Keyboard layouts are not wired yet'),
+          ),
+          const _SectionHeader('Notifications'),
+          _SwitchRow(
+            value: _value(ref.watch(puzzleReminderProvider), fallback: false),
+            onChanged: (_) {
+              ref.read(puzzleReminderProvider.notifier).toggle();
+              _showStub(context, 'Reminder scheduling is deferred');
+            },
+            leading: Icons.notifications_outlined,
+            title: 'Puzzle reminder',
+            subtitle: 'Off',
+          ),
+          _NavRow(
+            leading: Icons.schedule_outlined,
+            title: 'Puzzle reminder time',
+            subtitle: '8:00 AM',
+            onTap: () => _showStub(context, 'Reminder scheduling is deferred'),
+          ),
+          _SwitchRow(
+            value: _value(ref.watch(streakReminderProvider), fallback: false),
+            onChanged: (_) {
+              ref.read(streakReminderProvider.notifier).toggle();
+              _showStub(context, 'Streak reminders are deferred');
+            },
+            leading: Icons.local_fire_department_outlined,
+            title: 'Streak reminder',
+            subtitle: 'Off',
+          ),
+          _NavRow(
+            leading: Icons.schedule_outlined,
+            title: 'Streak reminder time',
+            subtitle: '7:00 PM',
+            onTap: () => _showStub(context, 'Streak reminders are deferred'),
+          ),
           const _SectionHeader('Puzzles'),
-          ListTile(
-            leading: const Icon(Icons.source_outlined),
-            title: const Text('Puzzle sources'),
-            subtitle: const Text('Import local files and manage sources'),
-            trailing: const Icon(Icons.chevron_right),
+          _NavRow(
+            leading: Icons.source_outlined,
+            title: 'Puzzle sources',
+            subtitle: 'Import local files and manage sources',
             onTap: () => context.push(Routes.sourceManagement),
           ),
-          const Divider(),
-          const _SectionHeader('Data'),
-          ListTile(
-            leading: Icon(
-              Icons.delete_forever_outlined,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            title: Text(
-              'Clear all data',
+          const _SectionHeader('Privacy & Data'),
+          _SwitchRow(
+            value: _value(ref.watch(crashReportingProvider), fallback: false),
+            onChanged: (_) {
+              ref.read(crashReportingProvider.notifier).toggle();
+              _showStub(context, 'Crash reporting is opt-in and not wired yet');
+            },
+            leading: Icons.bug_report_outlined,
+            title: 'Crash reporting',
+            subtitle: 'Share anonymous crash reports',
+          ),
+          _NavRow(
+            leading: Icons.upload_file_outlined,
+            title: 'Export data',
+            subtitle: 'Save a local backup',
+            onTap: () => _showStub(context, 'Data export is not wired yet'),
+          ),
+          _NavRow(
+            leading: Icons.download_outlined,
+            title: 'Import data',
+            subtitle: 'Restore from a local backup',
+            onTap: () => _showStub(context, 'Data import is not wired yet'),
+          ),
+          _NavRow(
+            leading: Icons.delete_forever_outlined,
+            title: 'Clear all data',
+            subtitle: 'Delete all puzzles, progress and settings',
+            trailing: Text(
+              'Delete',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            subtitle: const Text('Delete all puzzles, progress and settings'),
+            color: Theme.of(context).colorScheme.error,
             onTap: () => _confirmClearAll(context, ref),
           ),
-          const Divider(),
-          const _SectionHeader('About'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('Crosscue'),
-            subtitle: Text('v0.1.0'),
+          const _SectionHeader('Help'),
+          _NavRow(
+            leading: Icons.help_outline,
+            title: 'How to play',
+            subtitle: 'Replay the onboarding walkthrough',
+            onTap: () => context.push(Routes.onboarding),
+          ),
+          _NavRow(
+            leading: Icons.info_outline,
+            title: 'About Crosscue',
+            subtitle: _appVersionLabel,
+            onTap: () => showAboutDialog(
+              context: context,
+              applicationName: 'Crosscue',
+              applicationVersion: _appVersionLabel,
+            ),
           ),
         ],
       ),
@@ -144,16 +233,18 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (confirmed != true) return;
 
-    // Delete all puzzles (cascades to clues, sessions, cell_progress) and all
-    // settings rows. Sources seed row is preserved by cascade direction.
     final db = ref.read(appDatabaseProvider);
     await db.clearAllUserData();
 
-    // Invalidate cached settings so the router re-reads has_seen_onboarding
-    // (now false) and redirects to onboarding on the next build.
     ref.invalidate(hasSeenOnboardingProvider);
     ref.invalidate(themeModeProvider);
     ref.invalidate(hapticsEnabledProvider);
+    ref.invalidate(colorblindModeProvider);
+    ref.invalidate(soundsEnabledProvider);
+    ref.invalidate(skipFilledCellsProvider);
+    ref.invalidate(puzzleReminderProvider);
+    ref.invalidate(streakReminderProvider);
+    ref.invalidate(crashReportingProvider);
 
     if (context.mounted) context.go(Routes.home);
   }
@@ -175,10 +266,102 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: CrosscueColors.onSurface3Light,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 1.0,
             ),
       ),
     );
   }
+}
+
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.value,
+    required this.onChanged,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final IconData leading;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SwitchListTile(
+          value: value,
+          onChanged: onChanged,
+          secondary: Icon(leading),
+          title: Text(title),
+          subtitle: Text(subtitle),
+        ),
+        _RowDivider(),
+      ],
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  const _NavRow({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.trailing,
+    this.color,
+  });
+
+  final IconData leading;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Widget? trailing;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color;
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(leading, color: effectiveColor),
+          title: Text(title, style: TextStyle(color: effectiveColor)),
+          subtitle: Text(subtitle),
+          trailing: trailing ?? const Icon(Icons.chevron_right),
+          onTap: onTap,
+        ),
+        _RowDivider(),
+      ],
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Divider(
+      height: 1,
+      indent: CrosscueSpacing.screenH,
+      color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
+    );
+  }
+}
+
+T _value<T>(AsyncValue<T> value, {required T fallback}) {
+  return switch (value) {
+    AsyncData(:final value) => value,
+    _ => fallback,
+  };
+}
+
+void _showStub(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+  );
 }

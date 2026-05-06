@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
-import '../../../home/presentation/screens/home_screen.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 import '../notifiers/import_notifier.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {

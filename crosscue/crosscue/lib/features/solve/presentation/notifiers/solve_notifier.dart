@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../features/import/presentation/providers/import_providers.dart';
+import '../../../../features/settings/presentation/providers/settings_providers.dart';
 import '../../../../features/solve/presentation/providers/solve_providers.dart';
+import '../../../../features/stats/presentation/providers/stats_providers.dart';
 import '../../domain/models/cell_progress.dart';
 import '../../domain/models/clue.dart';
 import '../../domain/models/enums.dart';
@@ -38,6 +40,7 @@ class SolveNotifier extends _$SolveNotifier {
     if (puzzle == null) throw Exception('Puzzle not found: $puzzleId');
 
     final session = await solveRepo.createOrResumeSession(puzzle);
+    final stats = await ref.read(statsRepositoryProvider).getStats();
 
     _startTimer();
 
@@ -54,6 +57,13 @@ class SolveNotifier extends _$SolveNotifier {
       usedCheck: session.usedCheck,
       usedReveal: session.usedReveal,
       cleanSolveEligible: session.cleanSolveEligible,
+      previousPersonalBestMs: _personalBestForSize(
+        width: puzzle.width,
+        height: puzzle.height,
+        personalBestMiniMs: stats.personalBestMiniMs,
+        personalBest15x15Ms: stats.personalBest15x15Ms,
+        personalBest21x21Ms: stats.personalBest21x21Ms,
+      ),
     );
   }
 
@@ -112,7 +122,8 @@ class SolveNotifier extends _$SolveNotifier {
           ? Direction.down
           : Direction.across;
       if (_hasWord(s, row, col, newDir)) {
-        state = AsyncData(s.copyWith(focus: s.focus.copyWith(direction: newDir)));
+        state =
+            AsyncData(s.copyWith(focus: s.focus.copyWith(direction: newDir)));
       }
     } else {
       Direction dir = s.focus.direction;
@@ -128,18 +139,20 @@ class SolveNotifier extends _$SolveNotifier {
   // Keyboard input
   // ---------------------------------------------------------------------------
 
-  void inputLetter(String letter) {
+  bool inputLetter(String letter) {
     final s = _s;
-    if (s == null || s.isPaused) return;
+    if (s == null || s.isPaused) return false;
 
     final upper = letter.toUpperCase();
-    if (!RegExp(r'^[A-Z]$').hasMatch(upper)) return;
+    if (!RegExp(r'^[A-Z]$').hasMatch(upper)) return false;
 
     final r = s.focus.row;
     final c = s.focus.col;
 
     // Do not overwrite a revealed cell (topic-11)
-    if (s.progress.cell(r, c).state == CellState.revealed) return;
+    if (s.progress.cell(r, c).state == CellState.revealed) return false;
+    final clue = _clueFor(s, r, c, s.focus.direction);
+    final wasWordComplete = clue != null && _isWordComplete(s, clue);
 
     // Any typed letter resets the cell to plain filled — clears checkedIncorrect,
     // checkedCorrect, and pencil marks alike (topic-11).
@@ -148,10 +161,17 @@ class SolveNotifier extends _$SolveNotifier {
       c,
       s.progress.cell(r, c).copyWith(letter: upper, state: CellState.filled),
     );
-    final nextFocus = _advanceFocus(s, r, c);
-    state = AsyncData(s.copyWith(progress: newProgress, focus: nextFocus));
+    final nextFocus = _advanceFocus(
+      s,
+      r,
+      c,
+      skipFilledCells: _skipFilledCellsEnabled(),
+    );
+    final updated = s.copyWith(progress: newProgress, focus: nextFocus);
+    state = AsyncData(updated);
     _scheduleSave();
     _checkCompletion();
+    return clue != null && !wasWordComplete && _isWordComplete(updated, clue);
   }
 
   void backspace() {
@@ -175,8 +195,8 @@ class SolveNotifier extends _$SolveNotifier {
       if (prev.state == CellState.revealed) {
         state = AsyncData(s.copyWith(focus: prevFocus));
       } else {
-        final newProgress =
-            s.progress.withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
+        final newProgress = s.progress
+            .withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
         state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
       }
     }
@@ -240,22 +260,24 @@ class SolveNotifier extends _$SolveNotifier {
   // ---------------------------------------------------------------------------
 
   /// Checks the focused cell. Empty cells are skipped silently.
-  void checkCell() {
+  CheckResult checkCell() {
     final s = _s;
-    if (s == null || _isTerminal(s.status)) return;
+    if (s == null || _isTerminal(s.status)) return CheckResult.noop;
 
     final r = s.focus.row;
     final c = s.focus.col;
     final cell = s.progress.cell(r, c);
-    if (cell.letter.isEmpty) return;
+    if (cell.letter.isEmpty) return CheckResult.noop;
 
-    final correct =
-        cell.letter.toUpperCase() == s.puzzle.grid.cell(r, c).solution.toUpperCase();
+    final correct = cell.letter.toUpperCase() ==
+        s.puzzle.grid.cell(r, c).solution.toUpperCase();
     final newState =
         correct ? CellState.checkedCorrect : CellState.checkedIncorrect;
 
     final newProgress = s.progress.withCell(
-      r, c, cell.copyWith(state: newState),
+      r,
+      c,
+      cell.copyWith(state: newState),
     );
 
     state = AsyncData(s.copyWith(
@@ -264,28 +286,37 @@ class SolveNotifier extends _$SolveNotifier {
       usedCheck: true,
     ));
     _scheduleSave();
+    return correct ? CheckResult.allCorrect : CheckResult.hasIncorrect;
   }
 
   /// Checks all filled cells in the active word.
-  void checkWord() {
+  CheckResult checkWord() {
     final s = _s;
-    if (s == null || _isTerminal(s.status)) return;
+    if (s == null || _isTerminal(s.status)) return CheckResult.noop;
 
     final clue = _clueFor(s, s.focus.row, s.focus.col, s.focus.direction);
-    if (clue == null) return;
+    if (clue == null) return CheckResult.noop;
 
     var progress = s.progress;
+    var checkedAny = false;
+    var hasIncorrect = false;
     for (final (r, c) in _clueCells(clue)) {
       final cell = progress.cell(r, c);
       if (cell.letter.isEmpty) continue;
       final correct = cell.letter.toUpperCase() ==
           s.puzzle.grid.cell(r, c).solution.toUpperCase();
+      checkedAny = true;
+      hasIncorrect = hasIncorrect || !correct;
       progress = progress.withCell(
-        r, c,
+        r,
+        c,
         cell.copyWith(
-            state: correct ? CellState.checkedCorrect : CellState.checkedIncorrect),
+            state: correct
+                ? CellState.checkedCorrect
+                : CellState.checkedIncorrect),
       );
     }
+    if (!checkedAny) return CheckResult.noop;
 
     state = AsyncData(s.copyWith(
       progress: progress,
@@ -293,14 +324,17 @@ class SolveNotifier extends _$SolveNotifier {
       usedCheck: true,
     ));
     _scheduleSave();
+    return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
   }
 
   /// Checks all filled cells in the puzzle.
-  void checkGrid() {
+  CheckResult checkGrid() {
     final s = _s;
-    if (s == null || _isTerminal(s.status)) return;
+    if (s == null || _isTerminal(s.status)) return CheckResult.noop;
 
     var progress = s.progress;
+    var checkedAny = false;
+    var hasIncorrect = false;
     for (var r = 0; r < s.puzzle.height; r++) {
       for (var c = 0; c < s.puzzle.width; c++) {
         if (s.puzzle.grid.cell(r, c).isBlack) continue;
@@ -308,13 +342,19 @@ class SolveNotifier extends _$SolveNotifier {
         if (cell.letter.isEmpty) continue;
         final correct = cell.letter.toUpperCase() ==
             s.puzzle.grid.cell(r, c).solution.toUpperCase();
+        checkedAny = true;
+        hasIncorrect = hasIncorrect || !correct;
         progress = progress.withCell(
-          r, c,
+          r,
+          c,
           cell.copyWith(
-              state: correct ? CellState.checkedCorrect : CellState.checkedIncorrect),
+              state: correct
+                  ? CellState.checkedCorrect
+                  : CellState.checkedIncorrect),
         );
       }
     }
+    if (!checkedAny) return CheckResult.noop;
 
     state = AsyncData(s.copyWith(
       progress: progress,
@@ -322,6 +362,7 @@ class SolveNotifier extends _$SolveNotifier {
       usedCheck: true,
     ));
     _scheduleSave();
+    return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
   }
 
   // ---------------------------------------------------------------------------
@@ -339,7 +380,8 @@ class SolveNotifier extends _$SolveNotifier {
 
     final solution = s.puzzle.grid.cell(r, c).solution;
     final newProgress = s.progress.withCell(
-      r, c,
+      r,
+      c,
       s.progress.cell(r, c).copyWith(
             letter: solution,
             state: CellState.revealed,
@@ -369,7 +411,8 @@ class SolveNotifier extends _$SolveNotifier {
     for (final (r, c) in _clueCells(clue)) {
       final solution = s.puzzle.grid.cell(r, c).solution;
       progress = progress.withCell(
-        r, c,
+        r,
+        c,
         progress.cell(r, c).copyWith(
               letter: solution,
               state: CellState.revealed,
@@ -400,7 +443,8 @@ class SolveNotifier extends _$SolveNotifier {
         if (s.puzzle.grid.cell(r, c).isBlack) continue;
         final solution = s.puzzle.grid.cell(r, c).solution;
         progress = progress.withCell(
-          r, c,
+          r,
+          c,
           progress.cell(r, c).copyWith(
                 letter: solution,
                 state: CellState.revealed,
@@ -460,20 +504,35 @@ class SolveNotifier extends _$SolveNotifier {
   // Focus movement
   // ---------------------------------------------------------------------------
 
-  FocusPosition _advanceFocus(SolveState s, int row, int col) {
+  FocusPosition _advanceFocus(
+    SolveState s,
+    int row,
+    int col, {
+    required bool skipFilledCells,
+  }) {
     final clue = _clueFor(s, row, col, s.focus.direction);
     if (clue == null) return s.focus;
     final cells = _clueCells(clue);
     final idx = cells.indexWhere((p) => p.$1 == row && p.$2 == col);
     if (idx == -1 || idx >= cells.length - 1) return s.focus;
-    for (var i = idx + 1; i < cells.length; i++) {
-      final (nr, nc) = cells[i];
-      if (s.progress.cell(nr, nc).letter.isEmpty) {
-        return FocusPosition(row: nr, col: nc, direction: s.focus.direction);
+    if (skipFilledCells) {
+      for (var i = idx + 1; i < cells.length; i++) {
+        final (nr, nc) = cells[i];
+        if (s.progress.cell(nr, nc).letter.isEmpty) {
+          return FocusPosition(row: nr, col: nc, direction: s.focus.direction);
+        }
       }
     }
     final (nr, nc) = cells[idx + 1];
     return FocusPosition(row: nr, col: nc, direction: s.focus.direction);
+  }
+
+  bool _skipFilledCellsEnabled() {
+    return ref.read(skipFilledCellsProvider).when(
+          data: (value) => value,
+          loading: () => false,
+          error: (_, __) => false,
+        );
   }
 
   FocusPosition _retreatFocus(SolveState s, int row, int col) {
@@ -511,6 +570,18 @@ class SolveNotifier extends _$SolveNotifier {
               : (clue.startRow + i, clue.startCol),
       ];
 
+  bool _isWordComplete(SolveState s, Clue clue) {
+    for (final (r, c) in _clueCells(clue)) {
+      final progress = s.progress.cell(r, c);
+      final solution = s.puzzle.grid.cell(r, c).solution;
+      if (progress.letter.isEmpty ||
+          progress.letter.toUpperCase() != solution.toUpperCase()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // ---------------------------------------------------------------------------
   // Completion check
   // ---------------------------------------------------------------------------
@@ -534,8 +605,9 @@ class SolveNotifier extends _$SolveNotifier {
     _timerSub?.cancel();
     _saveDebounce?.cancel();
 
-    final finalStatus =
-        (s.usedCheck || s.usedReveal) ? PuzzleStatus.solvedWithHelp : PuzzleStatus.solved;
+    final finalStatus = (s.usedCheck || s.usedReveal)
+        ? PuzzleStatus.solvedWithHelp
+        : PuzzleStatus.solved;
     final completed = s.copyWith(status: finalStatus);
     state = AsyncData(completed);
 
@@ -546,20 +618,24 @@ class SolveNotifier extends _$SolveNotifier {
 
   void _persistCompletion(SolveState s) {
     final repo = ref.read(solveRepositoryProvider);
-    repo.markComplete(
-      sessionId: s.sessionId!,
-      puzzleWidth: s.puzzle.width,
-      puzzleHeight: s.puzzle.height,
-      progress: s.progress,
-      focus: s.focus,
-      elapsedMs: s.elapsedSeconds * 1000,
-      status: s.status,
-      completionType: _deriveCompletionType(s),
-      checkCount: s.checkCount,
-      revealCount: s.revealCount,
-      usedCheck: s.usedCheck,
-      usedReveal: s.usedReveal,
-      cleanSolveEligible: s.cleanSolveEligible,
+    unawaited(
+      repo
+          .markComplete(
+            sessionId: s.sessionId!,
+            puzzleWidth: s.puzzle.width,
+            puzzleHeight: s.puzzle.height,
+            progress: s.progress,
+            focus: s.focus,
+            elapsedMs: s.elapsedSeconds * 1000,
+            status: s.status,
+            completionType: _deriveCompletionType(s),
+            checkCount: s.checkCount,
+            revealCount: s.revealCount,
+            usedCheck: s.usedCheck,
+            usedReveal: s.usedReveal,
+            cleanSolveEligible: s.cleanSolveEligible,
+          )
+          .then((_) => ref.invalidate(statsDataProvider)),
     );
   }
 
@@ -575,4 +651,25 @@ class SolveNotifier extends _$SolveNotifier {
       status == PuzzleStatus.solved ||
       status == PuzzleStatus.solvedWithHelp ||
       status == PuzzleStatus.revealed;
+
+  int? _personalBestForSize({
+    required int width,
+    required int height,
+    required int? personalBestMiniMs,
+    required int? personalBest15x15Ms,
+    required int? personalBest21x21Ms,
+  }) {
+    if (width <= 7 && height <= 7) return personalBestMiniMs;
+    if (width == 15 && height == 15) return personalBest15x15Ms;
+    if (width == 21 && height == 21) return personalBest21x21Ms;
+    return null;
+  }
+}
+
+enum CheckResult {
+  noop,
+  allCorrect,
+  hasIncorrect;
+
+  bool get shouldVibrate => this == CheckResult.hasIncorrect;
 }

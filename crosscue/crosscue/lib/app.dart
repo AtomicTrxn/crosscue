@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/routing/app_router.dart';
-import 'core/settings/settings_providers.dart';
 import 'core/theme/app_theme.dart';
+import 'features/settings/presentation/providers/settings_providers.dart';
 
 /// Root application widget. Reads the router and theme mode from Riverpod
 /// and wraps MaterialApp.router with Material You dynamic color support.

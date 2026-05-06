@@ -23,6 +23,7 @@ class SolveState {
     this.usedCheck = false,
     this.usedReveal = false,
     this.cleanSolveEligible = true,
+    this.previousPersonalBestMs,
   });
 
   final Puzzle puzzle;
@@ -54,6 +55,9 @@ class SolveState {
 
   /// False once any reveal action is used; disqualifies clean solve and PB.
   final bool cleanSolveEligible;
+
+  /// Previous clean personal best for this puzzle's size bucket, if one exists.
+  final int? previousPersonalBestMs;
 
   // ---------------------------------------------------------------------------
   // Derived helpers
@@ -93,8 +97,7 @@ class SolveState {
     ];
   }
 
-  bool isFocused(int row, int col) =>
-      row == focus.row && col == focus.col;
+  bool isFocused(int row, int col) => row == focus.row && col == focus.col;
 
   bool isWordHighlighted(int row, int col) {
     for (final (r, c) in activeWordCells) {
@@ -121,6 +124,7 @@ class SolveState {
     bool? usedCheck,
     bool? usedReveal,
     bool? cleanSolveEligible,
+    int? previousPersonalBestMs,
   }) {
     return SolveState(
       puzzle: puzzle,
@@ -135,6 +139,8 @@ class SolveState {
       usedCheck: usedCheck ?? this.usedCheck,
       usedReveal: usedReveal ?? this.usedReveal,
       cleanSolveEligible: cleanSolveEligible ?? this.cleanSolveEligible,
+      previousPersonalBestMs:
+          previousPersonalBestMs ?? this.previousPersonalBestMs,
     );
   }
 

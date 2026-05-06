@@ -96,12 +96,12 @@ adb -s emulator-5554 logcat -c
 
 Run after any change to `@freezed` models, `@riverpod` notifiers, or Drift tables:
 ```bash
-flutter pub run build_runner build --delete-conflicting-outputs
+flutter pub run build_runner build
 ```
 
 Or watch mode during active development:
 ```bash
-flutter pub run build_runner watch --delete-conflicting-outputs
+flutter pub run build_runner watch
 ```
 
 ---

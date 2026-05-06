@@ -1,15 +1,16 @@
 import 'dart:typed_data';
 
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/models/puzzle_metadata.dart';
 import '../../domain/models/parse_error.dart';
+import '../../domain/repositories/import_repository.dart';
 import '../../domain/repositories/puzzle_parser.dart';
 import '../daos/puzzle_dao.dart';
 import '../parsers/ipuz_parser.dart';
 import '../parsers/puz_parser.dart';
 
 /// Orchestrates parsing + persistence for puzzle imports.
-class ImportRepositoryImpl {
+class ImportRepositoryImpl implements ImportRepository {
   ImportRepositoryImpl({required PuzzleDao dao})
       : _dao = dao,
         _parsers = const [PuzParser(), IpuzParser()];
@@ -20,6 +21,7 @@ class ImportRepositoryImpl {
   /// Import [bytes] of an unknown format.
   ///
   /// Returns [ImportJobResult] discriminating success / duplicate / failure.
+  @override
   Future<ImportJobResult> importBytes(Uint8List bytes) async {
     // Find a capable parser
     PuzzleParser? parser;
@@ -50,10 +52,13 @@ class ImportRepositoryImpl {
     return ImportJobResult.success(puzzle);
   }
 
+  @override
   Future<List<PuzzleMetadata>> getAllMetadata() => _dao.getAllMetadata();
 
+  @override
   Future<Puzzle?> getPuzzle(String id) => _dao.getPuzzle(id);
 
+  @override
   Future<void> deletePuzzle(String id) => _dao.deletePuzzle(id);
 }
 

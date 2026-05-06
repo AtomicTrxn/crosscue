@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'nav_icons.dart';
+
 /// Persistent 4-tab shell. Shown for Home, Archive, Stats, and Settings tabs.
 /// Full-page routes (Solve, Import, Onboarding) push over this shell.
 class AppShell extends StatelessWidget {
@@ -17,23 +19,23 @@ class AppShell extends StatelessWidget {
         onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: CrosscueNavIcon.home(selected: false),
+            selectedIcon: CrosscueNavIcon.home(selected: true),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.archive_outlined),
-            selectedIcon: Icon(Icons.archive),
+            icon: CrosscueNavIcon.archive(selected: false),
+            selectedIcon: CrosscueNavIcon.archive(selected: true),
             label: 'Archive',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
+            icon: CrosscueNavIcon.stats(selected: false),
+            selectedIcon: CrosscueNavIcon.stats(selected: true),
             label: 'Stats',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
+            icon: CrosscueNavIcon.settings(selected: false),
+            selectedIcon: CrosscueNavIcon.settings(selected: true),
             label: 'Settings',
           ),
         ],

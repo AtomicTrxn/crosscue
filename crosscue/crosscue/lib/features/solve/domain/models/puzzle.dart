@@ -1,8 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../core/domain/models/puzzle_metadata.dart';
 import 'clue.dart';
 import 'grid.dart';
-import 'puzzle_metadata.dart';
 import 'solution_cell.dart';
 
 part 'puzzle.freezed.dart';
@@ -19,6 +19,7 @@ abstract class Puzzle with _$Puzzle {
     required PuzzleMetadata metadata,
     required Grid<SolutionCell> grid,
     required List<Clue> clues,
+
     /// Optional notes / instructions from the constructor.
     @Default('') String notes,
   }) = _Puzzle;

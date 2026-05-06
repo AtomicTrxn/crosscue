@@ -45,7 +45,7 @@ All commands must be run from the **project root**: `/Users/tomhess/Claude/Cross
 
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
-/Users/tomhess/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs
+/Users/tomhess/flutter/bin/flutter pub run build_runner build
 
 # Lint — must be 0 issues before committing
 /Users/tomhess/flutter/bin/flutter analyze

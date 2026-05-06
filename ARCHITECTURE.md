@@ -11,11 +11,11 @@ lib/
 ├── app.dart                         # MaterialApp + router wiring
 ├── core/
 │   ├── database/                    # Drift DB definition + all tables
+│   ├── domain/models/               # Cross-feature domain models
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
-│   ├── settings/                    # AppSettingsDao, AppSettingsRepository, settings providers
 │   ├── theme/                       # Material 3 theme + CrosswordTheme extension
-│   ├── utils/                       # Result<T,E> type
+│   ├── utils/                       # Result<T,E>, shared formatting helpers
 │   ├── entitlement/                 # License / paywall stubs (Phase 1: free only)
 │   ├── sync/                        # Sync adapter interface + NoOp impl
 │   └── telemetry/                   # Crash reporter stub
@@ -50,16 +50,16 @@ Lists imported puzzles and launches the import flow.
 ```
 home/
 └── presentation/
+    ├── providers/
+    │   └── home_providers.dart # puzzleListProvider (@riverpod Future<List<PuzzleMetadata>>)
     └── screens/
         └── home_screen.dart   # HomeScreen + _PuzzleList + _PuzzleTile + _EmptyState
-                               # puzzleListProvider (@riverpod Future<List<PuzzleMetadata>>)
-                               # Invalidated by ImportNotifier after successful import
 ```
 
 **Data flow:**
 ```
 HomeScreen (ref.watch puzzleListProvider)
-  → ImportRepositoryImpl.getAllMetadata()   # sorted by createdAt DESC
+  → ImportRepository.getAllMetadata()   # sorted by createdAt DESC
   → _PuzzleTile.onTap
       → context.push('/solve/${Uri.encodeComponent(puzzle.id)}')
 ```
@@ -98,7 +98,7 @@ ImportScreen
   → ImportNotifier.pickAndImport()
     → FilePicker (FileType.any — see CONVENTIONS.md)
     → PuzParser / IpuzParser (canParse → parse → Result<Puzzle, ParseError>)
-    → ImportRepositoryImpl.importBytes()
+      → ImportRepository.importBytes()
       → PuzzleDao.existsByChecksum()   # duplicate guard
       → PuzzleDao.insertPuzzle()       # transaction: puzzles + clues rows
     → state = ImportSuccess / ImportDuplicate / ImportFailure
@@ -109,20 +109,20 @@ ImportScreen
 
 ## Feature: `solve`
 
-Owns all domain models (other features import from here). Handles the interactive grid.
+Owns solve-specific models and the interactive grid. Shared puzzle metadata lives in `core/domain/models`.
 
 ```
 solve/
 ├── domain/
-│   └── models/
+│   ├── models/
 │       ├── enums.dart            # Direction, CellState, PuzzleStatus, PuzzleFormat, LicenseStatus, etc.
 │       ├── grid.dart             # Grid<T> — plain Dart class (NOT Freezed — generics)
 │       ├── solution_cell.dart    # @freezed abstract class — one cell in the solution
 │       ├── cell_progress.dart    # @freezed abstract class — one cell of user progress
 │       ├── clue.dart             # @freezed abstract class
 │       ├── focus_position.dart   # @freezed abstract class
-│       ├── puzzle_metadata.dart  # @freezed abstract class (includes publishDate)
 │       └── puzzle.dart           # @freezed abstract class — full puzzle (metadata + grid + clues)
+│   └── repositories/solve_repository.dart # Abstract solve contract
 ├── data/
 │   ├── daos/solve_session_dao.dart          # Autosave, resume, getLatestSession()
 │   └── repositories/solve_repository_impl.dart  # createOrResumeSession + save
@@ -143,7 +143,7 @@ solve/
 ```
 SolveScreen (ref.watch solveProvider(puzzleId))
   → SolveNotifier.build(puzzleId)
-      → ImportRepositoryImpl.getPuzzle(id)   # loads from DB
+      → ImportRepository.getPuzzle(id)   # loads from DB
       → Grid<CellProgress>.generate(...)     # blank progress
       → _startTimer()                        # Stream<int>.periodic tick
       → return SolveState(puzzle, progress, focus, ...)
@@ -264,23 +264,23 @@ core/providers/core_providers.dart
   entitlementServiceProvider — @Riverpod(keepAlive: true) FreeEntitlementService (Phase 1)
   crashReporterProvider      — @Riverpod(keepAlive: true) NoOpCrashReporter (Phase 1)
 
-core/settings/settings_providers.dart
+features/settings/presentation/providers/settings_providers.dart
   hasSeenOnboardingProvider  — @riverpod Future<bool>
   themeModeProvider          — @riverpod class ThemeModeNotifier
   hapticsEnabledProvider     — @riverpod class HapticsEnabledNotifier
 
 import/.../import_providers.dart
-  importRepositoryProvider   — @Riverpod(keepAlive: true) ImportRepositoryImpl
+  importRepositoryProvider   — @Riverpod(keepAlive: true) ImportRepository
 
 solve/.../solve_providers.dart
-  solveRepositoryProvider    — @Riverpod(keepAlive: true) SolveRepositoryImpl
+  solveRepositoryProvider    — @Riverpod(keepAlive: true) SolveRepository
 
 archive/.../archive_providers.dart
-  archiveRepositoryProvider  — @Riverpod(keepAlive: true) ArchiveRepositoryImpl
+  archiveRepositoryProvider  — @Riverpod(keepAlive: true) ArchiveRepository
   archiveEntriesProvider     — @riverpod Future<List<ArchiveEntry>>
 
 stats/.../stats_providers.dart
-  statsRepositoryProvider    — @Riverpod(keepAlive: true) StatsRepositoryImpl
+  statsRepositoryProvider    — @Riverpod(keepAlive: true) StatsRepository
   statsDataProvider          — @riverpod Future<StatsData>
 ```
 

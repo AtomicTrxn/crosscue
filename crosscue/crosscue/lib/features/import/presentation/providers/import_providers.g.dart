@@ -13,9 +13,9 @@ part of 'import_providers.dart';
 final importRepositoryProvider = ImportRepositoryProvider._();
 
 final class ImportRepositoryProvider extends $FunctionalProvider<
-    ImportRepositoryImpl,
-    ImportRepositoryImpl,
-    ImportRepositoryImpl> with $Provider<ImportRepositoryImpl> {
+    ImportRepository,
+    ImportRepository,
+    ImportRepository> with $Provider<ImportRepository> {
   ImportRepositoryProvider._()
       : super(
           from: null,
@@ -32,22 +32,21 @@ final class ImportRepositoryProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $ProviderElement<ImportRepositoryImpl> $createElement(
-          $ProviderPointer pointer) =>
+  $ProviderElement<ImportRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  ImportRepositoryImpl create(Ref ref) {
+  ImportRepository create(Ref ref) {
     return importRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ImportRepositoryImpl value) {
+  Override overrideWithValue(ImportRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ImportRepositoryImpl>(value),
+      providerOverride: $SyncValueProvider<ImportRepository>(value),
     );
   }
 }
 
-String _$importRepositoryHash() => r'84f819d4937e1a4447b94796add4b62b4cbab13f';
+String _$importRepositoryHash() => r'a498a4c72975e8d4db20b59872feca4a758d4060';

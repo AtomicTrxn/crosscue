@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'enums.dart';
+import '../../../features/solve/domain/models/enums.dart';
 
 part 'puzzle_metadata.freezed.dart';
 

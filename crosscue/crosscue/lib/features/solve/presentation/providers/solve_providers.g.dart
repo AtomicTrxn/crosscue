@@ -12,10 +12,8 @@ part of 'solve_providers.dart';
 @ProviderFor(solveRepository)
 final solveRepositoryProvider = SolveRepositoryProvider._();
 
-final class SolveRepositoryProvider extends $FunctionalProvider<
-    SolveRepositoryImpl,
-    SolveRepositoryImpl,
-    SolveRepositoryImpl> with $Provider<SolveRepositoryImpl> {
+final class SolveRepositoryProvider extends $FunctionalProvider<SolveRepository,
+    SolveRepository, SolveRepository> with $Provider<SolveRepository> {
   SolveRepositoryProvider._()
       : super(
           from: null,
@@ -32,22 +30,21 @@ final class SolveRepositoryProvider extends $FunctionalProvider<
 
   @$internal
   @override
-  $ProviderElement<SolveRepositoryImpl> $createElement(
-          $ProviderPointer pointer) =>
+  $ProviderElement<SolveRepository> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  SolveRepositoryImpl create(Ref ref) {
+  SolveRepository create(Ref ref) {
     return solveRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SolveRepositoryImpl value) {
+  Override overrideWithValue(SolveRepository value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<SolveRepositoryImpl>(value),
+      providerOverride: $SyncValueProvider<SolveRepository>(value),
     );
   }
 }
 
-String _$solveRepositoryHash() => r'd9f8277b714b0e07ebaf04435ded4529bedfb7d1';
+String _$solveRepositoryHash() => r'2ab8e3b28532d3b6c0953d8df7cd116145cade75';
