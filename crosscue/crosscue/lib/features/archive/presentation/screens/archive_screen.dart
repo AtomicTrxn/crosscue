@@ -226,7 +226,7 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? CrosscueColors.wordHLLight : Colors.transparent,
           border: Border.all(
-            color: selected ? CrosscueColors.wordHLDark : CrosscueColors.dividerLight,
+            color: selected ? CrosscueColors.wordHLLight : CrosscueColors.dividerLight,
           ),
           borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
         ),

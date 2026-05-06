@@ -175,8 +175,8 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              letterSpacing: 1.2,
+              color: CrosscueColors.onSurface3Light,
+              letterSpacing: 1.0,
             ),
       ),
     );

@@ -105,6 +105,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: CrosscueColors.deepNavy,
       body: SafeArea(
         child: Column(
           children: [
@@ -118,8 +119,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   const SizedBox(width: 60),
                   if (_step < 3) _StepDots(current: _step, total: 3),
+                  // Bug fix: white translucent text on navy background (spec §07)
                   TextButton(
                     onPressed: _skip,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white.withValues(alpha: 0.65),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     child: const Text('Skip'),
                   ),
                 ],
@@ -186,9 +195,10 @@ class _StepDots extends StatelessWidget {
           width: active ? 16 : 8,
           height: 8,
           decoration: BoxDecoration(
+            // Active: #FDD835 yellow pill; inactive: white 30% on navy bg
             color: active
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outlineVariant,
+                ? CrosscueColors.cellActiveLight
+                : Colors.white.withValues(alpha: 0.30),
             borderRadius: BorderRadius.circular(4),
           ),
         );
