@@ -1,9 +1,9 @@
-import '../../../../core/domain/models/puzzle_metadata.dart';
-import '../../../../core/database/app_database.dart';
-import '../../../import/data/daos/puzzle_dao.dart';
-import '../../../solve/data/daos/solve_session_dao.dart';
-import '../../domain/models/archive_entry.dart';
-import '../../domain/repositories/archive_repository.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
+import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
+import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
+import 'package:crosscue/features/archive/domain/repositories/archive_repository.dart';
 
 /// Provides the Archive screen's data by combining [PuzzleDao] metadata with
 /// the latest [SolveSessionRow] for each puzzle.

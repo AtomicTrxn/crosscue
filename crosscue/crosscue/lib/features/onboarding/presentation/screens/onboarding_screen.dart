@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/crossword_theme.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Mock 5×5 grid data (hardcoded, never stored in Drift — topic-17 §7)

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/utils/time_format.dart';
-import '../../domain/models/stats_data.dart';
-import '../providers/stats_providers.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/utils/time_format.dart';
+import 'package:crosscue/features/stats/domain/models/stats_data.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});

@@ -3,15 +3,15 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 
-import '../../../../core/utils/result.dart';
-import '../../../solve/domain/models/clue.dart';
-import '../../../solve/domain/models/enums.dart';
-import '../../../solve/domain/models/grid.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../../../core/domain/models/puzzle_metadata.dart';
-import '../../../solve/domain/models/solution_cell.dart';
-import '../../domain/models/parse_error.dart';
-import '../../domain/repositories/puzzle_parser.dart';
+import 'package:crosscue/core/utils/result.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/features/solve/domain/models/solution_cell.dart';
+import 'package:crosscue/features/import/domain/models/parse_error.dart';
+import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart';
 
 /// Parses Across Lite .puz binary files.
 ///

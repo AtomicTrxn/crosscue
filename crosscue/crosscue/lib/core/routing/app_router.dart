@@ -1,15 +1,15 @@
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../features/archive/presentation/screens/archive_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/import/presentation/screens/import_screen.dart';
-import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
-import '../../features/settings/presentation/screens/source_management_screen.dart';
-import '../../features/settings/presentation/screens/settings_screen.dart';
-import '../../features/solve/presentation/screens/solve_screen.dart';
-import '../../features/stats/presentation/screens/stats_screen.dart';
-import '../../features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
+import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
+import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
+import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/source_management_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/settings_screen.dart';
+import 'package:crosscue/features/solve/presentation/screens/solve_screen.dart';
+import 'package:crosscue/features/stats/presentation/screens/stats_screen.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'app_shell.dart';
 import 'routes.dart';
 

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/providers/core_providers.dart';
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../providers/settings_providers.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 
 const _appVersionLabel = 'v1.0.0';
 

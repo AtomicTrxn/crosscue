@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import '../../../solve/domain/models/grid.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/models/solution_cell.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/solution_cell.dart';
 
 /// Converts a [Puzzle]'s grid to/from a JSON map for DB storage.
 class GridSerializer {

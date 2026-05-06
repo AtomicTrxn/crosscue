@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/sources/local_import_source.dart';
-import '../../data/sources/source_registry.dart';
+import 'package:crosscue/features/import/data/sources/local_import_source.dart';
+import 'package:crosscue/features/import/data/sources/source_registry.dart';
 
 /// App-wide registry of puzzle sources that are known to Crosscue.
 ///

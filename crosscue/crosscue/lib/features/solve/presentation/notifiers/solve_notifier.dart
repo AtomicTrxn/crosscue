@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../features/import/presentation/providers/import_providers.dart';
-import '../../../../features/settings/presentation/providers/settings_providers.dart';
-import '../../../../features/solve/presentation/providers/solve_providers.dart';
-import '../../../../features/stats/presentation/providers/stats_providers.dart';
-import '../../domain/models/cell_progress.dart';
-import '../../domain/models/clue.dart';
-import '../../domain/models/enums.dart';
-import '../../domain/models/focus_position.dart';
-import '../../domain/models/grid.dart';
+import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
 import 'solve_state.dart';
 
 part 'solve_notifier.g.dart';

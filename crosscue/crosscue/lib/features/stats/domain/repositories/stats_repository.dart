@@ -1,4 +1,4 @@
-import '../models/stats_data.dart';
+import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 
 /// Abstract contract for the stats data layer.
 abstract class StatsRepository {

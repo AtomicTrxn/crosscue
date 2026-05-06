@@ -1,9 +1,9 @@
-import '../../domain/models/cell_progress.dart';
-import '../../domain/models/clue.dart';
-import '../../domain/models/enums.dart';
-import '../../domain/models/focus_position.dart';
-import '../../domain/models/grid.dart';
-import '../../domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
 
 /// Full state for the solve screen.
 ///

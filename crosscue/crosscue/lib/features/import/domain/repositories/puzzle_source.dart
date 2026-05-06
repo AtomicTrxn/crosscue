@@ -1,4 +1,4 @@
-import '../../../solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
 
 /// Describes a puzzle source and its legal / capability metadata.
 ///

@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/utils/time_format.dart';
-import '../../domain/models/archive_entry.dart';
-import '../providers/archive_providers.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/utils/time_format.dart';
+import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Sort / filter enums

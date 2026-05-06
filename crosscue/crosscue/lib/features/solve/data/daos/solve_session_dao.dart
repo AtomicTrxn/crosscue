@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/tables/cell_progress_table.dart';
-import '../../../../core/database/tables/solve_sessions_table.dart';
-import '../../../solve/domain/models/cell_progress.dart';
-import '../../../solve/domain/models/enums.dart';
-import '../../../solve/domain/models/grid.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/database/tables/cell_progress_table.dart';
+import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
 
 part 'solve_session_dao.g.dart';
 

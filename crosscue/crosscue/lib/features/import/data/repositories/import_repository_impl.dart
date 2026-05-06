@@ -1,13 +1,13 @@
 import 'dart:typed_data';
 
-import '../../../../core/domain/models/puzzle_metadata.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../domain/models/parse_error.dart';
-import '../../domain/repositories/import_repository.dart';
-import '../../domain/repositories/puzzle_parser.dart';
-import '../daos/puzzle_dao.dart';
-import '../parsers/ipuz_parser.dart';
-import '../parsers/puz_parser.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/import/domain/models/parse_error.dart';
+import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
+import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart';
+import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
+import 'package:crosscue/features/import/data/parsers/ipuz_parser.dart';
+import 'package:crosscue/features/import/data/parsers/puz_parser.dart';
 
 /// Orchestrates parsing + persistence for puzzle imports.
 class ImportRepositoryImpl implements ImportRepository {

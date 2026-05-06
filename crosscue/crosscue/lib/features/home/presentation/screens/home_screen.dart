@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/domain/models/puzzle_metadata.dart';
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/utils/time_format.dart';
-import '../../../archive/domain/models/archive_entry.dart';
-import '../../../archive/presentation/providers/archive_providers.dart';
-import '../../../stats/presentation/providers/stats_providers.dart';
-import '../providers/home_providers.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/utils/time_format.dart';
+import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

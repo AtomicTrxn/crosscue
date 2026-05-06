@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/crossword_theme.dart';
-import '../../domain/models/clue.dart';
-import '../../domain/models/enums.dart';
-import '../../../settings/presentation/providers/settings_providers.dart';
-import '../notifiers/solve_notifier.dart';
-import '../notifiers/solve_state.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'crossword_grid_painter.dart';
 
 /// The interactive crossword grid.

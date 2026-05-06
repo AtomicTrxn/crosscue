@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../core/providers/core_providers.dart';
-import '../../domain/repositories/app_settings_repository.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
+import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 
 part 'settings_providers.g.dart';
 
@@ -13,7 +14,7 @@ part 'settings_providers.g.dart';
 @Riverpod(keepAlive: true)
 AppSettingsRepository appSettings(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
-  return AppSettingsRepository(dao: db.appSettingsDao);
+  return AppSettingsRepositoryImpl(dao: db.appSettingsDao);
 }
 
 // ---------------------------------------------------------------------------

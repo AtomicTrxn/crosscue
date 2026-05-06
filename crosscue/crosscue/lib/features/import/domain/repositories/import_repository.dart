@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import '../../../../core/domain/models/puzzle_metadata.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../data/repositories/import_repository_impl.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/import/data/repositories/import_repository_impl.dart';
 
 /// Abstract contract for the import data layer.
 abstract class ImportRepository {

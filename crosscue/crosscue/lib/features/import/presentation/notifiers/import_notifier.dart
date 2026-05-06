@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../data/repositories/import_repository_impl.dart';
-import '../../domain/models/parse_error.dart';
-import '../providers/import_providers.dart';
+import 'package:crosscue/features/import/data/repositories/import_repository_impl.dart';
+import 'package:crosscue/features/import/domain/models/parse_error.dart';
+import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 
 part 'import_notifier.g.dart';
 

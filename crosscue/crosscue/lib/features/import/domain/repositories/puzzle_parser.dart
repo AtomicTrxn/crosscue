@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import '../../../../core/utils/result.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../models/parse_error.dart';
+import 'package:crosscue/core/utils/result.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/import/domain/models/parse_error.dart';
 
 /// Interface implemented by each puzzle-format parser.
 abstract interface class PuzzleParser {

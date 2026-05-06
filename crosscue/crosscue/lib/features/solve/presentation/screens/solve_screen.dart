@@ -8,19 +8,19 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:vibration/vibration.dart';
 
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/utils/time_format.dart';
-import '../../../settings/presentation/providers/settings_providers.dart';
-import '../../../stats/presentation/providers/stats_providers.dart';
-import '../../domain/models/enums.dart';
-import '../notifiers/solve_notifier.dart';
-import '../notifiers/solve_state.dart';
-import '../widgets/clue_bar.dart';
-import '../widgets/clue_panel.dart';
-import '../widgets/crossword_grid.dart';
-import '../widgets/crossword_keyboard.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/app_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/utils/time_format.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/clue_bar.dart';
+import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_keyboard.dart';
 
 class SolveScreen extends ConsumerStatefulWidget {
   const SolveScreen({super.key, required this.puzzleId});

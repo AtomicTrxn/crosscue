@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../home/presentation/providers/home_providers.dart';
-import '../notifiers/import_notifier.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:crosscue/features/import/presentation/notifiers/import_notifier.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {
   const ImportScreen({super.key});

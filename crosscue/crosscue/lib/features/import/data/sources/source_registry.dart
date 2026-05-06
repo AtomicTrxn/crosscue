@@ -1,5 +1,5 @@
-import '../../../solve/domain/models/enums.dart';
-import '../../domain/repositories/puzzle_source.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 
 /// Thrown by [SourceRegistry.register] when a caller attempts to register a
 /// source whose [LicenseStatus] is [LicenseStatus.prohibited].

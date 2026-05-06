@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../../../core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'clue.dart';
 import 'grid.dart';
 import 'solution_cell.dart';

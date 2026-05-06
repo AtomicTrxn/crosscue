@@ -1,4 +1,4 @@
-import '../models/archive_entry.dart';
+import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 
 /// Abstract contract for the archive data layer.
 abstract class ArchiveRepository {

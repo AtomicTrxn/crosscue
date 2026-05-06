@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/tables/clues_table.dart';
-import '../../../../core/database/tables/puzzles_table.dart';
-import '../../../solve/domain/models/clue.dart';
-import '../../../solve/domain/models/enums.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../../../core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/database/tables/clues_table.dart';
+import 'package:crosscue/core/database/tables/puzzles_table.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'grid_serializer.dart';
 
 part 'puzzle_dao.g.dart';

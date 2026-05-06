@@ -1,12 +1,12 @@
 import 'package:intl/intl.dart';
 
-import '../../../solve/domain/models/cell_progress.dart';
-import '../../../solve/domain/models/enums.dart';
-import '../../../solve/domain/models/focus_position.dart';
-import '../../../solve/domain/models/grid.dart';
-import '../../../solve/domain/models/puzzle.dart';
-import '../../../solve/domain/repositories/solve_repository.dart';
-import '../daos/solve_session_dao.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
+import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
 
 class SolveRepositoryImpl implements SolveRepository {
   const SolveRepositoryImpl({required this.dao});

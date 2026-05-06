@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/tables/app_settings_table.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/database/tables/app_settings_table.dart';
 
 part 'app_settings_dao.g.dart';
 

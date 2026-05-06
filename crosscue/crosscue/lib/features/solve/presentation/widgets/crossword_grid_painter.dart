@@ -2,13 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/crossword_theme.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../domain/models/cell_progress.dart';
-import '../../domain/models/enums.dart';
-import '../../domain/models/grid.dart';
-import '../../domain/models/puzzle.dart';
-import '../notifiers/solve_state.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 
 /// Paints the crossword grid using direct canvas calls.
 class CrosswordGridPainter extends CustomPainter {

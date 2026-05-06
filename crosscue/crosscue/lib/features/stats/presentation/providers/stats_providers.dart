@@ -1,9 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../core/providers/core_providers.dart';
-import '../../data/repositories/stats_repository_impl.dart';
-import '../../domain/models/stats_data.dart';
-import '../../domain/repositories/stats_repository.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/features/stats/data/repositories/stats_repository_impl.dart';
+import 'package:crosscue/features/stats/domain/models/stats_data.dart';
+import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
 
 part 'stats_providers.g.dart';
 

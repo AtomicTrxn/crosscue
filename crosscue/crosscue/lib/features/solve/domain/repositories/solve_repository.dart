@@ -1,8 +1,8 @@
-import '../models/cell_progress.dart';
-import '../models/enums.dart';
-import '../models/focus_position.dart';
-import '../models/grid.dart';
-import '../models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/puzzle.dart';
 
 /// Result returned when a solve session is created or resumed.
 final class SessionLoadResult {

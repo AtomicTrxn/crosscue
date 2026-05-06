@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/database/tables/puzzles_table.dart';
-import '../../../../core/database/tables/solve_sessions_table.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/database/tables/puzzles_table.dart';
+import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 
 part 'stats_dao.g.dart';
 

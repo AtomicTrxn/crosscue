@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/routing/routes.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../import/domain/repositories/puzzle_source.dart';
-import '../../../import/presentation/providers/source_registry_provider.dart';
-import '../../../solve/domain/models/enums.dart';
+import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
+import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
   const SourceManagementScreen({super.key});

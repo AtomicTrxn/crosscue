@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/theme/crossword_theme.dart';
-import '../../../../core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
 
 /// Custom QWERTY keyboard for the solve screen (Sprint 10).
 ///

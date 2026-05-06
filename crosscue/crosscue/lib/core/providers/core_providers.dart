@@ -1,11 +1,11 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../database/app_database.dart';
-import '../entitlement/entitlement_service.dart';
-import '../entitlement/free_entitlement_service.dart';
-import '../sync/no_op_sync_adapter.dart';
-import '../sync/sync_adapter.dart';
-import '../telemetry/crash_reporter.dart';
+import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/entitlement/entitlement_service.dart';
+import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
+import 'package:crosscue/core/sync/no_op_sync_adapter.dart';
+import 'package:crosscue/core/sync/sync_adapter.dart';
+import 'package:crosscue/core/telemetry/crash_reporter.dart';
 
 part 'core_providers.g.dart';
 

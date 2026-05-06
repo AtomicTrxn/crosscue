@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/crossword_theme.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../domain/models/clue.dart';
-import '../../domain/models/enums.dart';
-import '../notifiers/solve_state.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/features/solve/domain/models/clue.dart';
+import 'package:crosscue/features/solve/domain/models/enums.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 
 /// Two-column scrollable clue panel (Sprint 10).
 ///

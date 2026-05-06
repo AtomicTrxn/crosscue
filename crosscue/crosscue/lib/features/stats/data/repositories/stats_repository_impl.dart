@@ -1,8 +1,8 @@
 import 'package:intl/intl.dart';
 
-import '../../domain/models/stats_data.dart';
-import '../../domain/repositories/stats_repository.dart';
-import '../daos/stats_dao.dart';
+import 'package:crosscue/features/stats/domain/models/stats_data.dart';
+import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
+import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 
 /// Fetches raw session data from [StatsDao] and computes all aggregated stats
 /// (streaks, averages, personal bests) in pure Dart.
