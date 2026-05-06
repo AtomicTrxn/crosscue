@@ -57,6 +57,13 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
+        // 1px bottom border on every AppBar (spec §01–06)
+        shape: const Border(
+          bottom: BorderSide(
+            color: CrosscueColors.dividerLight,
+            width: 1,
+          ),
+        ),
         titleTextStyle: TextStyle(
           fontFamily: CrosscueTypography.roboto,
           fontSize: CrosscueTypography.screenTitle,

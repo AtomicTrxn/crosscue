@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/crossword_theme.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../domain/models/clue.dart';
 import '../../domain/models/enums.dart';
 import '../notifiers/solve_state.dart';
@@ -169,10 +170,10 @@ class _ClueColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headerStyle = TextStyle(
+    const headerStyle = TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w700,
-      color: xwTheme.cellNumber, // #999999 token
+      color: CrosscueColors.onSurface3Light, // #999999
       letterSpacing: 1.0,
       height: 1.2,
     );
@@ -211,7 +212,7 @@ class _ClueColumn extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: isActive || isCross
               ? xwTheme.clueBarDirection
-              : xwTheme.cellNumber,
+              : CrosscueColors.onSurface3Light, // #999999 per spec
           height: 1.3,
         );
         final textStyle = TextStyle(

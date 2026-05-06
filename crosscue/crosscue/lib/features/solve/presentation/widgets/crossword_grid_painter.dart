@@ -166,7 +166,7 @@ class CrosswordGridPainter extends CustomPainter {
         style: TextStyle(
           fontSize: fontSize,
           color: color,
-          fontFamily: 'RobotoMono',
+          fontFamily: CrosscueTypography.roboto,
           fontWeight: FontWeight.bold,
           height: 1.0,
         ),

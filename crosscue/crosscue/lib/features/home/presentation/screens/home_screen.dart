@@ -204,10 +204,10 @@ class _ContinueSection extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Puzzle list
+// Puzzle list (recent / all)
 // ---------------------------------------------------------------------------
 
-class _PuzzleList extends ConsumerWidget {
+class _PuzzleList extends StatelessWidget {
   const _PuzzleList({
     required this.puzzles,
     required this.theme,
@@ -219,126 +219,221 @@ class _PuzzleList extends ConsumerWidget {
   final ColorScheme colorScheme;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: CrosscueSpacing.rowV),
-      itemCount: puzzles.length,
-      itemBuilder: (context, index) {
-        final puzzle = puzzles[index];
-        return _PuzzleTile(
-          puzzle: puzzle,
-          isCurrent: _isCurrent(puzzle),
-          theme: theme,
-          colorScheme: colorScheme,
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        const _SectionHeader('Current'),
+        _FeaturedPuzzle(
+          puzzle: puzzles.first,
+          onTap: () => context.push(
+              Routes.solveFor(Uri.encodeComponent(puzzles.first.id))),
+        ),
 
-  bool _isCurrent(PuzzleMetadata puzzle) {
-    final hasInProgress = puzzles.any((p) => p.status == PuzzleStatus.inProgress);
-    return hasInProgress && puzzle.status == PuzzleStatus.inProgress;
+        if (puzzles.length > 1) ...[
+          const Divider(height: 1),
+          const _SectionHeader('Recent'),
+          ...puzzles.sublist(1).map((p) {
+            return _PuzzleRow(
+              puzzle: p,
+              onTap: () => context.push(
+                  Routes.solveFor(Uri.encodeComponent(p.id))),
+            );
+          }),
+        ],
+
+        // Bottom padding so FAB doesn't overlap last row
+        const SizedBox(height: 88),
+      ],
+    );
   }
 }
 
-class _PuzzleTile extends StatelessWidget {
-  const _PuzzleTile({
+class _FeaturedPuzzle extends StatelessWidget {
+  const _FeaturedPuzzle({
     required this.puzzle,
-    this.isCurrent = false,
-    required this.theme,
-    required this.colorScheme,
+    required this.onTap,
   });
 
   final PuzzleMetadata puzzle;
-  final bool isCurrent;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
+  final ValueChanged<PuzzleMetadata> onTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isCurrent ? colorScheme.surfaceVariant : null,
+      color: colorScheme.surfaceVariant,
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: EdgeInsets.zero,
         leading: CircleAvatar(
-          backgroundColor: isCurrent
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceVariant,
+          backgroundColor: colorScheme.primaryContainer,
           child: Text(
             '${puzzle.width}×${puzzle.height}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isCurrent
-                  ? colorScheme.onPrimaryContainer
-                  : colorScheme.onSurfaceVariant,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
         title: Text(
           puzzle.title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           puzzle.author.isNotEmpty ? puzzle.author : 'Unknown author',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+          style: const TextStyle(
+            color: Colors.grey,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Icon(
+        trailing: const Icon(
           Icons.chevron_right,
-          color: colorScheme.onSurfaceVariant,
+          size: 18,
         ),
-        onTap: () => context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id))),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _PuzzleRow extends StatelessWidget {
+  const _PuzzleRow({
+    required this.puzzle,
+    required this.onTap,
+  });
+
+  final PuzzleMetadata puzzle;
+  final ValueChanged<PuzzleMetadata> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: colorScheme.surfaceVariant,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          backgroundColor: colorScheme.primaryContainer,
+          child: Text(
+            '${puzzle.width}×${puzzle.height}',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          puzzle.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          puzzle.author.isNotEmpty ? puzzle.author : 'Unknown author',
+          style: const TextStyle(
+            color: Colors.grey,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          size: 18,
+        ),
+        onTap: onTap,
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Continue button (AppBar action)
+// Section header
 // ---------------------------------------------------------------------------
 
-class _ContinueButton extends ConsumerWidget {
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.sectionBot,
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize: CrosscueTypography.label,
+          fontWeight: FontWeight.w600,
+          color: CrosscueColors.onSurface3Light,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FAB — navigate to puzzle sources / import
+// ---------------------------------------------------------------------------
+
+class _ImportFAB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => context.push(Routes.sourceManagement),
+      backgroundColor: CrosscueColors.primary,
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(CrosscueSpacing.fabRadius),
+      ),
+      child: const Icon(Icons.add, size: 26),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Continue button (streak indicator)
+// ---------------------------------------------------------------------------
+
+class _ContinueButton extends StatelessWidget {
   const _ContinueButton({
     required this.ref,
     required this.theme,
     required this.colorScheme,
   });
 
-  final Ref ref;
+  final WidgetRef ref;
   final CrosswordTheme theme;
   final ColorScheme colorScheme;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final puzzlesAsync = ref.watch(puzzleListProvider);
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.play_arrow),
+      tooltip: 'Continue',
+      onPressed: () async {
+        final puzzlesAsync = ref.watch(puzzleListProvider);
+        final puzzles = await puzzlesAsync;
+        final hasInProgress = puzzles.any((p) => p.status == PuzzleStatus.inProgress);
+        final hasCompleted = puzzles.any((p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed);
 
-    return puzzlesAsync.when(
-      loading: () => const SizedBox(width: 40),
-      error: (_, __) => const SizedBox(width: 40),
-      data: (puzzles) {
-        final inProgress = puzzles.firstWhere(
-          (p) => p.status == PuzzleStatus.inProgress,
-          orElse: () => puzzles.firstWhere(
-            (p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed,
-            orElse: () => puzzles.first,
-          ),
-        );
-
-        return IconButton(
-          icon: Icon(
-            Icons.play_arrow,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          tooltip: 'Continue solving',
-          onPressed: () => context.push(Routes.solveFor(Uri.encodeComponent(inProgress.id))),
-        );
+        if (hasInProgress || hasCompleted) {
+          final inProgress = puzzles.firstWhere(
+            (p) => p.status == PuzzleStatus.inProgress,
+            orElse: () => puzzles.firstWhere(
+              (p) => p.status == PuzzleStatus.completed || p.status == PuzzleStatus.revealed,
+              orElse: () => puzzles.first,
+            ),
+          );
+          context.push(Routes.solveFor(Uri.encodeComponent(inProgress.id)));
+        }
       },
     );
   }

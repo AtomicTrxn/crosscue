@@ -42,9 +42,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       appBar: AppBar(
         title: const Text('Archive'),
         actions: [
-          _SortMenuButton(
-            current: _sort,
-            onSelected: (s) => setState(() => _sort = s),
+          // ⊕ import shortcut
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            color: CrosscueColors.primary,
+            tooltip: 'Import puzzle',
+            onPressed: () => context.push(Routes.sourceManagement),
           ),
         ],
       ),
@@ -52,24 +55,32 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (entries) {
-          if (entries.isEmpty) {
-            return const _EmptyArchive();
-          }
+          if (entries.isEmpty) return const _EmptyArchive();
+
           final filtered = _applyFilter(entries, _filter);
           final sorted = _applySort(filtered, _sort);
+
           return Column(
             children: [
+              // Filter chips
               _FilterChips(
                 current: _filter,
                 onSelected: (f) => setState(() => _filter = f),
               ),
+              // Sort bar
+              _SortBar(
+                count: filtered.length,
+                sort: _sort,
+                onSort: (s) => setState(() => _sort = s),
+              ),
+              // List
               Expanded(
                 child: sorted.isEmpty
                     ? const _EmptyFilter()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding: EdgeInsets.zero,
                         itemCount: sorted.length,
-                        itemBuilder: (ctx, i) => _ArchiveTile(
+                        itemBuilder: (ctx, i) => _ArchiveRow(
                           entry: sorted[i],
                           onDelete: () => _confirmDelete(ctx, sorted[i]),
                         ),
@@ -86,10 +97,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       List<ArchiveEntry> entries, _FilterMode filter) {
     return switch (filter) {
       _FilterMode.all => entries,
-      _FilterMode.notStarted =>
-        entries.where((e) => e.isNotStarted).toList(),
-      _FilterMode.inProgress =>
-        entries.where((e) => e.isInProgress).toList(),
+      _FilterMode.notStarted => entries.where((e) => e.isNotStarted).toList(),
+      _FilterMode.inProgress => entries.where((e) => e.isInProgress).toList(),
       _FilterMode.completed =>
         entries.where((e) => e.isCompleted || e.isRevealed).toList(),
     };
@@ -129,8 +138,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Delete'),
@@ -140,48 +149,8 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     );
 
     if (confirmed != true) return;
-    await ref
-        .read(archiveRepositoryProvider)
-        .deletePuzzle(entry.puzzleId);
+    await ref.read(archiveRepositoryProvider).deletePuzzle(entry.puzzleId);
     ref.invalidate(archiveEntriesProvider);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Sort menu button
-// ---------------------------------------------------------------------------
-
-class _SortMenuButton extends StatelessWidget {
-  const _SortMenuButton({required this.current, required this.onSelected});
-
-  final _SortOrder current;
-  final void Function(_SortOrder) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return PopupMenuButton<_SortOrder>(
-      tooltip: 'Sort by',
-      icon: Icon(Icons.sort, color: colorScheme.onSurfaceVariant),
-      initialValue: current,
-      onSelected: onSelected,
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          value: _SortOrder.importDate,
-          child: Text('Import date', style: theme.textTheme.bodyMedium),
-        ),
-        PopupMenuItem(
-          value: _SortOrder.puzzleDate,
-          child: Text('Puzzle date', style: theme.textTheme.bodyMedium),
-        ),
-        PopupMenuItem(
-          value: _SortOrder.title,
-          child: Text('Title (A–Z)', style: theme.textTheme.bodyMedium),
-        ),
-      ],
-    );
   }
 }
 
@@ -197,24 +166,27 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
-        children: _FilterMode.values
-            .map((f) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(_filterLabel(f), style: theme.textTheme.bodySmall),
-                    selected: current == f,
-                    onSelected: (_) => onSelected(f),
-                    selectedColor: colorScheme.surfaceVariant,
-                    checkmarkColor: colorScheme.primary,
-                  ),
-                ))
-            .toList(),
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: CrosscueColors.dividerLight, width: 1),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: CrosscueSpacing.screenH, vertical: 10),
+        child: Row(
+          children: _FilterMode.values
+              .map((f) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _FilterChip(
+                      label: _filterLabel(f),
+                      selected: current == f,
+                      onTap: () => onSelected(f),
+                    ),
+                  ))
+              .toList(),
+        ),
       ),
     );
   }
@@ -227,92 +199,254 @@ class _FilterChips extends StatelessWidget {
       };
 }
 
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
+        decoration: BoxDecoration(
+          color: selected ? CrosscueColors.primaryContLight : Colors.transparent,
+          border: Border.all(
+            color: selected ? CrosscueColors.wordHLLight : CrosscueColors.dividerLight,
+          ),
+          borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: CrosscueTypography.bodySmall,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected
+                ? CrosscueColors.primary
+                : CrosscueColors.onSurface3Light,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Archive tile
+// Sort bar
 // ---------------------------------------------------------------------------
 
-class _ArchiveTile extends StatelessWidget {
-  const _ArchiveTile({required this.entry, required this.onDelete});
+class _SortBar extends StatelessWidget {
+  const _SortBar({
+    required this.count,
+    required this.sort,
+    required this.onSort,
+  });
+
+  final int count;
+  final _SortOrder sort;
+  final void Function(_SortOrder) onSort;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 8,
+        horizontal: CrosscueSpacing.screenH,
+      ),
+      child: Row(
+        children: [
+          Text(
+            '$count ${count == 1 ? 'puzzle' : 'puzzles'}',
+            style: const TextStyle(
+              fontSize: CrosscueTypography.label,
+              color: CrosscueColors.onSurface3Light,
+            ),
+          ),
+          const Spacer(),
+          PopupMenuButton<_SortOrder>(
+            initialValue: sort,
+            onSelected: onSort,
+            tooltip: 'Sort',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Sort: ${_sortLabel(sort)} ↓',
+                  style: const TextStyle(
+                    fontSize: CrosscueTypography.label,
+                    fontWeight: FontWeight.w500,
+                    color: CrosscueColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _SortOrder.importDate,
+                child: Text('Import date'),
+              ),
+              PopupMenuItem(
+                value: _SortOrder.puzzleDate,
+                child: Text('Puzzle date'),
+              ),
+              PopupMenuItem(
+                value: _SortOrder.title,
+                child: Text('Title (A–Z)'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _sortLabel(_SortOrder s) => switch (s) {
+        _SortOrder.importDate => 'Date',
+        _SortOrder.puzzleDate => 'Pub. Date',
+        _SortOrder.title => 'Title',
+      };
+}
+
+// ---------------------------------------------------------------------------
+// Archive row (flat design)
+// ---------------------------------------------------------------------------
+
+class _ArchiveRow extends StatelessWidget {
+  const _ArchiveRow({required this.entry, required this.onDelete});
 
   final ArchiveEntry entry;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final (iconData, iconColor) = _iconAndColor(entry);
+    final subtitle = _subtitleParts(entry).join(' · ');
+    final (statusNote, statusColor) = _statusNote(entry);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      onTap: () => context.push(Routes.solveFor(Uri.encodeComponent(entry.puzzleId))),
-      onLongPress: onDelete,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            _StatusIcon(entry: entry),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: entry.isInProgress ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _subtitle(entry),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => context
+              .push(Routes.solveFor(Uri.encodeComponent(entry.puzzleId))),
+          onLongPress: onDelete,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: CrosscueSpacing.rowV,
+              horizontal: CrosscueSpacing.screenH,
             ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: colorScheme.onSurfaceVariant,
-              size: 18,
+            child: Row(
+              children: [
+                // Status icon — 22dp wide
+                SizedBox(
+                  width: 22,
+                  child: Icon(iconData, size: 18, color: iconColor),
+                ),
+                const SizedBox(width: 10),
+                // Text block
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: CrosscueTypography.body,
+                          fontWeight: FontWeight.w500,
+                          color: CrosscueColors.onSurface1Light,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty)
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: CrosscueTypography.label,
+                            color: CrosscueColors.onSurface3Light,
+                          ),
+                        ),
+                      if (statusNote != null)
+                        Text(
+                          statusNote,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: CrosscueTypography.label,
+                            fontWeight: FontWeight.w500,
+                            color: statusColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: CrosscueColors.onSurface3Light,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        const Divider(
+          height: 1,
+          indent: 52, // 16 screenH + 22 icon col + 10 gap + 4 extra = 52 per spec
+          endIndent: 0,
+          color: CrosscueColors.dividerLight,
+        ),
+      ],
     );
   }
 
-  String _subtitle(ArchiveEntry entry) {
-    final parts = <String>[];
-
-    final dateStr = _puzzleDateLabel(entry);
-    if (dateStr != null) parts.add(dateStr);
-    parts.add(entry.sizeLabel);
-
-    if (entry.isNotStarted) {
-      parts.add('Not started');
-    } else if (entry.isInProgress) {
-      final t = entry.elapsedMs != null ? _formatMs(entry.elapsedMs!) : '';
-      parts.add('In progress${t.isNotEmpty ? ' · $t elapsed' : ''}');
-    } else if (entry.isCompleted) {
-      final t = entry.elapsedMs != null ? _formatMs(entry.elapsedMs!) : '';
-      parts.add('Completed${t.isNotEmpty ? ' · $t' : ''}');
-    } else if (entry.isRevealed) {
-      parts.add('Revealed');
+  (IconData, Color) _iconAndColor(ArchiveEntry e) {
+    if (e.isCleanSolve) {
+      return (Icons.star_rounded, CrosscueColors.primary);
     }
-
-    return parts.join(' · ');
+    if (e.isCompleted || e.isRevealed) {
+      return (Icons.check_circle_outline_rounded, CrosscueColors.correctLight);
+    }
+    if (e.isInProgress) {
+      return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
+    }
+    return (Icons.radio_button_unchecked_rounded, CrosscueColors.onSurface3Light);
   }
 
-  static String? _puzzleDateLabel(ArchiveEntry entry) {
-    final date = entry.publishDate ?? entry.importedAt;
-    return DateFormat('MMM d').format(date.toLocal());
+  List<String> _subtitleParts(ArchiveEntry e) {
+    final parts = <String>[];
+    final date = e.publishDate ?? e.importedAt;
+    parts.add(DateFormat('d MMM yyyy').format(date.toLocal()));
+    parts.add(e.sizeLabel);
+    return parts;
+  }
+
+  (String?, Color) _statusNote(ArchiveEntry e) {
+    if (e.isNotStarted) return (null, Colors.transparent);
+    if (e.isInProgress) {
+      final t = e.elapsedMs != null ? _formatMs(e.elapsedMs!) : '';
+      return (
+        'In progress${t.isNotEmpty ? ' · $t' : ''}',
+        CrosscueColors.primaryMid,
+      );
+    }
+    if (e.isCompleted) {
+      final t = e.elapsedMs != null ? _formatMs(e.elapsedMs!) : '';
+      return (
+        'Completed${t.isNotEmpty ? ' · $t' : ''}',
+        CrosscueColors.correctLight,
+      );
+    }
+    if (e.isRevealed) return ('Revealed', CrosscueColors.onSurface2Light);
+    return (null, Colors.transparent);
   }
 }
 
@@ -327,21 +461,26 @@ class _StatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CrosswordTheme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final (iconData, iconColor) = _iconAndColor(entry);
 
     return Icon(
-      _getStatusIconData(entry),
+      iconData,
       size: 24,
-      color: _getStatusColor(entry),
+      color: iconColor,
     );
   }
 
-  IconData _getStatusIconData(ArchiveEntry entry) {
-    if (entry.isCleanSolve) return Icons.star_rounded;
-    if (entry.isCompleted || entry.isRevealed) return Icons.check_circle_rounded;
-    if (entry.isInProgress) return Icons.timelapse_rounded;
-    return Icons.radio_button_unchecked_rounded;
+  (IconData, Color) _iconAndColor(ArchiveEntry e) {
+    if (e.isCleanSolve) {
+      return (Icons.star_rounded, CrosscueColors.primary);
+    }
+    if (e.isCompleted || e.isRevealed) {
+      return (Icons.check_circle_outline_rounded, CrosscueColors.correctLight);
+    }
+    if (e.isInProgress) {
+      return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
+    }
+    return (Icons.radio_button_unchecked_rounded, CrosscueColors.onSurface3Light);
   }
 
   Color _getStatusColor(ArchiveEntry entry) {

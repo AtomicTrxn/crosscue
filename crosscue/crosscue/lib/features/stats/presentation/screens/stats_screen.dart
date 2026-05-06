@@ -32,7 +32,7 @@ class StatsScreen extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Body
+// Body — fully flat, no cards
 // ---------------------------------------------------------------------------
 
 class _StatsBody extends StatelessWidget {
@@ -44,42 +44,32 @@ class _StatsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.zero,
       children: [
-        _StreakSection(
-          stats: stats,
-          theme: theme,
-          colorScheme: Theme.of(context).colorScheme,
-        ),
-        const SizedBox(height: CrosscueSpacing.screenM),
-        _TotalsSection(
-          stats: stats,
-          theme: theme,
-          colorScheme: Theme.of(context).colorScheme,
-        ),
-        const SizedBox(height: CrosscueSpacing.screenM),
+        // ── Streak ────────────────────────────────────────────────────────
+        _StreakSection(stats: stats),
+        const _SectionDivider(),
+
+        // ── Solve times ───────────────────────────────────────────────────
         if (stats.hasSolves) ...[
-          _TimesSection(
-            stats: stats,
-            theme: theme,
-            colorScheme: Theme.of(context).colorScheme,
-          ),
-          const SizedBox(height: CrosscueSpacing.screenM),
+          _TimesSection(stats: stats),
+          const _SectionDivider(),
         ],
+
+        // ── Totals ────────────────────────────────────────────────────────
+        _TotalsSection(stats: stats),
+        const _SectionDivider(),
+
+        // ── Personal Bests ────────────────────────────────────────────────
         if (_hasPB(stats)) ...[
-          _PersonalBestsSection(
-            stats: stats,
-            theme: theme,
-            colorScheme: Theme.of(context).colorScheme,
-          ),
-          const SizedBox(height: CrosscueSpacing.screenM),
+          _PersonalBestsSection(stats: stats),
+          const _SectionDivider(),
         ],
-        _CompletionSection(
-          stats: stats,
-          theme: theme,
-          colorScheme: Theme.of(context).colorScheme,
-        ),
-        const SizedBox(height: CrosscueSpacing.screenM),
+
+        // ── Completion ────────────────────────────────────────────────────
+        _CompletionSection(stats: stats),
+
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -91,161 +81,83 @@ class _StatsBody extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Streak section
+// Streak section — two columns
 // ---------------------------------------------------------------------------
 
 class _StreakSection extends StatelessWidget {
-  const _StreakSection({required this.stats, required this.theme, required this.colorScheme});
+  const _StreakSection({required this.stats});
 
   final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.screenH,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StreakCell(
+              value: '${stats.currentStreak}',
+              label: 'CURRENT',
+              sub: stats.currentStreak == 1 ? 'day' : 'days',
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 64,
+            color: CrosscueColors.dividerLight,
+          ),
+          Expanded(
+            child: _StreakCell(
+              value: '${stats.longestStreak}',
+              label: 'LONGEST',
+              sub: stats.longestStreak == 1 ? 'day' : 'days',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakCell extends StatelessWidget {
+  const _StreakCell({
+    required this.value,
+    required this.label,
+    required this.sub,
+  });
+
+  final String value;
+  final String label;
+  final String sub;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _SectionHeader('Streak', theme: theme),
-        const SizedBox(height: CrosscueSpacing.screenXS),
-        _StreakCard(
-          stats: stats,
-          theme: theme,
-          colorScheme: colorScheme,
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: CrosscueColors.onSurface1Light,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$label\n$sub',
+          style: const TextStyle(
+            fontSize: CrosscueTypography.label,
+            color: CrosscueColors.onSurface3Light,
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _StreakCard extends StatelessWidget {
-  const _StreakCard({required this.stats, required this.theme, required this.colorScheme});
-
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(CrosscueSpacing.screenXS),
-        child: Row(
-          children: [
-            Expanded(
-              child: _StatCell(
-                icon: Icons.local_fire_department_rounded,
-                iconColor: colorScheme.error,
-                value: '${stats.currentStreak}',
-                label: 'Current streak',
-                suffix: stats.currentStreak == 1 ? 'day' : 'days',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-            ),
-            const SizedBox(width: CrosscueSpacing.screenXS),
-            Expanded(
-              child: _StatCell(
-                icon: Icons.emoji_events_outlined,
-                iconColor: colorScheme.tertiary,
-                value: '${stats.longestStreak}',
-                label: 'Longest streak',
-                suffix: stats.longestStreak == 1 ? 'day' : 'days',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Totals section
-// ---------------------------------------------------------------------------
-
-class _TotalsSection extends StatelessWidget {
-  const _TotalsSection({required this.stats, required this.theme, required this.colorScheme});
-
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionHeader('Solves', theme: theme),
-        const SizedBox(height: CrosscueSpacing.screenXS),
-        _TotalsCard(
-          stats: stats,
-          theme: theme,
-          colorScheme: colorScheme,
-        ),
-      ],
-    );
-  }
-}
-
-class _TotalsCard extends StatelessWidget {
-  const _TotalsCard({required this.stats, required this.theme, required this.colorScheme});
-
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(CrosscueSpacing.screenXS),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _StatRow(
-              label: 'Total solved',
-              value: '${stats.totalSolved}',
-              theme: theme,
-              colorScheme: colorScheme,
-            ),
-            const Divider(height: 1),
-            _StatRow(
-              label: 'Clean solves',
-              value: '${stats.cleanSolves}',
-              sublabel: stats.totalSolved > 0
-                  ? '${(stats.cleanSolves / stats.totalSolved * 100).round()}%'
-                  : null,
-              theme: theme,
-              colorScheme: colorScheme,
-            ),
-            const Divider(height: 1),
-            _StatRow(
-              label: 'Solved with help',
-              value: '${stats.hintedCheckedSolves}',
-              theme: theme,
-              colorScheme: colorScheme,
-            ),
-            const Divider(height: 1),
-            _StatRow(
-              label: 'Puzzles revealed',
-              value: '${stats.revealedCount}',
-              theme: theme,
-              colorScheme: colorScheme,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -255,152 +167,246 @@ class _TotalsCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TimesSection extends StatelessWidget {
-  const _TimesSection({required this.stats, required this.theme, required this.colorScheme});
+  const _TimesSection({required this.stats});
 
   final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.screenH,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'AVERAGE TIME',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: CrosscueColors.onSurface3Light,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_formatMs(stats.averageTimeMs)}',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: CrosscueColors.onSurface1Light,
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (stats.sevenDayAverageMs != null) ...[
+            const Text(
+              '7-DAY AVERAGE',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                color: CrosscueColors.onSurface3Light,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${_formatMs(stats.sevenDayAverageMs!)}',
+              style: const TextStyle(
+                fontSize: 24,
+                color: CrosscueColors.onSurface2Light,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _formatMs(int ms) {
+    final total = ms ~/ 1000;
+    final h = total ~/ 3600;
+    final m = (total % 3600) ~/ 60;
+    final s = total % 60;
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Totals section
+// ---------------------------------------------------------------------------
+
+class _TotalsSection extends StatelessWidget {
+  const _TotalsSection({required this.stats});
+
+  final StatsData stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.screenH,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _TotalCell(
+              label: 'STARTED',
+              value: stats.startedCount.toString(),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 64,
+            color: CrosscueColors.dividerLight,
+          ),
+          Expanded(
+            child: _TotalCell(
+              label: 'COMPLETED',
+              value: stats.completedCount.toString(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TotalCell extends StatelessWidget {
+  const _TotalCell({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _SectionHeader('Times', theme: theme),
-        const SizedBox(height: CrosscueSpacing.screenXS),
-        _TimesCard(
-          stats: stats,
-          theme: theme,
-          colorScheme: colorScheme,
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: CrosscueColors.onSurface1Light,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: CrosscueTypography.label,
+            color: CrosscueColors.onSurface3Light,
+          ),
         ),
       ],
     );
   }
 }
 
-class _TimesCard extends StatelessWidget {
-  const _TimesCard({required this.stats, required this.theme, required this.colorScheme});
-
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(CrosscueSpacing.screenXS),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (stats.averageElapsedMs != null) ...[
-              _StatRow(
-                label: 'Average time',
-                value: _formatMs(stats.averageElapsedMs!),
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              const Divider(height: 1),
-            ],
-            if (stats.sevenDayAverageMs != null)
-              _StatRow(
-                label: '7-day average',
-                value: _formatMs(stats.sevenDayAverageMs!),
-                theme: theme,
-                colorScheme: colorScheme,
-              )
-            else
-              _StatRow(
-                label: '7-day average',
-                value: '–',
-                sublabel: 'No solves in the last 7 days',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
-// Personal bests section
+// Personal Bests section
 // ---------------------------------------------------------------------------
 
 class _PersonalBestsSection extends StatelessWidget {
-  const _PersonalBestsSection({required this.stats, required this.theme, required this.colorScheme});
+  const _PersonalBestsSection({required this.stats});
 
   final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionHeader('Personal Bests', theme: theme),
-        const SizedBox(height: CrosscueSpacing.screenXS),
-        _PersonalBestsCard(
-          stats: stats,
-          theme: theme,
-          colorScheme: colorScheme,
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.screenH,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PBCell(
+              label: '15×15',
+              value: stats.personalBest15x15Ms != null
+                  ? _formatMs(stats.personalBest15x15Ms!)
+                  : '-',
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 64,
+            color: CrosscueColors.dividerLight,
+          ),
+          Expanded(
+            child: _PBCell(
+              label: '21×21',
+              value: stats.personalBest21x21Ms != null
+                  ? _formatMs(stats.personalBest21x21Ms!)
+                  : '-',
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 64,
+            color: CrosscueColors.dividerLight,
+          ),
+          Expanded(
+            child: _PBCell(
+              label: 'MINI',
+              value: stats.personalBestMiniMs != null
+                  ? _formatMs(stats.personalBestMiniMs!)
+                  : '-',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _PersonalBestsCard extends StatelessWidget {
-  const _PersonalBestsCard({required this.stats, required this.theme, required this.colorScheme});
+class _PBCell extends StatelessWidget {
+  const _PBCell({
+    required this.label,
+    required this.value,
+  });
 
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    if (stats.personalBestMiniMs != null) {
-      rows.add(_StatRow(
-        label: 'Mini best',
-        value: _formatMs(stats.personalBestMiniMs!),
-        theme: theme,
-        colorScheme: colorScheme,
-      ));
-    }
-    if (stats.personalBest15x15Ms != null) {
-      if (rows.isNotEmpty) rows.add(const Divider(height: 1));
-      rows.add(_StatRow(
-        label: '15×15 best',
-        value: _formatMs(stats.personalBest15x15Ms!),
-        theme: theme,
-        colorScheme: colorScheme,
-      ));
-    }
-    if (stats.personalBest21x21Ms != null) {
-      if (rows.isNotEmpty) rows.add(const Divider(height: 1));
-      rows.add(_StatRow(
-        label: '21×21 best',
-        value: _formatMs(stats.personalBest21x21Ms!),
-        theme: theme,
-        colorScheme: colorScheme,
-      ));
-    }
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(CrosscueSpacing.screenXS),
-        child: Column(children: rows),
-      ),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: CrosscueColors.onSurface1Light,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: CrosscueTypography.label,
+            color: CrosscueColors.onSurface3Light,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -410,108 +416,59 @@ class _PersonalBestsCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CompletionSection extends StatelessWidget {
-  const _CompletionSection({required this.stats, required this.theme, required this.colorScheme});
+  const _CompletionSection({required this.stats});
 
   final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionHeader('Completion', theme: theme),
-        const SizedBox(height: CrosscueSpacing.screenXS),
-        _CompletionCard(
-          stats: stats,
-          theme: theme,
-          colorScheme: colorScheme,
-        ),
-      ],
-    );
-  }
-}
+    final rate = stats.startedCount > 0
+        ? (stats.completedCount / stats.startedCount * 100).round()
+        : 0;
 
-class _CompletionCard extends StatelessWidget {
-  const _CompletionCard({required this.stats, required this.theme, required this.colorScheme});
-
-  final StatsData stats;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final pct = (stats.completionRate * 100).round();
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(CrosscueSpacing.screenXS),
-        child: _StatRow(
-          label: 'Completion rate',
-          value: '$pct%',
-          sublabel: '${stats.totalSolved + stats.revealedCount} of ${stats.startedCount} started',
-          theme: theme,
-          colorScheme: colorScheme,
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Shared sub-widgets
-// ---------------------------------------------------------------------------
-
-class _StatRow extends StatelessWidget {
-  const _StatRow({
-    required this.label,
-    required this.value,
-    this.sublabel,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final String label;
-  final String value;
-  final String? sublabel;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.fromLTRB(
+        CrosscueSpacing.screenH,
+        20,
+        CrosscueSpacing.screenH,
+        CrosscueSpacing.screenH,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const Text(
+            'COMPLETION RATE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: CrosscueColors.onSurface3Light,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (sublabel != null)
-                Text(
-                  sublabel!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: rate / 100,
+                    backgroundColor: CrosscueColors.dividerLight,
+                    valueColor: AlwaysStoppedAnimation(CrosscueColors.primary),
+                    minHeight: 8,
                   ),
                 ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$rate%',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: CrosscueColors.onSurface1Light,
+                ),
+              ),
             ],
-          ),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
           ),
         ],
       ),
@@ -519,79 +476,8 @@ class _StatRow extends StatelessWidget {
   }
 }
 
-class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-    this.suffix,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-  final String? suffix;
-  final CrosswordTheme theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: iconColor, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
-          ),
-        ),
-        if (suffix != null)
-          Text(
-            suffix!,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label, {required this.theme});
-
-  final String label;
-  final CrosswordTheme theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label.toUpperCase(),
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: colorScheme.primary,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
-// Empty state
+// Empty stats state
 // ---------------------------------------------------------------------------
 
 class _EmptyStats extends StatelessWidget {
@@ -602,9 +488,9 @@ class _EmptyStats extends StatelessWidget {
     final theme = CrosswordTheme.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.all(CrosscueSpacing.screenH),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.bar_chart_outlined,
@@ -620,12 +506,11 @@ class _EmptyStats extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Solve a puzzle to start tracking your stats.',
+            'Start solving puzzles to see your stats.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.3,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -634,16 +519,19 @@ class _EmptyStats extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Section divider
 // ---------------------------------------------------------------------------
 
-String _formatMs(int ms) {
-  final total = ms ~/ 1000;
-  final h = total ~/ 3600;
-  final m = (total % 3600) ~/ 60;
-  final s = total % 60;
-  if (h > 0) {
-    return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 1,
+      child: Divider(
+        color: CrosscueColors.dividerLight,
+      ),
+    );
   }
-  return '$m:${s.toString().padLeft(2, '0')}';
 }

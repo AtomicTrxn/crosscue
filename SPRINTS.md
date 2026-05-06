@@ -213,7 +213,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 11 — Home, Archive & Stats Redesign ⬜
+## Sprint 11 — Home, Archive & Stats Redesign ✅
 
 **Goal:** Bring the primary tabs into the flat, dense design language while keeping the app local/offline-first.
 
@@ -221,11 +221,11 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Home redesign for local puzzles | ⬜ | Use "Current puzzle" / "Continue" model instead of publisher "Today" feed |
-| Neutral sample/empty-state content | ⬜ | Do not use uncleared publisher names in production UI |
-| Archive row/filter/sort refresh | ⬜ | Flat rows, semantic status icons, chip styling |
-| Stats screen refresh | ⬜ | Flat sections, mono time values, no card-heavy layout |
-| Import/source placement review | ⬜ | Downloader/source management belongs in Settings, not Home |
+| Home redesign for local puzzles | ✅ | Use "Current puzzle" / "Continue" model instead of publisher "Today" feed |
+| Neutral sample/empty-state content | ✅ | Do not use uncleared publisher names in production UI |
+| Archive row/filter/sort refresh | ✅ | Flat rows, semantic status icons, chip styling |
+| Stats screen refresh | ✅ | Flat sections, mono time values, no card-heavy layout |
+| Import/source placement review | ✅ | Downloader/source management belongs in Settings, not Home |
 
 ---
 
@@ -259,6 +259,116 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | Visual QA screenshots | ⬜ | Home, Solve 15x15, Solve mini, Archive, Stats, Settings, Onboarding, Import, completion sheet |
 | Light/dark QA | ⬜ | Verify contrast and crossword readability |
 | Final verification | ⬜ | `flutter analyze`, `flutter test`, debug APK build |
+
+---
+
+## Sprint 13.5 — Codebase Cleanup & Dark Mode Correctness ⬜
+
+**Goal:** Fix dark-mode colour hardcoding, eliminate duplicated utilities, tighten design tokens, patch the grid painter repaint scope, pre-add Sprint 14 packages, update stale documentation, and correct structural/architectural issues — all before Sprint 13 visual QA so the dark-mode pass catches real issues rather than known ones.
+
+### Dark Mode Correctness
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Dark mode — Archive** | ⬜ | Replace hardcoded `onSurface1Light`, `onSurface3Light`, `dividerLight`, `primaryMid`, `correctLight` in `archive_screen.dart` with `Theme.of(context)` / `colorScheme` lookups or `CrosscueColors` light/dark pairs; `_FilterChips` border and `_ArchiveRow` divider both hardcode light tokens |
+| **Dark mode — Home** | ⬜ | `home_screen.dart`: `_FeaturedPuzzle`, `_PuzzleRow`, `_SectionHeader`, `_ImportFAB` all hardcode `onSurface1Light` / `onSurface3Light` / `dividerLight` / `primary` directly; replace with theme-aware equivalents |
+| **Dark mode — Stats** | ⬜ | `stats_screen.dart`: every `_Cell`, `_SectionLabel`, `_PBRow`, `_CompletionSection` uses light-only tokens; wire through `colorScheme.onSurface` / `CrosscueColors.*Dark` via brightness check |
+| **Dark mode — Settings** | ⬜ | `_SectionHeader` hardcodes `CrosscueColors.onSurface3Light`; use `Theme.of(context).textTheme.labelSmall` colour (already theme-aware) and remove the manual override |
+
+### Code Quality
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Extract `_formatMs` utility** | ⬜ | Create `lib/core/utils/time_format.dart` with a single `formatMs(int ms)` function; remove the three identical copies in `archive_screen.dart`, `home_screen.dart`, `stats_screen.dart` |
+| **`CrosswordGridPainter.shouldRepaint` — add theme guard** | ⬜ | Current check misses theme changes (dark/light toggle won't repaint the grid); add `oldDelegate.theme != theme` to `shouldRepaint` in `crossword_grid_painter.dart` |
+| **Add Sprint 14 packages to `pubspec.yaml`** | ⬜ | Add `flutter_animate`, `share_plus`, `vibration` as declared dependencies now so Sprint 14 starts without a pub-get step; run `flutter pub get` and verify `flutter analyze` still clean |
+| **Update stale docs** | ⬜ | `docs/design-implementation-plan.md` status line still says "Sprints 10, 11, and 13 remain"; update to reflect Sprints 9–12 complete and 13–14 planned; no other content changes needed |
+
+### Structural / Architectural
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Consolidate `core/settings/` → `features/settings/`** | ⬜ | Move `app_settings_dao.dart`, `app_settings_repository.dart`, `settings_providers.dart` (+ `.g.dart` files) from `core/settings/` into `features/settings/data/` and `features/settings/domain/`; update all import paths; `core/` should be infrastructure only (DB, routing, theme) |
+| **Relocate `PuzzleMetadata` to `core/domain/models/`** | ⬜ | Currently in `features/solve/domain/models/` but imported by `home`, `import`, `archive`, and `stats` — it is a cross-cutting domain concept, not solve-specific; move file, re-run `build_runner`, update all imports |
+| **Add repository interfaces** | ⬜ | Create abstract `ArchiveRepository`, `SolveRepository`, `StatsRepository` interfaces alongside their impls; `ImportRepository` is the only one missing its interface; notifiers and providers should depend on the abstract type, not the concrete impl |
+| **Extract `puzzleListProvider` from `home_screen.dart`** | ⬜ | Create `features/home/presentation/providers/home_providers.dart`; move the `@riverpod Future<List<PuzzleMetadata>> puzzleList` function and its `part` directive there; delete `home_screen.g.dart` and regenerate |
+| **Document `notifiers/` vs `providers/` convention** | ⬜ | Add a section to `CONVENTIONS.md`: `notifiers/` = stateful `AsyncNotifier` subclasses that own business logic; `providers/` = pure read/query providers; features with only queries use `providers/` only |
+
+### Final Verification
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Final verification** | ⬜ | `flutter analyze` 0 issues, `flutter test` 79/79, debug APK builds |
+
+---
+
+## Sprint 14 — Animations, Haptics, Nav Icons & Settings Completion ⬜
+
+**Goal:** Implement all remaining design-spec items that were explicitly deferred during Sprints 10–12: full micro-animation suite, complete haptic spec, custom SVG nav bar icons, stats difficulty bars, missing Settings rows, and completion sheet polish.
+
+**Read before starting:** [design/README.md](design/README.md) (Animations §, Haptics §, Nav icons SVG spec §, Screen specs §05 §06 §08), [docs/design-implementation-plan.md](docs/design-implementation-plan.md)
+
+### Animations — `flutter_animate`, gated on `MediaQuery.of(context).disableAnimations`
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Add `flutter_animate` to `pubspec.yaml` | ⬜ | |
+| Letter entry: scale `0.7→1.0` + fade in, 80ms easeOut | ⬜ | `CrosswordGrid` — trigger on `prog.letter` change |
+| Backspace: scale `1.0→0.7` + fade out, 60ms easeIn | ⬜ | Same hook |
+| Cell focus: color fade 150ms easeOut | ⬜ | `CrosswordGridPainter` — background color already uses theme; animate via `AnimatedContainer` or painter repaint |
+| Direction toggle: word-highlight cross-fade 200ms easeInOut | ⬜ | Triggered by `toggleDirection()` |
+| Check correct: card flip → green 400ms easeInOut | ⬜ | `CrosswordGrid` per-cell animation |
+| Check incorrect: horizontal shake ±4dp ×3 + flip → red 200ms | ⬜ | |
+| Reveal: card flip → yellow 400ms easeInOut | ⬜ | |
+| Word complete: soft green pulse on word cells 300ms | ⬜ | Detect word completion in `SolveNotifier` |
+| Puzzle complete: grid wave flash 500ms → sheet slide up 350ms easeOut | ⬜ | Confetti via `confetti` package (deferred to post-MVP if complex) |
+
+### Haptics — full spec, gated on `hapticsEnabledProvider`
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Backspace key → `HapticFeedback.selectionClick()` | ⬜ | `CrosswordKeyboard` — currently `lightImpact()` |
+| Direction toggle (ClueBar tap) → `HapticFeedback.selectionClick()` | ⬜ | `SolveScreen` `onToggleDirection` callback |
+| Word completion → `HapticFeedback.mediumImpact()` | ⬜ | `SolveNotifier` — detect word fill |
+| Puzzle completion → 3-pulse (light→medium→heavy) | ⬜ | Add `vibration` package; fire from `_maybeShowCompletionSheet` |
+| Check incorrect → `HapticFeedback.vibrate()` | ⬜ | `SolveNotifier.checkCell/Word/Grid()` — return result; caller fires haptic |
+
+### Custom SVG Navigation Bar Icons
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Today icon: 2×2 grid squares (3 filled + 1 outlined when active) | ⬜ | `CustomPaint` or inline SVG via `flutter_svg`; see spec SVG details in design/README.md |
+| Archive icon: calendar outline + filled date cell | ⬜ | |
+| Stats icon: 3 ascending filled bars `4×8/13/18 rx1` | ⬜ | |
+| Settings icon: 8-tooth gear polygon `r_outer=9.5 r_inner=7.2`, center hole `r=3.2`, `fillRule=evenodd` | ⬜ | Built via path math; active = filled, inactive = `1.8px` stroke |
+| Wire icons into `app_shell.dart` `NavigationBar` | ⬜ | Replace `Icons.*` placeholders |
+
+### Stats — Difficulty Bars Section
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Add `difficultyBreakdown` map to `StatsData` model | ⬜ | `{easy: N, medium: N, hard: N, themeless: N}` sourced from `puzzles.difficulty` column |
+| `StatsDao` query: count sessions by difficulty category | ⬜ | Join `solve_sessions` + `puzzles`; filter `completion_type != null` |
+| `_DifficultySection` widget in `StatsScreen` | ⬜ | Gate on `≥3` data points; label `72dp` right-aligned `12px #555555`; track `#E8E8E8 h8 r4`; colors: Easy `#4CAF50`, Medium `#1565C0`, Hard `#FF9800`, Themeless `#999999` |
+
+### Settings — Missing Rows (spec §06)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Appearance**: Colorblind mode toggle (default off) | ⬜ | Persist in `app_settings`; token swap not yet designed — stub toggle with snackbar |
+| **Gameplay section** (rename from "Feedback"): add Sounds toggle (default off), Skip filled cells toggle (default off), Keyboard layout nav row | ⬜ | Sounds + Skip filled: persist in `AppSettingsRepository`; Keyboard layout: stub nav row |
+| **Notifications section**: Puzzle reminder toggle + time picker row, Streak reminder toggle + time picker row | ⬜ | Stub toggles for Phase 1; actual scheduling deferred |
+| **Privacy & Data section**: Crash reporting toggle (default off, opt-in), Export data nav row, Import data nav row | ⬜ | Crash reporting: stub toggle; Export/Import: stub nav rows |
+| **Help section**: "How to play" nav row (launches onboarding flow), "About Crosscue" row with version | ⬜ | How to play: push `/onboarding`; About: `PackageInfo` for version string |
+| Row dividers between all rows (`1px #E8E8E8 indent: 16dp`) | ⬜ | Replace section-level `Divider()` with per-row dividers |
+
+### Completion Sheet — Polish
+
+| Task | Status | Notes |
+|------|--------|-------|
+| PB line for clean solves: "↑ New personal best — prev. X:XX" `13px w500 #4CAF50` | ⬜ | Requires knowing previous PB before this solve; snapshot PB in `SolveNotifier` at session start |
+| "Share result" real share intent | ⬜ | Add `share_plus` package; format: puzzle title + time + solve type; hidden when revealed ✓ already |
+| Invalidate `statsDataProvider` on puzzle completion | ⬜ | In `SolveNotifier` after persisting session — so completion sheet streak is always current |
 
 ---
 
