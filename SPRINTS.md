@@ -262,6 +262,76 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
+## Sprint 14 — Animations, Haptics, Nav Icons & Settings Completion ⬜
+
+**Goal:** Implement all remaining design-spec items that were explicitly deferred during Sprints 10–12: full micro-animation suite, complete haptic spec, custom SVG nav bar icons, stats difficulty bars, missing Settings rows, and completion sheet polish.
+
+**Read before starting:** [design/README.md](design/README.md) (Animations §, Haptics §, Nav icons SVG spec §, Screen specs §05 §06 §08), [docs/design-implementation-plan.md](docs/design-implementation-plan.md)
+
+### Animations — `flutter_animate`, gated on `MediaQuery.of(context).disableAnimations`
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Add `flutter_animate` to `pubspec.yaml` | ⬜ | |
+| Letter entry: scale `0.7→1.0` + fade in, 80ms easeOut | ⬜ | `CrosswordGrid` — trigger on `prog.letter` change |
+| Backspace: scale `1.0→0.7` + fade out, 60ms easeIn | ⬜ | Same hook |
+| Cell focus: color fade 150ms easeOut | ⬜ | `CrosswordGridPainter` — background color already uses theme; animate via `AnimatedContainer` or painter repaint |
+| Direction toggle: word-highlight cross-fade 200ms easeInOut | ⬜ | Triggered by `toggleDirection()` |
+| Check correct: card flip → green 400ms easeInOut | ⬜ | `CrosswordGrid` per-cell animation |
+| Check incorrect: horizontal shake ±4dp ×3 + flip → red 200ms | ⬜ | |
+| Reveal: card flip → yellow 400ms easeInOut | ⬜ | |
+| Word complete: soft green pulse on word cells 300ms | ⬜ | Detect word completion in `SolveNotifier` |
+| Puzzle complete: grid wave flash 500ms → sheet slide up 350ms easeOut | ⬜ | Confetti via `confetti` package (deferred to post-MVP if complex) |
+
+### Haptics — full spec, gated on `hapticsEnabledProvider`
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Backspace key → `HapticFeedback.selectionClick()` | ⬜ | `CrosswordKeyboard` — currently `lightImpact()` |
+| Direction toggle (ClueBar tap) → `HapticFeedback.selectionClick()` | ⬜ | `SolveScreen` `onToggleDirection` callback |
+| Word completion → `HapticFeedback.mediumImpact()` | ⬜ | `SolveNotifier` — detect word fill |
+| Puzzle completion → 3-pulse (light→medium→heavy) | ⬜ | Add `vibration` package; fire from `_maybeShowCompletionSheet` |
+| Check incorrect → `HapticFeedback.vibrate()` | ⬜ | `SolveNotifier.checkCell/Word/Grid()` — return result; caller fires haptic |
+
+### Custom SVG Navigation Bar Icons
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Today icon: 2×2 grid squares (3 filled + 1 outlined when active) | ⬜ | `CustomPaint` or inline SVG via `flutter_svg`; see spec SVG details in design/README.md |
+| Archive icon: calendar outline + filled date cell | ⬜ | |
+| Stats icon: 3 ascending filled bars `4×8/13/18 rx1` | ⬜ | |
+| Settings icon: 8-tooth gear polygon `r_outer=9.5 r_inner=7.2`, center hole `r=3.2`, `fillRule=evenodd` | ⬜ | Built via path math; active = filled, inactive = `1.8px` stroke |
+| Wire icons into `app_shell.dart` `NavigationBar` | ⬜ | Replace `Icons.*` placeholders |
+
+### Stats — Difficulty Bars Section
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Add `difficultyBreakdown` map to `StatsData` model | ⬜ | `{easy: N, medium: N, hard: N, themeless: N}` sourced from `puzzles.difficulty` column |
+| `StatsDao` query: count sessions by difficulty category | ⬜ | Join `solve_sessions` + `puzzles`; filter `completion_type != null` |
+| `_DifficultySection` widget in `StatsScreen` | ⬜ | Gate on `≥3` data points; label `72dp` right-aligned `12px #555555`; track `#E8E8E8 h8 r4`; colors: Easy `#4CAF50`, Medium `#1565C0`, Hard `#FF9800`, Themeless `#999999` |
+
+### Settings — Missing Rows (spec §06)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Appearance**: Colorblind mode toggle (default off) | ⬜ | Persist in `app_settings`; token swap not yet designed — stub toggle with snackbar |
+| **Gameplay section** (rename from "Feedback"): add Sounds toggle (default off), Skip filled cells toggle (default off), Keyboard layout nav row | ⬜ | Sounds + Skip filled: persist in `AppSettingsRepository`; Keyboard layout: stub nav row |
+| **Notifications section**: Puzzle reminder toggle + time picker row, Streak reminder toggle + time picker row | ⬜ | Stub toggles for Phase 1; actual scheduling deferred |
+| **Privacy & Data section**: Crash reporting toggle (default off, opt-in), Export data nav row, Import data nav row | ⬜ | Crash reporting: stub toggle; Export/Import: stub nav rows |
+| **Help section**: "How to play" nav row (launches onboarding flow), "About Crosscue" row with version | ⬜ | How to play: push `/onboarding`; About: `PackageInfo` for version string |
+| Row dividers between all rows (`1px #E8E8E8 indent: 16dp`) | ⬜ | Replace section-level `Divider()` with per-row dividers |
+
+### Completion Sheet — Polish
+
+| Task | Status | Notes |
+|------|--------|-------|
+| PB line for clean solves: "↑ New personal best — prev. X:XX" `13px w500 #4CAF50` | ⬜ | Requires knowing previous PB before this solve; snapshot PB in `SolveNotifier` at session start |
+| "Share result" real share intent | ⬜ | Add `share_plus` package; format: puzzle title + time + solve type; hidden when revealed ✓ already |
+| Invalidate `statsDataProvider` on puzzle completion | ⬜ | In `SolveNotifier` after persisting session — so completion sheet streak is always current |
+
+---
+
 ## Deferred / Post-MVP
 
 | Item | Notes |
