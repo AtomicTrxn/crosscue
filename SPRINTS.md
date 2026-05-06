@@ -264,7 +264,9 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ## Sprint 13.5 — Codebase Cleanup & Dark Mode Correctness ⬜
 
-**Goal:** Fix dark-mode colour hardcoding, eliminate duplicated utilities, tighten design tokens, patch the grid painter repaint scope, pre-add Sprint 14 packages, and update stale documentation — all before Sprint 13 visual QA so the dark-mode pass catches real issues rather than known ones.
+**Goal:** Fix dark-mode colour hardcoding, eliminate duplicated utilities, tighten design tokens, patch the grid painter repaint scope, pre-add Sprint 14 packages, update stale documentation, and correct structural/architectural issues — all before Sprint 13 visual QA so the dark-mode pass catches real issues rather than known ones.
+
+### Dark Mode Correctness
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -272,10 +274,30 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | **Dark mode — Home** | ⬜ | `home_screen.dart`: `_FeaturedPuzzle`, `_PuzzleRow`, `_SectionHeader`, `_ImportFAB` all hardcode `onSurface1Light` / `onSurface3Light` / `dividerLight` / `primary` directly; replace with theme-aware equivalents |
 | **Dark mode — Stats** | ⬜ | `stats_screen.dart`: every `_Cell`, `_SectionLabel`, `_PBRow`, `_CompletionSection` uses light-only tokens; wire through `colorScheme.onSurface` / `CrosscueColors.*Dark` via brightness check |
 | **Dark mode — Settings** | ⬜ | `_SectionHeader` hardcodes `CrosscueColors.onSurface3Light`; use `Theme.of(context).textTheme.labelSmall` colour (already theme-aware) and remove the manual override |
+
+### Code Quality
+
+| Task | Status | Notes |
+|------|--------|-------|
 | **Extract `_formatMs` utility** | ⬜ | Create `lib/core/utils/time_format.dart` with a single `formatMs(int ms)` function; remove the three identical copies in `archive_screen.dart`, `home_screen.dart`, `stats_screen.dart` |
 | **`CrosswordGridPainter.shouldRepaint` — add theme guard** | ⬜ | Current check misses theme changes (dark/light toggle won't repaint the grid); add `oldDelegate.theme != theme` to `shouldRepaint` in `crossword_grid_painter.dart` |
 | **Add Sprint 14 packages to `pubspec.yaml`** | ⬜ | Add `flutter_animate`, `share_plus`, `vibration` as declared dependencies now so Sprint 14 starts without a pub-get step; run `flutter pub get` and verify `flutter analyze` still clean |
 | **Update stale docs** | ⬜ | `docs/design-implementation-plan.md` status line still says "Sprints 10, 11, and 13 remain"; update to reflect Sprints 9–12 complete and 13–14 planned; no other content changes needed |
+
+### Structural / Architectural
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Consolidate `core/settings/` → `features/settings/`** | ⬜ | Move `app_settings_dao.dart`, `app_settings_repository.dart`, `settings_providers.dart` (+ `.g.dart` files) from `core/settings/` into `features/settings/data/` and `features/settings/domain/`; update all import paths; `core/` should be infrastructure only (DB, routing, theme) |
+| **Relocate `PuzzleMetadata` to `core/domain/models/`** | ⬜ | Currently in `features/solve/domain/models/` but imported by `home`, `import`, `archive`, and `stats` — it is a cross-cutting domain concept, not solve-specific; move file, re-run `build_runner`, update all imports |
+| **Add repository interfaces** | ⬜ | Create abstract `ArchiveRepository`, `SolveRepository`, `StatsRepository` interfaces alongside their impls; `ImportRepository` is the only one missing its interface; notifiers and providers should depend on the abstract type, not the concrete impl |
+| **Extract `puzzleListProvider` from `home_screen.dart`** | ⬜ | Create `features/home/presentation/providers/home_providers.dart`; move the `@riverpod Future<List<PuzzleMetadata>> puzzleList` function and its `part` directive there; delete `home_screen.g.dart` and regenerate |
+| **Document `notifiers/` vs `providers/` convention** | ⬜ | Add a section to `CONVENTIONS.md`: `notifiers/` = stateful `AsyncNotifier` subclasses that own business logic; `providers/` = pure read/query providers; features with only queries use `providers/` only |
+
+### Final Verification
+
+| Task | Status | Notes |
+|------|--------|-------|
 | **Final verification** | ⬜ | `flutter analyze` 0 issues, `flutter test` 79/79, debug APK builds |
 
 ---
