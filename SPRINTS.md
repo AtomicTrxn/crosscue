@@ -213,7 +213,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 11 — Home, Archive & Stats Redesign ⬜
+## Sprint 11 — Home, Archive & Stats Redesign ✅
 
 **Goal:** Bring the primary tabs into the flat, dense design language while keeping the app local/offline-first.
 
@@ -221,11 +221,11 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Home redesign for local puzzles | ⬜ | Use "Current puzzle" / "Continue" model instead of publisher "Today" feed |
-| Neutral sample/empty-state content | ⬜ | Do not use uncleared publisher names in production UI |
-| Archive row/filter/sort refresh | ⬜ | Flat rows, semantic status icons, chip styling |
-| Stats screen refresh | ⬜ | Flat sections, mono time values, no card-heavy layout |
-| Import/source placement review | ⬜ | Downloader/source management belongs in Settings, not Home |
+| Home redesign for local puzzles | ✅ | Use "Current puzzle" / "Continue" model instead of publisher "Today" feed |
+| Neutral sample/empty-state content | ✅ | Do not use uncleared publisher names in production UI |
+| Archive row/filter/sort refresh | ✅ | Flat rows, semantic status icons, chip styling |
+| Stats screen refresh | ✅ | Flat sections, mono time values, no card-heavy layout |
+| Import/source placement review | ✅ | Downloader/source management belongs in Settings, not Home |
 
 ---
 
