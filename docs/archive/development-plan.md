@@ -6,7 +6,7 @@ This document outlines a comprehensive plan to develop, build, and deploy the Cr
 
 ## Current Project State
 
-- Flutter project exists at `/Users/tomhess/Claude/Crossword/crosscue/crosscue`
+- Flutter project exists under `crosscue/`
 - Basic counter app as starter template
 - Many domain models and components already created in `lib/` directory
 - Android emulator installed and available
@@ -423,7 +423,7 @@ lib/
 2. **Build Process**
    ```bash
    # Navigate to project directory
-   cd /Users/tomhess/Crossword/crosscue/crosscue
+   cd crosscue
 
    # Get dependencies
    flutter pub get

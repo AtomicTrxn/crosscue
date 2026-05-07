@@ -4,10 +4,10 @@
 
 | Tool | Path |
 |------|------|
-| Flutter SDK | `/Users/tomhess/flutter/bin/flutter` |
+| Flutter SDK | `flutter` on `PATH`, or set `FLUTTER=/path/to/flutter/bin/flutter` |
 | ADB | `adb` (on `$PATH` via Android SDK) |
-| Target emulator | Pixel 9 — `emulator-5554` (`sdk gphone64 arm64`) |
-| Project root | `/Users/tomhess/Claude/Crossword/crosscue/` |
+| Target emulator | Any Android emulator/device shown by `adb devices` |
+| Project root | `crosscue/` |
 
 All `flutter` and `adb` commands below assume you are **inside the project root** unless stated otherwise.
 
@@ -17,14 +17,14 @@ All `flutter` and `adb` commands below assume you are **inside the project root*
 
 ### Start the emulator (if not already running)
 ```bash
-emulator -avd Pixel_9 &
-# Wait until `adb devices` shows emulator-5554 as "device"
+emulator -avd <avd-name> &
+# Wait until `adb devices` shows your target as "device"
 adb devices
 ```
 
 ### Run with hot-reload support (recommended during development)
 ```bash
-/Users/tomhess/flutter/bin/flutter run -d emulator-5554
+flutter run -d <device-id>
 ```
 Key commands while `flutter run` is active:
 - `r` — Hot reload (preserves state)
@@ -33,12 +33,12 @@ Key commands while `flutter run` is active:
 
 ### Run headless (background, logs to file)
 ```bash
-truncate -s 0 /tmp/flutter_debug.log   # clear stale output first
-/Users/tomhess/flutter/bin/flutter run -d emulator-5554 --no-pub >> /tmp/flutter_debug.log 2>&1 &
+truncate -s 0 /tmp/crosscue_flutter_debug.log   # clear stale output first
+flutter run -d <device-id> --no-pub >> /tmp/crosscue_flutter_debug.log 2>&1 &
 ```
 Then tail the log:
 ```bash
-tail -f /tmp/flutter_debug.log
+tail -f /tmp/crosscue_flutter_debug.log
 ```
 
 ---
@@ -49,13 +49,13 @@ Use this when you need to push a specific build without keeping `flutter run` al
 
 ```bash
 # 1. Build debug APK
-/Users/tomhess/flutter/bin/flutter build apk --debug --no-pub
+flutter build apk --debug --no-pub
 
 # 2. Install via adb
-adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+adb -s <device-id> install -r build/app/outputs/flutter-apk/app-debug.apk
 
 # 3. Launch the app
-adb -s emulator-5554 shell am start -n com.crosscue.crosscue/.MainActivity
+adb -s <device-id> shell am start -n com.crosscue.crosscue/.MainActivity
 ```
 
 > **Why not `flutter install`?** The `flutter install` command targets the release APK by default and doesn't accept `--no-pub`. Using `adb install -r` directly is more reliable for debug builds.
@@ -67,27 +67,27 @@ adb -s emulator-5554 shell am start -n com.crosscue.crosscue/.MainActivity
 ### Flutter print output
 Flutter's `print()` statements appear under the `I/flutter` logcat tag:
 ```bash
-adb -s emulator-5554 logcat | grep "I/flutter"
+adb -s <device-id> logcat | grep "I/flutter"
 ```
 
 ### Filtered live monitoring (recommended)
 ```bash
-adb -s emulator-5554 logcat -v brief | grep --line-buffered -E "flutter|Exception|Error|FATAL"
+adb -s <device-id> logcat -v brief | grep --line-buffered -E "flutter|Exception|Error|FATAL"
 ```
 
 ### Save to file for later review
 ```bash
-truncate -s 0 /tmp/flutter_monitor.log
-adb -s emulator-5554 logcat -v brief 2>/dev/null \
+truncate -s 0 /tmp/crosscue_flutter_monitor.log
+adb -s <device-id> logcat -v brief 2>/dev/null \
   | grep --line-buffered -E "flutter|Exception|Error|FATAL" \
-  >> /tmp/flutter_monitor.log 2>&1 &
+  >> /tmp/crosscue_flutter_monitor.log 2>&1 &
 # Then read it:
-cat /tmp/flutter_monitor.log
+cat /tmp/crosscue_flutter_monitor.log
 ```
 
 ### Clear logcat buffer (before a fresh test)
 ```bash
-adb -s emulator-5554 logcat -c
+adb -s <device-id> logcat -c
 ```
 
 ---
@@ -109,7 +109,7 @@ flutter pub run build_runner watch
 ## Linting
 
 ```bash
-/Users/tomhess/flutter/bin/flutter analyze
+flutter analyze
 ```
 Target: **0 issues**. Fix all errors and warnings before committing.
 
@@ -117,7 +117,7 @@ Target: **0 issues**. Fix all errors and warnings before committing.
 
 ## Deploying to GitHub
 
-Run from the **repo root** (`/Users/tomhess/Claude/Crossword/`), not the project subdirectory.
+Run from the **repo root**, not the Flutter project subdirectory.
 
 ```bash
 git add <specific files — never git add .>
@@ -132,7 +132,7 @@ EOF
 )"
 git push origin main
 ```
-Remote: `https://github.com/AtomicTrxn/crossque.git`
+Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ---
 

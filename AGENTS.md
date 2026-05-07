@@ -29,7 +29,7 @@ Before writing any code, read these documents in order:
 
 | Concern | Library | Notes |
 |---------|---------|-------|
-| Language | Dart / Flutter | SDK at `/Users/tomhess/flutter/bin/flutter` |
+| Language | Dart / Flutter | Use `flutter` on `PATH`, or set `FLUTTER=/path/to/flutter/bin/flutter` |
 | State | Riverpod 3 + `riverpod_annotation` | Codegen — see CONVENTIONS.md for naming rules |
 | Models | Freezed 3 | `abstract class` for single-factory — see CONVENTIONS.md |
 | Database | Drift (SQLite) | Do NOT use Hive or Isar |
@@ -41,21 +41,21 @@ Before writing any code, read these documents in order:
 
 ## Dev Commands
 
-All commands must be run from the **project root**: `/Users/tomhess/Claude/Crossword/crosscue/`
+All commands must be run from the **Flutter project root**: `crosscue/`
 
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
-/Users/tomhess/flutter/bin/flutter pub run build_runner build
+flutter pub run build_runner build
 
 # Lint — must be 0 issues before committing
-/Users/tomhess/flutter/bin/flutter analyze
+flutter analyze
 
 # Run on emulator
-/Users/tomhess/flutter/bin/flutter run -d emulator-5554
+flutter run -d <device-id>
 
 # Build + install manually (see DEPLOYMENT.md for full workflow)
-/Users/tomhess/flutter/bin/flutter build apk --debug --no-pub
-adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+flutter build apk --debug --no-pub
+adb -s <device-id> install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
 When adding packages, reference **`crosscue/pubspec.yaml`** — it lists all Phase 1 packages with their locked versions, and Phase 2 packages are commented out inline.

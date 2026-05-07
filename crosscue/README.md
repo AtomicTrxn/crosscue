@@ -11,7 +11,7 @@ clue panel, track your solving history, and build a daily streak.
 
 ## Project Docs
 
-All documentation lives in `/Users/tomhess/Claude/Crossword/`:
+All documentation lives in the repository root:
 
 | Doc | Purpose |
 |-----|---------|
@@ -29,21 +29,21 @@ All documentation lives in `/Users/tomhess/Claude/Crossword/`:
 
 ```bash
 # All commands run from this directory:
-# /Users/tomhess/Claude/Crossword/crosscue/crosscue/
+# crosscue/
 
 # Run on emulator
-/Users/tomhess/flutter/bin/flutter run -d emulator-5554
+flutter run -d <device-id>
 
 # Build + install
-/Users/tomhess/flutter/bin/flutter build apk --debug --no-pub
-adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
-adb -s emulator-5554 shell am start -n com.crosscue.crosscue/.MainActivity
+flutter build apk --debug --no-pub
+adb -s <device-id> install -r build/app/outputs/flutter-apk/app-debug.apk
+adb -s <device-id> shell am start -n com.crosscue.crosscue/.MainActivity
 
 # Regenerate after model/notifier/table changes
-/Users/tomhess/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs
+flutter pub run build_runner build --delete-conflicting-outputs
 
 # Lint (must be 0 issues before committing)
-/Users/tomhess/flutter/bin/flutter analyze
+flutter analyze
 ```
 
 ---
