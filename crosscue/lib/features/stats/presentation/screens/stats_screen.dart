@@ -101,26 +101,41 @@ class _StreakSection extends StatelessWidget {
         CrosscueSpacing.screenH,
         CrosscueSpacing.screenH,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: _StreakCell(
-              value: '${stats.currentStreak}',
-              label: 'CURRENT',
-              sub: stats.currentStreak == 1 ? 'day' : 'days',
+          Text(
+            'STREAK',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _onSurface3(context),
+              letterSpacing: 1.0,
             ),
           ),
-          Container(
-            width: 1,
-            height: 64,
-            color: _divider(context),
-          ),
-          Expanded(
-            child: _StreakCell(
-              value: '${stats.longestStreak}',
-              label: 'LONGEST',
-              sub: stats.longestStreak == 1 ? 'day' : 'days',
-            ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _StreakCell(
+                  value: '${stats.currentStreak}',
+                  label: 'CURRENT',
+                  sub: stats.currentStreak == 1 ? 'day' : 'days',
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 64,
+                color: _divider(context),
+              ),
+              Expanded(
+                child: _StreakCell(
+                  value: '${stats.longestStreak}',
+                  label: 'LONGEST',
+                  sub: stats.longestStreak == 1 ? 'day' : 'days',
+                ),
+              ),
+            ],
           ),
         ],
       ),

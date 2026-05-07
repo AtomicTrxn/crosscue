@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:crosscue/features/import/data/sources/crosshare_source.dart';
 import 'package:crosscue/features/import/data/sources/local_import_source.dart';
 import 'package:crosscue/features/import/data/sources/source_registry.dart';
 
@@ -9,5 +10,7 @@ import 'package:crosscue/features/import/data/sources/source_registry.dart';
 /// must be registered here only after their license status is cleared by the
 /// topic-07 guardrails.
 final sourceRegistryProvider = Provider<SourceRegistry>((ref) {
-  return SourceRegistry()..register(const LocalImportSource());
+  return SourceRegistry()
+    ..register(const LocalImportSource())
+    ..register(const CrosshareSource());
 });

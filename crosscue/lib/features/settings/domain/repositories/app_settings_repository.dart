@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:crosscue/core/domain/models/enums.dart';
+
 /// Abstract interface for persisted user settings.
 ///
 /// Implemented by [AppSettingsRepositoryImpl] (data layer).
@@ -15,8 +17,8 @@ abstract interface class AppSettingsRepository {
   Future<bool> getHapticsEnabled();
   Future<void> setHapticsEnabled(bool value);
 
-  Future<bool> getColorblindMode();
-  Future<void> setColorblindMode(bool value);
+  Future<ColorblindMode> getColorblindMode();
+  Future<void> setColorblindMode(ColorblindMode value);
 
   Future<bool> getSoundsEnabled();
   Future<void> setSoundsEnabled(bool value);

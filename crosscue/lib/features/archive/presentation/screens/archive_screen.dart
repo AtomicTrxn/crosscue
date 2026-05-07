@@ -37,18 +37,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
     final archiveAsync = ref.watch(archiveEntriesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Archive'),
-        actions: [
-          // ⊕ import shortcut
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            color: CrosscueColors.primary,
-            tooltip: 'Import puzzle',
-            onPressed: () => context.push(Routes.sourceManagement),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Archive')),
       body: archiveAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),

@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
-import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 
 /// Paints the crossword grid using direct canvas calls.
@@ -17,6 +18,7 @@ class CrosswordGridPainter extends CustomPainter {
     required this.progress,
     required this.solveState,
     required this.theme,
+    required this.colorblindMode,
     this.previousSolveState,
     this.effects = const {},
     this.effectValue = 1.0,
@@ -26,6 +28,7 @@ class CrosswordGridPainter extends CustomPainter {
   final Grid<CellProgress> progress;
   final SolveState solveState;
   final CrosswordTheme theme;
+  final ColorblindMode colorblindMode;
   final SolveState? previousSolveState;
   final Map<(int, int), GridCellEffect> effects;
   final double effectValue;
@@ -142,6 +145,7 @@ class CrosswordGridPainter extends CustomPainter {
             prog.letter,
             rect,
             cellSize,
+            color: _letterColorFor(r, c),
             scale: effect?.type == GridCellEffectType.entry
                 ? 0.7 + (0.3 * effectValue)
                 : 1.0,
@@ -162,6 +166,8 @@ class CrosswordGridPainter extends CustomPainter {
             opacity: 1.0 - effectValue,
           );
         }
+
+        _paintAccessibilityOverlay(canvas, prog, cell.solution, rect, cellSize);
 
         if (isShaking || effect?.isFlip == true) {
           canvas.restore();
@@ -188,8 +194,8 @@ class CrosswordGridPainter extends CustomPainter {
     if (state.isWordHighlighted(row, col)) {
       return theme.wordHighlight;
     }
-    if (state.isCrossHighlighted(row, col)) {
-      return theme.crossHighlight;
+    if (_isCompletedCell(state, row, col)) {
+      return const Color(0xFFC8E6C9);
     }
     return _cellBg(grid.cell(row, col));
   }
@@ -235,6 +241,7 @@ class CrosswordGridPainter extends CustomPainter {
     String letter,
     Rect cellRect,
     double cellSize, {
+    Color? color,
     double scale = 1.0,
     double opacity = 1.0,
   }) {
@@ -242,14 +249,15 @@ class CrosswordGridPainter extends CustomPainter {
         (cellSize * CrosscueTypography.cellLetterFactor).clamp(10.0, 32.0);
     // Revealed cells use standard cellText — the stateRevealed background
     // (pale yellow) communicates the revealed state visually.
-    final color = theme.cellText.withValues(alpha: opacity.clamp(0.0, 1.0));
+    final effectiveColor =
+        (color ?? theme.cellText).withValues(alpha: opacity.clamp(0.0, 1.0));
 
     final tp = TextPainter(
       text: TextSpan(
         text: letter,
         style: TextStyle(
           fontSize: fontSize * scale,
-          color: color,
+          color: effectiveColor,
           fontFamily: CrosscueTypography.roboto,
           fontWeight: FontWeight.bold,
           height: 1.0,
@@ -268,6 +276,65 @@ class CrosswordGridPainter extends CustomPainter {
     );
   }
 
+  Color _letterColorFor(int row, int col) {
+    if (_isCompletedCell(solveState, row, col)) {
+      return const Color(0xFF2E7D32);
+    }
+    return theme.cellText;
+  }
+
+  bool _isCompletedCell(SolveState state, int row, int col) {
+    final progress = state.progress.cell(row, col);
+    if (progress.letter.isEmpty) return false;
+    for (final clue in state.puzzle.clues) {
+      if (!SolveState.cellInClue(row, col, clue)) continue;
+      if (_isClueComplete(state, clue)) return true;
+    }
+    return false;
+  }
+
+  bool _isClueComplete(SolveState state, Clue clue) {
+    for (var i = 0; i < clue.length; i++) {
+      final (row, col) = clue.direction == Direction.across
+          ? (clue.startRow, clue.startCol + i)
+          : (clue.startRow + i, clue.startCol);
+      final progress = state.progress.cell(row, col);
+      final solution = state.puzzle.grid.cell(row, col).solution;
+      if (progress.letter.isEmpty ||
+          progress.letter.toUpperCase() != solution.toUpperCase()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _paintAccessibilityOverlay(
+    Canvas canvas,
+    CellProgress progress,
+    String solution,
+    Rect rect,
+    double cellSize,
+  ) {
+    switch (colorblindMode) {
+      case ColorblindMode.none:
+        return;
+      case ColorblindMode.deuteranopia:
+        final isCorrect = progress.state == CellState.checkedCorrect ||
+            (progress.letter.isNotEmpty &&
+                progress.letter.toUpperCase() == solution.toUpperCase());
+        if (!isCorrect) return;
+        final dotPaint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = CrosscueColors.primary;
+        final radius = (cellSize * 0.09).clamp(2.0, 4.5);
+        canvas.drawCircle(
+          Offset(rect.right - radius - 2, rect.top + radius + 2),
+          radius,
+          dotPaint,
+        );
+    }
+  }
+
   @override
   bool shouldRepaint(CrosswordGridPainter oldDelegate) {
     return oldDelegate.progress != progress ||
@@ -275,6 +342,7 @@ class CrosswordGridPainter extends CustomPainter {
         oldDelegate.previousSolveState != previousSolveState ||
         oldDelegate.effects != effects ||
         oldDelegate.effectValue != effectValue ||
+        oldDelegate.colorblindMode != colorblindMode ||
         oldDelegate.solveState.focus != solveState.focus ||
         oldDelegate.solveState.status != solveState.status;
   }

@@ -14,6 +14,7 @@ import 'tables/app_settings_table.dart';
 import 'tables/cell_progress_table.dart';
 import 'tables/clues_table.dart';
 import 'tables/puzzles_table.dart';
+import 'tables/imported_solve_stats_table.dart';
 import 'tables/solve_sessions_table.dart';
 import 'tables/sources_table.dart';
 
@@ -26,6 +27,7 @@ part 'app_database.g.dart';
   SolveSessionsTable,
   CellProgressTable,
   AppSettingsTable,
+  ImportedSolveStatsTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
@@ -40,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   StatsDao get statsDao => StatsDao(this);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -49,7 +51,9 @@ class AppDatabase extends _$AppDatabase {
           await _seedLocalImportSource();
         },
         onUpgrade: (m, from, to) async {
-          // Future migrations go here.
+          if (from < 2) {
+            await m.createTable(importedSolveStatsTable);
+          }
         },
         beforeOpen: (details) async {
           // Enable foreign key enforcement.
@@ -66,6 +70,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> clearAllUserData() async {
     await transaction(() async {
       await delete(puzzlesTable).go();
+      await delete(importedSolveStatsTable).go();
       await delete(appSettingsTable).go();
     });
   }

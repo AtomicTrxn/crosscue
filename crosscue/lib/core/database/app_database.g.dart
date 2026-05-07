@@ -4405,6 +4405,489 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
   }
 }
 
+class $ImportedSolveStatsTableTable extends ImportedSolveStatsTable
+    with TableInfo<$ImportedSolveStatsTableTable, ImportedSolveStatRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImportedSolveStatsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _completionTypeMeta =
+      const VerificationMeta('completionType');
+  @override
+  late final GeneratedColumn<String> completionType = GeneratedColumn<String>(
+      'completion_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _elapsedMsMeta =
+      const VerificationMeta('elapsedMs');
+  @override
+  late final GeneratedColumn<int> elapsedMs = GeneratedColumn<int>(
+      'elapsed_ms', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _solvedDateLocalMeta =
+      const VerificationMeta('solvedDateLocal');
+  @override
+  late final GeneratedColumn<String> solvedDateLocal = GeneratedColumn<String>(
+      'solved_date_local', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _solvedTimezoneMeta =
+      const VerificationMeta('solvedTimezone');
+  @override
+  late final GeneratedColumn<String> solvedTimezone = GeneratedColumn<String>(
+      'solved_timezone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _widthMeta = const VerificationMeta('width');
+  @override
+  late final GeneratedColumn<int> width = GeneratedColumn<int>(
+      'width', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _heightMeta = const VerificationMeta('height');
+  @override
+  late final GeneratedColumn<int> height = GeneratedColumn<int>(
+      'height', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _puzzleTitleMeta =
+      const VerificationMeta('puzzleTitle');
+  @override
+  late final GeneratedColumn<String> puzzleTitle = GeneratedColumn<String>(
+      'puzzle_title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _importedAtMeta =
+      const VerificationMeta('importedAt');
+  @override
+  late final GeneratedColumn<DateTime> importedAt = GeneratedColumn<DateTime>(
+      'imported_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        completionType,
+        elapsedMs,
+        solvedDateLocal,
+        solvedTimezone,
+        width,
+        height,
+        puzzleTitle,
+        importedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'imported_solve_stats';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ImportedSolveStatRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('completion_type')) {
+      context.handle(
+          _completionTypeMeta,
+          completionType.isAcceptableOrUnknown(
+              data['completion_type']!, _completionTypeMeta));
+    } else if (isInserting) {
+      context.missing(_completionTypeMeta);
+    }
+    if (data.containsKey('elapsed_ms')) {
+      context.handle(_elapsedMsMeta,
+          elapsedMs.isAcceptableOrUnknown(data['elapsed_ms']!, _elapsedMsMeta));
+    } else if (isInserting) {
+      context.missing(_elapsedMsMeta);
+    }
+    if (data.containsKey('solved_date_local')) {
+      context.handle(
+          _solvedDateLocalMeta,
+          solvedDateLocal.isAcceptableOrUnknown(
+              data['solved_date_local']!, _solvedDateLocalMeta));
+    } else if (isInserting) {
+      context.missing(_solvedDateLocalMeta);
+    }
+    if (data.containsKey('solved_timezone')) {
+      context.handle(
+          _solvedTimezoneMeta,
+          solvedTimezone.isAcceptableOrUnknown(
+              data['solved_timezone']!, _solvedTimezoneMeta));
+    }
+    if (data.containsKey('width')) {
+      context.handle(
+          _widthMeta, width.isAcceptableOrUnknown(data['width']!, _widthMeta));
+    } else if (isInserting) {
+      context.missing(_widthMeta);
+    }
+    if (data.containsKey('height')) {
+      context.handle(_heightMeta,
+          height.isAcceptableOrUnknown(data['height']!, _heightMeta));
+    } else if (isInserting) {
+      context.missing(_heightMeta);
+    }
+    if (data.containsKey('puzzle_title')) {
+      context.handle(
+          _puzzleTitleMeta,
+          puzzleTitle.isAcceptableOrUnknown(
+              data['puzzle_title']!, _puzzleTitleMeta));
+    } else if (isInserting) {
+      context.missing(_puzzleTitleMeta);
+    }
+    if (data.containsKey('imported_at')) {
+      context.handle(
+          _importedAtMeta,
+          importedAt.isAcceptableOrUnknown(
+              data['imported_at']!, _importedAtMeta));
+    } else if (isInserting) {
+      context.missing(_importedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+        {puzzleTitle, solvedDateLocal},
+      ];
+  @override
+  ImportedSolveStatRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportedSolveStatRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      completionType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}completion_type'])!,
+      elapsedMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}elapsed_ms'])!,
+      solvedDateLocal: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}solved_date_local'])!,
+      solvedTimezone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}solved_timezone']),
+      width: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}width'])!,
+      height: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}height'])!,
+      puzzleTitle: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}puzzle_title'])!,
+      importedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}imported_at'])!,
+    );
+  }
+
+  @override
+  $ImportedSolveStatsTableTable createAlias(String alias) {
+    return $ImportedSolveStatsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ImportedSolveStatRow extends DataClass
+    implements Insertable<ImportedSolveStatRow> {
+  final int id;
+  final String completionType;
+  final int elapsedMs;
+  final String solvedDateLocal;
+  final String? solvedTimezone;
+  final int width;
+  final int height;
+  final String puzzleTitle;
+  final DateTime importedAt;
+  const ImportedSolveStatRow(
+      {required this.id,
+      required this.completionType,
+      required this.elapsedMs,
+      required this.solvedDateLocal,
+      this.solvedTimezone,
+      required this.width,
+      required this.height,
+      required this.puzzleTitle,
+      required this.importedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['completion_type'] = Variable<String>(completionType);
+    map['elapsed_ms'] = Variable<int>(elapsedMs);
+    map['solved_date_local'] = Variable<String>(solvedDateLocal);
+    if (!nullToAbsent || solvedTimezone != null) {
+      map['solved_timezone'] = Variable<String>(solvedTimezone);
+    }
+    map['width'] = Variable<int>(width);
+    map['height'] = Variable<int>(height);
+    map['puzzle_title'] = Variable<String>(puzzleTitle);
+    map['imported_at'] = Variable<DateTime>(importedAt);
+    return map;
+  }
+
+  ImportedSolveStatsTableCompanion toCompanion(bool nullToAbsent) {
+    return ImportedSolveStatsTableCompanion(
+      id: Value(id),
+      completionType: Value(completionType),
+      elapsedMs: Value(elapsedMs),
+      solvedDateLocal: Value(solvedDateLocal),
+      solvedTimezone: solvedTimezone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(solvedTimezone),
+      width: Value(width),
+      height: Value(height),
+      puzzleTitle: Value(puzzleTitle),
+      importedAt: Value(importedAt),
+    );
+  }
+
+  factory ImportedSolveStatRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportedSolveStatRow(
+      id: serializer.fromJson<int>(json['id']),
+      completionType: serializer.fromJson<String>(json['completionType']),
+      elapsedMs: serializer.fromJson<int>(json['elapsedMs']),
+      solvedDateLocal: serializer.fromJson<String>(json['solvedDateLocal']),
+      solvedTimezone: serializer.fromJson<String?>(json['solvedTimezone']),
+      width: serializer.fromJson<int>(json['width']),
+      height: serializer.fromJson<int>(json['height']),
+      puzzleTitle: serializer.fromJson<String>(json['puzzleTitle']),
+      importedAt: serializer.fromJson<DateTime>(json['importedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'completionType': serializer.toJson<String>(completionType),
+      'elapsedMs': serializer.toJson<int>(elapsedMs),
+      'solvedDateLocal': serializer.toJson<String>(solvedDateLocal),
+      'solvedTimezone': serializer.toJson<String?>(solvedTimezone),
+      'width': serializer.toJson<int>(width),
+      'height': serializer.toJson<int>(height),
+      'puzzleTitle': serializer.toJson<String>(puzzleTitle),
+      'importedAt': serializer.toJson<DateTime>(importedAt),
+    };
+  }
+
+  ImportedSolveStatRow copyWith(
+          {int? id,
+          String? completionType,
+          int? elapsedMs,
+          String? solvedDateLocal,
+          Value<String?> solvedTimezone = const Value.absent(),
+          int? width,
+          int? height,
+          String? puzzleTitle,
+          DateTime? importedAt}) =>
+      ImportedSolveStatRow(
+        id: id ?? this.id,
+        completionType: completionType ?? this.completionType,
+        elapsedMs: elapsedMs ?? this.elapsedMs,
+        solvedDateLocal: solvedDateLocal ?? this.solvedDateLocal,
+        solvedTimezone:
+            solvedTimezone.present ? solvedTimezone.value : this.solvedTimezone,
+        width: width ?? this.width,
+        height: height ?? this.height,
+        puzzleTitle: puzzleTitle ?? this.puzzleTitle,
+        importedAt: importedAt ?? this.importedAt,
+      );
+  ImportedSolveStatRow copyWithCompanion(
+      ImportedSolveStatsTableCompanion data) {
+    return ImportedSolveStatRow(
+      id: data.id.present ? data.id.value : this.id,
+      completionType: data.completionType.present
+          ? data.completionType.value
+          : this.completionType,
+      elapsedMs: data.elapsedMs.present ? data.elapsedMs.value : this.elapsedMs,
+      solvedDateLocal: data.solvedDateLocal.present
+          ? data.solvedDateLocal.value
+          : this.solvedDateLocal,
+      solvedTimezone: data.solvedTimezone.present
+          ? data.solvedTimezone.value
+          : this.solvedTimezone,
+      width: data.width.present ? data.width.value : this.width,
+      height: data.height.present ? data.height.value : this.height,
+      puzzleTitle:
+          data.puzzleTitle.present ? data.puzzleTitle.value : this.puzzleTitle,
+      importedAt:
+          data.importedAt.present ? data.importedAt.value : this.importedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportedSolveStatRow(')
+          ..write('id: $id, ')
+          ..write('completionType: $completionType, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('solvedDateLocal: $solvedDateLocal, ')
+          ..write('solvedTimezone: $solvedTimezone, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('puzzleTitle: $puzzleTitle, ')
+          ..write('importedAt: $importedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, completionType, elapsedMs,
+      solvedDateLocal, solvedTimezone, width, height, puzzleTitle, importedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportedSolveStatRow &&
+          other.id == this.id &&
+          other.completionType == this.completionType &&
+          other.elapsedMs == this.elapsedMs &&
+          other.solvedDateLocal == this.solvedDateLocal &&
+          other.solvedTimezone == this.solvedTimezone &&
+          other.width == this.width &&
+          other.height == this.height &&
+          other.puzzleTitle == this.puzzleTitle &&
+          other.importedAt == this.importedAt);
+}
+
+class ImportedSolveStatsTableCompanion
+    extends UpdateCompanion<ImportedSolveStatRow> {
+  final Value<int> id;
+  final Value<String> completionType;
+  final Value<int> elapsedMs;
+  final Value<String> solvedDateLocal;
+  final Value<String?> solvedTimezone;
+  final Value<int> width;
+  final Value<int> height;
+  final Value<String> puzzleTitle;
+  final Value<DateTime> importedAt;
+  const ImportedSolveStatsTableCompanion({
+    this.id = const Value.absent(),
+    this.completionType = const Value.absent(),
+    this.elapsedMs = const Value.absent(),
+    this.solvedDateLocal = const Value.absent(),
+    this.solvedTimezone = const Value.absent(),
+    this.width = const Value.absent(),
+    this.height = const Value.absent(),
+    this.puzzleTitle = const Value.absent(),
+    this.importedAt = const Value.absent(),
+  });
+  ImportedSolveStatsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String completionType,
+    required int elapsedMs,
+    required String solvedDateLocal,
+    this.solvedTimezone = const Value.absent(),
+    required int width,
+    required int height,
+    required String puzzleTitle,
+    required DateTime importedAt,
+  })  : completionType = Value(completionType),
+        elapsedMs = Value(elapsedMs),
+        solvedDateLocal = Value(solvedDateLocal),
+        width = Value(width),
+        height = Value(height),
+        puzzleTitle = Value(puzzleTitle),
+        importedAt = Value(importedAt);
+  static Insertable<ImportedSolveStatRow> custom({
+    Expression<int>? id,
+    Expression<String>? completionType,
+    Expression<int>? elapsedMs,
+    Expression<String>? solvedDateLocal,
+    Expression<String>? solvedTimezone,
+    Expression<int>? width,
+    Expression<int>? height,
+    Expression<String>? puzzleTitle,
+    Expression<DateTime>? importedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (completionType != null) 'completion_type': completionType,
+      if (elapsedMs != null) 'elapsed_ms': elapsedMs,
+      if (solvedDateLocal != null) 'solved_date_local': solvedDateLocal,
+      if (solvedTimezone != null) 'solved_timezone': solvedTimezone,
+      if (width != null) 'width': width,
+      if (height != null) 'height': height,
+      if (puzzleTitle != null) 'puzzle_title': puzzleTitle,
+      if (importedAt != null) 'imported_at': importedAt,
+    });
+  }
+
+  ImportedSolveStatsTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? completionType,
+      Value<int>? elapsedMs,
+      Value<String>? solvedDateLocal,
+      Value<String?>? solvedTimezone,
+      Value<int>? width,
+      Value<int>? height,
+      Value<String>? puzzleTitle,
+      Value<DateTime>? importedAt}) {
+    return ImportedSolveStatsTableCompanion(
+      id: id ?? this.id,
+      completionType: completionType ?? this.completionType,
+      elapsedMs: elapsedMs ?? this.elapsedMs,
+      solvedDateLocal: solvedDateLocal ?? this.solvedDateLocal,
+      solvedTimezone: solvedTimezone ?? this.solvedTimezone,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      puzzleTitle: puzzleTitle ?? this.puzzleTitle,
+      importedAt: importedAt ?? this.importedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (completionType.present) {
+      map['completion_type'] = Variable<String>(completionType.value);
+    }
+    if (elapsedMs.present) {
+      map['elapsed_ms'] = Variable<int>(elapsedMs.value);
+    }
+    if (solvedDateLocal.present) {
+      map['solved_date_local'] = Variable<String>(solvedDateLocal.value);
+    }
+    if (solvedTimezone.present) {
+      map['solved_timezone'] = Variable<String>(solvedTimezone.value);
+    }
+    if (width.present) {
+      map['width'] = Variable<int>(width.value);
+    }
+    if (height.present) {
+      map['height'] = Variable<int>(height.value);
+    }
+    if (puzzleTitle.present) {
+      map['puzzle_title'] = Variable<String>(puzzleTitle.value);
+    }
+    if (importedAt.present) {
+      map['imported_at'] = Variable<DateTime>(importedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportedSolveStatsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('completionType: $completionType, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('solvedDateLocal: $solvedDateLocal, ')
+          ..write('solvedTimezone: $solvedTimezone, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('puzzleTitle: $puzzleTitle, ')
+          ..write('importedAt: $importedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4417,6 +4900,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CellProgressTableTable(this);
   late final $AppSettingsTableTable appSettingsTable =
       $AppSettingsTableTable(this);
+  late final $ImportedSolveStatsTableTable importedSolveStatsTable =
+      $ImportedSolveStatsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4427,7 +4912,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         cluesTable,
         solveSessionsTable,
         cellProgressTable,
-        appSettingsTable
+        appSettingsTable,
+        importedSolveStatsTable
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -7144,6 +7630,246 @@ typedef $$AppSettingsTableTableProcessedTableManager = ProcessedTableManager<
     ),
     AppSettingRow,
     PrefetchHooks Function()>;
+typedef $$ImportedSolveStatsTableTableCreateCompanionBuilder
+    = ImportedSolveStatsTableCompanion Function({
+  Value<int> id,
+  required String completionType,
+  required int elapsedMs,
+  required String solvedDateLocal,
+  Value<String?> solvedTimezone,
+  required int width,
+  required int height,
+  required String puzzleTitle,
+  required DateTime importedAt,
+});
+typedef $$ImportedSolveStatsTableTableUpdateCompanionBuilder
+    = ImportedSolveStatsTableCompanion Function({
+  Value<int> id,
+  Value<String> completionType,
+  Value<int> elapsedMs,
+  Value<String> solvedDateLocal,
+  Value<String?> solvedTimezone,
+  Value<int> width,
+  Value<int> height,
+  Value<String> puzzleTitle,
+  Value<DateTime> importedAt,
+});
+
+class $$ImportedSolveStatsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ImportedSolveStatsTableTable> {
+  $$ImportedSolveStatsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completionType => $composableBuilder(
+      column: $table.completionType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get elapsedMs => $composableBuilder(
+      column: $table.elapsedMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get width => $composableBuilder(
+      column: $table.width, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get height => $composableBuilder(
+      column: $table.height, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get puzzleTitle => $composableBuilder(
+      column: $table.puzzleTitle, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get importedAt => $composableBuilder(
+      column: $table.importedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ImportedSolveStatsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImportedSolveStatsTableTable> {
+  $$ImportedSolveStatsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get completionType => $composableBuilder(
+      column: $table.completionType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get elapsedMs => $composableBuilder(
+      column: $table.elapsedMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get width => $composableBuilder(
+      column: $table.width, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get height => $composableBuilder(
+      column: $table.height, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get puzzleTitle => $composableBuilder(
+      column: $table.puzzleTitle, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get importedAt => $composableBuilder(
+      column: $table.importedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ImportedSolveStatsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImportedSolveStatsTableTable> {
+  $$ImportedSolveStatsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get completionType => $composableBuilder(
+      column: $table.completionType, builder: (column) => column);
+
+  GeneratedColumn<int> get elapsedMs =>
+      $composableBuilder(column: $table.elapsedMs, builder: (column) => column);
+
+  GeneratedColumn<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal, builder: (column) => column);
+
+  GeneratedColumn<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone, builder: (column) => column);
+
+  GeneratedColumn<int> get width =>
+      $composableBuilder(column: $table.width, builder: (column) => column);
+
+  GeneratedColumn<int> get height =>
+      $composableBuilder(column: $table.height, builder: (column) => column);
+
+  GeneratedColumn<String> get puzzleTitle => $composableBuilder(
+      column: $table.puzzleTitle, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get importedAt => $composableBuilder(
+      column: $table.importedAt, builder: (column) => column);
+}
+
+class $$ImportedSolveStatsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ImportedSolveStatsTableTable,
+    ImportedSolveStatRow,
+    $$ImportedSolveStatsTableTableFilterComposer,
+    $$ImportedSolveStatsTableTableOrderingComposer,
+    $$ImportedSolveStatsTableTableAnnotationComposer,
+    $$ImportedSolveStatsTableTableCreateCompanionBuilder,
+    $$ImportedSolveStatsTableTableUpdateCompanionBuilder,
+    (
+      ImportedSolveStatRow,
+      BaseReferences<_$AppDatabase, $ImportedSolveStatsTableTable,
+          ImportedSolveStatRow>
+    ),
+    ImportedSolveStatRow,
+    PrefetchHooks Function()> {
+  $$ImportedSolveStatsTableTableTableManager(
+      _$AppDatabase db, $ImportedSolveStatsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImportedSolveStatsTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImportedSolveStatsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImportedSolveStatsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> completionType = const Value.absent(),
+            Value<int> elapsedMs = const Value.absent(),
+            Value<String> solvedDateLocal = const Value.absent(),
+            Value<String?> solvedTimezone = const Value.absent(),
+            Value<int> width = const Value.absent(),
+            Value<int> height = const Value.absent(),
+            Value<String> puzzleTitle = const Value.absent(),
+            Value<DateTime> importedAt = const Value.absent(),
+          }) =>
+              ImportedSolveStatsTableCompanion(
+            id: id,
+            completionType: completionType,
+            elapsedMs: elapsedMs,
+            solvedDateLocal: solvedDateLocal,
+            solvedTimezone: solvedTimezone,
+            width: width,
+            height: height,
+            puzzleTitle: puzzleTitle,
+            importedAt: importedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String completionType,
+            required int elapsedMs,
+            required String solvedDateLocal,
+            Value<String?> solvedTimezone = const Value.absent(),
+            required int width,
+            required int height,
+            required String puzzleTitle,
+            required DateTime importedAt,
+          }) =>
+              ImportedSolveStatsTableCompanion.insert(
+            id: id,
+            completionType: completionType,
+            elapsedMs: elapsedMs,
+            solvedDateLocal: solvedDateLocal,
+            solvedTimezone: solvedTimezone,
+            width: width,
+            height: height,
+            puzzleTitle: puzzleTitle,
+            importedAt: importedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ImportedSolveStatsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $ImportedSolveStatsTableTable,
+        ImportedSolveStatRow,
+        $$ImportedSolveStatsTableTableFilterComposer,
+        $$ImportedSolveStatsTableTableOrderingComposer,
+        $$ImportedSolveStatsTableTableAnnotationComposer,
+        $$ImportedSolveStatsTableTableCreateCompanionBuilder,
+        $$ImportedSolveStatsTableTableUpdateCompanionBuilder,
+        (
+          ImportedSolveStatRow,
+          BaseReferences<_$AppDatabase, $ImportedSolveStatsTableTable,
+              ImportedSolveStatRow>
+        ),
+        ImportedSolveStatRow,
+        PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7160,4 +7886,7 @@ class $AppDatabaseManager {
       $$CellProgressTableTableTableManager(_db, _db.cellProgressTable);
   $$AppSettingsTableTableTableManager get appSettingsTable =>
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
+  $$ImportedSolveStatsTableTableTableManager get importedSolveStatsTable =>
+      $$ImportedSolveStatsTableTableTableManager(
+          _db, _db.importedSolveStatsTable);
 }

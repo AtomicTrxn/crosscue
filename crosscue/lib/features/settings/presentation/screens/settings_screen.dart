@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 
 const _appVersionLabel = 'v1.0.0';
 
@@ -67,16 +70,18 @@ class SettingsScreen extends ConsumerWidget {
           ),
           _RowDivider(),
           _SwitchRow(
-            value: _value(ref.watch(colorblindModeProvider), fallback: false),
-            onChanged: (_) {
-              ref.read(colorblindModeProvider.notifier).toggle();
-              _showStub(context, 'Colorblind palette is not wired yet');
-            },
+            value: _value(
+                  ref.watch(colorblindModeProvider),
+                  fallback: ColorblindMode.none,
+                ) !=
+                ColorblindMode.none,
+            onChanged: (_) =>
+                ref.read(colorblindModeProvider.notifier).toggle(),
             leading: Icons.contrast_outlined,
             title: 'Colorblind mode',
-            subtitle: 'Use alternate puzzle feedback colors',
+            subtitle: 'Adds a dot to correct letters',
           ),
-          const _SectionHeader('Gameplay'),
+          const _SectionHeader('Touch & Sound'),
           _SwitchRow(
             value: _value(ref.watch(hapticsEnabledProvider), fallback: true),
             onChanged: (_) =>
@@ -87,10 +92,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           _SwitchRow(
             value: _value(ref.watch(soundsEnabledProvider), fallback: false),
-            onChanged: (_) {
-              ref.read(soundsEnabledProvider.notifier).toggle();
-              _showStub(context, 'Sounds are not wired yet');
-            },
+            onChanged: (_) => ref.read(soundsEnabledProvider.notifier).toggle(),
             leading: Icons.volume_up_outlined,
             title: 'Sounds',
             subtitle: 'Play subtle feedback sounds',
@@ -155,23 +157,22 @@ class SettingsScreen extends ConsumerWidget {
             value: _value(ref.watch(crashReportingProvider), fallback: false),
             onChanged: (_) {
               ref.read(crashReportingProvider.notifier).toggle();
-              _showStub(context, 'Crash reporting is opt-in and not wired yet');
             },
             leading: Icons.bug_report_outlined,
             title: 'Crash reporting',
-            subtitle: 'Share anonymous crash reports',
+            subtitle: 'Save a local crash log on this device',
           ),
           _NavRow(
             leading: Icons.upload_file_outlined,
             title: 'Export data',
             subtitle: 'Save a local backup',
-            onTap: () => _showStub(context, 'Data export is not wired yet'),
+            onTap: () => _exportData(context, ref),
           ),
           _NavRow(
             leading: Icons.download_outlined,
             title: 'Import data',
             subtitle: 'Restore from a local backup',
-            onTap: () => _showStub(context, 'Data import is not wired yet'),
+            onTap: () => _importData(context, ref),
           ),
           _NavRow(
             leading: Icons.delete_forever_outlined,
@@ -195,15 +196,49 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icons.info_outline,
             title: 'About Crosscue',
             subtitle: _appVersionLabel,
-            onTap: () => showAboutDialog(
-              context: context,
-              applicationName: 'Crosscue',
-              applicationVersion: _appVersionLabel,
-            ),
+            onTap: () => _showAboutDialog(context),
           ),
         ],
       ),
     );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => const _AboutDialog(),
+    );
+  }
+
+  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
+    try {
+      final count = await ref.read(statsExportServiceProvider).exportAndShare();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exported $count completed sessions')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not export data: $e')),
+      );
+    }
+  }
+
+  Future<void> _importData(BuildContext context, WidgetRef ref) async {
+    try {
+      final count = await ref.read(statsExportServiceProvider).pickAndImport();
+      ref.invalidate(statsDataProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Imported $count completed sessions')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not import data: $e')),
+      );
+    }
   }
 
   Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
@@ -251,6 +286,78 @@ class SettingsScreen extends ConsumerWidget {
     ref.invalidate(crashReportingProvider);
 
     if (context.mounted) context.go(Routes.home);
+  }
+}
+
+class _AboutDialog extends StatelessWidget {
+  const _AboutDialog();
+
+  static const _githubUrl = 'https://github.com/AtomicTrxn/crossque';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.asset(
+              'assets/images/ic_launcher.png',
+              width: 72,
+              height: 72,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Crosscue',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'A clean, offline-first crossword app for Android',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _appVersionLabel,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(const ClipboardData(text: _githubUrl));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('GitHub URL copied')),
+                );
+              }
+            },
+            icon: const Icon(Icons.open_in_new),
+            label: const Text(_githubUrl),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
   }
 }
 

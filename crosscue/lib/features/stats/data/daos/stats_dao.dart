@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 
@@ -17,12 +18,24 @@ typedef CompletedSessionStat = ({
   String? difficulty,
 });
 
+typedef StatsExportRecord = ({
+  String completionType,
+  int elapsedMs,
+  String solvedDateLocal,
+  String? solvedTimezone,
+  int width,
+  int height,
+  String puzzleTitle,
+});
+
 /// Provides aggregate and streak-related queries for the Stats screen.
 ///
 /// Raw data is fetched here; all computation (streak algorithm, averages,
 /// personal-best comparisons) is done in [StatsRepositoryImpl] so it is
 /// easily unit-testable without a database.
-@DriftAccessor(tables: [SolveSessionsTable, PuzzlesTable])
+@DriftAccessor(
+  tables: [SolveSessionsTable, PuzzlesTable, ImportedSolveStatsTable],
+)
 class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   StatsDao(super.db);
 
@@ -42,7 +55,7 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
       ),
     ]).get();
 
-    return rows.map((row) {
+    final localRows = rows.map((row) {
       final session = row.readTable(solveSessionsTable);
       final puzzle = row.readTable(puzzlesTable);
       return (
@@ -54,6 +67,58 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
         difficulty: puzzle.difficulty,
       );
     }).toList();
+
+    final importedRows = await select(importedSolveStatsTable).get();
+    return [
+      ...localRows,
+      ...importedRows.map((row) => (
+            completionType: row.completionType,
+            elapsedMs: row.elapsedMs,
+            solvedDateLocal: row.solvedDateLocal,
+            width: row.width,
+            height: row.height,
+            difficulty: null,
+          )),
+    ];
+  }
+
+  Future<List<StatsExportRecord>> getExportRecords() async {
+    final rows = await (select(solveSessionsTable)
+          ..where((t) => t.completionType.isNotNull()))
+        .join([
+      innerJoin(
+        puzzlesTable,
+        puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+      ),
+    ]).get();
+
+    final localRecords = rows.map((row) {
+      final session = row.readTable(solveSessionsTable);
+      final puzzle = row.readTable(puzzlesTable);
+      return (
+        completionType: session.completionType ?? 'clean',
+        elapsedMs: session.elapsedMs,
+        solvedDateLocal: session.solvedDateLocal ?? '',
+        solvedTimezone: session.solvedTimezone,
+        width: puzzle.width,
+        height: puzzle.height,
+        puzzleTitle: puzzle.title,
+      );
+    }).where((row) => row.solvedDateLocal.isNotEmpty);
+
+    final importedRows = await select(importedSolveStatsTable).get();
+    return [
+      ...localRecords,
+      ...importedRows.map((row) => (
+            completionType: row.completionType,
+            elapsedMs: row.elapsedMs,
+            solvedDateLocal: row.solvedDateLocal,
+            solvedTimezone: row.solvedTimezone,
+            width: row.width,
+            height: row.height,
+            puzzleTitle: row.puzzleTitle,
+          )),
+    ];
   }
 
   // ---------------------------------------------------------------------------
@@ -65,8 +130,8 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   ///
   /// Returns strings in 'yyyy-MM-dd' format; nulls are filtered out in the
   /// repository before running the streak algorithm.
-  Future<List<String?>> getStreakDates() {
-    return (selectOnly(solveSessionsTable)
+  Future<List<String?>> getStreakDates() async {
+    final localDates = await (selectOnly(solveSessionsTable)
           ..addColumns([solveSessionsTable.solvedDateLocal])
           ..where(
             solveSessionsTable.completionType.isNotNull() &
@@ -74,6 +139,13 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
           ))
         .map((r) => r.read(solveSessionsTable.solvedDateLocal))
         .get();
+    final importedDates = await (selectOnly(importedSolveStatsTable)
+          ..addColumns([importedSolveStatsTable.solvedDateLocal])
+          ..where(
+              importedSolveStatsTable.completionType.isNotValue('revealed')))
+        .map((r) => r.read(importedSolveStatsTable.solvedDateLocal))
+        .get();
+    return [...localDates, ...importedDates];
   }
 
   // ---------------------------------------------------------------------------
@@ -85,6 +157,60 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     final count = solveSessionsTable.id.count();
     final q = selectOnly(solveSessionsTable)..addColumns([count]);
     final result = await q.getSingle();
-    return result.read(count) ?? 0;
+    final importedCount = importedSolveStatsTable.id.count();
+    final importedQ = selectOnly(importedSolveStatsTable)
+      ..addColumns([importedCount]);
+    final importedResult = await importedQ.getSingle();
+    return (result.read(count) ?? 0) +
+        (importedResult.read(importedCount) ?? 0);
+  }
+
+  Future<bool> hasCompletedRecord({
+    required String puzzleTitle,
+    required String solvedDateLocal,
+  }) async {
+    final localCount = solveSessionsTable.id.count();
+    final local = await (selectOnly(solveSessionsTable)
+          ..addColumns([localCount])
+          ..join([
+            innerJoin(
+              puzzlesTable,
+              puzzlesTable.id.equalsExp(solveSessionsTable.puzzleId),
+            ),
+          ])
+          ..where(
+            solveSessionsTable.completionType.isNotNull() &
+                solveSessionsTable.solvedDateLocal.equals(solvedDateLocal) &
+                puzzlesTable.title.equals(puzzleTitle),
+          ))
+        .getSingle();
+    if ((local.read(localCount) ?? 0) > 0) return true;
+
+    final importedCount = importedSolveStatsTable.id.count();
+    final imported = await (selectOnly(importedSolveStatsTable)
+          ..addColumns([importedCount])
+          ..where(
+            importedSolveStatsTable.puzzleTitle.equals(puzzleTitle) &
+                importedSolveStatsTable.solvedDateLocal.equals(solvedDateLocal),
+          ))
+        .getSingle();
+    return (imported.read(importedCount) ?? 0) > 0;
+  }
+
+  Future<void> insertImportedRecord(StatsExportRecord record) {
+    final now = DateTime.now().toUtc();
+    return into(importedSolveStatsTable).insert(
+      ImportedSolveStatsTableCompanion.insert(
+        completionType: record.completionType,
+        elapsedMs: record.elapsedMs,
+        solvedDateLocal: record.solvedDateLocal,
+        solvedTimezone: Value(record.solvedTimezone),
+        width: record.width,
+        height: record.height,
+        puzzleTitle: record.puzzleTitle,
+        importedAt: now,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
   }
 }

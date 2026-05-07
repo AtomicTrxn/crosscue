@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:vibration/vibration.dart';
 
+import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
@@ -58,6 +59,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     if (lifecycleState == AppLifecycleState.paused ||
         lifecycleState == AppLifecycleState.hidden) {
       ref.read(solveProvider(widget.puzzleId).notifier).pause();
+    } else if (lifecycleState == AppLifecycleState.detached) {
+      unawaited(
+        ref.read(solveProvider(widget.puzzleId).notifier).flushPendingSave(),
+      );
     }
   }
 
@@ -65,6 +70,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     final async = ref.read(hapticsEnabledProvider);
     return async.when(
         data: (v) => v, loading: () => true, error: (_, __) => true);
+  }
+
+  bool get _soundsOn {
+    final async = ref.read(soundsEnabledProvider);
+    return async.when(
+      data: (v) => v,
+      loading: () => false,
+      error: (_, __) => false,
+    );
+  }
+
+  void _playFeedbackSound() {
+    if (_soundsOn) {
+      unawaited(ref.read(soundPlayerProvider).playFeedback());
+    }
   }
 
   void _maybeShowCompletionSheet(SolveState solveState) {
@@ -79,6 +99,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     if (_hapticsOn) {
       unawaited(_pulseCompletionHaptics());
     }
+    _playFeedbackSound();
 
     // Spec §08: wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)
     final animationsDisabled = MediaQuery.of(context).disableAnimations;
@@ -172,6 +193,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   Expanded(
                     child: CluePanel(
                       solveState: solveState,
+                      hapticsEnabled: _hapticsOn,
                       onClueTap: (clue) {
                         if (_hapticsOn) HapticFeedback.selectionClick();
                         ref
@@ -186,12 +208,17 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     CrosswordKeyboard(
                       isSmallPuzzle: puzzle.width <= 7 && puzzle.height <= 7,
                       hapticsEnabled: _hapticsOn,
+                      soundsEnabled: _soundsOn,
+                      onFeedbackSound: _playFeedbackSound,
                       onLetter: (l) {
                         final wordComplete = ref
                             .read(solveProvider(widget.puzzleId).notifier)
                             .inputLetter(l);
                         if (wordComplete && _hapticsOn) {
                           HapticFeedback.mediumImpact();
+                        }
+                        if (wordComplete) {
+                          _playFeedbackSound();
                         }
                       },
                       onBackspace: () => ref
@@ -203,6 +230,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                             .checkWord();
                         if (result.shouldVibrate && _hapticsOn) {
                           HapticFeedback.vibrate();
+                        }
+                        if (result == CheckResult.allCorrect) {
+                          _playFeedbackSound();
                         }
                       },
                     ),
@@ -700,13 +730,18 @@ class _CheckRevealMenu extends ConsumerWidget {
               'The timer will restart from zero.',
             ),
             actions: [
-              TextButton(
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: CrosscueColors.primary,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('Cancel'),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(ctx).colorScheme.error,
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(ctx, true),
                 child: const Text('Reset'),

@@ -149,17 +149,17 @@ final class EntitlementServiceProvider extends $FunctionalProvider<
 String _$entitlementServiceHash() =>
     r'8b777f0857c0b0277e787bd83e737e8c2d1556d2';
 
-/// Crash reporter — no-op until Sentry is wired (post-MVP).
+/// Crash reporter — local-only in Phase 1; no data leaves the device.
 
 @ProviderFor(crashReporter)
 final crashReporterProvider = CrashReporterProvider._();
 
-/// Crash reporter — no-op until Sentry is wired (post-MVP).
+/// Crash reporter — local-only in Phase 1; no data leaves the device.
 
 final class CrashReporterProvider
     extends $FunctionalProvider<CrashReporter, CrashReporter, CrashReporter>
     with $Provider<CrashReporter> {
-  /// Crash reporter — no-op until Sentry is wired (post-MVP).
+  /// Crash reporter — local-only in Phase 1; no data leaves the device.
   CrashReporterProvider._()
       : super(
           from: null,
@@ -193,4 +193,45 @@ final class CrashReporterProvider
   }
 }
 
-String _$crashReporterHash() => r'62ef201ad5b6fd2a7a8e5b4f178a352463c998dd';
+String _$crashReporterHash() => r'c86a5ab1826f6068ee77a662ee3b040bdd1aa8fb';
+
+@ProviderFor(soundPlayer)
+final soundPlayerProvider = SoundPlayerProvider._();
+
+final class SoundPlayerProvider
+    extends $FunctionalProvider<SoundPlayer, SoundPlayer, SoundPlayer>
+    with $Provider<SoundPlayer> {
+  SoundPlayerProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'soundPlayerProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$soundPlayerHash();
+
+  @$internal
+  @override
+  $ProviderElement<SoundPlayer> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SoundPlayer create(Ref ref) {
+    return soundPlayer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SoundPlayer value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SoundPlayer>(value),
+    );
+  }
+}
+
+String _$soundPlayerHash() => r'e8a014932109bf01b02f58abdf475f9b2e7cc575';

@@ -53,6 +53,50 @@ final class StatsRepositoryProvider extends $FunctionalProvider<StatsRepository,
 
 String _$statsRepositoryHash() => r'c9fab6d45f2922cf29c95d00f482084b62035d54';
 
+@ProviderFor(statsExportService)
+final statsExportServiceProvider = StatsExportServiceProvider._();
+
+final class StatsExportServiceProvider extends $FunctionalProvider<
+    StatsExportService,
+    StatsExportService,
+    StatsExportService> with $Provider<StatsExportService> {
+  StatsExportServiceProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'statsExportServiceProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$statsExportServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<StatsExportService> $createElement(
+          $ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  StatsExportService create(Ref ref) {
+    return statsExportService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(StatsExportService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<StatsExportService>(value),
+    );
+  }
+}
+
+String _$statsExportServiceHash() =>
+    r'67d362a0ae4d62ec8459402d43d1e13ab11e2829';
+
 /// Aggregated stats derived from all solve sessions.
 /// Re-fetched each time the provider is watched (no keepAlive),
 /// so opening the Stats tab always shows fresh data.

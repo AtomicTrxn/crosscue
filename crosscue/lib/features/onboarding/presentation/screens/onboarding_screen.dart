@@ -166,7 +166,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onImport: () async {
                 final nav = GoRouter.of(context);
                 await _complete();
-                if (mounted) nav.push(Routes.import_);
+                if (mounted) nav.go(Routes.import_);
               },
               onLater: () async {
                 final nav = GoRouter.of(context);

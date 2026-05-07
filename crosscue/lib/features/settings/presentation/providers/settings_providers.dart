@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
@@ -65,10 +66,17 @@ class HapticsEnabledNotifier extends _$HapticsEnabledNotifier {
 @riverpod
 class ColorblindModeNotifier extends _$ColorblindModeNotifier {
   @override
-  Future<bool> build() => ref.read(appSettingsProvider).getColorblindMode();
+  Future<ColorblindMode> build() =>
+      ref.read(appSettingsProvider).getColorblindMode();
 
   Future<void> toggle() async {
-    final next = _nextBool(state);
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => ColorblindMode.none,
+    };
+    final next = current == ColorblindMode.none
+        ? ColorblindMode.deuteranopia
+        : ColorblindMode.none;
     await ref.read(appSettingsProvider).setColorblindMode(next);
     state = AsyncData(next);
   }

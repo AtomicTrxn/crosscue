@@ -20,6 +20,21 @@ abstract class PuzzleSource {
   /// Legal status of this source per topic-07 guardrails.
   LicenseStatus get licenseStatus;
 
+  /// Public terms or license URL reviewed for this source, when applicable.
+  String? get licenseUrl;
+
+  /// Permission contact, agreement reference, or owner contact for review.
+  String? get permissionContact;
+
+  /// Human-readable cache policy for puzzle bodies and downloaded payloads.
+  String get cachePolicy;
+
+  /// ISO-8601 date of the latest human legal review, or null if unreviewed.
+  String? get lastLegalReviewAt;
+
+  /// Human notes, unresolved risks, or source-specific implementation limits.
+  String? get reviewNotes;
+
   /// Whether the source is currently active.  Disabled sources are not
   /// offered to the user even if their [licenseStatus] is cleared.
   bool get enabled;
