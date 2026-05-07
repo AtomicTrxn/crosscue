@@ -378,14 +378,14 @@ See `core/utils/result.dart` for the full definition and MODELS.md for usage exa
 
 ```bash
 # Run all commands from the project root:
-# /Users/tomhess/Claude/Crossword/crosscue/
+# crosscue/
 
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
-/Users/tomhess/flutter/bin/flutter pub run build_runner build
+flutter pub run build_runner build
 
 # 2. Lint — must be 0 issues
-/Users/tomhess/flutter/bin/flutter analyze
+flutter analyze
 
 # 3. Build check
-/Users/tomhess/flutter/bin/flutter build apk --debug --no-pub
+flutter build apk --debug --no-pub
 ```

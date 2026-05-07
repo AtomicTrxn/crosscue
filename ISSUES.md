@@ -275,7 +275,7 @@ The current About section in Settings is a stub row. Replace with a proper scree
 - App name "Crosscue" in `20px w600`
 - Tagline: "A clean, offline-first crossword app for Android" in `14px #666`
 - Version string from `package_info_plus` (add package if not present)
-- Tappable GitHub URL: `https://github.com/AtomicTrxn/crossque` using `url_launcher`
+- Tappable GitHub URL from app configuration using `url_launcher`
 
 **Key file:** `settings_screen.dart` — expand the About list tile or push a new `AboutScreen`
 
