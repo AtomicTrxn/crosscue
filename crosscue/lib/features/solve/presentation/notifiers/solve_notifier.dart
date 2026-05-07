@@ -525,6 +525,11 @@ class SolveNotifier extends _$SolveNotifier {
     );
   }
 
+  Future<void> flushPendingSave() async {
+    _saveDebounce?.cancel();
+    await _saveNow();
+  }
+
   // ---------------------------------------------------------------------------
   // Focus movement
   // ---------------------------------------------------------------------------

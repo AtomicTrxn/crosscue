@@ -21,6 +21,23 @@ class LocalImportSource implements PuzzleSource {
   LicenseStatus get licenseStatus => LicenseStatus.userImport;
 
   @override
+  String? get licenseUrl => null;
+
+  @override
+  String? get permissionContact => null;
+
+  @override
+  String get cachePolicy =>
+      'User-selected local files are parsed into app storage; raw payloads are not retained.';
+
+  @override
+  String? get lastLegalReviewAt => '2026-05-06';
+
+  @override
+  String? get reviewNotes =>
+      'Local import only. Crosscue does not fetch, redistribute, or automate access to publisher content.';
+
+  @override
   bool get enabled => true;
 
   /// Attribution is not required for user-imported files in the aggregate UI,

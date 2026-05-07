@@ -15,6 +15,9 @@ enum CellState {
   revealed,
 }
 
+/// Accessibility overlay mode for puzzle feedback.
+enum ColorblindMode { none, deuteranopia }
+
 /// High-level puzzle completion status used by PuzzleState and persisted
 /// via TypeConverter to solve_sessions.status.
 ///
@@ -28,7 +31,14 @@ enum CellState {
 ///
 /// solvedWithHelp  = completed using check operations only (no reveals).
 /// solvedWithReveal = completed where ≥1 cell was revealed (hints used).
-enum PuzzleStatus { unsolved, inProgress, solved, solvedWithHelp, solvedWithReveal, revealed }
+enum PuzzleStatus {
+  unsolved,
+  inProgress,
+  solved,
+  solvedWithHelp,
+  solvedWithReveal,
+  revealed,
+}
 
 /// Entry mode for the current cell. Pencil mode is deferred post-MVP but
 /// included here to avoid a future breaking change.

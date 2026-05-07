@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Router;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
   const SourceManagementScreen({super.key});
@@ -15,42 +15,35 @@ class SourceManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final registry = ref.watch(sourceRegistryProvider);
     final sources = registry.allSources;
-    final enabledSources = registry.enabledSources;
+    final localSources = sources.where((source) => source.id == 'local_import');
+    final communitySources =
+        sources.where((source) => source.id != 'local_import');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Puzzle sources')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          const _SectionHeader('Import'),
-          ListTile(
-            leading: const Icon(Icons.folder_open_outlined),
-            title: const Text('Import local file'),
-            subtitle: const Text('.puz and .ipuz files stay on this device'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.import_),
-          ),
-          const Divider(),
           const _SectionHeader('Sources'),
-          if (sources.isEmpty)
+          if (localSources.isEmpty)
             const ListTile(
               leading: Icon(Icons.source_outlined),
               title: Text('No sources configured'),
               subtitle: Text('Local file import is always available.'),
             )
           else
-            for (final source in sources) _SourceTile(source: source),
+            for (final source in localSources) _SourceTile(source: source),
           const Divider(),
-          const _SectionHeader('Future downloads'),
+          const _SectionHeader('Community Crosswords'),
+          for (final source in communitySources) _SourceTile(source: source),
           ListTile(
-            enabled: false,
-            leading: const Icon(Icons.cloud_download_outlined),
-            title: const Text('Licensed online sources'),
-            subtitle: Text(
-              enabledSources.length <= 1
-                  ? 'No rights-cleared online source is configured yet.'
-                  : 'Only rights-cleared sources can be enabled.',
+            leading: const Icon(Icons.fact_check_outlined),
+            title: const Text('Source review checklist'),
+            subtitle: const Text(
+              'Required before any online source can be enabled',
             ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showReviewChecklist(context),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -72,44 +65,30 @@ class SourceManagementScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _SourceTile extends StatelessWidget {
-  const _SourceTile({required this.source});
-
-  final PuzzleSource source;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final status = source.licenseStatus;
-    final enabled = source.enabled &&
-        status != LicenseStatus.needsReview &&
-        status != LicenseStatus.prohibited;
-
-    return ListTile(
-      leading: Icon(
-        enabled ? Icons.check_circle_outline : Icons.block_outlined,
-        color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
-      ),
-      title: Text(source.displayName),
-      subtitle: Text(_statusText(source)),
-      trailing: Chip(
-        label: Text(_statusLabel(status)),
-        visualDensity: VisualDensity.compact,
+  void _showReviewChecklist(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Source review checklist'),
+        content: const Text(
+          'Sources need reviewed terms, attribution, commercial-use, and cache policy before downloads are enabled.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
+}
 
-  String _statusText(PuzzleSource source) {
-    return switch (source.licenseStatus) {
-      LicenseStatus.userImport => 'User-selected files only',
-      LicenseStatus.explicitPermission => 'Enabled by explicit permission',
-      LicenseStatus.openLicense => 'Enabled by open-license terms',
-      LicenseStatus.needsReview => 'Disabled until legal review is complete',
-      LicenseStatus.prohibited => 'Blocked by source policy',
-    };
-  }
+class _SourceTile extends StatelessWidget {
+  final PuzzleSource source;
+
+  const _SourceTile({required this.source});
 
   String _statusLabel(LicenseStatus status) {
     return switch (status) {
@@ -119,6 +98,83 @@ class _SourceTile extends StatelessWidget {
       LicenseStatus.needsReview => 'Review',
       LicenseStatus.prohibited => 'Blocked',
     };
+  }
+
+  String _statusText(PuzzleSource source) {
+    final status = source.licenseStatus;
+    final enabled = source.enabled &&
+        status != LicenseStatus.needsReview &&
+        status != LicenseStatus.prohibited;
+
+    if (source.id == 'local_import') {
+      return '.puz and .ipuz files stay on this device';
+    }
+    if (source.id == 'crosshare_daily_mini') {
+      return 'Community source candidate; downloads pending review';
+    }
+
+    return status == LicenseStatus.prohibited
+        ? 'Blocked${source.enabled ? '; needs review' : ''}'.trim()
+        : status == LicenseStatus.needsReview
+            ? 'Needs review${source.enabled ? '; disabled for now' : ''}'.trim()
+            : enabled
+                ? 'All clear'.toUpperCase()
+                : 'Disabled manually${status == LicenseStatus.userImport ? '' : ' (review)'}'
+                    .trim();
+  }
+
+  String _createCompactContent(PuzzleSource source) {
+    final enabled = source.enabled &&
+        source.licenseStatus != LicenseStatus.needsReview &&
+        source.licenseStatus != LicenseStatus.prohibited;
+    return 'License: ${_statusLabel(source.licenseStatus)}. Enabled: ${enabled ? 'Yes' : 'No'}.';
+  }
+
+  void _showSourceDetails(BuildContext context, PuzzleSource source) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(source.displayName),
+        content: Text(_createCompactContent(source)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final status = source.licenseStatus;
+    final enabled = source.enabled &&
+        status != LicenseStatus.needsReview &&
+        status != LicenseStatus.prohibited;
+    final isLocalImport = source.id == 'local_import';
+
+    return ListTile(
+      leading: Icon(
+        isLocalImport
+            ? Icons.folder_open_outlined
+            : enabled
+                ? Icons.check_circle_outline
+                : Icons.block_outlined,
+        color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
+      ),
+      title: Text(source.displayName),
+      subtitle: Text(_statusText(source)),
+      trailing: isLocalImport ? const Icon(Icons.chevron_right) : null,
+      onTap: () {
+        if (isLocalImport) {
+          context.push(Routes.import_);
+        } else {
+          _showSourceDetails(context, source);
+        }
+      },
+    );
   }
 }
 

@@ -10,10 +10,10 @@ import 'package:crosscue/core/theme/design_tokens.dart';
 /// - Background: #ECEFF1 (keyboardBg)
 /// - Padding: 6dp top, 4dp horizontal, 8dp bottom
 /// - Row gap: 4dp between rows, 3dp between keys
-/// - Standard key: height 44dp, flex 1, maxWidth 34dp, white bg, 5dp radius,
-///   14px w500 #1A1A1A, shadow 0 1px 1px rgba(0,0,0,0.15)
-/// - Small puzzles: height 48dp, 15px text
-/// - ⌫ / ✓ keys: 46dp wide, #B0BEC5 / #1565C0 bg, white text
+/// - Standard key: height 50dp, responsive width fills available space, white bg,
+///   5dp radius, 16px w500 #1A1A1A, shadow 0 1px 1px rgba(0,0,0,0.15)
+/// - Small puzzles: height 54dp, 17px text
+/// - ⌫ / ✓ keys: responsive width, #B0BEC5 / #1565C0 bg, white text
 /// - Three rows: QWERTYUIOP / ASDFGHJKL / ⌫ZXCVBNM✓
 ///
 /// Physical keyboard input is still handled via the hidden [TextField] in
@@ -24,15 +24,19 @@ class CrosswordKeyboard extends StatelessWidget {
     required this.onLetter,
     required this.onBackspace,
     required this.onCheckWord,
+    required this.onFeedbackSound,
     this.isSmallPuzzle = false,
     this.hapticsEnabled = true,
+    this.soundsEnabled = false,
   });
 
   final void Function(String letter) onLetter;
   final VoidCallback onBackspace;
   final VoidCallback onCheckWord;
+  final VoidCallback onFeedbackSound;
   final bool isSmallPuzzle;
   final bool hapticsEnabled;
+  final bool soundsEnabled;
 
   static const _row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
   static const _row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
@@ -43,8 +47,8 @@ class CrosswordKeyboard extends StatelessWidget {
     final xwTheme =
         Theme.of(context).extension<CrosswordTheme>() ?? CrosswordTheme.light();
     final metrics = isSmallPuzzle
-        ? const _KeyMetrics(height: 48, letterFontSize: 15)
-        : const _KeyMetrics(height: 44, letterFontSize: 14);
+        ? const _KeyMetrics(height: 54, letterFontSize: 17)
+        : const _KeyMetrics(height: 50, letterFontSize: 16);
 
     return Container(
       color: xwTheme.keyboardBg,
@@ -66,44 +70,20 @@ class CrosswordKeyboard extends StatelessWidget {
             metrics: metrics,
           ),
           const SizedBox(height: 4),
-          // Bottom row: ⌫ + letters + ✓
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Backspace
-              _SpecialKey(
-                label: '⌫',
-                color: xwTheme.keySpecial,
-                textColor: Colors.white,
-                metrics: metrics,
-                onTap: () {
-                  if (hapticsEnabled) HapticFeedback.selectionClick();
-                  onBackspace();
-                },
-              ),
-              const SizedBox(width: 3),
-              // Letter keys
-              ..._row3.map((l) => Padding(
-                    padding: const EdgeInsets.only(right: 3),
-                    child: _LetterKey(
-                      letter: l,
-                      onTap: () => _tap(l),
-                      xwTheme: xwTheme,
-                      metrics: metrics,
-                    ),
-                  )),
-              // Check-word key
-              _SpecialKey(
-                label: '✓',
-                color: xwTheme.keyCheck,
-                textColor: Colors.white,
-                metrics: metrics,
-                onTap: () {
-                  if (hapticsEnabled) HapticFeedback.lightImpact();
-                  onCheckWord();
-                },
-              ),
-            ],
+          _BottomKeyRow(
+            keys: _row3,
+            onLetter: _tap,
+            onBackspace: () {
+              if (hapticsEnabled) HapticFeedback.selectionClick();
+              _playSound();
+              onBackspace();
+            },
+            onCheckWord: () {
+              if (hapticsEnabled) HapticFeedback.lightImpact();
+              onCheckWord();
+            },
+            xwTheme: xwTheme,
+            metrics: metrics,
           ),
         ],
       ),
@@ -112,7 +92,12 @@ class CrosswordKeyboard extends StatelessWidget {
 
   void _tap(String letter) {
     if (hapticsEnabled) HapticFeedback.lightImpact();
+    _playSound();
     onLetter(letter);
+  }
+
+  void _playSound() {
+    if (soundsEnabled) onFeedbackSound();
   }
 }
 
@@ -135,19 +120,88 @@ class _KeyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < keys.length; i++) ...[
-          if (i > 0) const SizedBox(width: 3),
-          _LetterKey(
-            letter: keys[i],
-            onTap: () => onLetter(keys[i]),
-            xwTheme: xwTheme,
-            metrics: metrics,
-          ),
-        ],
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final keyWidth =
+            (constraints.maxWidth - (keys.length - 1) * 3) / keys.length;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < keys.length; i++) ...[
+              if (i > 0) const SizedBox(width: 3),
+              _LetterKey(
+                letter: keys[i],
+                width: keyWidth,
+                onTap: () => onLetter(keys[i]),
+                xwTheme: xwTheme,
+                metrics: metrics,
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BottomKeyRow extends StatelessWidget {
+  const _BottomKeyRow({
+    required this.keys,
+    required this.onLetter,
+    required this.onBackspace,
+    required this.onCheckWord,
+    required this.xwTheme,
+    required this.metrics,
+  });
+
+  final List<String> keys;
+  final void Function(String) onLetter;
+  final VoidCallback onBackspace;
+  final VoidCallback onCheckWord;
+  final CrosswordTheme xwTheme;
+  final _KeyMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gapTotal = (keys.length + 1) * 3;
+        final unit = (constraints.maxWidth - gapTotal) / (keys.length + 2.6);
+        final keyWidth = unit;
+        final specialWidth = unit * 1.3;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _SpecialKey(
+              label: '⌫',
+              width: specialWidth,
+              color: xwTheme.keySpecial,
+              textColor: Colors.white,
+              metrics: metrics,
+              onTap: onBackspace,
+            ),
+            const SizedBox(width: 3),
+            for (final letter in keys) ...[
+              _LetterKey(
+                letter: letter,
+                width: keyWidth,
+                onTap: () => onLetter(letter),
+                xwTheme: xwTheme,
+                metrics: metrics,
+              ),
+              const SizedBox(width: 3),
+            ],
+            _SpecialKey(
+              label: '✓',
+              width: specialWidth,
+              color: xwTheme.keyCheck,
+              textColor: Colors.white,
+              metrics: metrics,
+              onTap: onCheckWord,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -159,12 +213,14 @@ class _KeyRow extends StatelessWidget {
 class _LetterKey extends StatelessWidget {
   const _LetterKey({
     required this.letter,
+    required this.width,
     required this.onTap,
     required this.xwTheme,
     required this.metrics,
   });
 
   final String letter;
+  final double width;
   final VoidCallback onTap;
   final CrosswordTheme xwTheme;
   final _KeyMetrics metrics;
@@ -174,10 +230,8 @@ class _LetterKey extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 34),
+        width: width,
         height: metrics.height,
-        // Use flex-like sizing: fill available width up to maxWidth
-        width: double.infinity,
         decoration: BoxDecoration(
           color: xwTheme.keyDefault,
           borderRadius: BorderRadius.circular(5),
@@ -211,6 +265,7 @@ class _LetterKey extends StatelessWidget {
 class _SpecialKey extends StatelessWidget {
   const _SpecialKey({
     required this.label,
+    required this.width,
     required this.color,
     required this.textColor,
     required this.metrics,
@@ -218,6 +273,7 @@ class _SpecialKey extends StatelessWidget {
   });
 
   final String label;
+  final double width;
   final Color color;
   final Color textColor;
   final _KeyMetrics metrics;
@@ -228,7 +284,7 @@ class _SpecialKey extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 46,
+        width: width,
         height: metrics.height,
         decoration: BoxDecoration(
           color: color,

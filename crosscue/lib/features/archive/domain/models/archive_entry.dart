@@ -17,6 +17,7 @@ class ArchiveEntry {
     this.elapsedMs,
     this.completedAt,
     this.lastPlayedAt,
+    this.completionFraction = 0,
   });
 
   final String puzzleId;
@@ -49,12 +50,14 @@ class ArchiveEntry {
   /// UTC timestamp when this puzzle was last interacted with.
   final DateTime? lastPlayedAt;
 
+  /// Fraction of white cells filled in the latest session, from 0.0 to 1.0.
+  final double completionFraction;
+
   // ---------------------------------------------------------------------------
   // Derived helpers
   // ---------------------------------------------------------------------------
 
-  bool get isNotStarted =>
-      sessionId == null || sessionStatus == 'not_started';
+  bool get isNotStarted => sessionId == null || sessionStatus == 'not_started';
   bool get isInProgress => sessionStatus == 'in_progress';
   bool get isCompleted => sessionStatus == 'completed';
   bool get isRevealed => sessionStatus == 'revealed';

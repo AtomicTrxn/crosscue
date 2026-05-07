@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:crosscue/core/audio/sound_player.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/entitlement/entitlement_service.dart';
 import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
@@ -22,6 +23,13 @@ SyncAdapter syncAdapter(Ref ref) => const NoOpSyncAdapter();
 EntitlementService entitlementService(Ref ref) =>
     const FreeEntitlementService();
 
-/// Crash reporter — no-op until Sentry is wired (post-MVP).
+/// Crash reporter — local-only in Phase 1; no data leaves the device.
 @Riverpod(keepAlive: true)
-CrashReporter crashReporter(Ref ref) => const NoOpCrashReporter();
+CrashReporter crashReporter(Ref ref) => LocalCrashReporter();
+
+@Riverpod(keepAlive: true)
+SoundPlayer soundPlayer(Ref ref) {
+  final player = SoundPlayer();
+  ref.onDispose(player.dispose);
+  return player;
+}

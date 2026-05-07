@@ -25,6 +25,21 @@ class _StubSource implements PuzzleSource {
   final LicenseStatus licenseStatus;
 
   @override
+  String? get licenseUrl => null;
+
+  @override
+  String? get permissionContact => null;
+
+  @override
+  String get cachePolicy => 'Test cache policy';
+
+  @override
+  String? get lastLegalReviewAt => null;
+
+  @override
+  String? get reviewNotes => null;
+
+  @override
   final bool enabled;
 
   @override
@@ -208,6 +223,12 @@ void main() {
 
     test('rawPayloadRetention is false', () {
       expect(source.rawPayloadRetention, isFalse);
+    });
+
+    test('documents cache and legal review metadata', () {
+      expect(source.cachePolicy, contains('raw payloads are not retained'));
+      expect(source.lastLegalReviewAt, equals('2026-05-06'));
+      expect(source.reviewNotes, contains('does not fetch'));
     });
 
     test('can be registered without error', () {

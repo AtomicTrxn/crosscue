@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -74,6 +77,21 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     final async = ref.read(hapticsEnabledProvider);
     return async.when(
         data: (v) => v, loading: () => true, error: (_, __) => true);
+  }
+
+  bool get _soundsOn {
+    final async = ref.read(soundsEnabledProvider);
+    return async.when(
+      data: (v) => v,
+      loading: () => false,
+      error: (_, __) => false,
+    );
+  }
+
+  void _playFeedbackSound() {
+    if (_soundsOn) {
+      unawaited(ref.read(soundPlayerProvider).playFeedback());
+    }
   }
 
   void _onTap(BuildContext context, Offset localPosition, double cellSize,
@@ -156,12 +174,14 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
 
     if (event.logicalKey == LogicalKeyboardKey.backspace ||
         event.logicalKey == LogicalKeyboardKey.delete) {
+      _playFeedbackSound();
       notifier.backspace();
       return KeyEventResult.handled;
     }
 
     final char = event.character;
     if (char != null && char.isNotEmpty) {
+      _playFeedbackSound();
       _pulseIfWordComplete(notifier.inputLetter(char));
       return KeyEventResult.handled;
     }
@@ -174,6 +194,11 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     final puzzle = widget.solveState.puzzle;
     final xwTheme =
         Theme.of(context).extension<CrosswordTheme>() ?? CrosswordTheme.light();
+    final colorblindMode = ref.watch(colorblindModeProvider).when(
+          data: (mode) => mode,
+          loading: () => ColorblindMode.none,
+          error: (_, __) => ColorblindMode.none,
+        );
     final animationsDisabled = MediaQuery.of(context).disableAnimations;
 
     return LayoutBuilder(
@@ -213,6 +238,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
                       progress: widget.solveState.progress,
                       solveState: widget.solveState,
                       theme: xwTheme,
+                      colorblindMode: colorblindMode,
                       previousSolveState: animationsDisabled
                           ? null
                           : _previousSolveStateForEffect,
@@ -275,11 +301,17 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     if (wordComplete && _hapticsOn) {
       HapticFeedback.mediumImpact();
     }
+    if (wordComplete) {
+      _playFeedbackSound();
+    }
   }
 
   void _vibrateIfIncorrect(CheckResult result) {
     if (result.shouldVibrate && _hapticsOn) {
       HapticFeedback.vibrate();
+    }
+    if (result == CheckResult.allCorrect) {
+      _playFeedbackSound();
     }
   }
 

@@ -180,7 +180,7 @@ abstract class _$HapticsEnabledNotifier extends $AsyncNotifier<bool> {
 final colorblindModeProvider = ColorblindModeNotifierProvider._();
 
 final class ColorblindModeNotifierProvider
-    extends $AsyncNotifierProvider<ColorblindModeNotifier, bool> {
+    extends $AsyncNotifierProvider<ColorblindModeNotifier, ColorblindMode> {
   ColorblindModeNotifierProvider._()
       : super(
           from: null,
@@ -201,17 +201,17 @@ final class ColorblindModeNotifierProvider
 }
 
 String _$colorblindModeNotifierHash() =>
-    r'25d28a29bd03f1df4926de9944387f186e94e466';
+    r'325dcdb3f6b3bf9b9c961f117c3aeda61e1d96c6';
 
-abstract class _$ColorblindModeNotifier extends $AsyncNotifier<bool> {
-  FutureOr<bool> build();
+abstract class _$ColorblindModeNotifier extends $AsyncNotifier<ColorblindMode> {
+  FutureOr<ColorblindMode> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final ref = this.ref as $Ref<AsyncValue<ColorblindMode>, ColorblindMode>;
     final element = ref.element as $ClassProviderElement<
-        AnyNotifier<AsyncValue<bool>, bool>,
-        AsyncValue<bool>,
+        AnyNotifier<AsyncValue<ColorblindMode>, ColorblindMode>,
+        AsyncValue<ColorblindMode>,
         Object?,
         Object?>;
     element.handleCreate(ref, build);

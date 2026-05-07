@@ -13,20 +13,6 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | # | Type | Title | Sprint Target | Notes |
 |---|------|-------|---------------|-------|
 | 3 | ✨ | In-app puzzle downloader for free/licensed sources | Sprint 8+ | See detail below; legal review required before any source ships |
-| 21 | ✨ | Sources: row-tap opens centered modal, condense wording, remove trailing button | Next | Entire `ListTile` row is tappable; detail sheet is a centered `AlertDialog` not a bottom sheet; wording tightened to avoid scrolling |
-| 22 | ✨ | Replace "Future Downloads" with "Community Crosswords" + Crosshare source | Next | Remove the placeholder section; add Crosshare (`openLicense`) as the first free community source. See detail. |
-| 23 | ✨ | Clue panel: scrollable numbered list, full-width dynamic keyboard, haptic scroll | Next | Both across/down lists scroll independently in number order; keyboard fills full width dynamically; panel extends to top of keyboard; haptic tick on scroll; cross-side updates only on release. See detail. |
-| 24 | ✨ | Puzzle reset dialog: cancel button blue | Next | Keep reset button red; make cancel button filled `#1565C0` blue — matches other dialog cancel patterns (#11, #15) |
-| 25 | ✨ | App icon: larger logo with thin margin inside circle | Next | Regenerate icon assets with logo scaled up so only a thin padding remains between logo edge and circle boundary |
-| 26 | ✨ | Stats page: add "Streak" section title above current/longest | Next | Small `12px #999` uppercase label "STREAK" above the current streak / longest streak stat cells, matching section-header style elsewhere |
-| 27 | 🐛 | Onboarding end: navigate to import screen, not today | Next | Final onboarding step CTA should `context.go(Routes.import_)` with back returning to today (`Routes.home`), not go directly to home |
-| 28 | ✨ | About: use centered dialog, match app icon exactly | Next | Replace bottom sheet with `showDialog` centered modal; icon widget must use the same asset as the launcher icon, not a placeholder |
-| 29 | ✨ | Archive page: remove floating add (+) button | Next | The FAB on the archive screen is redundant — import is accessible from Today. Remove it. |
-| 30 | ✨ | Today page add button: context-aware routing + blue color | Next | If no free source enabled → `Routes.import_`; if free source enabled → free source downloader (TBD). Button color: `#1565C0` (selected-tab blue). See detail. |
-| 31 | 🐛 | Cross-direction column highlight too prominent | Next | When a cell is focused, the perpendicular word's light-blue highlight makes letters hard to read. Remove the cross-word highlight entirely or reduce to a 1dp border tint. See detail. |
-| 32 | ✨ | "Crosscue" home header: centered, overlay banner, cold-start only | Next | Header renders as an overlay on top of content (no layout shift); slides up and stays hidden after first appearance each cold start; centered text. See detail. |
-| 33 | ✨ | Android lifecycle: audit all app states | Next | Verify correct behaviour for all Android lifecycle states. See detail. |
-| 34 | ✨ | Today page: pie chart completion indicator next to puzzle size | Next | Small circular progress pie (`~18dp`) inline after size label e.g. "15×15 ◕"; fill proportion = cells filled / total white cells; style matches navy palette. See detail. |
 
 ## Done
 
@@ -48,6 +34,20 @@ Status key: 🐛 Bug · ✨ Enhancement · 💡 Idea · ✅ Done · ❌ Won't Fi
 | 20 | ✨ | Keyboard: increase key size again | 2026-05-06 | Keys are taller/larger with responsive widths for narrow screens |
 | 10 | 🐛 | Export and import data not implemented or wired up | 2026-05-06 | Added JSON stats export/share and additive import into backup-only stats rows |
 | 14 | 🐛 | Sounds not implemented; merge with haptics into "Touch & Sound" section | 2026-05-06 | Added `audioplayers` beep generation and wired sounds to key/check/completion events |
+| 24 | ✨ | Puzzle reset dialog: cancel button blue | 2026-05-06 | Reset remains red; Cancel is now a filled primary-blue button |
+| 26 | ✨ | Stats page: add "Streak" section title above current/longest | 2026-05-06 | Added uppercase `STREAK` label above current/longest streak cells |
+| 29 | ✨ | Archive page: remove floating add (+) button | 2026-05-06 | Removed the redundant Archive add/import shortcut |
+| 31 | 🐛 | Cross-direction column highlight too prominent | 2026-05-06 | Removed the perpendicular word background highlight; active word and focus remain |
+| 21 | ✨ | Sources: row-tap opens centered modal, condense wording, remove trailing button | 2026-05-06 | Local Import routes directly to import; non-local source rows open compact centered dialogs with no trailing button |
+| 28 | ✨ | About: use centered dialog, match app icon exactly | 2026-05-06 | Replaced About bottom sheet with centered dialog using the launcher icon asset |
+| 30 | ✨ | Today page add button: context-aware routing + blue color | 2026-05-06 | Add button now uses primary blue and routes to local import until a downloader-capable source exists |
+| 32 | ✨ | "Crosscue" home header: centered, overlay banner, cold-start only | 2026-05-06 | Added a once-per-process slide-in overlay banner without AppBar layout shift |
+| 34 | ✨ | Today page: pie chart completion indicator next to puzzle size | 2026-05-06 | Added 18dp inline completion pies using latest session progress fraction |
+| 22 | ✨ | Replace "Future Downloads" with "Community Crosswords" + Crosshare source | 2026-05-06 | Replaced placeholder section with Crosshare candidate; downloads stay blocked pending content-rights review |
+| 23 | ✨ | Clue panel: scrollable numbered list, full-width dynamic keyboard, haptic scroll | 2026-05-06 | Clue lists now scroll independently in number order, fill available height, haptic on scroll, and commit selection on release |
+| 25 | ✨ | App icon: larger logo with thin margin inside circle | 2026-05-06 | Regenerated Android launcher icons with a larger crossword mark |
+| 27 | 🐛 | Onboarding end: navigate to import screen, not today | 2026-05-06 | Final onboarding CTA now uses `context.go(Routes.import_)` |
+| 33 | ✨ | Android lifecycle: audit all app states | 2026-05-06 | Detached state now flushes pending saves; lifecycle QA checklist added to deployment docs |
 
 ---
 
@@ -440,6 +440,12 @@ Settings → Puzzle sources exposes those fields and includes a source review
 checklist. A reusable review template lives at
 `docs/source-legal-review-template.md`. This issue remains open because no
 online source has been rights-cleared for downloader implementation.
+
+**Update 2026-05-06:**  
+Crosshare is visible as a Community Crosswords candidate, but downloader
+implementation is still blocked here. Crosshare's app code is AGPL-3.0; hosted
+puzzle-content rights, API terms, attribution, and cache policy still need
+human review before Crosscue may fetch or cache puzzle bodies.
 
 > ⚠️ **Legal guardrail:** Read [topic-07](research/topic-07-legal-tos-puzzle-sources.md)
 > in full before writing any downloader code. Universal, LA Times, and The Guardian

@@ -8,6 +8,8 @@ mixin _$StatsDaoMixin on DatabaseAccessor<AppDatabase> {
   $PuzzlesTableTable get puzzlesTable => attachedDatabase.puzzlesTable;
   $SolveSessionsTableTable get solveSessionsTable =>
       attachedDatabase.solveSessionsTable;
+  $ImportedSolveStatsTableTable get importedSolveStatsTable =>
+      attachedDatabase.importedSolveStatsTable;
   StatsDaoManager get managers => StatsDaoManager(this);
 }
 
@@ -21,4 +23,7 @@ class StatsDaoManager {
   $$SolveSessionsTableTableTableManager get solveSessionsTable =>
       $$SolveSessionsTableTableTableManager(
           _db.attachedDatabase, _db.solveSessionsTable);
+  $$ImportedSolveStatsTableTableTableManager get importedSolveStatsTable =>
+      $$ImportedSolveStatsTableTableTableManager(
+          _db.attachedDatabase, _db.importedSolveStatsTable);
 }

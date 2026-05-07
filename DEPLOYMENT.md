@@ -198,6 +198,19 @@ if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) { ... }
 ```
 Always wrap `pickFiles` in try/catch for `PlatformException`.
 
+### Solve lifecycle QA checklist
+
+Use this when touching `SolveScreen` lifecycle or autosave behavior:
+
+| Transition | Expected result |
+|------------|-----------------|
+| Foreground → background (`paused`) | Timer pauses and current progress is saved. |
+| Hidden / split-screen (`hidden`) | Same as paused. |
+| Phone-call style interruption (`inactive`) | No forced pause; brief interruptions keep the timer running. |
+| Background → foreground (`resumed`) | User-paused puzzles stay paused; the pause overlay controls resume. |
+| App detached / process teardown (`detached`) | Pending autosave is flushed before disposal when possible. |
+| System kill after background | No special callback required; progress was already autosaved on pause. |
+
 ### Freezed compile errors ("Missing concrete implementations")
 Freezed 3.x requires `abstract class` for **single-factory** classes.
 Multi-factory (union) classes use plain `class`.

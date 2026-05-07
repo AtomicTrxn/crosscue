@@ -32,7 +32,8 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
 
     for (final puzzle in allPuzzles) {
       final session = await sessionDao.getLatestSession(puzzle.id);
-      entries.add(_buildEntry(puzzle, session));
+      final completionFraction = await _completionFraction(puzzle.id, session);
+      entries.add(_buildEntry(puzzle, session, completionFraction));
     }
 
     return entries;
@@ -52,7 +53,11 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  ArchiveEntry _buildEntry(PuzzleMetadata puzzle, SolveSessionRow? session) {
+  ArchiveEntry _buildEntry(
+    PuzzleMetadata puzzle,
+    SolveSessionRow? session,
+    double completionFraction,
+  ) {
     if (session == null) {
       return ArchiveEntry(
         puzzleId: puzzle.id,
@@ -63,6 +68,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         importedAt: puzzle.importedAt,
         publishDate: puzzle.publishDate,
         sessionStatus: 'not_started',
+        completionFraction: completionFraction,
       );
     }
     return ArchiveEntry(
@@ -79,6 +85,34 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
       elapsedMs: session.elapsedMs,
       completedAt: session.completedAt,
       lastPlayedAt: session.lastPlayedAt,
+      completionFraction: completionFraction,
     );
+  }
+
+  Future<double> _completionFraction(
+    String puzzleId,
+    SolveSessionRow? session,
+  ) async {
+    if (session == null) return 0;
+    if (session.status == 'completed' || session.status == 'revealed') {
+      return 1;
+    }
+
+    final puzzle = await puzzleDao.getPuzzle(puzzleId);
+    if (puzzle == null) return 0;
+
+    var whiteCells = 0;
+    for (var row = 0; row < puzzle.height; row++) {
+      for (var col = 0; col < puzzle.width; col++) {
+        if (!puzzle.grid.cell(row, col).isBlack) whiteCells++;
+      }
+    }
+    if (whiteCells == 0) return 0;
+
+    final progressRows = await sessionDao.loadCellProgress(session.id);
+    final filled = progressRows
+        .where((row) => row.guess != null && row.guess!.isNotEmpty)
+        .length;
+    return (filled / whiteCells).clamp(0.0, 1.0);
   }
 }

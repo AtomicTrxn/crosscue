@@ -63,6 +63,7 @@ dependencies:
 
   # Keyboard visibility detection
   flutter_keyboard_visibility: ^6.0.0
+  audioplayers: ^6.6.0
 
   # Local notifications (Phase 2 — uncomment when reminders are scoped in)
   # flutter_local_notifications: ^17.0.0
@@ -101,6 +102,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - assets/images/ic_launcher.png
 
 # flutter_native_splash — run: dart run flutter_native_splash:create
 flutter_native_splash:
