@@ -7,11 +7,13 @@ Before writing any code, read these documents in order:
 | Doc | Purpose |
 |-----|---------|
 | **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Feature structure, layer rules, data flow diagrams, checklist for adding a new feature |
-| **[SPRINTS.md](./SPRINTS.md)** | What is already built (✅), what is next (⬜), what is deferred (⏸) — check this before starting any task |
+| **[SPRINTS.md](./SPRINTS.md)** | Open/planned work (⬜) and deferred items (⏸) — check this before starting any task |
 | **[ISSUES.md](./ISSUES.md)** | Bug reports and enhancement requests — check before starting any sprint for items to pull in |
 | **[MODELS.md](./MODELS.md)** | Every domain model, its fields, DB mapping, and ID format |
 | **[CONVENTIONS.md](./CONVENTIONS.md)** | Hard rules: Freezed 3.x, Riverpod 3.x, FocusNode, file picker, routing, Drift, naming |
 | **[DEPLOYMENT.md](./DEPLOYMENT.md)** | How to run, build, install, monitor logs, and debug on the emulator |
+
+Historical shipped-sprint detail lives in **[COMPLETED_SPRINTS.md](./COMPLETED_SPRINTS.md)**. Do not load it unless past implementation context is specifically needed.
 
 ---
 

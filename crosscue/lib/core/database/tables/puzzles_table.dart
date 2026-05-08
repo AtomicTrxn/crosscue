@@ -6,7 +6,8 @@ class PuzzlesTable extends Table {
   @override
   String get tableName => 'puzzles';
 
-  TextColumn get id => text()(); // 'source_id:source_puzzle_id' or checksum for local imports
+  TextColumn get id =>
+      text()(); // 'source_id:source_puzzle_id' or checksum for local imports
   TextColumn get sourceId =>
       text().references(SourcesTable, #id, onDelete: KeyAction.restrict)();
   TextColumn get sourcePuzzleId => text().nullable()();
@@ -23,7 +24,8 @@ class PuzzlesTable extends Table {
   IntColumn get height => integer()();
   TextColumn get checksum => text()(); // SHA-256 of canonical content
   TextColumn get canonicalJson => text()(); // Full puzzle as ipuz-style JSON
-  TextColumn get rawPayload => text().nullable()(); // Original file bytes (if retained)
+  TextColumn get rawPayload =>
+      text().nullable()(); // Original file bytes (if retained)
   DateTimeColumn get fetchedAt => dateTime().nullable()();
   DateTimeColumn get expiresAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();

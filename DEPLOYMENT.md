@@ -115,9 +115,36 @@ Target: **0 issues**. Fix all errors and warnings before committing.
 
 ---
 
-## Deploying to GitHub
+## Pull Request Workflow
 
-Run from the **repo root**, not the Flutter project subdirectory.
+All code and documentation changes should land through a pull request into
+`main`. Run commands from the **repo root**, not the Flutter project
+subdirectory, unless a command explicitly says otherwise.
+
+### Create a branch
+
+```bash
+git checkout main
+git pull --ff-only origin main
+git checkout -b feature/short-description
+```
+
+### Verify locally
+
+Run from `crosscue/`:
+
+```bash
+flutter pub get
+dart run build_runner build
+dart format --output=none --set-exit-if-changed .
+flutter analyze
+flutter test
+flutter build apk --debug --no-pub
+```
+
+### Commit and push
+
+Run from the repo root:
 
 ```bash
 git add <specific files — never git add .>
@@ -130,9 +157,27 @@ Reference sprint if relevant.
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
-git push origin main
+git push -u origin feature/short-description
 ```
+
+Then open a pull request targeting `main`. GitHub Actions runs CI on every PR
+and on every push to `main`. Merge only after CI is green.
+
 Remote: use the repository's configured `origin` URL (`git remote -v`).
+
+### CI coverage
+
+The CI workflow in `.github/workflows/ci.yml` runs:
+
+| Step | Purpose |
+|------|---------|
+| Flutter `3.41.9` + Java 17 setup | Match the local SDK used to verify this project |
+| `flutter pub get` | Restore locked dependencies from `pubspec.lock` |
+| `dart format --output=none --set-exit-if-changed .` | Enforce formatting |
+| `dart run build_runner build` + `git diff --exit-code` | Ensure generated Freezed/Riverpod/Drift files are current |
+| `flutter analyze` | Enforce lint/static analysis |
+| `flutter test` | Run parser, source registry, solve, and widget tests |
+| `flutter build apk --debug --no-pub` | Verify Android debug APK builds |
 
 ---
 

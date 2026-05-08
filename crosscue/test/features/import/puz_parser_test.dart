@@ -111,8 +111,8 @@ void main() {
     });
 
     test('clue (0,0) is 1-Across with text "1-Across"', () {
-      final c = puzzle.clues.firstWhere(
-          (c) => c.number == 1 && c.direction == Direction.across);
+      final c = puzzle.clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(c.text, equals('1-Across'));
       expect(c.startRow, equals(0));
       expect(c.startCol, equals(0));
@@ -129,16 +129,14 @@ void main() {
     });
 
     test('across clues span the correct rows', () {
-      final acrossClues = puzzle.clues
-          .where((c) => c.direction == Direction.across)
-          .toList();
+      final acrossClues =
+          puzzle.clues.where((c) => c.direction == Direction.across).toList();
       expect(acrossClues.map((c) => c.number).toSet(), equals({1, 4, 5}));
     });
 
     test('down clues span the correct columns', () {
-      final downClues = puzzle.clues
-          .where((c) => c.direction == Direction.down)
-          .toList();
+      final downClues =
+          puzzle.clues.where((c) => c.direction == Direction.down).toList();
       expect(downClues.map((c) => c.number).toSet(), equals({1, 2, 3}));
     });
 
@@ -204,7 +202,8 @@ void main() {
     test('truncated file → Err(invalidFormat)', () {
       final r = parser.parse(PuzFixtureBuilder.truncated());
       expect(r, isA<Err>());
-      expect((r as Err).error, isIn([ParseError.invalidFormat, ParseError.missingData]));
+      expect((r as Err).error,
+          isIn([ParseError.invalidFormat, ParseError.missingData]));
     });
 
     test('oversized file → Err(fileTooLarge)', () {
@@ -219,7 +218,14 @@ void main() {
         width: 3,
         height: 3,
         grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: ['1-Across', '1-Down', '2-Down', '3-Down', '4-Across', '5-Across'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
       );
       // Overwrite width byte to 0
       final copy = Uint8List.fromList(bytes);

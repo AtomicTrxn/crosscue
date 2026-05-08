@@ -33,9 +33,9 @@ class PuzFixtureBuilder {
         copyright: '© 2026',
         clueTexts: [
           '1-Across', // 1A: A B C
-          '1-Down',   // 1D: A D G
-          '2-Down',   // 2D: B E H
-          '3-Down',   // 3D: C F I
+          '1-Down', // 1D: A D G
+          '2-Down', // 2D: B E H
+          '3-Down', // 3D: C F I
           '4-Across', // 4A: D E F
           '5-Across', // 5A: G H I
         ],
@@ -139,9 +139,9 @@ class PuzFixtureBuilder {
     List<String> clueTexts = const [],
     bool scrambled = false,
     String notes = '',
-    Map<int, int> grbsMap = const {},  // cellIndex → rebus slot (1-based)
+    Map<int, int> grbsMap = const {}, // cellIndex → rebus slot (1-based)
     Map<int, String> rtblMap = const {}, // slot → multi-letter string
-    Map<int, int> gextMap = const {},  // cellIndex → GEXT flag byte
+    Map<int, int> gextMap = const {}, // cellIndex → GEXT flag byte
   }) {
     final buf = BytesBuilder();
 
@@ -207,7 +207,8 @@ class PuzFixtureBuilder {
       rtblMap.forEach((slot, value) {
         sb.write(' ${slot.toString().padLeft(2, '0')}:$value;');
       });
-      _writeExtBlock(buf, 'RTBL', Uint8List.fromList(latin1.encode(sb.toString())));
+      _writeExtBlock(
+          buf, 'RTBL', Uint8List.fromList(latin1.encode(sb.toString())));
     }
 
     if (gextMap.isNotEmpty) {
@@ -225,7 +226,8 @@ class PuzFixtureBuilder {
 
   static void _writeExtBlock(BytesBuilder buf, String tag, Uint8List data) {
     buf.add(latin1.encode(tag)); // 4-byte tag
-    buf.add([data.length & 0xFF, (data.length >> 8) & 0xFF]); // length uint16 LE
+    buf.add(
+        [data.length & 0xFF, (data.length >> 8) & 0xFF]); // length uint16 LE
     buf.add([0x00, 0x00]); // checksum placeholder (ignored by parser)
     buf.add(data);
     buf.addByte(0x00); // null terminator

@@ -131,13 +131,13 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
     }
 
     if (companions.isNotEmpty) {
-      await batch((b) => b.insertAllOnConflictUpdate(cellProgressTable, companions));
+      await batch(
+          (b) => b.insertAllOnConflictUpdate(cellProgressTable, companions));
     }
   }
 
   /// Loads all cell-progress rows for a session (used when resuming).
   Future<List<CellProgressRow>> loadCellProgress(int sessionId) =>
-      (select(cellProgressTable)
-            ..where((t) => t.sessionId.equals(sessionId)))
+      (select(cellProgressTable)..where((t) => t.sessionId.equals(sessionId)))
           .get();
 }

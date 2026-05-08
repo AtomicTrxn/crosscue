@@ -223,13 +223,15 @@ void main() {
     });
 
     test('returns false for non-crossword JSON', () {
-      final bytes = _jsonBytes({'kind': ['http://ipuz.org/wordplay#1']});
+      final bytes = _jsonBytes({
+        'kind': ['http://ipuz.org/wordplay#1']
+      });
       expect(parser.canParse(bytes), isFalse);
     });
 
     test('returns false for plain text', () {
-      expect(
-          parser.canParse(Uint8List.fromList('hello world'.codeUnits)), isFalse);
+      expect(parser.canParse(Uint8List.fromList('hello world'.codeUnits)),
+          isFalse);
     });
   });
 
@@ -300,8 +302,8 @@ void main() {
     });
 
     test('1-Across has correct text and start position', () {
-      final c = puzzle.clues.firstWhere(
-          (c) => c.number == 1 && c.direction == Direction.across);
+      final c = puzzle.clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(c.text, equals('1 Across'));
       expect(c.startRow, equals(0));
       expect(c.startCol, equals(0));
@@ -322,8 +324,10 @@ void main() {
     test('object-format clues {number, clue} are parsed', () {
       final r = parser.parse(_objectFormatClues());
       expect(r, isA<Ok>());
-      final clue = (r as Ok).value.clues.firstWhere(
-          (c) => c.number == 1 && c.direction == Direction.across);
+      final clue = (r as Ok)
+          .value
+          .clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(clue.text, equals('1 Across (obj)'));
     });
   });
