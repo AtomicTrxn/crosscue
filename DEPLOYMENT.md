@@ -167,17 +167,20 @@ Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ### CI coverage
 
-The CI workflow in `.github/workflows/ci.yml` runs:
+The CI workflow in `.github/workflows/ci.yml` runs separate jobs so failures
+are easy to identify and failed jobs can be rerun independently:
 
-| Step | Purpose |
+| Job | Purpose |
 |------|---------|
-| Flutter `3.41.9` + Java 17 setup | Match the local SDK used to verify this project |
-| `flutter pub get` | Restore locked dependencies from `pubspec.lock` |
-| `dart format --output=none --set-exit-if-changed .` | Enforce formatting |
-| `dart run build_runner build` + `git diff --exit-code` | Ensure generated Freezed/Riverpod/Drift files are current |
-| `flutter analyze` | Enforce lint/static analysis |
-| `flutter test` | Run parser, source registry, solve, and widget tests |
-| `flutter build apk --debug --no-pub` | Verify Android debug APK builds |
+| **Format** | Runs `dart format --output=none --set-exit-if-changed .` |
+| **Generated files** | Runs `flutter pub get`, `dart run build_runner build`, then `git diff --exit-code` to ensure Freezed/Riverpod/Drift outputs are current |
+| **Analyze** | Runs `flutter pub get` and `flutter analyze` |
+| **Test** | Runs `flutter pub get` and `flutter test` |
+| **Build debug APK** | Runs Java 17 setup, `flutter pub get`, and `flutter build apk --debug --no-pub` to verify Android packaging |
+
+All jobs use Flutter `3.41.9`. The PR APK build is only a temporary build
+verification artifact inside the GitHub Actions runner; it is not uploaded or
+retained after the job finishes.
 
 ---
 
