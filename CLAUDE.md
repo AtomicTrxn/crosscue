@@ -16,8 +16,6 @@ Before writing any code, read these docs in order — they contain decisions tha
 | `CONVENTIONS.md` | Hard rules born from real bugs (Freezed, Riverpod, FocusNode, FilePicker, routing) |
 | `DEPLOYMENT.md` | Build, run, install, log capture, and debugging runbook |
 
-`COMPLETED_SPRINTS.md` has historical sprint detail — load only when past implementation context is needed.
-
 ---
 
 ## Commands
