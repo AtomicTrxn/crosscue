@@ -121,8 +121,10 @@ jobs:
           git diff --exit-code
 
   # ── Stage 3 (gated on all stage 2 jobs) ──────────────────────────────────────
+  # Skipped when called from release.yml — the release job builds a signed APK instead.
   build-debug-apk:
     name: Build debug APK
+    if: github.event_name != 'workflow_call'
     needs: [analyze, test, generated]
     runs-on: ubuntu-latest
     defaults:

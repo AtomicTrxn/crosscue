@@ -189,7 +189,7 @@ Stage 1   Format
              │
 Stage 2   Analyze ── Test ── Generated files   (parallel)
              │
-Stage 3   Build debug APK
+Stage 3   Build debug APK   (PR / push to main only — skipped when called from release pipeline)
 ```
 
 | Stage | Job | Command |
@@ -201,8 +201,10 @@ Stage 3   Build debug APK
 | 3 | **Build debug APK** | Java 17 → `flutter pub get` → `flutter build apk --debug --no-pub` |
 
 All jobs use Flutter `3.41.9`. Format runs `flutter pub get` first so the
-formatter can resolve the SDK constraint and apply the correct style. The APK
-build artifact is not uploaded or retained after the job finishes.
+formatter can resolve the SDK constraint and apply the correct style. The debug
+APK build is skipped when CI runs as part of the release pipeline — the release
+job builds a signed release APK instead. The debug APK artifact is not uploaded
+or retained after the job finishes.
 
 ---
 
