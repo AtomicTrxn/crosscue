@@ -208,7 +208,10 @@ build artifact is not uploaded or retained after the job finishes.
 
 ## Release Pipeline
 
-Releases are triggered by pushing a semver tag. The pipeline runs full CI, builds a signed AAB, and publishes a GitHub Release.
+| Trigger | Builds | Publishes |
+|---------|--------|-----------|
+| Push a `v*.*.*` tag | Signed APK | GitHub Release with APK attached |
+| `workflow_dispatch` with `play_store: true` | Signed APK + AAB | GitHub Release + Play Store internal track |
 
 ### One-time setup: create a keystore
 
@@ -257,14 +260,14 @@ cd crosscue && flutter build apk --release --no-pub
 
 ```bash
 git checkout main && git pull
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
 This triggers `.github/workflows/release.yml`, which:
 1. Runs full CI (format → analyze → test → generated → debug APK)
-2. Builds a signed release AAB with version name `1.0.0` and version code `10000`
-3. Publishes a GitHub Release at `v1.0.0` with the AAB attached and auto-generated release notes
+2. Builds a signed release APK with version name `1.2.3` and version code `10203`
+3. Publishes a GitHub Release at `v1.2.3` with the APK attached and auto-generated release notes
 
 **Version code formula:** `major × 10000 + minor × 100 + patch`
 - `v1.0.0` → `10000`
@@ -273,7 +276,11 @@ This triggers `.github/workflows/release.yml`, which:
 
 ### Play Store upload
 
-The workflow has a commented-out `r0adkll/upload-google-play` step. Once the app is live on Google Play, uncomment it and add a `PLAY_SERVICE_ACCOUNT_JSON` secret (a Google Cloud service account key with the **Release Manager** role on the Play Console).
+When ready to ship to Google Play, use `workflow_dispatch` from the Actions tab:
+- Select **Release** workflow → **Run workflow**
+- Enter the tag (must already exist) and set `play_store: true`
+
+This builds both the APK and a signed AAB, attaches the APK to the GitHub Release, and uploads the AAB to the Play Store internal track. Requires an additional secret `PLAY_SERVICE_ACCOUNT_JSON` (a Google Cloud service account key with the **Release Manager** role on the Play Console) and the commented-out upload step in `release.yml` to be uncommented.
 
 ---
 
