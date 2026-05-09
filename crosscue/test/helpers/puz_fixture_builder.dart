@@ -41,37 +41,53 @@ class PuzFixtureBuilder {
         ],
       );
 
-  /// A 3×3 puzzle with a rebus cell.
+  /// A 3×3 puzzle with a standard rebus cell (1-based RTBL key).
   ///
   /// Cell (0,0) solution is "EST" instead of a single letter.
-  /// GRBS slot 1 → RTBL "01:EST;"
-  static Uint8List rebus3x3() {
-    // Solution byte for (0,0): any letter (overridden by RTBL)
-    // Use 'E' as the single-byte placeholder.
-    final bytes = build(
-      width: 3,
-      height: 3,
-      grid: ['EBC', 'DEF', 'GHI'],
-      title: 'Rebus Puzzle',
-      author: 'Tester',
-      copyright: '2026',
-      clueTexts: [
-        '1-Across',
-        '1-Down',
-        '2-Down',
-        '3-Down',
-        '4-Across',
-        '5-Across',
-      ],
-      grbsMap: {0: 1}, // cell index 0 → slot 1
-      rtblMap: {1: 'EST'},
-    );
-    return bytes;
-  }
+  /// GRBS slot 1 → RTBL key "01" (standard Across Lite).
+  static Uint8List rebus3x3() => build(
+        width: 3,
+        height: 3,
+        grid: ['EBC', 'DEF', 'GHI'],
+        title: 'Rebus Puzzle',
+        author: 'Tester',
+        copyright: '2026',
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across',
+        ],
+        grbsMap: {0: 1}, // cell index 0 → slot 1 (1-based)
+        rtblMap: {1: 'EST'}, // key 1 → "EST"
+      );
 
-  /// A 3×3 puzzle with a circled cell at index 0 (top-left).
+  /// A 3×3 puzzle with a Crosshare-style rebus cell (0-based RTBL key).
   ///
-  /// GEXT bit 0x10 marks cell as circled (standard spec).
+  /// Crosshare writes GRBS slot values as 1-based but stores RTBL keys as
+  /// 0-based (slot − 1).  Cell (0,0) should resolve to "EST".
+  static Uint8List crosshareRebus3x3() => build(
+        width: 3,
+        height: 3,
+        grid: ['EBC', 'DEF', 'GHI'],
+        title: 'Crosshare Rebus',
+        author: 'Tester',
+        copyright: '2026',
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across',
+        ],
+        grbsMap: {0: 1}, // cell 0 → slot 1 (1-based, as Crosshare writes)
+        rtblMap: {0: 'EST'}, // key 0 (0-based, Crosshare style) → "EST"
+      );
+
+  /// A 3×3 puzzle with a circled cell marked with GEXT bit 0x10 (standard).
   static Uint8List circles3x3() => build(
         width: 3,
         height: 3,
@@ -87,8 +103,96 @@ class PuzFixtureBuilder {
           '4-Across',
           '5-Across',
         ],
-        gextMap: {0: 0x10}, // cell 0 flagged as circled
+        gextMap: {0: 0x10}, // standard bit
       );
+
+  /// A 3×3 puzzle with a circled cell marked with GEXT bit 0x80 (Crosshare).
+  static Uint8List circlesGext80_3x3() => build(
+        width: 3,
+        height: 3,
+        grid: ['ABC', 'DEF', 'GHI'],
+        title: 'Circles 0x80 Puzzle',
+        author: 'Tester',
+        copyright: '2026',
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across',
+        ],
+        gextMap: {0: 0x80}, // Crosshare alternate circle bit
+      );
+
+  /// A 3×3 puzzle whose title contains a non-ASCII UTF-8 character (ñ).
+  static Uint8List utf8Title3x3() {
+    final bytes = build(
+      width: 3,
+      height: 3,
+      grid: ['ABC', 'DEF', 'GHI'],
+      title: 'placeholder',
+      author: 'Tester',
+      copyright: '2026',
+      clueTexts: [
+        '1-Across',
+        '1-Down',
+        '2-Down',
+        '3-Down',
+        '4-Across',
+        '5-Across',
+      ],
+    );
+    // Patch the title string starting at the strings section (0x34 + 9*2 = 0x52).
+    // Replace the null-terminated 'placeholder\0' with 'Mañana\0' in UTF-8.
+    final copy = Uint8List.fromList(bytes);
+
+    // Find 'placeholder\0' and replace with 'Ma\xC3\xB1ana\0' (UTF-8 ñ = C3 B1)
+    final titleUtf8 = utf8.encode('Mañana') + [0x00];
+    final oldTitle = latin1.encode('placeholder') + [0x00];
+    final idx = _indexOf(copy, oldTitle);
+    if (idx == -1) return bytes; // shouldn't happen
+
+    final result = BytesBuilder();
+    result.add(copy.sublist(0, idx));
+    result.add(titleUtf8);
+    result.add(copy.sublist(idx + oldTitle.length));
+    return result.toBytes();
+  }
+
+  static int _indexOf(Uint8List haystack, List<int> needle) {
+    outer:
+    for (var i = 0; i <= haystack.length - needle.length; i++) {
+      for (var j = 0; j < needle.length; j++) {
+        if (haystack[i + j] != needle[j]) continue outer;
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  /// A 3×3 puzzle with a hidden cell (byte 0x3A ':') at position (0,0).
+  static Uint8List hiddenCell3x3() {
+    final bytes = build(
+      width: 3,
+      height: 3,
+      grid: ['ABC', 'DEF', 'GHI'],
+      title: 'Hidden Cell',
+      author: 'Tester',
+      copyright: '2026',
+      clueTexts: [
+        '1-Across',
+        '1-Down',
+        '2-Down',
+        '3-Down',
+        '4-Across',
+        '5-Across',
+      ],
+    );
+    final copy = Uint8List.fromList(bytes);
+    copy[0x34] = 0x3A; // overwrite solution byte at cell 0 with ':'
+    return copy;
+  }
 
   /// A file whose first 12 bytes after offset 0x02 do NOT match "ACROSS&DOWN\0".
   static Uint8List badMagic() {
@@ -98,11 +202,22 @@ class PuzFixtureBuilder {
     return copy;
   }
 
-  /// A file with the scramble tag set to non-zero (solution is locked).
+  /// A file with the scramble bit 0x0004 set (solution is locked).
   static Uint8List scrambled() {
     final base = minimal3x3();
     final copy = Uint8List.fromList(base);
-    copy[0x32] = 4; // scramble tag = 4
+    copy[0x32] = 0x04; // bit 0x0004 = scrambled
+    copy[0x33] = 0x00;
+    return copy;
+  }
+
+  /// A file with a nonzero scramble field that does NOT have bit 0x0004 set.
+  /// This simulates non-scramble metadata flags that some writers emit.
+  static Uint8List nonScrambleFlag() {
+    final base = minimal3x3();
+    final copy = Uint8List.fromList(base);
+    copy[0x32] = 0x01; // bit 0x0001 only — NOT the scramble bit
+    copy[0x33] = 0x00;
     return copy;
   }
 
@@ -126,9 +241,8 @@ class PuzFixtureBuilder {
   /// [grid] must have exactly [height] strings each of length [width].
   /// Use '.' for black cells and an uppercase letter for white cells.
   ///
-  /// [clueTexts] must match the .puz interleaved ordering (all-across sorted
-  /// by number, then all-down sorted by number — but the PuzParser itself
-  /// interleaves them, so pass them in that interleaved order).
+  /// [clueTexts] must match the .puz interleaved ordering (across before down
+  /// for the same number, ascending by number).
   static Uint8List build({
     required int width,
     required int height,
@@ -139,7 +253,7 @@ class PuzFixtureBuilder {
     List<String> clueTexts = const [],
     bool scrambled = false,
     String notes = '',
-    Map<int, int> grbsMap = const {}, // cellIndex → rebus slot (1-based)
+    Map<int, int> grbsMap = const {}, // cellIndex → rebus slot
     Map<int, String> rtblMap = const {}, // slot → multi-letter string
     Map<int, int> gextMap = const {}, // cellIndex → GEXT flag byte
   }) {
@@ -159,7 +273,7 @@ class PuzFixtureBuilder {
     final nc = clueTexts.length;
     buf.add([nc & 0xFF, (nc >> 8) & 0xFF]); // 0x2E-0x2F num clues
     buf.add([0x01, 0x00]); // 0x30-0x31 bitmask
-    buf.add([scrambled ? 4 : 0, 0x00]); // 0x32-0x33 scramble tag
+    buf.add([scrambled ? 0x04 : 0, 0x00]); // 0x32-0x33 scramble tag
 
     // ── Solution grid ─────────────────────────────────────────────────────
     for (var r = 0; r < height; r++) {
@@ -201,8 +315,8 @@ class PuzFixtureBuilder {
     }
 
     if (rtblMap.isNotEmpty) {
-      // Format: " 01:EST; 02:TION;" (leading space, padded 2-digit slot, colon,
-      // value, semicolon) — matches the split+trim logic in PuzParser.
+      // Format: " 01:EST; 02:TION;" — leading space, 2-digit padded slot,
+      // colon, value, semicolon.  Matches the split+trim logic in PuzParser.
       final sb = StringBuffer();
       rtblMap.forEach((slot, value) {
         sb.write(' ${slot.toString().padLeft(2, '0')}:$value;');

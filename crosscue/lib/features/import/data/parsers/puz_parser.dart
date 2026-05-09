@@ -17,6 +17,17 @@ import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart'
 ///
 /// Spec references:
 ///   https://code.google.com/archive/p/puz/wikis/FileFormat.wiki
+///
+/// Compatibility notes:
+///   - GRBS/RTBL: accepts both standard 1-based slot keys and Crosshare-style
+///     0-based keys (slot − 1 fallback).
+///   - GEXT circles: accepts both bit 0x10 (standard) and bit 0x80 (Crosshare).
+///   - Strings: tries UTF-8 first, falls back to Latin-1 on decode failure.
+///   - Scramble: only bit 0x0004 indicates a locked solution; other bits are
+///     non-scramble metadata and are tolerated.
+///   - Hidden cells (byte 0x3A, ':') are not supported and cause rejection.
+///   - App-supported grid dimensions: 2×2 – 25×25.
+///   - Constructor notes are preserved verbatim (no boilerplate stripping).
 class PuzParser implements PuzzleParser {
   const PuzParser();
 
@@ -31,8 +42,24 @@ class PuzParser implements PuzzleParser {
   /// Maximum accepted file size (5 MiB).  Real .puz files are ≤ 100 KB.
   static const _maxBytes = 5 * 1024 * 1024;
 
-  /// GEXT flag bit indicating a circled cell (standard .puz spec).
+  /// GEXT flag bit indicating a circled cell (standard Across Lite spec).
   static const _gextCircledBit = 0x10;
+
+  /// GEXT flag bit indicating a circled cell (Crosshare / alternate writers).
+  static const _gextCircledBit2 = 0x80;
+
+  /// Scramble bitmask: only this bit locks the solution.
+  /// Other nonzero bits in the scramble field are reserved/non-scramble metadata.
+  static const _scrambledBit = 0x0004;
+
+  /// Minimum supported grid dimension (both width and height).
+  static const _minDimension = 2;
+
+  /// Maximum supported grid dimension (both width and height).
+  static const _maxDimension = 25;
+
+  /// Solution byte for a hidden cell in some .puz writers (not supported).
+  static const _hiddenCellByte = 0x3A; // ':'
 
   // Extension block tags
   static const _extGrbs = 'GRBS';
@@ -62,11 +89,26 @@ class PuzParser implements PuzzleParser {
     // --- header fields ---
     final width = bytes[_widthOffset];
     final height = bytes[_heightOffset];
+
+    // Zero dimensions indicate a truncated/corrupted file.
     if (width == 0 || height == 0) return const Err(ParseError.missingData);
 
+    // Dimensions outside the app-supported range.
+    if (width < _minDimension ||
+        height < _minDimension ||
+        width > _maxDimension ||
+        height > _maxDimension) {
+      return const Err(ParseError.unsupportedFormat);
+    }
+
     final numClues = _readUint16LE(bytes, _numCluesOffset);
+
+    // Only bit 0x0004 means "solution is scrambled/locked". Other bits are
+    // reserved or used for non-scramble metadata by some writers.
     final scramble = _readUint16LE(bytes, _scrambleOffset);
-    if (scramble != 0) return const Err(ParseError.unsupportedFormat);
+    if (scramble & _scrambledBit != 0) {
+      return const Err(ParseError.unsupportedFormat);
+    }
 
     final cellCount = width * height;
     if (bytes.length < _gridOffset + cellCount * 2) {
@@ -80,14 +122,19 @@ class PuzParser implements PuzzleParser {
     // bytes[_gridOffset + cellCount .. _gridOffset + cellCount*2]
 
     // --- strings section ---
+    // Try UTF-8 first (newer .puz writers); fall back to Latin-1 on failure.
     int cursor = _gridOffset + cellCount * 2;
 
     String readString() {
       final end = bytes.indexOf(0, cursor);
       if (end == -1) return '';
-      final s = latin1.decode(bytes.sublist(cursor, end));
+      final slice = bytes.sublist(cursor, end);
       cursor = end + 1;
-      return s;
+      try {
+        return utf8.decode(slice, allowMalformed: false);
+      } catch (_) {
+        return latin1.decode(slice);
+      }
     }
 
     final title = readString();
@@ -97,7 +144,7 @@ class PuzParser implements PuzzleParser {
     final notes = readString();
 
     // --- extension blocks (GRBS, RTBL, GEXT) ---
-    final rebusGrid = <int, int>{}; // cellIndex → rebus slot (1-based)
+    final rebusGrid = <int, int>{}; // cellIndex → rebus slot (1-based per spec)
     final rebusTable = <int, String>{}; // slot → solution string
     final gextFlags = <int, int>{}; // cellIndex → flags byte
 
@@ -115,7 +162,9 @@ class PuzParser implements PuzzleParser {
           if (v != 0) rebusGrid[i] = v;
         }
       } else if (tag == _extRtbl) {
-        // Format: "01:EST; 02:TION;" …
+        // Format: " 01:EST; 02:TION;" (standard) or " 00:EST;" (Crosshare).
+        // Keys are parsed as integers and stored as-is; the cell-lookup below
+        // tries both the slot value and slot−1 for compatibility.
         final raw = latin1.decode(bytes.sublist(dataStart, dataEnd));
         for (final entry in raw.split(';')) {
           final trimmed = entry.trim();
@@ -140,19 +189,34 @@ class PuzParser implements PuzzleParser {
     final cells = <SolutionCell>[];
     for (var i = 0; i < cellCount; i++) {
       final b = solutionBytes[i];
+
       if (b == 0x2E) {
         // '.' — black cell
         cells.add(SolutionCell.black);
         continue;
       }
+
+      // Hidden cells (byte ':') are not yet supported by the domain model.
+      // Reject rather than importing wrong answers.
+      if (b == _hiddenCellByte) {
+        return const Err(ParseError.unsupportedFormat);
+      }
+
       final String solution;
       if (rebusGrid.containsKey(i)) {
         final slot = rebusGrid[i]!;
-        solution = rebusTable[slot] ?? latin1.decode([b]);
+        // Standard .puz: GRBS stores 1-based slot, RTBL key matches exactly.
+        // Crosshare-style: GRBS stores 1-based slot, RTBL key is slot−1 (0-based).
+        solution =
+            rebusTable[slot] ?? rebusTable[slot - 1] ?? latin1.decode([b]);
       } else {
         solution = latin1.decode([b]);
       }
-      final circled = (gextFlags[i] ?? 0) & _gextCircledBit != 0;
+
+      // Accept circle flag from either bit 0x10 (standard) or 0x80 (Crosshare).
+      final circled =
+          (gextFlags[i] ?? 0) & (_gextCircledBit | _gextCircledBit2) != 0;
+
       cells.add(SolutionCell(
         isBlack: false,
         solution: solution,
@@ -171,16 +235,20 @@ class PuzParser implements PuzzleParser {
     final clues = _buildClues(numberedGrid, clueTexts, width, height);
 
     // --- compute puzzle ID ---
+    // Canonical string uses the resolved cell solutions (including rebus text)
+    // so that puzzles differing only in rebus expansion get distinct IDs.
+    // For non-rebus ASCII puzzles this produces the same base64 as the old
+    // raw-byte approach, so existing IDs are preserved.
+    final resolvedSolution =
+        cells.map((c) => c.isBlack ? '.' : c.solution).join('');
     final canonicalJson = _canonicalJson(
       width: width,
       height: height,
-      solution: solutionBytes,
+      resolvedSolution: resolvedSolution,
       title: title,
     );
     final digest = sha256.convert(utf8.encode(canonicalJson)).toString();
     final id = 'local:${digest.substring(0, 16)}';
-
-    final checksum = digest;
 
     final metadata = PuzzleMetadata(
       id: id,
@@ -194,7 +262,7 @@ class PuzParser implements PuzzleParser {
       totalClues: clues.length,
       importedAt: DateTime.now().toUtc(),
       notes: notes.isEmpty ? null : notes,
-      checksum: checksum,
+      checksum: digest,
     );
 
     return Ok(Puzzle(
@@ -258,7 +326,6 @@ class PuzParser implements PuzzleParser {
     int width,
     int height,
   ) {
-    // Collect numbered cells in order (across clues first per number, then down)
     final acrossStarts = <_ClueStart>[];
     final downStarts = <_ClueStart>[];
 
@@ -276,8 +343,7 @@ class PuzParser implements PuzzleParser {
       }
     }
 
-    // .puz interleaves clues: all across/down per number in ascending order
-    // (across before down for same number)
+    // .puz interleaves clues: across before down for the same number
     final orderedStarts = <(Direction, _ClueStart)>[];
     int ai = 0, di = 0;
     while (ai < acrossStarts.length || di < downStarts.length) {
@@ -320,14 +386,18 @@ class PuzParser implements PuzzleParser {
     return len;
   }
 
+  /// Builds the canonical JSON used for deduplication and ID generation.
+  ///
+  /// [resolvedSolution] is all cell solutions concatenated (black cells as '.'),
+  /// including expanded rebus text. For non-rebus ASCII-only puzzles this
+  /// produces identical base64 to the previous raw-byte approach.
   String _canonicalJson({
     required int width,
     required int height,
-    required Uint8List solution,
+    required String resolvedSolution,
     required String title,
   }) {
-    // Deterministic key for deduplication — does NOT include mutable fields.
-    return '{"w":$width,"h":$height,"s":"${base64.encode(solution)}","t":${jsonEncode(title)}}';
+    return '{"w":$width,"h":$height,"s":"${base64.encode(utf8.encode(resolvedSolution))}","t":${jsonEncode(title)}}';
   }
 }
 

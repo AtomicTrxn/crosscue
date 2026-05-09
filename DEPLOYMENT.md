@@ -108,10 +108,13 @@ dart run build_runner watch
 
 ## Linting
 
+Run the full pipeline, not individual checks:
+
 ```bash
-flutter analyze
+make ci
 ```
-Target: **0 issues**. Fix all errors and warnings before committing.
+
+`make ci` runs format → analyze → test → generated-files check → build APK in the correct order, matching CI exactly. Running individual commands (e.g. `flutter analyze` alone) is only appropriate when iterating on a specific failure — **always finish with `make ci` before pushing**.
 
 ---
 
@@ -131,10 +134,15 @@ git checkout -b feature/short-description
 
 ### Verify locally
 
-Run from the **repo root** using the Makefile (mirrors CI exactly):
+**Always run `make ci` from the repo root before pushing — no exceptions:**
 
 ```bash
-make ci          # full pipeline: format → analyze + test + generated → build APK
+make ci
+```
+
+This mirrors the full CI pipeline (format → analyze + test + generated → build APK). Individual targets exist for iterating on a specific failure, but `make ci` must be the final check before any push or PR:
+
+```bash
 make format      # formatting check only
 make analyze     # flutter analyze only
 make test        # flutter test only
@@ -144,7 +152,7 @@ make build       # debug APK build only
 
 The pre-push hook runs `make ci` automatically whenever you push to `main`,
 blocking the push if any check fails. For all other branches, pushes are
-unblocked — run `make ci` manually before opening a PR.
+unblocked — `make ci` must be run manually before opening a PR.
 
 To bypass the hook in an emergency: `git push --no-verify`
 
