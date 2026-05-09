@@ -459,3 +459,32 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | Emulator deployment | ✅ Debug APK built, installed, and launched on `emulator-5554` |
 
 ---
+
+## Sprint 17 — `.puz` Parser Compatibility Hardening ✅
+
+**Goal:** Make Crosscue's `.puz` importer compatible with more real-world Across Lite files and Crosshare-exported files, while keeping local imports safe and deterministic.
+
+### Scope
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Rebus RTBL/GRBS compatibility** | ✅ | `rebusTable[slot] ?? rebusTable[slot - 1]` fallback; both standard 1-based and Crosshare 0-based RTBL keys tested. |
+| **GEXT circle flag compatibility** | ✅ | Accepts both `0x10` (standard) and `0x80` (Crosshare); both bit values covered by tests. |
+| **String decoding for newer `.puz` files** | ✅ | Try UTF-8 first (`allowMalformed: false`), fall back to Latin-1 on `FormatException`. Unicode title tested (`Mañana` fixture). |
+| **Dimension guardrails** | ✅ | 2×2 min, 25×25 max. Zero → `missingData`; out-of-range → `unsupportedFormat`. Boundary tests added. |
+| **Hidden-cell handling** | ✅ | Solution byte `0x3A` (`:`) → `ParseError.unsupportedFormat`. Full support deferred to future domain-model work. |
+| **Scramble flag review** | ✅ | Only bit `0x0004` locks the solution; other nonzero bits tolerated. Tests for both `0x0004` rejection and `0x0001` pass-through. |
+| **Canonical checksum includes rebus expansion** | ✅ | ID hashes resolved cell solutions (including rebus text); plain vs. rebus variants get distinct IDs; stable for unchanged ASCII puzzles. |
+| **Note cleanup policy** | ✅ | Constructor notes preserved verbatim — no boilerplate stripping. |
+| **Real-world fixture expansion** | ✅ | Added `crosshareRebus3x3`, `circlesGext80_3x3`, `utf8Title3x3`, `hiddenCell3x3`, `nonScrambleFlag` to `PuzFixtureBuilder`. |
+
+### Final Verification
+
+| Check | Result |
+|-------|--------|
+| `make ci` | ✅ Passed (format → analyze → test → generated → build) |
+| `flutter test test/features/import/puz_parser_test.dart` | ✅ 47/47 passed (up from 24) |
+| `flutter test` | ✅ 103/103 passed |
+| `flutter analyze` | ✅ No issues |
+
+---

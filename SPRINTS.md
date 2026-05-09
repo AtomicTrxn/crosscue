@@ -8,41 +8,6 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 17 — `.puz` Parser Compatibility Hardening ✅
-
-**Goal:** Make Crosscue's `.puz` importer compatible with more real-world Across Lite files and Crosshare-exported files, while keeping local imports safe and deterministic.
-
-**Background:** Crosshare only imports/exports `.puz` in its public upload path, but its parser has useful battle-tested behavior around encoding, dimensions, rebus tables, hidden cells, and fixture coverage. Crosscue already supports `.puz` import, but several edge cases can currently import incorrectly or lose metadata/styling.
-
-**Read before starting:** [ARCHITECTURE.md](ARCHITECTURE.md), [CONVENTIONS.md](CONVENTIONS.md), [research/topic-14-puzzle-parser-spec.md](research/topic-14-puzzle-parser-spec.md)
-
-### Scope
-
-| Task | Status | Notes |
-|------|--------|-------|
-| **Rebus RTBL/GRBS compatibility** | ✅ | `rebusTable[slot] ?? rebusTable[slot - 1]` fallback; both standard and Crosshare-style 0-based keys tested. |
-| **GEXT circle flag compatibility** | ✅ | Accepts both `0x10` (standard) and `0x80` (Crosshare); both bit values covered by tests. |
-| **String decoding for newer `.puz` files** | ✅ | Try UTF-8 first (`allowMalformed: false`), fall back to Latin-1 on `FormatException`. Unicode title/author tested (`Mañana` fixture). |
-| **Dimension guardrails** | ✅ | 2×2 min, 25×25 max. Zero → `missingData`; out-of-range → `unsupportedFormat`. Min/max boundary tests added. |
-| **Hidden-cell handling** | ✅ | Solution byte `0x3A` (`:`) → `ParseError.unsupportedFormat`. Deferred to future domain-model work. |
-| **Scramble flag review** | ✅ | Only bit `0x0004` locks the solution; other nonzero bits tolerated. Tests for both `0x0004` rejection and `0x0001` pass-through. |
-| **Canonical checksum includes rebus expansion** | ✅ | ID hashes resolved cell solutions (including rebus text) via `base64(utf8(resolvedSolution))`; plain vs. rebus IDs are distinct; IDs stable for unchanged ASCII puzzles. |
-| **Note cleanup policy** | ✅ | Decided to preserve constructor notes verbatim — no boilerplate stripping. `notes` field passed through as-is. |
-| **Real-world fixture expansion** | ✅ | Added `crosshareRebus3x3`, `circlesGext80_3x3`, `utf8Title3x3`, `hiddenCell3x3`, `nonScrambleFlag` to `PuzFixtureBuilder`; all fixtures used in new test groups. |
-
-### Acceptance Criteria
-
-| Check | Expected Result |
-|-------|-----------------|
-| `flutter test test/features/import/puz_parser_test.dart` | Passes with added compatibility cases |
-| Existing parser tests | Continue passing unless an intentional checksum/ID change is documented |
-| Crosshare-style rebus fixture | Imports multi-character solution correctly |
-| Crosshare-style circle fixture | Preserves circled cells |
-| Hidden-cell fixture | Returns unsupported instead of silently importing `:` as an answer |
-
-**Key files:** `lib/features/import/data/parsers/puz_parser.dart`, `lib/core/domain/models/solution_cell.dart`, `test/features/import/puz_parser_test.dart`, `test/helpers/puz_fixture_builder.dart`
-
----
 
 ## Sprint 18 — `.ipuz` Parser Robustness & Metadata ⬜
 
