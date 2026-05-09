@@ -36,6 +36,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
