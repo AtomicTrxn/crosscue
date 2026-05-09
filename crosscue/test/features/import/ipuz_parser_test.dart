@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/import/data/parsers/ipuz_parser.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------
@@ -14,130 +14,106 @@ import 'package:flutter_test/flutter_test.dart';
 Uint8List _jsonBytes(Object obj) =>
     Uint8List.fromList(utf8.encode(jsonEncode(obj)));
 
-/// Minimal valid 3×3 .ipuz crossword JSON.
+/// Base 3×3 structure reused across many fixtures.
 ///
 /// Grid (all white):
 ///   A B C   (0,0)=1  (0,1)=2  (0,2)=3
 ///   D E F   (1,0)=4
 ///   G H I   (2,0)=5
-Uint8List _minimal3x3() => _jsonBytes({
-      'version': 'http://ipuz.org/v2',
-      'kind': ['http://ipuz.org/crossword#1'],
-      'title': 'Test Puzzle',
-      'author': 'Test Author',
-      'copyright': '© 2026',
-      'dimensions': {'width': 3, 'height': 3},
-      'puzzle': [
+Map<String, dynamic> _base3x3({
+  String title = 'Test Puzzle',
+  String author = 'Test Author',
+  String copyright = '© 2026',
+  List<List<dynamic>>? solution,
+  List<List<dynamic>>? puzzle,
+  Map<String, dynamic>? clues,
+  Map<String, dynamic> extra = const {},
+}) {
+  return {
+    'version': 'http://ipuz.org/v2',
+    'kind': ['http://ipuz.org/crossword#1'],
+    'title': title,
+    'author': author,
+    'copyright': copyright,
+    'dimensions': {'width': 3, 'height': 3},
+    'puzzle': puzzle ??
         [
-          {'cell': 1},
-          {'cell': 2},
-          {'cell': 3}
+          [
+            {'cell': 1},
+            {'cell': 2},
+            {'cell': 3}
+          ],
+          [
+            {'cell': 4},
+            0,
+            0
+          ],
+          [
+            {'cell': 5},
+            0,
+            0
+          ],
         ],
+    'solution': solution ??
         [
-          {'cell': 4},
-          0,
-          0
+          ['A', 'B', 'C'],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-      'solution': [
-        ['A', 'B', 'C'],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      'clues': {
-        'Across': [
+    'clues': clues ??
+        {
+          'Across': [
+            [1, '1 Across'],
+            [4, '4 Across'],
+            [5, '5 Across'],
+          ],
+          'Down': [
+            [1, '1 Down'],
+            [2, '2 Down'],
+            [3, '3 Down'],
+          ],
+        },
+    ...extra,
+  };
+}
+
+Uint8List _minimal3x3() => _jsonBytes(_base3x3());
+
+/// Clues with lowercase direction keys ('across'/'down').
+Uint8List _lowercaseClueKeys() => _jsonBytes(_base3x3(
+      clues: {
+        'across': [
           [1, '1 Across'],
           [4, '4 Across'],
           [5, '5 Across'],
         ],
-        'Down': [
+        'down': [
           [1, '1 Down'],
           [2, '2 Down'],
           [3, '3 Down'],
         ],
       },
-    });
+    ));
 
-/// 3×3 puzzle with a multi-char rebus solution in cell (0,0).
-Uint8List _rebus3x3() => _jsonBytes({
-      'version': 'http://ipuz.org/v2',
-      'kind': ['http://ipuz.org/crossword#1'],
-      'title': 'Rebus Puzzle',
-      'author': 'Tester',
-      'copyright': '2026',
-      'dimensions': {'width': 3, 'height': 3},
-      'puzzle': [
-        [
-          {'cell': 1},
-          {'cell': 2},
-          {'cell': 3}
-        ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-      'solution': [
-        ['EST', 'B', 'C'], // cell (0,0) is a rebus "EST"
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      'clues': {
-        'Across': [
-          [1, '1 Across (rebus)'],
+/// Clues with all-uppercase direction keys ('ACROSS'/'DOWN').
+Uint8List _uppercaseClueKeys() => _jsonBytes(_base3x3(
+      clues: {
+        'ACROSS': [
+          [1, '1 Across'],
           [4, '4 Across'],
           [5, '5 Across'],
         ],
-        'Down': [
-          [1, '1 Down (rebus)'],
+        'DOWN': [
+          [1, '1 Down'],
           [2, '2 Down'],
           [3, '3 Down'],
         ],
       },
-    });
+    ));
 
-/// Puzzle with clues in object format {number, clue} instead of [number, text].
-Uint8List _objectFormatClues() => _jsonBytes({
-      'version': 'http://ipuz.org/v2',
-      'kind': ['http://ipuz.org/crossword#1'],
-      'title': 'Object Clues',
-      'author': 'Tester',
-      'copyright': '2026',
-      'dimensions': {'width': 3, 'height': 3},
-      'puzzle': [
-        [
-          {'cell': 1},
-          {'cell': 2},
-          {'cell': 3}
-        ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-      'solution': [
-        ['A', 'B', 'C'],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      'clues': {
+/// Clues in object format {number, clue}.
+Uint8List _objectFormatClues() => _jsonBytes(_base3x3(
+      clues: {
         'Across': [
           {'number': 1, 'clue': '1 Across (obj)'},
           {'number': 4, 'clue': '4 Across (obj)'},
@@ -149,22 +125,134 @@ Uint8List _objectFormatClues() => _jsonBytes({
           {'number': 3, 'clue': '3 Down (obj)'},
         ],
       },
-    });
+    ));
 
-/// Puzzle with a `date` field in MM/DD/YYYY format.
-Uint8List _withDate() => _jsonBytes({
-      'version': 'http://ipuz.org/v2',
-      'kind': ['http://ipuz.org/crossword#1'],
-      'title': 'Dated Puzzle',
-      'author': 'Tester',
-      'copyright': '2026',
-      'date': '05/01/2026',
-      'dimensions': {'width': 3, 'height': 3},
-      'puzzle': [
+/// Clues with HTML in the text.
+Uint8List _htmlClues() => _jsonBytes(_base3x3(
+      clues: {
+        'Across': [
+          [1, '<b>Bold</b> clue &amp; more'],
+          [4, '4 Across'],
+          [5, '5 Across'],
+        ],
+        'Down': [
+          [1, '1 Down'],
+          [2, '2 Down'],
+          [3, '3 Down'],
+        ],
+      },
+    ));
+
+/// Puzzle with 'date' in ISO YYYY-MM-DD format.
+Uint8List _withIsoDate() => _jsonBytes(_base3x3(
+      extra: {'date': '2026-05-01'},
+    ));
+
+/// Puzzle with 'date' in US MM/DD/YYYY format.
+Uint8List _withUsDate() => _jsonBytes(_base3x3(
+      extra: {'date': '05/01/2026'},
+    ));
+
+/// Puzzle with a 'date' that cannot be parsed (stays null, no error).
+Uint8List _withBadDate() => _jsonBytes(_base3x3(
+      extra: {'date': 'not a date'},
+    ));
+
+/// Puzzle with publisher and editor metadata.
+Uint8List _withPublisherEditor() => _jsonBytes(_base3x3(
+      extra: {
+        'intro': 'A fine puzzle',
+        'publisher': 'Crossword Co.',
+        'editor': 'Ed Itor',
+      },
+    ));
+
+/// Solution row containing numeric 0 as a black cell.
+Uint8List _numericZeroBlack() => _jsonBytes(_base3x3(
+      solution: [
+        [0, 'B', 'C'],
+        ['D', 'E', 'F'],
+        ['G', 'H', 'I'],
+      ],
+      puzzle: [
         [
+          '#',
           {'cell': 1},
           {'cell': 2},
-          {'cell': 3}
+        ],
+        [
+          {'cell': 3},
+          0,
+          0
+        ],
+        [
+          {'cell': 4},
+          0,
+          0
+        ],
+      ],
+      clues: {
+        'Across': [
+          [1, '1 Across'],
+          [3, '3 Across'],
+          [4, '4 Across'],
+        ],
+        'Down': [
+          [1, '1 Down'],
+          [2, '2 Down'],
+        ],
+      },
+    ));
+
+/// Map-valued solution cell where 'value' is numeric (should not be used as answer).
+Uint8List _mapCellNumericValue() => _jsonBytes(_base3x3(
+      solution: [
+        [
+          {'cell': 'A', 'value': 1},
+          'B',
+          'C'
+        ],
+        ['D', 'E', 'F'],
+        ['G', 'H', 'I'],
+      ],
+    ));
+
+/// Map-valued solution cell where answer is in 'cell' key (rebus).
+Uint8List _mapCellRebus() => _jsonBytes(_base3x3(
+      solution: [
+        [
+          {'cell': 'EST'},
+          'B',
+          'C'
+        ],
+        ['D', 'E', 'F'],
+        ['G', 'H', 'I'],
+      ],
+    ));
+
+/// Map-valued solution cell where answer is in 'answer' key.
+Uint8List _mapCellAnswerKey() => _jsonBytes(_base3x3(
+      solution: [
+        [
+          {'answer': 'X'},
+          'B',
+          'C'
+        ],
+        ['D', 'E', 'F'],
+        ['G', 'H', 'I'],
+      ],
+    ));
+
+/// Circle via style.shape == 'circle'.
+Uint8List _circleStyleShape() => _jsonBytes(_base3x3(
+      puzzle: [
+        [
+          {
+            'cell': 1,
+            'style': {'shape': 'circle'}
+          },
+          {'cell': 2},
+          {'cell': 3},
         ],
         [
           {'cell': 4},
@@ -177,31 +265,77 @@ Uint8List _withDate() => _jsonBytes({
           0
         ],
       ],
-      'solution': [
-        ['A', 'B', 'C'],
+    ));
+
+/// Circle via cell-level 'circle: true'.
+Uint8List _circleCellTrue() => _jsonBytes(_base3x3(
+      puzzle: [
+        [
+          {'cell': 1, 'circle': true},
+          {'cell': 2},
+          {'cell': 3},
+        ],
+        [
+          {'cell': 4},
+          0,
+          0
+        ],
+        [
+          {'cell': 5},
+          0,
+          0
+        ],
+      ],
+    ));
+
+/// Circle via style.shapebg == 'circle' (existing standard path).
+Uint8List _circleStyleShapebg() => _jsonBytes(_base3x3(
+      puzzle: [
+        [
+          {
+            'cell': 1,
+            'style': {'shapebg': 'circle'}
+          },
+          {'cell': 2},
+          {'cell': 3},
+        ],
+        [
+          {'cell': 4},
+          0,
+          0
+        ],
+        [
+          {'cell': 5},
+          0,
+          0
+        ],
+      ],
+    ));
+
+/// 3×3 puzzle with a multi-char rebus solution in cell (0,0).
+Uint8List _rebus3x3() => _jsonBytes(_base3x3(
+      solution: [
+        ['EST', 'B', 'C'],
         ['D', 'E', 'F'],
         ['G', 'H', 'I'],
       ],
-      'clues': {
+      clues: {
         'Across': [
-          [1, '1 Across'],
+          [1, '1 Across (rebus)'],
           [4, '4 Across'],
           [5, '5 Across'],
         ],
         'Down': [
-          [1, '1 Down'],
+          [1, '1 Down (rebus)'],
           [2, '2 Down'],
           [3, '3 Down'],
         ],
       },
-    });
+    ));
 
-Uint8List _barred3x3() => _jsonBytes({
-      'version': 'http://ipuz.org/v2',
-      'kind': ['http://ipuz.org/crossword#1'],
-      'title': 'Barred Puzzle',
-      'dimensions': {'width': 3, 'height': 3},
-      'puzzle': [
+/// Barred grid (cell-side bar key in style).
+Uint8List _barred3x3() => _jsonBytes(_base3x3(
+      puzzle: [
         [
           {
             'cell': 1,
@@ -221,24 +355,36 @@ Uint8List _barred3x3() => _jsonBytes({
           0
         ],
       ],
-      'solution': [
-        ['A', 'B', 'C'],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      'clues': {
-        'Across': [
-          [1, '1 Across'],
-          [4, '4 Across'],
-          [5, '5 Across'],
-        ],
-        'Down': [
-          [1, '1 Down'],
-          [2, '2 Down'],
-          [3, '3 Down'],
-        ],
-      },
-    });
+    ));
+
+/// Solution rows that are not lists (defensive shape validation).
+Uint8List _malformedSolutionRow() {
+  // Manually construct JSON with a non-list solution row
+  const raw =
+      '{"version":"http://ipuz.org/v2","kind":["http://ipuz.org/crossword#1"],'
+      '"dimensions":{"width":3,"height":3},'
+      '"solution":["not a list",["A","B","C"],["D","E","F"]],'
+      '"clues":{"Across":[],"Down":[]}}';
+  return Uint8List.fromList(utf8.encode(raw));
+}
+
+/// Dimensions field is present but not a map.
+Uint8List _malformedDimensions() {
+  const raw =
+      '{"version":"http://ipuz.org/v2","kind":["http://ipuz.org/crossword#1"],'
+      '"dimensions":"3x3","solution":[],"clues":{"Across":[],"Down":[]}}';
+  return Uint8List.fromList(utf8.encode(raw));
+}
+
+/// Clues field is present but not a map.
+Uint8List _malformedClues() {
+  const raw =
+      '{"version":"http://ipuz.org/v2","kind":["http://ipuz.org/crossword#1"],'
+      '"dimensions":{"width":3,"height":3},'
+      '"solution":[["A","B","C"],["D","E","F"],["G","H","I"]],'
+      '"clues":"not a map"}';
+  return Uint8List.fromList(utf8.encode(raw));
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -257,11 +403,21 @@ void main() {
     });
 
     test('returns false for .puz binary bytes', () {
-      // A .puz file starts with 2 CRC bytes then "ACROSS&DOWN\0"
       final puzMagic = Uint8List.fromList([
-        0x00, 0x00, // CRC
-        0x41, 0x43, 0x52, 0x4F, 0x53, 0x53, 0x26, 0x44,
-        0x4F, 0x57, 0x4E, 0x00,
+        0x00,
+        0x00,
+        0x41,
+        0x43,
+        0x52,
+        0x4F,
+        0x53,
+        0x53,
+        0x26,
+        0x44,
+        0x4F,
+        0x57,
+        0x4E,
+        0x00,
       ]);
       expect(parser.canParse(puzMagic), isFalse);
     });
@@ -295,8 +451,7 @@ void main() {
     });
 
     test('returns Ok', () {
-      final r = parser.parse(_minimal3x3());
-      expect(r, isA<Ok>());
+      expect(parser.parse(_minimal3x3()), isA<Ok>());
     });
 
     test('grid dimensions are 3×3', () {
@@ -361,7 +516,34 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Clue format variants
+  // Case-insensitive clue direction keys
+  // ---------------------------------------------------------------------------
+
+  group('case-insensitive clue direction keys', () {
+    test('lowercase keys (across/down) produce 6 clues', () {
+      final r = parser.parse(_lowercaseClueKeys());
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.clues.length, equals(6));
+    });
+
+    test('uppercase keys (ACROSS/DOWN) produce 6 clues', () {
+      final r = parser.parse(_uppercaseClueKeys());
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.clues.length, equals(6));
+    });
+
+    test('lowercase 1-Across clue text is preserved', () {
+      final r = parser.parse(_lowercaseClueKeys());
+      final clue = (r as Ok)
+          .value
+          .clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
+      expect(clue.text, equals('1 Across'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Clue object variants and HTML stripping
   // ---------------------------------------------------------------------------
 
   group('clue format variants', () {
@@ -374,39 +556,172 @@ void main() {
           .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(clue.text, equals('1 Across (obj)'));
     });
+
+    test('HTML tags stripped from clue text', () {
+      final r = parser.parse(_htmlClues());
+      final clue = (r as Ok)
+          .value
+          .clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
+      expect(clue.text, equals('Bold clue & more'));
+    });
   });
 
   // ---------------------------------------------------------------------------
-  // Rebus (multi-char solution cells)
+  // Publish date parsing
+  // ---------------------------------------------------------------------------
+
+  group('publish date parsing', () {
+    test('ISO YYYY-MM-DD date is parsed into publishDate', () {
+      final r = parser.parse(_withIsoDate());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.metadata.publishDate, isNotNull);
+      expect(puzzle.metadata.publishDate!.year, equals(2026));
+      expect(puzzle.metadata.publishDate!.month, equals(5));
+      expect(puzzle.metadata.publishDate!.day, equals(1));
+    });
+
+    test('US MM/DD/YYYY date is parsed into publishDate', () {
+      final r = parser.parse(_withUsDate());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.metadata.publishDate, isNotNull);
+      expect(puzzle.metadata.publishDate!.year, equals(2026));
+      expect(puzzle.metadata.publishDate!.month, equals(5));
+      expect(puzzle.metadata.publishDate!.day, equals(1));
+    });
+
+    test('invalid date string leaves publishDate as null (no error)', () {
+      final r = parser.parse(_withBadDate());
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.metadata.publishDate, isNull);
+    });
+
+    test('missing date field leaves publishDate as null', () {
+      final r = parser.parse(_minimal3x3());
+      expect((r as Ok).value.metadata.publishDate, isNull);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Metadata enrichment (publisher / editor into notes)
+  // ---------------------------------------------------------------------------
+
+  group('metadata enrichment', () {
+    test('publisher and editor are appended to notes', () {
+      final r = parser.parse(_withPublisherEditor());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.metadata.notes, contains('Publisher: Crossword Co.'));
+      expect(puzzle.metadata.notes, contains('Editor: Ed Itor'));
+      expect(puzzle.metadata.notes, contains('A fine puzzle'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Block-cell variants
+  // ---------------------------------------------------------------------------
+
+  group('block-cell variants', () {
+    test('numeric 0 in solution row is treated as a black cell', () {
+      final r = parser.parse(_numericZeroBlack());
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.grid.cell(0, 0).isBlack, isTrue);
+    });
+
+    test('non-black cells adjacent to numeric-0 black are white', () {
+      final r = parser.parse(_numericZeroBlack());
+      expect((r as Ok).value.grid.cell(0, 1).isBlack, isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Map-valued solution cells
+  // ---------------------------------------------------------------------------
+
+  group('map-valued solution cells', () {
+    test('numeric value field is not used as answer text', () {
+      final r = parser.parse(_mapCellNumericValue());
+      final puzzle = (r as Ok).value;
+      // 'cell' key holds 'A'; numeric 'value' = 1 should be ignored
+      expect(puzzle.grid.cell(0, 0).solution, equals('A'));
+    });
+
+    test('cell key with rebus string is preserved', () {
+      final r = parser.parse(_mapCellRebus());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 0).solution, equals('EST'));
+    });
+
+    test('answer key is used as solution when cell key is absent', () {
+      final r = parser.parse(_mapCellAnswerKey());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 0).solution, equals('X'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Rebus (multi-char solution cells via plain string)
   // ---------------------------------------------------------------------------
 
   group('rebus cells', () {
     test('multi-char solution cell (0,0) is preserved as "EST"', () {
       final r = parser.parse(_rebus3x3());
       expect(r, isA<Ok>());
-      final puzzle = (r as Ok).value;
-      expect(puzzle.grid.cell(0, 0).solution, equals('EST'));
+      expect((r as Ok).value.grid.cell(0, 0).solution, equals('EST'));
     });
 
     test('single-char cells are unaffected', () {
       final r = parser.parse(_rebus3x3());
-      final puzzle = (r as Ok).value;
-      expect(puzzle.grid.cell(0, 1).solution, equals('B'));
+      expect((r as Ok).value.grid.cell(0, 1).solution, equals('B'));
     });
   });
 
   // ---------------------------------------------------------------------------
-  // Date parsing
+  // Circle / style variants
   // ---------------------------------------------------------------------------
 
-  group('date field', () {
-    test('MM/DD/YYYY date is parsed into publishDate', () {
-      final r = parser.parse(_withDate());
-      expect(r, isA<Ok>());
-      // publishDate is not stored in PuzzleMetadata directly from the ipuz parser
-      // (it's populated if the intl package date parse succeeds — skip if not wired)
-      // This test validates the parser completes without error when date is present.
-      expect((r as Ok).value.metadata.title, equals('Dated Puzzle'));
+  group('circle style variants', () {
+    test('style.shapebg == circle marks cell as circled', () {
+      final r = parser.parse(_circleStyleShapebg());
+      expect((r as Ok).value.grid.cell(0, 0).circled, isTrue);
+    });
+
+    test('style.shape == circle marks cell as circled', () {
+      final r = parser.parse(_circleStyleShape());
+      expect((r as Ok).value.grid.cell(0, 0).circled, isTrue);
+    });
+
+    test('cell-level circle:true marks cell as circled', () {
+      final r = parser.parse(_circleCellTrue());
+      expect((r as Ok).value.grid.cell(0, 0).circled, isTrue);
+    });
+
+    test('non-circled cells are not circled', () {
+      final r = parser.parse(_circleStyleShapebg());
+      expect((r as Ok).value.grid.cell(0, 1).circled, isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Defensive JSON shape validation
+  // ---------------------------------------------------------------------------
+
+  group('defensive JSON shape validation', () {
+    test('non-list solution row → Err(missingData)', () {
+      final r = parser.parse(_malformedSolutionRow());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.missingData));
+    });
+
+    test('non-map dimensions → Err(missingData)', () {
+      final r = parser.parse(_malformedDimensions());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.missingData));
+    });
+
+    test('non-map clues → Err(missingData)', () {
+      final r = parser.parse(_malformedClues());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.missingData));
     });
   });
 
@@ -425,7 +740,6 @@ void main() {
     test('missing dimensions → Err(missingData)', () {
       final bytes = _jsonBytes({
         'kind': ['http://ipuz.org/crossword#1'],
-        // no 'dimensions' key
         'solution': [[]],
         'clues': {'Across': [], 'Down': []},
       });
@@ -438,7 +752,6 @@ void main() {
       final bytes = _jsonBytes({
         'kind': ['http://ipuz.org/crossword#1'],
         'dimensions': {'width': 3, 'height': 3},
-        // no 'solution' key
         'clues': {'Across': [], 'Down': []},
       });
       final r = parser.parse(bytes);
@@ -447,8 +760,7 @@ void main() {
     });
 
     test('oversized file → Err(fileTooLarge)', () {
-      final big = Uint8List(5 * 1024 * 1024 + 1);
-      final r = parser.parse(big);
+      final r = parser.parse(Uint8List(5 * 1024 * 1024 + 1));
       expect(r, isA<Err>());
       expect((r as Err).error, equals(ParseError.fileTooLarge));
     });
@@ -459,7 +771,6 @@ void main() {
         'dimensions': {'width': 3, 'height': 3},
         'solution': [
           ['A', 'B', 'C']
-          // only 1 row, expected 3
         ],
         'clues': {'Across': [], 'Down': []},
       });

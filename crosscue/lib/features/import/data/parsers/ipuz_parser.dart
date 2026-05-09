@@ -14,6 +14,22 @@ import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart';
 
 /// Parses .ipuz JSON puzzle files (ipuz.org spec v2).
+///
+/// Compatibility notes:
+///   - Clue direction keys: case-insensitive (`Across`, `across`, `ACROSS`).
+///   - Block cells: `'#'`, `null`, and numeric `0` in solution rows.
+///   - Map solution cells: prefers string-typed `cell`, `answer`, or `solution`
+///     fields; numeric `value` is treated as numbering metadata, not an answer.
+///   - Clue objects: accepts `[number, text]` arrays, `{number, clue}` objects,
+///     and `{number, text}` objects. Clue text has simple HTML tags stripped.
+///   - Circles: recognizes `style.shapebg`, `style.color`, `style.shape` == `'circle'`
+///     and cell-level `circle: true`.
+///   - Publish date: parses `YYYY-MM-DD` and `MM/DD/YYYY`; invalid dates become null.
+///   - Barred grids: rejected as unsupported (cell-side bar keys detected in
+///     `style` map). Full barred support requires a future `SolutionCell` boundary
+///     model; see SPRINTS.md.
+///   - Defensive shape validation: malformed JSON structures return structured
+///     `ParseError` values rather than crashing to `ParseError.unknown`.
 class IpuzParser implements PuzzleParser {
   const IpuzParser();
 
@@ -21,6 +37,18 @@ class IpuzParser implements PuzzleParser {
   static const _maxBytes = 5 * 1024 * 1024;
 
   static const _blackCell = '#';
+
+  // Simple HTML tag/entity stripper for clue text.
+  static final _htmlTagRe = RegExp(r'<[^>]+>');
+  static final _htmlEntityRe = RegExp(r'&[a-zA-Z]+;|&#[0-9]+;');
+  static const _htmlEntities = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&nbsp;': ' ',
+  };
 
   @override
   bool canParse(Uint8List bytes) {
@@ -65,8 +93,9 @@ class IpuzParser implements PuzzleParser {
     }
 
     // --- dimensions ---
-    final dimensions = json['dimensions'] as Map<String, dynamic>?;
-    if (dimensions == null) return const Err(ParseError.missingData);
+    final dimensionsRaw = json['dimensions'];
+    if (dimensionsRaw is! Map) return const Err(ParseError.missingData);
+    final dimensions = dimensionsRaw as Map<String, dynamic>;
     final width = (dimensions['width'] as num?)?.toInt();
     final height = (dimensions['height'] as num?)?.toInt();
     if (width == null || height == null || width <= 0 || height <= 0) {
@@ -74,24 +103,28 @@ class IpuzParser implements PuzzleParser {
     }
 
     // --- solution grid ---
-    final solutionRaw = json['solution'] as List<dynamic>?;
-    if (solutionRaw == null) return const Err(ParseError.missingData);
+    final solutionRaw = json['solution'];
+    if (solutionRaw is! List) return const Err(ParseError.missingData);
     if (solutionRaw.length != height) return const Err(ParseError.missingData);
 
     final cells = <SolutionCell>[];
     final solutionStrings = <String>[]; // for checksum
 
     for (var r = 0; r < height; r++) {
-      final row = solutionRaw[r] as List<dynamic>;
+      final rowRaw = solutionRaw[r];
+      if (rowRaw is! List) return const Err(ParseError.missingData);
+      final row = rowRaw;
       if (row.length != width) return const Err(ParseError.missingData);
       for (var c = 0; c < width; c++) {
         final val = row[c];
-        if (val == _blackCell || val == null) {
+        // Black cells: '#', null, or numeric 0
+        if (val == _blackCell || val == null || val == 0) {
           cells.add(SolutionCell.black);
           solutionStrings.add('#');
         } else if (val is Map) {
-          // rebus: {"cell": "EST"} or {"value": 0, "cell": "EST"}
-          final letter = (val['cell'] ?? val['value'] ?? '').toString();
+          // Rebus / map cell: prefer string-typed answer fields;
+          // treat numeric 'value' as numbering metadata, not an answer.
+          final letter = _extractSolutionFromMap(val);
           cells.add(SolutionCell(isBlack: false, solution: letter));
           solutionStrings.add(letter);
         } else {
@@ -102,32 +135,35 @@ class IpuzParser implements PuzzleParser {
       }
     }
 
-    // --- puzzle grid (for circle flags) ---
-    final puzzleRaw = json['puzzle'] as List<dynamic>?;
+    // --- puzzle grid (numbers + circles; barred grids rejected) ---
+    final puzzleRaw = json['puzzle'];
     if (_containsBarredGridData(solutionRaw) ||
-        (puzzleRaw != null && _containsBarredGridData(puzzleRaw))) {
+        (puzzleRaw is List && _containsBarredGridData(puzzleRaw))) {
       return const Err(ParseError.unsupportedFormat);
     }
     final numberedCells = <int, int>{}; // cellIndex → clue number
     final circledCells = <int>{};
 
-    if (puzzleRaw != null) {
+    if (puzzleRaw is List) {
       for (var r = 0; r < height && r < puzzleRaw.length; r++) {
-        final row = puzzleRaw[r] as List<dynamic>;
-        for (var c = 0; c < width && c < row.length; c++) {
-          final val = row[c];
+        final rowRaw = puzzleRaw[r];
+        if (rowRaw is! List) continue;
+        for (var c = 0; c < width && c < rowRaw.length; c++) {
+          final val = rowRaw[c];
           final idx = r * width + c;
           if (val is Map) {
             final cell = val['cell'];
             if (cell is int && cell > 0) numberedCells[idx] = cell;
-            final style = val['style'] as Map<String, dynamic>?;
-            if (style != null &&
-                (style['shapebg'] == 'circle' || style['color'] == 'circle')) {
-              circledCells.add(idx);
+            // Cell-level circle flag
+            if (val['circle'] == true) circledCells.add(idx);
+            final style = val['style'];
+            if (style is Map) {
+              if (_isCircleStyle(style)) circledCells.add(idx);
             }
           } else if (val is int && val > 0) {
             numberedCells[idx] = val;
           }
+          // '#' in puzzle grid = black cell; already handled in solution pass
         }
       }
     }
@@ -174,20 +210,48 @@ class IpuzParser implements PuzzleParser {
     );
 
     // --- clues ---
-    final cluesRaw = json['clues'] as Map<String, dynamic>?;
-    if (cluesRaw == null) return const Err(ParseError.missingData);
+    final cluesRaw = json['clues'];
+    if (cluesRaw is! Map) return const Err(ParseError.missingData);
 
     final clues = <Clue>[];
-    _parseClueList(cluesRaw, 'Across', Direction.across, grid, clues);
-    _parseClueList(cluesRaw, 'Down', Direction.down, grid, clues);
+    // Case-insensitive key lookup: find 'across' and 'down' variants
+    final acrossKey = _findClueKey(cluesRaw as Map<String, dynamic>, 'across');
+    final downKey = _findClueKey(cluesRaw, 'down');
+    if (acrossKey != null) {
+      _parseClueList(cluesRaw, acrossKey, Direction.across, grid, clues);
+    }
+    if (downKey != null) {
+      _parseClueList(cluesRaw, downKey, Direction.down, grid, clues);
+    }
 
     // --- metadata ---
-    final title =
-        (json['title'] as String? ?? '').replaceAll(RegExp(r'<[^>]+>'), '');
-    final author = (json['author'] as String? ?? '');
-    final copyright = (json['copyright'] as String? ?? '');
-    final notes = (json['intro'] as String? ?? '');
-    final difficulty = json['difficulty'] as String?;
+    final title = _stripHtml(
+        (json['title'] is String ? json['title'] as String : null) ?? '');
+    final author =
+        (json['author'] is String ? json['author'] as String : null) ?? '';
+    final copyright =
+        (json['copyright'] is String ? json['copyright'] as String : null) ??
+            '';
+    final difficulty =
+        (json['difficulty'] is String ? json['difficulty'] as String : null);
+
+    // Notes: prefer 'intro'; append publisher/editor if present
+    final intro =
+        (json['intro'] is String ? json['intro'] as String : null) ?? '';
+    final publisher =
+        (json['publisher'] is String ? json['publisher'] as String : null);
+    final editor = (json['editor'] is String ? json['editor'] as String : null);
+    final notesParts = <String>[
+      if (intro.isNotEmpty) intro,
+      if (publisher != null && publisher.isNotEmpty) 'Publisher: $publisher',
+      if (editor != null && editor.isNotEmpty) 'Editor: $editor',
+    ];
+    final notes = notesParts.join('\n');
+
+    // Publish date: try ISO YYYY-MM-DD, then US MM/DD/YYYY
+    final dateStr =
+        (json['date'] is String ? json['date'] as String : null) ?? '';
+    final publishDate = _parseDate(dateStr);
 
     final canonicalJson =
         '{"w":$width,"h":$height,"s":${jsonEncode(solutionStrings.join())},"t":${jsonEncode(title)}}';
@@ -208,6 +272,7 @@ class IpuzParser implements PuzzleParser {
       notes: notes.isEmpty ? null : notes,
       checksum: digest,
       difficulty: difficulty,
+      publishDate: publishDate,
     );
 
     return Ok(Puzzle(
@@ -218,6 +283,75 @@ class IpuzParser implements PuzzleParser {
     ));
   }
 
+  // ---- helpers ----
+
+  /// Finds the first key in [cluesRaw] whose lowercase form equals [target].
+  String? _findClueKey(Map<String, dynamic> cluesRaw, String target) {
+    for (final key in cluesRaw.keys) {
+      if (key.toLowerCase() == target) return key;
+    }
+    return null;
+  }
+
+  /// Extracts a string answer from a map-valued solution cell.
+  ///
+  /// Prefers `cell`, `answer`, or `solution` if they are non-empty strings.
+  /// Treats numeric `value` as numbering/style metadata and ignores it.
+  String _extractSolutionFromMap(Map<dynamic, dynamic> val) {
+    for (final key in ['cell', 'answer', 'solution']) {
+      final v = val[key];
+      if (v is String && v.isNotEmpty) return v;
+    }
+    // Fall back to 'value' only if it's a non-empty string
+    final value = val['value'];
+    if (value is String && value.isNotEmpty) return value;
+    return '';
+  }
+
+  /// Returns true if the style map indicates a circle cell.
+  bool _isCircleStyle(Map<dynamic, dynamic> style) {
+    return style['shapebg'] == 'circle' ||
+        style['color'] == 'circle' ||
+        style['shape'] == 'circle';
+  }
+
+  /// Strips simple HTML tags and decodes common HTML entities from [text].
+  String _stripHtml(String text) {
+    var result = text.replaceAll(_htmlTagRe, '');
+    result = result.replaceAllMapped(_htmlEntityRe, (m) {
+      return _htmlEntities[m.group(0)] ?? m.group(0)!;
+    });
+    return result;
+  }
+
+  /// Parses a date string into a [DateTime].
+  ///
+  /// Accepts ISO `YYYY-MM-DD` and US `MM/DD/YYYY`. Returns null for
+  /// unrecognized or invalid formats rather than failing the import.
+  DateTime? _parseDate(String raw) {
+    if (raw.isEmpty) return null;
+    // ISO: YYYY-MM-DD
+    final iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
+    final isoMatch = iso.firstMatch(raw);
+    if (isoMatch != null) {
+      return DateTime.tryParse(raw);
+    }
+    // US: MM/DD/YYYY
+    final us = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$');
+    final usMatch = us.firstMatch(raw);
+    if (usMatch != null) {
+      final y = int.parse(usMatch.group(3)!);
+      final m = int.parse(usMatch.group(1)!);
+      final d = int.parse(usMatch.group(2)!);
+      try {
+        return DateTime(y, m, d);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   void _parseClueList(
     Map<String, dynamic> cluesRaw,
     String key,
@@ -225,20 +359,24 @@ class IpuzParser implements PuzzleParser {
     Grid<SolutionCell> grid,
     List<Clue> out,
   ) {
-    final list = cluesRaw[key] as List<dynamic>?;
-    if (list == null) return;
-    for (final item in list) {
+    final listRaw = cluesRaw[key];
+    if (listRaw is! List) return;
+    for (final item in listRaw) {
       int? number;
       String text = '';
       if (item is List && item.length >= 2) {
         number = int.tryParse(item[0].toString());
         text = item[1].toString();
       } else if (item is Map) {
-        number =
-            int.tryParse((item['number'] ?? item['Number'] ?? '').toString());
-        text = (item['clue'] ?? item['text'] ?? '').toString();
+        // Accept 'number', 'Number', or 'label' for the clue number field
+        final numRaw = item['number'] ?? item['Number'] ?? item['label'];
+        number = int.tryParse((numRaw ?? '').toString());
+        text = (item['clue'] ?? item['text'] ?? item['hint'] ?? '').toString();
       }
       if (number == null) continue;
+
+      // Strip HTML from clue text
+      text = _stripHtml(text);
 
       // Find start position
       int? startRow, startCol;
@@ -293,6 +431,12 @@ class IpuzParser implements PuzzleParser {
     return topBlack && hasBelow;
   }
 
+  /// Returns true if the grid data contains cell-side bar keys, indicating a
+  /// barred grid that Crosscue does not yet support.
+  ///
+  /// Known bar keys: `barred`, `bars`, any key starting with `barred` or
+  /// ending with `bar`, or a value of `'barred'`. Full barred-grid support
+  /// requires a future `SolutionCell` boundary model (see SPRINTS.md).
   bool _containsBarredGridData(List<dynamic> rows) {
     for (final row in rows) {
       if (row is! List) continue;

@@ -9,7 +9,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 ---
 
 
-## Sprint 18 — `.ipuz` Parser Robustness & Metadata ⬜
+## Sprint 18 — `.ipuz` Parser Robustness & Metadata ✅
 
 **Goal:** Keep Crosscue's `.ipuz` advantage over Crosshare, but make the parser more tolerant of common `.ipuz` variants and more complete in the metadata it preserves.
 
@@ -21,16 +21,16 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Publish date parsing** | ⬜ | Parse common `.ipuz` `date` values into `PuzzleMetadata.publishDate`: ISO `YYYY-MM-DD`, US `MM/DD/YYYY`, and compact variants only if they can be interpreted unambiguously. Keep invalid dates as `null` rather than failing import. Update the existing date test so it asserts the stored date, not only that parsing succeeds. |
-| **Case-insensitive clue direction keys** | ⬜ | Accept `Across`/`Down`, `across`/`down`, and other simple case variants. Keep output clues normalized to `Direction.across` / `Direction.down`. Add tests where only lowercase keys are present. |
-| **Defensive JSON shape validation** | ⬜ | Replace unchecked casts for `solution` rows, `puzzle` rows, `dimensions`, and `clues` with type checks that return `ParseError.missingData` or `ParseError.invalidFormat`. The parser should never return `ParseError.unknown` for ordinary malformed `.ipuz` structure. |
-| **Block-cell variants** | ⬜ | Support common black-cell representations in solution/puzzle grids: `'#'`, `null`, and numeric `0` where appropriate. Review whether `'.'` should be accepted as a block for compatibility; add only if fixture-backed because `'.'` can be meaningful in some JSON contexts. |
-| **Map-valued solution cells** | ⬜ | Current logic uses `val['cell'] ?? val['value']`; this can turn numeric `value` fields into answer text. Prefer string-like answer fields (`cell`, `answer`, `solution`) and treat numeric `value` as numbering/style metadata unless paired with a real answer string. Add rebus tests for map cells with both `value` and `cell`. |
-| **Clue object variants** | ⬜ | Extend clue parsing to accept common fields such as `label`, `cells`, or stringified `number` when present. Continue ignoring unsupported rich metadata, but never crash. Preserve clue text after stripping simple HTML tags/entities where safe. |
-| **Circle/style variants** | ⬜ | Crosscue currently recognizes `style.shapebg == 'circle'` or `style.color == 'circle'`. Add support for common style keys such as `style.shape == 'circle'` or direct `circle: true` if observed in fixtures. Keep unsupported style data ignored. |
-| **Barred-boundary discovery hook** | ⬜ | Sprint 16 may introduce barred-grid boundaries. During `.ipuz` hardening, inspect known keys for cell-side bars and document the mapping needed for `SolutionCell` or a future boundary model. If the domain model is not ready, reject barred `.ipuz` puzzles as unsupported instead of importing wrong word lengths. `.jpz` remains out of scope until a parser exists. |
-| **Metadata enrichment** | ⬜ | Preserve simple metadata already supported by `PuzzleMetadata`: `title`, `author`, `copyright`, `difficulty`, `notes`, and `publishDate`. Consider mapping `publisher`/`editor` into notes only if it improves display without polluting constructor notes. |
-| **Expanded fixture coverage** | ⬜ | Add synthetic `.ipuz` fixtures for lowercase clues, date variants, numeric blocks, malformed rows, map rebus cells, extra clue fields, circle style variants, and invalid-but-noncrashing inputs. |
+| **Publish date parsing** | ✅ | ISO `YYYY-MM-DD` and US `MM/DD/YYYY` parsed into `publishDate`; invalid dates silently become `null`. Both formats tested. |
+| **Case-insensitive clue direction keys** | ✅ | `_findClueKey` searches map keys case-insensitively; `across`/`ACROSS`/`Across` all work. Tests for lower and upper variants. |
+| **Defensive JSON shape validation** | ✅ | `dimensions`, `solution`, `solution` rows, and `clues` use `is` type checks returning `missingData`/`invalidFormat`; no unchecked casts. Tests for non-map dimensions, non-list solution rows, non-map clues. |
+| **Block-cell variants** | ✅ | `'#'`, `null`, and numeric `0` in solution rows all map to black cells. `'.'` withheld (no fixture evidence; can be meaningful). |
+| **Map-valued solution cells** | ✅ | Prefers `cell`/`answer`/`solution` string fields; numeric `value` ignored as numbering metadata. Tests for `{cell, value}`, `{cell: 'EST'}`, and `{answer}`. |
+| **Clue object variants** | ✅ | Accepts `label` as number key and `hint` as text key. HTML tags and common entities stripped from all clue text via `_stripHtml`. |
+| **Circle/style variants** | ✅ | `style.shape == 'circle'` and `circle: true` at cell level added alongside existing `shapebg`/`color` checks. |
+| **Barred-boundary discovery hook** | ✅ | Rejection already in place from Sprint 16. Documented the future `SolutionCell` boundary model requirement in parser class doc and `_containsBarredGridData` comment. |
+| **Metadata enrichment** | ✅ | `publishDate` wired; `publisher`/`editor` appended to notes when present. `title` HTML-stripped. |
+| **Expanded fixture coverage** | ✅ | `_base3x3` shared builder; fixtures for lowercase/uppercase keys, HTML clues, ISO/US/bad dates, publisher+editor, numeric-0 black, map cells (`cell`, `answer`, numeric `value`), `style.shape`, `circle:true`, malformed dimensions/rows/clues. |
 
 ### Acceptance Criteria
 
