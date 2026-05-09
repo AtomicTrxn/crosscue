@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Pre-push hook — runs the full CI pipeline locally before any push lands.
+# Installed by: make install-hooks  (or scripts/install-hooks.sh)
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "🔍 Running pre-push checks (make ci)..."
+cd "$REPO_ROOT" && make ci
+echo "✅ All checks passed."
