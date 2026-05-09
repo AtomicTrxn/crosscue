@@ -488,3 +488,33 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | `flutter analyze` | ✅ No issues |
 
 ---
+
+## Sprint 18 — `.ipuz` Parser Robustness & Metadata ✅
+
+**Goal:** Make the `.ipuz` parser more tolerant of common real-world variants and more complete in the metadata it preserves.
+
+### Scope
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Publish date parsing** | ✅ | ISO `YYYY-MM-DD` and US `MM/DD/YYYY` → `publishDate`; invalid dates silently `null`. |
+| **Case-insensitive clue direction keys** | ✅ | `_findClueKey` searches case-insensitively; `across`/`ACROSS`/`Across` all work. |
+| **Defensive JSON shape validation** | ✅ | `dimensions`, `solution` rows, and `clues` use `is` type checks; no unchecked casts crashing to `ParseError.unknown`. |
+| **Block-cell variants** | ✅ | `'#'`, `null`, and numeric `0` in solution rows all map to black. |
+| **Map-valued solution cells** | ✅ | Prefers `cell`/`answer`/`solution` string fields; numeric `value` ignored as numbering metadata. |
+| **Clue object variants** | ✅ | Accepts `label` as number key, `hint` as text key. HTML tags and entities stripped from clue text. |
+| **Circle/style variants** | ✅ | `style.shape == 'circle'` and `circle: true` added alongside existing `shapebg`/`color`. |
+| **Barred-boundary discovery hook** | ✅ | Rejection in place; future `SolutionCell` boundary model documented in parser. |
+| **Metadata enrichment** | ✅ | `publishDate` wired; `publisher`/`editor` appended to notes; `title` HTML-stripped. |
+| **Expanded fixture coverage** | ✅ | Shared `_base3x3` builder; fixtures for all new behaviors. |
+
+### Final Verification
+
+| Check | Result |
+|-------|--------|
+| `make ci` | ✅ Passed (format → analyze → test → generated → build) |
+| `flutter test test/features/import/ipuz_parser_test.dart` | ✅ 46/46 passed (up from 11) |
+| `flutter test` | ✅ 123/123 passed |
+| `flutter analyze` | ✅ No issues |
+
+---
