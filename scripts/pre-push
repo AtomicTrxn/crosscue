@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Pre-push hook — runs the full CI pipeline only when pushing to main.
+# Installed by: make install-hooks  (or scripts/install-hooks.sh)
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+PROTECTED_BRANCH="main"
+
+# The hook receives lines on stdin: <local-ref> <local-sha> <remote-ref> <remote-sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/$PROTECTED_BRANCH" ]]; then
+    echo "🔍 Pushing to $PROTECTED_BRANCH — running CI checks (make ci)..."
+    cd "$REPO_ROOT" && make ci
+    echo "✅ All checks passed."
+    exit 0
+  fi
+done
+
+# Not pushing to main — skip checks.
+exit 0

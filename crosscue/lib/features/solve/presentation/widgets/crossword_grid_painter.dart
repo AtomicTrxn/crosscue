@@ -168,6 +168,7 @@ class CrosswordGridPainter extends CustomPainter {
         }
 
         _paintAccessibilityOverlay(canvas, prog, cell.solution, rect, cellSize);
+        _paintStateGlyph(canvas, prog, rect, cellSize);
 
         if (isShaking || effect?.isFlip == true) {
           canvas.restore();
@@ -332,6 +333,49 @@ class CrosswordGridPainter extends CustomPainter {
           radius,
           dotPaint,
         );
+    }
+  }
+
+  void _paintStateGlyph(
+    Canvas canvas,
+    CellProgress progress,
+    Rect rect,
+    double cellSize,
+  ) {
+    final glyphPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = (cellSize * 0.045).clamp(1.0, 2.0)
+      ..color = theme.cellText.withValues(alpha: 0.42);
+
+    switch (progress.state) {
+      case CellState.checkedIncorrect:
+        final inset = (cellSize * 0.18).clamp(3.0, 8.0);
+        canvas.drawLine(
+          Offset(rect.right - inset, rect.top + inset),
+          Offset(rect.right - inset * 1.9, rect.top + inset * 1.9),
+          glyphPaint,
+        );
+      case CellState.revealed:
+        final center = Offset(
+          rect.right - (cellSize * 0.22).clamp(5.0, 10.0),
+          rect.bottom - (cellSize * 0.20).clamp(5.0, 10.0),
+        );
+        final eyeRect = Rect.fromCenter(
+          center: center,
+          width: (cellSize * 0.22).clamp(5.0, 9.0),
+          height: (cellSize * 0.12).clamp(3.0, 5.0),
+        );
+        canvas.drawOval(eyeRect, glyphPaint);
+        canvas.drawCircle(
+          center,
+          (cellSize * 0.025).clamp(0.8, 1.4),
+          Paint()
+            ..style = PaintingStyle.fill
+            ..color = glyphPaint.color,
+        );
+      default:
+        return;
     }
   }
 

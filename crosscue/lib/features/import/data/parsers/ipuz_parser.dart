@@ -104,6 +104,10 @@ class IpuzParser implements PuzzleParser {
 
     // --- puzzle grid (for circle flags) ---
     final puzzleRaw = json['puzzle'] as List<dynamic>?;
+    if (_containsBarredGridData(solutionRaw) ||
+        (puzzleRaw != null && _containsBarredGridData(puzzleRaw))) {
+      return const Err(ParseError.unsupportedFormat);
+    }
     final numberedCells = <int, int>{}; // cellIndex → clue number
     final circledCells = <int>{};
 
@@ -287,5 +291,33 @@ class IpuzParser implements PuzzleParser {
     final topBlack = r == 0 || grid.cell(r - 1, c).isBlack;
     final hasBelow = r + 1 < grid.height && !grid.cell(r + 1, c).isBlack;
     return topBlack && hasBelow;
+  }
+
+  bool _containsBarredGridData(List<dynamic> rows) {
+    for (final row in rows) {
+      if (row is! List) continue;
+      for (final cell in row) {
+        if (cell is! Map) continue;
+        if (_mapHasBarKey(cell)) return true;
+        final style = cell['style'];
+        if (style is Map && _mapHasBarKey(style)) return true;
+      }
+    }
+    return false;
+  }
+
+  bool _mapHasBarKey(Map<dynamic, dynamic> map) {
+    for (final entry in map.entries) {
+      final key = entry.key.toString().toLowerCase();
+      final value = entry.value.toString().toLowerCase();
+      if (key == 'barred' ||
+          key == 'bars' ||
+          key.startsWith('barred') ||
+          key.endsWith('bar') ||
+          value == 'barred') {
+        return true;
+      }
+    }
+    return false;
   }
 }

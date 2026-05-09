@@ -6,8 +6,8 @@ class CellProgressTable extends Table {
   @override
   String get tableName => 'cell_progress';
 
-  IntColumn get sessionId =>
-      integer().references(SolveSessionsTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get sessionId => integer()
+      .references(SolveSessionsTable, #id, onDelete: KeyAction.cascade)();
   IntColumn get row => integer()();
   IntColumn get col => integer()();
   TextColumn get guess => text().nullable()();

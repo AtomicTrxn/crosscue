@@ -60,7 +60,9 @@ abstract final class AppTheme {
         // 1px bottom border on every AppBar (spec §01–06)
         shape: Border(
           bottom: BorderSide(
-            color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
+            color: isLight
+                ? CrosscueColors.dividerLight
+                : CrosscueColors.dividerDark,
             width: 1,
           ),
         ),
@@ -108,7 +110,8 @@ abstract final class AppTheme {
 
       // ── Dividers ────────────────────────────────────────────────────────────
       dividerTheme: DividerThemeData(
-        color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
+        color:
+            isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
         thickness: 1,
         space: 1,
       ),

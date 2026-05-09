@@ -11,9 +11,11 @@ abstract class Clue with _$Clue {
     required int number,
     required Direction direction,
     required String text,
+
     /// Starting row/col of the answer in the grid.
     required int startRow,
     required int startCol,
+
     /// Number of letters in the answer.
     required int length,
   }) = _Clue;

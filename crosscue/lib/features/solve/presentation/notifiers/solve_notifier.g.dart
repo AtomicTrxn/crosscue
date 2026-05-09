@@ -49,7 +49,7 @@ final class SolveNotifierProvider
   }
 }
 
-String _$solveNotifierHash() => r'57591b8a5a7135ffbd882a4c2ad816b84e4bc96f';
+String _$solveNotifierHash() => r'9aa0df54df63873b6e90aca3a8a6fb7eb6154e31';
 
 final class SolveNotifierFamily extends $Family
     with

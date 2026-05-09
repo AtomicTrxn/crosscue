@@ -24,8 +24,7 @@ class SolveSessionsTable extends Table {
   TextColumn get deviceId => text()();
 
   /// DB values: not_started | in_progress | completed | revealed
-  TextColumn get status =>
-      text().withDefault(const Constant('not_started'))();
+  TextColumn get status => text().withDefault(const Constant('not_started'))();
 
   /// DB values: clean | checked | hinted | revealed (only set when completed)
   TextColumn get completionType => text().nullable()();
@@ -54,8 +53,7 @@ class SolveSessionsTable extends Table {
 
   IntColumn get focusRow => integer().withDefault(const Constant(0))();
   IntColumn get focusCol => integer().withDefault(const Constant(0))();
-  TextColumn get direction =>
-      text().withDefault(const Constant('across'))();
+  TextColumn get direction => text().withDefault(const Constant('across'))();
 
   // Sync-readiness columns (topic-09) — NoOpSyncAdapter in Phase 1
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();

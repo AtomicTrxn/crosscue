@@ -7,11 +7,13 @@ Before writing any code, read these documents in order:
 | Doc | Purpose |
 |-----|---------|
 | **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Feature structure, layer rules, data flow diagrams, checklist for adding a new feature |
-| **[SPRINTS.md](./SPRINTS.md)** | What is already built (✅), what is next (⬜), what is deferred (⏸) — check this before starting any task |
+| **[SPRINTS.md](./SPRINTS.md)** | Open/planned work (⬜) and deferred items (⏸) — check this before starting any task |
 | **[ISSUES.md](./ISSUES.md)** | Bug reports and enhancement requests — check before starting any sprint for items to pull in |
 | **[MODELS.md](./MODELS.md)** | Every domain model, its fields, DB mapping, and ID format |
 | **[CONVENTIONS.md](./CONVENTIONS.md)** | Hard rules: Freezed 3.x, Riverpod 3.x, FocusNode, file picker, routing, Drift, naming |
 | **[DEPLOYMENT.md](./DEPLOYMENT.md)** | How to run, build, install, monitor logs, and debug on the emulator |
+
+Historical shipped-sprint detail lives in **[COMPLETED_SPRINTS.md](./COMPLETED_SPRINTS.md)**. Do not load it unless past implementation context is specifically needed.
 
 ---
 
@@ -41,11 +43,23 @@ Before writing any code, read these documents in order:
 
 ## Dev Commands
 
-All commands must be run from the **Flutter project root**: `crosscue/`
+CI checks run from the **repo root** via `make`:
+
+```bash
+make ci          # full pipeline (format → analyze + test + generated → build APK)
+make format      # dart format check only
+make analyze     # flutter analyze only
+make test        # flutter test only
+make generated   # build_runner + generated-file drift check
+make build       # debug APK build only
+make install-hooks  # wire up git hooks (run once after cloning)
+```
+
+Flutter/Dart commands run from the **Flutter project root**: `crosscue/`
 
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
-flutter pub run build_runner build
+dart run build_runner build
 
 # Lint — must be 0 issues before committing
 flutter analyze
@@ -64,10 +78,14 @@ When adding packages, reference **`crosscue/pubspec.yaml`** — it lists all Pha
 
 ## Before Every Commit
 
-1. `build_runner build` — regenerate if any annotated files changed
+1. `dart run build_runner build` — regenerate if any annotated files changed
 2. `flutter analyze` — 0 issues required
 3. Stage only app source files — never commit `.claude/settings.local.json`, `*.save`, or temp files
 4. Follow the commit message style in CONVENTIONS.md
+
+The pre-push git hook runs `make ci` automatically when pushing to `main`,
+blocking the push on any failure. Run `make install-hooks` once after cloning
+to activate it. Use `make ci` manually before opening a PR on a feature branch.
 
 ---
 

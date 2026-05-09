@@ -40,6 +40,10 @@ class CluePanel extends StatelessWidget {
         .where((c) => c.direction == Direction.down)
         .toList()
       ..sort((a, b) => a.number.compareTo(b.number));
+    final referencedClues = _referencedClueKeys(
+      activeClue?.text,
+      solveState.puzzle.clues,
+    );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -50,6 +54,7 @@ class CluePanel extends StatelessWidget {
             clues: acrossClues,
             activeClue: activeClue,
             crossClue: crossClue,
+            referencedClues: referencedClues,
             xwTheme: xwTheme,
             hapticsEnabled: hapticsEnabled,
             onClueTap: onClueTap,
@@ -66,6 +71,7 @@ class CluePanel extends StatelessWidget {
             clues: downClues,
             activeClue: activeClue,
             crossClue: crossClue,
+            referencedClues: referencedClues,
             xwTheme: xwTheme,
             hapticsEnabled: hapticsEnabled,
             onClueTap: onClueTap,
@@ -87,6 +93,7 @@ class _ClueColumn extends StatefulWidget {
     required this.clues,
     required this.activeClue,
     required this.crossClue,
+    required this.referencedClues,
     required this.xwTheme,
     required this.hapticsEnabled,
     required this.onClueTap,
@@ -96,6 +103,7 @@ class _ClueColumn extends StatefulWidget {
   final List<Clue> clues;
   final Clue? activeClue;
   final Clue? crossClue;
+  final Set<String> referencedClues;
   final CrosswordTheme xwTheme;
   final bool hapticsEnabled;
   final ValueChanged<Clue> onClueTap;
@@ -184,6 +192,7 @@ class _ClueColumnState extends State<_ClueColumn> {
                       clue: clue,
                       activeClue: widget.activeClue,
                       crossClue: widget.crossClue,
+                      referencedClues: widget.referencedClues,
                       previewClue: _userScrolling ? _previewClue : null,
                       xwTheme: widget.xwTheme,
                       onClueTap: (clue) {
@@ -311,6 +320,7 @@ class _ClueRow extends StatelessWidget {
     required this.clue,
     required this.activeClue,
     required this.crossClue,
+    required this.referencedClues,
     required this.previewClue,
     required this.xwTheme,
     required this.onClueTap,
@@ -319,6 +329,7 @@ class _ClueRow extends StatelessWidget {
   final Clue clue;
   final Clue? activeClue;
   final Clue? crossClue;
+  final Set<String> referencedClues;
   final Clue? previewClue;
   final CrosswordTheme xwTheme;
   final ValueChanged<Clue> onClueTap;
@@ -331,15 +342,18 @@ class _ClueRow extends StatelessWidget {
         crossClue?.direction == clue.direction;
     final isPreview = previewClue?.number == clue.number &&
         previewClue?.direction == clue.direction;
+    final isReferenced = referencedClues.contains(_clueKey(clue));
 
     Color? rowBg;
     if (isActive || isPreview) {
       rowBg = xwTheme.activeClueBg;
     } else if (isCross) {
       rowBg = xwTheme.crossClueBg;
+    } else if (isReferenced) {
+      rowBg = xwTheme.crossClueBg.withValues(alpha: 0.42);
     }
 
-    final highlighted = isActive || isCross || isPreview;
+    final highlighted = isActive || isCross || isPreview || isReferenced;
     final numStyle = TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w600,
@@ -387,3 +401,28 @@ class _ClueRow extends StatelessWidget {
     );
   }
 }
+
+Set<String> _referencedClueKeys(String? clueText, List<Clue> clues) {
+  if (clueText == null || clueText.isEmpty) return const {};
+
+  final validKeys = clues.map(_clueKey).toSet();
+  final references = <String>{};
+  final directionNames = RegExp(
+    r'\b(\d+)\s*[- ]?\s*(Across|Down)\b',
+    caseSensitive: false,
+  );
+  final shortNames = RegExp(r'\b(\d+)\s*[- ]?([AD])\b', caseSensitive: false);
+
+  for (final match in directionNames.allMatches(clueText)) {
+    final key = '${match.group(1)}:${match.group(2)![0].toLowerCase()}';
+    if (validKeys.contains(key)) references.add(key);
+  }
+  for (final match in shortNames.allMatches(clueText)) {
+    final key = '${match.group(1)}:${match.group(2)!.toLowerCase()}';
+    if (validKeys.contains(key)) references.add(key);
+  }
+  return references;
+}
+
+String _clueKey(Clue clue) =>
+    '${clue.number}:${clue.direction == Direction.across ? 'a' : 'd'}';

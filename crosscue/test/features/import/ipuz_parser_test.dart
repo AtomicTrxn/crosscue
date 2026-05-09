@@ -196,6 +196,50 @@ Uint8List _withDate() => _jsonBytes({
       },
     });
 
+Uint8List _barred3x3() => _jsonBytes({
+      'version': 'http://ipuz.org/v2',
+      'kind': ['http://ipuz.org/crossword#1'],
+      'title': 'Barred Puzzle',
+      'dimensions': {'width': 3, 'height': 3},
+      'puzzle': [
+        [
+          {
+            'cell': 1,
+            'style': {'barred': 'R'}
+          },
+          {'cell': 2},
+          {'cell': 3}
+        ],
+        [
+          {'cell': 4},
+          0,
+          0
+        ],
+        [
+          {'cell': 5},
+          0,
+          0
+        ],
+      ],
+      'solution': [
+        ['A', 'B', 'C'],
+        ['D', 'E', 'F'],
+        ['G', 'H', 'I'],
+      ],
+      'clues': {
+        'Across': [
+          [1, '1 Across'],
+          [4, '4 Across'],
+          [5, '5 Across'],
+        ],
+        'Down': [
+          [1, '1 Down'],
+          [2, '2 Down'],
+          [3, '3 Down'],
+        ],
+      },
+    });
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -223,13 +267,15 @@ void main() {
     });
 
     test('returns false for non-crossword JSON', () {
-      final bytes = _jsonBytes({'kind': ['http://ipuz.org/wordplay#1']});
+      final bytes = _jsonBytes({
+        'kind': ['http://ipuz.org/wordplay#1']
+      });
       expect(parser.canParse(bytes), isFalse);
     });
 
     test('returns false for plain text', () {
-      expect(
-          parser.canParse(Uint8List.fromList('hello world'.codeUnits)), isFalse);
+      expect(parser.canParse(Uint8List.fromList('hello world'.codeUnits)),
+          isFalse);
     });
   });
 
@@ -300,8 +346,8 @@ void main() {
     });
 
     test('1-Across has correct text and start position', () {
-      final c = puzzle.clues.firstWhere(
-          (c) => c.number == 1 && c.direction == Direction.across);
+      final c = puzzle.clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(c.text, equals('1 Across'));
       expect(c.startRow, equals(0));
       expect(c.startCol, equals(0));
@@ -322,8 +368,10 @@ void main() {
     test('object-format clues {number, clue} are parsed', () {
       final r = parser.parse(_objectFormatClues());
       expect(r, isA<Ok>());
-      final clue = (r as Ok).value.clues.firstWhere(
-          (c) => c.number == 1 && c.direction == Direction.across);
+      final clue = (r as Ok)
+          .value
+          .clues
+          .firstWhere((c) => c.number == 1 && c.direction == Direction.across);
       expect(clue.text, equals('1 Across (obj)'));
     });
   });
@@ -418,6 +466,12 @@ void main() {
       final r = parser.parse(bytes);
       expect(r, isA<Err>());
       expect((r as Err).error, equals(ParseError.missingData));
+    });
+
+    test('barred cell-side data → Err(unsupportedFormat)', () {
+      final r = parser.parse(_barred3x3());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
     });
   });
 }

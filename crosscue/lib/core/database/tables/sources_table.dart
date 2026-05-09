@@ -42,8 +42,9 @@ class SourcesTable extends Table {
   TextColumn get termsUrl => text().nullable()();
   TextColumn get attribution => text().nullable()();
   BoolColumn get enabled => boolean().withDefault(const Constant(false))();
-  TextColumn get licenseStatus =>
-      text().map(const LicenseStatusConverter()).withDefault(const Constant('needs_review'))();
+  TextColumn get licenseStatus => text()
+      .map(const LicenseStatusConverter())
+      .withDefault(const Constant('needs_review'))();
   TextColumn get licenseUrl => text().nullable()();
   TextColumn get permissionContact => text().nullable()();
   BoolColumn get attributionRequired =>
