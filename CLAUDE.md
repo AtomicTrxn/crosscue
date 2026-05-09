@@ -11,8 +11,7 @@ Before writing any code, read these docs in order — they contain decisions tha
 | Doc | What it covers |
 |-----|---------------|
 | `ARCHITECTURE.md` | Layer rules, feature structure, data flow, new-feature checklist |
-| `SPRINTS.md` | All open/planned work — check before starting any task |
-| `ISSUES.md` | Bug reports and enhancements — check before starting any sprint |
+| [GitHub Issues](https://github.com/AtomicTrxn/crossque/issues) | All open/planned/deferred work — check before starting any task |
 | `MODELS.md` | Every domain model, field list, DB mapping, ID format |
 | `CONVENTIONS.md` | Hard rules born from real bugs (Freezed, Riverpod, FocusNode, FilePicker, routing) |
 | `DEPLOYMENT.md` | Build, run, install, log capture, and debugging runbook |

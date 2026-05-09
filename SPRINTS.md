@@ -1,24 +1,8 @@
-# Open Sprints — Crosscue
+# Sprints — Crosscue
 
-This file contains only planned, active, and deferred work so agents can inspect
-what remains without loading the full completed sprint history. For shipped work,
-read [COMPLETED_SPRINTS.md](COMPLETED_SPRINTS.md).
+Work is tracked in **GitHub Issues**: https://github.com/AtomicTrxn/crossque/issues
 
-Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
+- Open / planned work: filter by label or milestone
+- Deferred / post-MVP: filter by the `deferred` label → https://github.com/AtomicTrxn/crossque/issues?q=label%3Adeferred
 
----
-
-
-
----
-
-## Deferred / Post-MVP
-
-| Item | Notes |
-|------|-------|
-| Pencil mode | `EntryMode.pencil` enum already defined; `cell_progress.is_pencil` column exists |
-| Rebus entry (multi-letter cells) | Planned in Sprint 16; `EntryMode.rebus` defined and rebus parsed from `.puz`, but not yet editable |
-| Sync adapter (iCloud / Drive) | `SyncAdapter` interface + `NoOpSyncAdapter` stub in `core/sync/` |
-| Subscription / entitlement | `EntitlementService` interface + `FreeEntitlementService` stub in `core/entitlement/` |
-| iOS support | Phase 2; Android is Phase 1 target |
-| Automated puzzle downloaders | Only for `LicenseStatus.openLicense` or `explicitPermission` sources; management lives in Settings |
+For shipped sprint history see [COMPLETED_SPRINTS.md](COMPLETED_SPRINTS.md).
