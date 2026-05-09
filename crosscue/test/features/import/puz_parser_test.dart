@@ -240,7 +240,14 @@ void main() {
         width: 3,
         height: 3,
         grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: ['1-Across', '1-Down', '2-Down', '3-Down', '4-Across', '5-Across'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
       );
       final copy = Uint8List.fromList(bytes);
       copy[0x2C] = 1; // width = 1
@@ -254,7 +261,14 @@ void main() {
         width: 3,
         height: 3,
         grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: ['1-Across', '1-Down', '2-Down', '3-Down', '4-Across', '5-Across'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
       );
       final copy = Uint8List.fromList(bytes);
       copy[0x2D] = 1; // height = 1
@@ -268,7 +282,14 @@ void main() {
         width: 3,
         height: 3,
         grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: ['1-Across', '1-Down', '2-Down', '3-Down', '4-Across', '5-Across'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
       );
       final copy = Uint8List.fromList(bytes);
       copy[0x2C] = 26; // width = 26
@@ -282,7 +303,14 @@ void main() {
         width: 3,
         height: 3,
         grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: ['1-Across', '1-Down', '2-Down', '3-Down', '4-Across', '5-Across'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
       );
       final copy = Uint8List.fromList(bytes);
       copy[0x2D] = 26; // height = 26
