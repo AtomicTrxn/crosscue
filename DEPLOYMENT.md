@@ -96,12 +96,12 @@ adb -s <device-id> logcat -c
 
 Run after any change to `@freezed` models, `@riverpod` notifiers, or Drift tables:
 ```bash
-flutter pub run build_runner build
+dart run build_runner build
 ```
 
 Or watch mode during active development:
 ```bash
-flutter pub run build_runner watch
+dart run build_runner watch
 ```
 
 ---
@@ -131,16 +131,22 @@ git checkout -b feature/short-description
 
 ### Verify locally
 
-Run from `crosscue/`:
+Run from the **repo root** using the Makefile (mirrors CI exactly):
 
 ```bash
-flutter pub get
-dart run build_runner build
-dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
-flutter build apk --debug --no-pub
+make ci          # full pipeline: format → analyze + test + generated → build APK
+make format      # formatting check only
+make analyze     # flutter analyze only
+make test        # flutter test only
+make generated   # build_runner + git diff check
+make build       # debug APK build only
 ```
+
+The pre-push hook runs `make ci` automatically whenever you push to `main`,
+blocking the push if any check fails. For all other branches, pushes are
+unblocked — run `make ci` manually before opening a PR.
+
+To bypass the hook in an emergency: `git push --no-verify`
 
 ### Commit and push
 
@@ -167,20 +173,28 @@ Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ### CI coverage
 
-The CI workflow in `.github/workflows/ci.yml` runs separate jobs so failures
-are easy to identify and failed jobs can be rerun independently:
+`.github/workflows/ci.yml` runs in three sequential stages. A stage only
+starts if all jobs in the previous stage passed.
 
-| Job | Purpose |
-|------|---------|
-| **Format** | Runs `dart format --output=none --set-exit-if-changed .` |
-| **Generated files** | Runs `flutter pub get`, `dart run build_runner build`, then `git diff --exit-code` to ensure Freezed/Riverpod/Drift outputs are current |
-| **Analyze** | Runs `flutter pub get` and `flutter analyze` |
-| **Test** | Runs `flutter pub get` and `flutter test` |
-| **Build debug APK** | Runs Java 17 setup, `flutter pub get`, and `flutter build apk --debug --no-pub` to verify Android packaging |
+```
+Stage 1   Format
+             │
+Stage 2   Analyze ── Test ── Generated files   (parallel)
+             │
+Stage 3   Build debug APK
+```
 
-All jobs use Flutter `3.41.9`. The PR APK build is only a temporary build
-verification artifact inside the GitHub Actions runner; it is not uploaded or
-retained after the job finishes.
+| Stage | Job | Command |
+|-------|-----|---------|
+| 1 | **Format** | `flutter pub get` → `dart format --output=none --set-exit-if-changed .` |
+| 2 | **Analyze** | `flutter pub get` → `flutter analyze` |
+| 2 | **Test** | `flutter pub get` → `flutter test` |
+| 2 | **Generated files** | `flutter pub get` → `dart run build_runner build` → `git diff --exit-code` |
+| 3 | **Build debug APK** | Java 17 → `flutter pub get` → `flutter build apk --debug --no-pub` |
+
+All jobs use Flutter `3.41.9`. Format runs `flutter pub get` first so the
+formatter can resolve the SDK constraint and apply the correct style. The APK
+build artifact is not uploaded or retained after the job finishes.
 
 ---
 

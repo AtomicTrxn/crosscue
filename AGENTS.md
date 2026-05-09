@@ -43,11 +43,23 @@ Historical shipped-sprint detail lives in **[COMPLETED_SPRINTS.md](./COMPLETED_S
 
 ## Dev Commands
 
-All commands must be run from the **Flutter project root**: `crosscue/`
+CI checks run from the **repo root** via `make`:
+
+```bash
+make ci          # full pipeline (format → analyze + test + generated → build APK)
+make format      # dart format check only
+make analyze     # flutter analyze only
+make test        # flutter test only
+make generated   # build_runner + generated-file drift check
+make build       # debug APK build only
+make install-hooks  # wire up git hooks (run once after cloning)
+```
+
+Flutter/Dart commands run from the **Flutter project root**: `crosscue/`
 
 ```bash
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
-flutter pub run build_runner build
+dart run build_runner build
 
 # Lint — must be 0 issues before committing
 flutter analyze
@@ -66,10 +78,14 @@ When adding packages, reference **`crosscue/pubspec.yaml`** — it lists all Pha
 
 ## Before Every Commit
 
-1. `build_runner build` — regenerate if any annotated files changed
+1. `dart run build_runner build` — regenerate if any annotated files changed
 2. `flutter analyze` — 0 issues required
 3. Stage only app source files — never commit `.claude/settings.local.json`, `*.save`, or temp files
 4. Follow the commit message style in CONVENTIONS.md
+
+The pre-push git hook runs `make ci` automatically when pushing to `main`,
+blocking the push on any failure. Run `make install-hooks` once after cloning
+to activate it. Use `make ci` manually before opening a PR on a feature branch.
 
 ---
 
