@@ -206,6 +206,77 @@ build artifact is not uploaded or retained after the job finishes.
 
 ---
 
+## Release Pipeline
+
+Releases are triggered by pushing a semver tag. The pipeline runs full CI, builds a signed AAB, and publishes a GitHub Release.
+
+### One-time setup: create a keystore
+
+Run this once locally and keep the keystore file safe (outside the repo):
+
+```bash
+keytool -genkey -v \
+  -keystore ~/crosscue-release.jks \
+  -alias crosscue \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Encode it for GitHub Secrets:
+```bash
+base64 -i ~/crosscue-release.jks | pbcopy   # macOS — copies to clipboard
+```
+
+### One-time setup: add GitHub Secrets
+
+Go to **GitHub → repo → Settings → Secrets and variables → Actions** and add:
+
+| Secret | Value |
+|--------|-------|
+| `KEYSTORE_BASE64` | Base64-encoded `.jks` file (from the command above) |
+| `KEY_ALIAS` | `crosscue` (or whatever alias you chose) |
+| `KEY_PASSWORD` | The key password you entered |
+| `STORE_PASSWORD` | The keystore password you entered |
+
+### Local release signing (optional)
+
+To build a release-signed APK locally, create `crosscue/android/key.properties` (gitignored):
+
+```properties
+storeFile=/Users/you/crosscue-release.jks
+keyAlias=crosscue
+storePassword=your-store-password
+keyPassword=your-key-password
+```
+
+Then:
+```bash
+cd crosscue && flutter build apk --release --no-pub
+```
+
+### Cutting a release
+
+```bash
+git checkout main && git pull
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers `.github/workflows/release.yml`, which:
+1. Runs full CI (format → analyze → test → generated → debug APK)
+2. Builds a signed release AAB with version name `1.0.0` and version code `10000`
+3. Publishes a GitHub Release at `v1.0.0` with the AAB attached and auto-generated release notes
+
+**Version code formula:** `major × 10000 + minor × 100 + patch`
+- `v1.0.0` → `10000`
+- `v1.1.0` → `10100`
+- `v1.0.3` → `10003`
+
+### Play Store upload
+
+The workflow has a commented-out `r0adkll/upload-google-play` step. Once the app is live on Google Play, uncomment it and add a `PLAY_SERVICE_ACCOUNT_JSON` secret (a Google Cloud service account key with the **Release Manager** role on the Play Console).
+
+---
+
 ## Debugging Runbook
 
 ### App shows error screen ("Could not load puzzle")

@@ -1,0 +1,97 @@
+name: Release
+
+# Trigger by pushing a semver tag: git tag v1.2.3 && git push origin v1.2.3
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  FLUTTER_VERSION: '3.41.9'
+
+jobs:
+  # ── Stage 1: full CI gate ─────────────────────────────────────────────────
+  ci:
+    name: CI checks
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  # ── Stage 2: signed release build + GitHub Release ───────────────────────
+  release:
+    name: Build & publish
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create a GitHub Release
+
+    defaults:
+      run:
+        working-directory: crosscue
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Parse version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"        # e.g. v1.2.3
+          VERSION="${TAG#v}"              # 1.2.3
+          IFS='.' read -r major minor patch <<< "$VERSION"
+          CODE=$(( major * 10000 + minor * 100 + patch ))
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE"    >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/crosscue-release.jks"
+
+      - name: Build release AAB
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/crosscue-release.jks
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          flutter build appbundle \
+            --release \
+            --no-pub \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ steps.version.outputs.code }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Crosscue v${{ steps.version.outputs.name }}
+          generate_release_notes: true
+          files: crosscue/build/app/outputs/bundle/release/app-release.aab
+
+      # ── Play Store upload (uncomment once app is live on Google Play) ─────
+      # Requires secret: PLAY_SERVICE_ACCOUNT_JSON
+      # (Settings → Secrets → Actions → New repository secret)
+      #
+      # - name: Upload to Play Store — internal track
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      #     packageName: com.crosscue.crosscue
+      #     releaseFiles: crosscue/build/app/outputs/bundle/release/app-release.aab
+      #     track: internal
+      #     status: completed
