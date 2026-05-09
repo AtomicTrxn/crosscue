@@ -118,7 +118,7 @@ Stage 1   Format
              │
 Stage 2   Analyze ── Test ── Generated files   (parallel)
              │
-Stage 3   Build debug APK
+Stage 3   Build debug APK   (skipped when called from release pipeline)
 ```
 
-All jobs use Flutter `3.41.9`. Format requires `flutter pub get` first so the formatter resolves the SDK constraint and applies the correct tall style.
+All jobs use Flutter `3.41.9`. Format requires `flutter pub get` first so the formatter resolves the SDK constraint and applies the correct tall style. The debug APK build is skipped when CI runs inside the release pipeline — the release job builds a signed APK instead.
