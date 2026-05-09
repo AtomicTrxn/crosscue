@@ -141,9 +141,9 @@ class SolveNotifier extends _$SolveNotifier {
   }
 
   /// Moves focus to a clue, preferring the first empty cell in that answer.
-  void focusClue(Clue clue) {
+  FocusPosition? focusClue(Clue clue) {
     final s = _s;
-    if (s == null) return;
+    if (s == null) return null;
 
     var targetRow = clue.startRow;
     var targetCol = clue.startCol;
@@ -155,15 +155,33 @@ class SolveNotifier extends _$SolveNotifier {
       }
     }
 
-    state = AsyncData(
-      s.copyWith(
-        focus: FocusPosition(
-          row: targetRow,
-          col: targetCol,
-          direction: clue.direction,
-        ),
-      ),
+    final focus = FocusPosition(
+      row: targetRow,
+      col: targetCol,
+      direction: clue.direction,
     );
+    state = AsyncData(s.copyWith(focus: focus));
+    return focus;
+  }
+
+  /// Moves focus to a non-black cell and updates direction when supported.
+  FocusPosition? moveFocusTo(int row, int col, Direction direction) {
+    final s = _s;
+    if (s == null) return null;
+    if (!s.puzzle.grid.inBounds(row, col) ||
+        s.puzzle.grid.cell(row, col).isBlack) {
+      return null;
+    }
+    final effectiveDirection =
+        _hasWord(s, row, col, direction) ? direction : s.focus.direction;
+    if (!_hasWord(s, row, col, effectiveDirection)) return null;
+    final focus = FocusPosition(
+      row: row,
+      col: col,
+      direction: effectiveDirection,
+    );
+    state = AsyncData(s.copyWith(focus: focus));
+    return focus;
   }
 
   // ---------------------------------------------------------------------------
@@ -205,91 +223,36 @@ class SolveNotifier extends _$SolveNotifier {
     return clue != null && !wasWordComplete && _isWordComplete(updated, clue);
   }
 
-  void backspace() {
+  bool inputRebus(String value) {
     final s = _s;
-    if (s == null || s.isPaused) return;
+    if (s == null || s.isPaused) return false;
+
+    final upper = value.toUpperCase().replaceAll(RegExp(r'[^A-Z]'), '');
+    if (upper.length < 2) return false;
 
     final r = s.focus.row;
     final c = s.focus.col;
-    final current = s.progress.cell(r, c);
+    if (s.progress.cell(r, c).state == CellState.revealed) return false;
 
-    // Do not erase a revealed cell
-    if (current.state == CellState.revealed) return;
-
-    if (current.letter.isNotEmpty) {
-      final newProgress = s.progress.withCell(r, c, CellProgress.blank);
-      state = AsyncData(s.copyWith(progress: newProgress));
-    } else {
-      final prevFocus = _retreatFocus(s, r, c);
-      final prev = s.progress.cell(prevFocus.row, prevFocus.col);
-      // Do not erase a revealed cell when retreating
-      if (prev.state == CellState.revealed) {
-        state = AsyncData(s.copyWith(focus: prevFocus));
-      } else {
-        final newProgress = s.progress
-            .withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
-        state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
-      }
-    }
+    final clue = _clueFor(s, r, c, s.focus.direction);
+    final wasWordComplete = clue != null && _isWordComplete(s, clue);
+    final newProgress = s.progress.withCell(
+      r,
+      c,
+      s.progress.cell(r, c).copyWith(letter: upper, state: CellState.filled),
+    );
+    final nextFocus = _advanceFocus(
+      s,
+      r,
+      c,
+      skipFilledCells: _skipFilledCellsEnabled(),
+    );
+    final updated = s.copyWith(progress: newProgress, focus: nextFocus);
+    state = AsyncData(updated);
     _scheduleSave();
+    _checkCompletion();
+    return clue != null && !wasWordComplete && _isWordComplete(updated, clue);
   }
-
-  // ---------------------------------------------------------------------------
-  // Reset
-  // ---------------------------------------------------------------------------
-
-  /// Clears all progress, counters, and the timer back to a fresh state.
-  /// Reuses the existing session row (overwrites it) rather than creating a new one.
-  void resetPuzzle() {
-    final s = _s;
-    if (s == null) return;
-
-    // Find first non-black cell for focus
-    FocusPosition focus = const FocusPosition(
-      row: 0,
-      col: 0,
-      direction: Direction.across,
-    );
-    outer:
-    for (var r = 0; r < s.puzzle.height; r++) {
-      for (var c = 0; c < s.puzzle.width; c++) {
-        if (!s.puzzle.grid.cell(r, c).isBlack) {
-          focus = FocusPosition(row: r, col: c, direction: Direction.across);
-          break outer;
-        }
-      }
-    }
-
-    final blank = Grid<CellProgress>.generate(
-      s.puzzle.width,
-      s.puzzle.height,
-      (_, __) => CellProgress.blank,
-    );
-
-    // Restart timer
-    _timerSub?.cancel();
-    _startTimer();
-
-    state = AsyncData(s.copyWith(
-      progress: blank,
-      focus: focus,
-      status: PuzzleStatus.inProgress,
-      elapsedSeconds: 0,
-      isPaused: false,
-      checkCount: 0,
-      revealCount: 0,
-      usedCheck: false,
-      usedReveal: false,
-      cleanSolveEligible: true,
-    ));
-
-    _refreshArchiveAfterSave = true;
-    _saveNow(); // Persist the reset immediately
-  }
-
-  // ---------------------------------------------------------------------------
-  // Check actions (topic-11)
-  // ---------------------------------------------------------------------------
 
   /// Checks the focused cell. Empty cells are skipped silently.
   CheckResult checkCell() {
@@ -402,7 +365,7 @@ class SolveNotifier extends _$SolveNotifier {
 
   // ---------------------------------------------------------------------------
   // Reveal actions (topic-11)
-  // ---------------------------------------------------------------------------
+  // --------------------------------------------------------------------
 
   /// Fills the focused cell with the solution and marks it revealed.
   void revealCell() {
@@ -504,6 +467,94 @@ class SolveNotifier extends _$SolveNotifier {
     if (s.sessionId != null) {
       _persistCompletion(completed);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reset
+  // ---------------------------------------------------------------------------
+
+  /// Clears all progress, counters, and the timer back to a fresh state.
+  /// Reuses the existing session row (overwrites it) rather than creating a new one.
+  void resetPuzzle() {
+    final s = _s;
+    if (s == null) return;
+
+    FocusPosition focus = const FocusPosition(
+      row: 0,
+      col: 0,
+      direction: Direction.across,
+    );
+    outer:
+    for (var r = 0; r < s.puzzle.height; r++) {
+      for (var c = 0; c < s.puzzle.width; c++) {
+        if (!s.puzzle.grid.cell(r, c).isBlack) {
+          focus = FocusPosition(row: r, col: c, direction: Direction.across);
+          break outer;
+        }
+      }
+    }
+
+    final blank = Grid<CellProgress>.generate(
+      s.puzzle.width,
+      s.puzzle.height,
+      (_, __) => CellProgress.blank,
+    );
+
+    // Restart timer
+    _timerSub?.cancel();
+    _startTimer();
+
+    state = AsyncData(s.copyWith(
+      progress: blank,
+      focus: focus,
+      status: PuzzleStatus.inProgress,
+      elapsedSeconds: 0,
+      isPaused: false,
+      checkCount: 0,
+      revealCount: 0,
+      usedCheck: false,
+      usedReveal: false,
+      cleanSolveEligible: true,
+    ));
+
+    _refreshArchiveAfterSave = true;
+    _saveNow(); // Persist the reset immediately
+  }
+
+  // ---------------------------------------------------------------------------
+  // Keys
+  // ---------------------------------------------------------------------------
+
+  /// Handles the backspace keypress (topic-11).
+  void backspace() {
+    final s = _s;
+    if (s == null || s.isPaused) return;
+
+    final r = s.focus.row;
+    final c = s.focus.col;
+    final current = s.progress.cell(r, c);
+
+    // Do not erase a revealed cell (topic-11)
+    if (current.state == CellState.revealed) return;
+
+    // Erase the current cell if it has content, or retreat to the previous cell
+    if (current.letter.isNotEmpty) {
+      final newProgress = s.progress.withCell(r, c, CellProgress.blank);
+      state = AsyncData(s.copyWith(progress: newProgress));
+    } else {
+      final prevFocus = _retreatFocus(s, r, c);
+      if (prevFocus == s.focus) return;
+      final prevCell = s.progress.cell(prevFocus.row, prevFocus.col);
+      // Do not erase a revealed cell when retreating
+      if (prevCell.state == CellState.revealed) {
+        state = AsyncData(s.copyWith(focus: prevFocus));
+      } else {
+        final newProgress = s.progress
+            .withCell(prevFocus.row, prevFocus.col, CellProgress.blank);
+        state = AsyncData(s.copyWith(progress: newProgress, focus: prevFocus));
+      }
+    }
+    _scheduleSave();
   }
 
   // ---------------------------------------------------------------------------

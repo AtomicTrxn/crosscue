@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -13,6 +14,8 @@ import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
+import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
@@ -23,6 +26,50 @@ import 'package:crosscue/features/stats/domain/repositories/stats_repository.dar
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 
 void main() {
+  test('rebus input writes a multi-letter cell and advances once', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final wordComplete = container.read(provider.notifier).inputRebus('est');
+    final solveState = container.read(provider).value!;
+
+    expect(wordComplete, isFalse);
+    expect(solveState.progress.cell(0, 0).letter, equals('EST'));
+    expect(solveState.focus,
+        const FocusPosition(row: 0, col: 1, direction: Direction.across));
+  });
+
+  test('backspace clears current cell before retreating within the word',
+      () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.inputLetter('A');
+    notifier.inputLetter('B');
+
+    notifier.backspace();
+    var solveState = container.read(provider).value!;
+    expect(solveState.focus,
+        const FocusPosition(row: 0, col: 1, direction: Direction.across));
+    expect(solveState.progress.cell(0, 1).letter, isEmpty);
+    expect(solveState.progress.cell(0, 0).letter, equals('A'));
+
+    notifier.backspace();
+    solveState = container.read(provider).value!;
+    expect(solveState.focus,
+        const FocusPosition(row: 0, col: 0, direction: Direction.across));
+    expect(solveState.progress.cell(0, 0).letter, isEmpty);
+  });
+
   test('checking final correct grid completes the puzzle as checked', () async {
     final puzzle = _puzzle();
     final solveRepository = _FakeSolveRepository(_filledProgress());
@@ -32,6 +79,7 @@ void main() {
             .overrideWithValue(_FakeImportRepository(puzzle)),
         solveRepositoryProvider.overrideWithValue(solveRepository),
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
+        appSettingsProvider.overrideWithValue(_FakeAppSettingsRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -47,6 +95,17 @@ void main() {
     expect(completed.completionType, CompletionType.checked);
     expect(container.read(provider).value?.status, PuzzleStatus.solvedWithHelp);
   });
+}
+
+ProviderContainer _containerFor(Puzzle puzzle, Grid<CellProgress> progress) {
+  return ProviderContainer(
+    overrides: [
+      importRepositoryProvider.overrideWithValue(_FakeImportRepository(puzzle)),
+      solveRepositoryProvider.overrideWithValue(_FakeSolveRepository(progress)),
+      statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
+      appSettingsProvider.overrideWithValue(_FakeAppSettingsRepository()),
+    ],
+  );
 }
 
 Puzzle _puzzle() {
@@ -107,6 +166,17 @@ Grid<CellProgress> _filledProgress() {
     cells: const [
       CellProgress(letter: 'A', state: CellState.filled),
       CellProgress(letter: 'B', state: CellState.filled),
+    ],
+  );
+}
+
+Grid<CellProgress> _blankProgress() {
+  return Grid(
+    width: 2,
+    height: 1,
+    cells: const [
+      CellProgress.blank,
+      CellProgress.blank,
     ],
   );
 }
@@ -193,6 +263,62 @@ final class _FakeSolveRepository implements SolveRepository {
 final class _FakeStatsRepository implements StatsRepository {
   @override
   Future<StatsData> getStats() async => StatsData.empty;
+}
+
+final class _FakeAppSettingsRepository implements AppSettingsRepository {
+  @override
+  Future<bool> getCrashReporting() async => false;
+
+  @override
+  Future<ColorblindMode> getColorblindMode() async => ColorblindMode.none;
+
+  @override
+  Future<bool> getHapticsEnabled() async => true;
+
+  @override
+  Future<bool> getHasSeenOnboarding() async => true;
+
+  @override
+  Future<bool> getPuzzleReminder() async => false;
+
+  @override
+  Future<bool> getSkipFilledCells() async => false;
+
+  @override
+  Future<bool> getSoundsEnabled() async => false;
+
+  @override
+  Future<bool> getStreakReminder() async => false;
+
+  @override
+  Future<ThemeMode> getThemeMode() async => ThemeMode.system;
+
+  @override
+  Future<void> setCrashReporting(bool value) async {}
+
+  @override
+  Future<void> setColorblindMode(ColorblindMode value) async {}
+
+  @override
+  Future<void> setHapticsEnabled(bool value) async {}
+
+  @override
+  Future<void> setHasSeenOnboarding(bool value) async {}
+
+  @override
+  Future<void> setPuzzleReminder(bool value) async {}
+
+  @override
+  Future<void> setSkipFilledCells(bool value) async {}
+
+  @override
+  Future<void> setSoundsEnabled(bool value) async {}
+
+  @override
+  Future<void> setStreakReminder(bool value) async {}
+
+  @override
+  Future<void> setThemeMode(ThemeMode mode) async {}
 }
 
 final class _CompletedStatus {

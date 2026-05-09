@@ -148,6 +148,9 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       ),
       items: const [
         PopupMenuItem(
+            value: _CellAction.enterRebus, child: Text('Enter rebus')),
+        PopupMenuDivider(),
+        PopupMenuItem(
             value: _CellAction.checkLetter, child: Text('Check letter')),
         PopupMenuItem(value: _CellAction.checkWord, child: Text('Check word')),
         PopupMenuDivider(),
@@ -158,8 +161,12 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       ],
     ).then((action) {
       if (action == null) return;
+      if (!mounted) return;
+      if (!context.mounted) return;
       final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
       switch (action) {
+        case _CellAction.enterRebus:
+          _showRebusDialog(context, row, col);
         case _CellAction.checkLetter:
           _vibrateIfIncorrect(notifier.checkCell());
         case _CellAction.checkWord:
@@ -170,6 +177,48 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
           notifier.revealWord();
       }
     });
+  }
+
+  Future<void> _showRebusDialog(BuildContext context, int row, int col) async {
+    final current = widget.solveState.progress.cell(row, col).letter;
+    final controller =
+        TextEditingController(text: current.length > 1 ? current : '');
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Enter rebus'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[A-Za-z]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Cell answer',
+              hintText: 'Example: EST',
+            ),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('Enter'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (value == null) return;
+    final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
+    _pulseIfWordComplete(notifier.inputRebus(value));
+    _requestFocus();
   }
 
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
@@ -186,14 +235,108 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       return KeyEventResult.handled;
     }
 
+    final state = widget.solveState;
+    final currentFocus = state.focus;
+    final shiftPressed = HardwareKeyboard.instance.isShiftPressed;
+
+    final arrowMove = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowRight => (0, 1, Direction.across),
+      LogicalKeyboardKey.arrowLeft => (0, -1, Direction.across),
+      LogicalKeyboardKey.arrowDown => (1, 0, Direction.down),
+      LogicalKeyboardKey.arrowUp => (-1, 0, Direction.down),
+      _ => null,
+    };
+    if (arrowMove != null) {
+      if (shiftPressed) {
+        final clue = arrowMove.$1 + arrowMove.$2 > 0
+            ? _findNextClue(state, currentFocus)
+            : _findPreviousClue(state, currentFocus);
+        final focus = clue == null ? null : notifier.focusClue(clue);
+        if (focus != null) widget.onGridFocusSelected?.call(focus);
+      } else {
+        final focus = notifier.moveFocusTo(
+              currentFocus.row + arrowMove.$1,
+              currentFocus.col + arrowMove.$2,
+              arrowMove.$3,
+            ) ??
+            notifier.moveFocusTo(
+              currentFocus.row,
+              currentFocus.col,
+              arrowMove.$3,
+            );
+        if (focus != null) widget.onGridFocusSelected?.call(focus);
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.tab ||
+        event.logicalKey == LogicalKeyboardKey.enter) {
+      if (event is KeyRepeatEvent) return KeyEventResult.handled;
+      final clue = shiftPressed
+          ? _findPreviousClue(state, currentFocus)
+          : _findNextClue(state, currentFocus);
+      final focus = clue == null ? null : notifier.focusClue(clue);
+      if (focus != null) widget.onGridFocusSelected?.call(focus);
+      return KeyEventResult.handled;
+    }
+
     final char = event.character;
-    if (char != null && char.isNotEmpty) {
+    if (char != null && RegExp(r'^[A-Za-z]$').hasMatch(char)) {
       _playFeedbackSound();
       _pulseIfWordComplete(notifier.inputLetter(char));
       return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
+  }
+
+  Clue? _findPreviousClue(SolveState state, FocusPosition currentFocus) {
+    // Find the previous clue based on clue order
+    // Sort clues by: across clues first, then down clues, then by starting position
+    final clues = [...state.puzzle.clues]..sort((a, b) {
+        if (a.direction == b.direction) {
+          return a.number.compareTo(b.number);
+        }
+        return a.direction == Direction.across ? -1 : 1;
+      });
+
+    final currentClueIndex = clues.indexWhere(
+      (clue) =>
+          clue.direction == currentFocus.direction &&
+          SolveState.cellInClue(currentFocus.row, currentFocus.col, clue),
+    );
+
+    if (currentClueIndex > 0) {
+      return clues[currentClueIndex - 1];
+    }
+    if (clues.isNotEmpty) {
+      return clues.last;
+    }
+    return null;
+  }
+
+  Clue? _findNextClue(SolveState state, FocusPosition currentFocus) {
+    // Find the next clue based on clue order
+    final clues = [...state.puzzle.clues]..sort((a, b) {
+        if (a.direction == b.direction) {
+          return a.number.compareTo(b.number);
+        }
+        return a.direction == Direction.across ? -1 : 1;
+      });
+
+    final currentClueIndex = clues.indexWhere(
+      (clue) =>
+          clue.direction == currentFocus.direction &&
+          SolveState.cellInClue(currentFocus.row, currentFocus.col, clue),
+    );
+
+    if (currentClueIndex < clues.length - 1) {
+      return clues[currentClueIndex + 1];
+    }
+    if (clues.isNotEmpty) {
+      return clues.first;
+    }
+    return null;
   }
 
   @override
@@ -464,4 +607,10 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
 }
 
 // Actions available from the long-press cell menu
-enum _CellAction { checkLetter, checkWord, revealLetter, revealWord }
+enum _CellAction {
+  enterRebus,
+  checkLetter,
+  checkWord,
+  revealLetter,
+  revealWord
+}

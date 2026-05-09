@@ -422,3 +422,40 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 | **Final verification** | ✅ | `flutter analyze` 0 issues, `flutter test` 79/79 pass, APK built and deployed to emulator |
 
 ---
+
+## Sprint 16 — Solve Screen Interaction Rework ✅
+
+**Goal:** Add the five solve-screen improvements identified from the Crosshare solver review while keeping Crosscue mobile-first and calm.
+
+**Read before starting:** [ARCHITECTURE.md](ARCHITECTURE.md), [CONVENTIONS.md](CONVENTIONS.md), [research/topic-03-canvas-accessibility.md](research/topic-03-canvas-accessibility.md), [research/topic-11-game-mechanics-feedback.md](research/topic-11-game-mechanics-feedback.md), [research/topic-14-puzzle-parser-spec.md](research/topic-14-puzzle-parser-spec.md)
+
+### Scope
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Desktop keyboard navigation** | ✅ | Physical arrows, shifted arrows, `Tab` / `Shift+Tab`, and `Enter` are handled from the grid focus node. Arrows set direction and move when a neighboring playable cell exists; at an edge they still set direction when the current cell supports it. |
+| **Rebus entry mode** | ✅ | Long-pressing a cell opens an Enter rebus action. Confirming a multi-character value writes the full cell text, preserves parsed `.puz` rebus compatibility, and advances focus once. |
+| **Barred-grid word boundaries** | ✅ | Known `.ipuz` cell-side bar metadata is detected and rejected as `unsupportedFormat` so Crosscue does not import barred puzzles with wrong word lengths. Full explicit boundary modeling remains tied to the Sprint 18 discovery hook / future `.jpz` work. |
+| **Wrong/revealed cell glyphs** | ✅ | Checked-wrong cells draw a subtle slash marker; revealed cells draw a small eye marker. These overlays are non-color cues and avoid the number/letter center. |
+| **Referenced clue highlighting** | ✅ | Active clue text recognizes simple references such as `17-Across`, `17A`, `17-Down`, and `see 17-Across`; referenced clue rows receive a secondary highlight below active/cross emphasis. |
+
+### Related Items Reviewed
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Backspace regression coverage** | ✅ | Added tests for clearing the current cell first, then retreating and clearing the previous cell in the current word. |
+| **Highlight hierarchy audit** | ✅ | Referenced clue highlighting remains secondary to active clue, cross clue, active word, and active cell styling. |
+| **Grid semantics pass** | ⏸ | Still deferred; TalkBack semantics need a dedicated accessibility pass. |
+| **Interaction tests** | ⏸ | Added focused notifier/parser regression coverage. Full widget-level keyboard and clue-panel interaction tests remain future work. |
+| **End-of-word behavior setting** | ⏸ | Crosscue keeps the existing no-auto-next-entry mobile default; optional power-user behavior remains deferred. |
+
+### Final Verification
+
+| Check | Result |
+|-------|--------|
+| `flutter pub run build_runner build --delete-conflicting-outputs` | ✅ Passed; regenerated provider hash |
+| `flutter analyze` | ✅ No issues |
+| `flutter test` | ✅ 87/87 passed |
+| Emulator deployment | ✅ Debug APK built, installed, and launched on `emulator-5554` |
+
+---

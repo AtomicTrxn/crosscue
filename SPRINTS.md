@@ -8,35 +8,6 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 16 — Solve Screen Interaction Rework ⬜
-
-**Goal:** Add the five solve-screen improvements identified from the Crosshare solver review while keeping Crosscue mobile-first and calm.
-
-**Read before starting:** [ARCHITECTURE.md](ARCHITECTURE.md), [CONVENTIONS.md](CONVENTIONS.md), [research/topic-03-canvas-accessibility.md](research/topic-03-canvas-accessibility.md), [research/topic-11-game-mechanics-feedback.md](research/topic-11-game-mechanics-feedback.md), [research/topic-14-puzzle-parser-spec.md](research/topic-14-puzzle-parser-spec.md)
-
-### Scope
-
-| Task | Status | Notes |
-|------|--------|-------|
-| **Desktop keyboard navigation** | ⬜ | Add physical-key handlers for arrows, `Tab` / `Shift+Tab`, `Enter`, and shifted arrows. Arrows should set direction and move only when appropriate; `Tab`/`Enter` should move to next clue; shifted variants should move to previous clue or adjacent entry. Do not change touch typing, backspace, or clue-panel selector behavior. |
-| **Rebus entry mode** | ⬜ | Add an explicit UI path to enter multi-character cell values, such as long-press menu action or overflow action. While in rebus mode, typed characters append to the active cell's rebus buffer; confirm writes the full string to that cell and advances once. Existing `.puz` rebus parsing should remain compatible. |
-| **Barred-grid word boundaries** | ⬜ | Investigate `.ipuz` support for cell-side bars and document the `.jpz` mapping separately if/when a `.jpz` parser is added. Model explicit horizontal/vertical word breaks if needed. Word lookup, highlighting, clue focus, auto-advance, backspace, and parser mapping must treat bars as answer boundaries even when adjacent cells are not black. |
-| **Wrong/revealed cell glyphs** | ⬜ | Add subtle non-color markers for checked-wrong and revealed cells, inspired by Crosshare's slash/eye overlays. Markers should remain readable at mini and 15x15 sizes, respect colorblind mode, and not obscure letters, clue numbers, circles, or current-cell focus. |
-| **Referenced clue highlighting** | ⬜ | Parse simple clue references like `17-Across`, `17A`, `17-Down`, and `see 17-Across`. When the active clue references another clue, softly highlight the referenced clue row and optionally its grid cells. Keep the effect secondary to active word/cell highlighting. |
-
-### Related Items To Consider
-
-| Item | Notes |
-|------|-------|
-| **Clue tap direction toggle** | If the tapped clue is already the active clue, consider toggling direction when a crossing clue exists. This matches a common crossword convention, but should not disrupt the centered clue-panel behavior. |
-| **End-of-word behavior setting** | Keep Crosscue's current no-auto-next-entry mobile default. Consider an optional power-user setting for auto-advance to the next clue after a completed word. |
-| **Backspace regression coverage** | Add tests that lock in the current behavior: clear current cell first, then clear previous cell when current is empty, without unexpected cross-word jumps. |
-| **Highlight hierarchy audit** | Reconfirm active cell, active word, selected clue, perpendicular clue, completed word, checked/revealed states, referenced clues, and animations do not compete visually. |
-| **Grid semantics pass** | Add/complete `CustomPainter` semantics so TalkBack can announce cell position, clue, value, checked/revealed/wrong state, and active direction. |
-| **Interaction tests** | Cover tap-to-focus, same-cell direction toggle, clue tap, keyboard navigation, typing, backspace, check/reveal state, rebus entry, and barred-boundary behavior after implementation. |
-
----
-
 ## Sprint 17 — `.puz` Parser Compatibility Hardening ⬜
 
 **Goal:** Make Crosscue's `.puz` importer compatible with more real-world Across Lite files and Crosshare-exported files, while keeping local imports safe and deterministic.
