@@ -183,6 +183,228 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Crosshare-style rebus (0-based RTBL key)
+  // ---------------------------------------------------------------------------
+
+  group('Crosshare-style rebus (0-based RTBL key)', () {
+    test('cell (0,0) resolves to "EST" with Crosshare 0-based slot key', () {
+      final r = parser.parse(PuzFixtureBuilder.crosshareRebus3x3());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 0).solution, equals('EST'));
+    });
+
+    test('non-rebus cell (0,1) keeps single-letter solution', () {
+      final r = parser.parse(PuzFixtureBuilder.crosshareRebus3x3());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 1).solution, equals('B'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Circles — GEXT bit 0x80 (Crosshare alternate)
+  // ---------------------------------------------------------------------------
+
+  group('circled cells — GEXT bit 0x80 (Crosshare)', () {
+    test('cell (0,0) is circled when GEXT bit 0x80 is set', () {
+      final r = parser.parse(PuzFixtureBuilder.circlesGext80_3x3());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 0).circled, isTrue);
+    });
+
+    test('cell (0,1) is NOT circled', () {
+      final r = parser.parse(PuzFixtureBuilder.circlesGext80_3x3());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.grid.cell(0, 1).circled, isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // UTF-8 string decoding
+  // ---------------------------------------------------------------------------
+
+  group('UTF-8 string decoding', () {
+    test('title with non-ASCII UTF-8 (ñ) is decoded correctly', () {
+      final r = parser.parse(PuzFixtureBuilder.utf8Title3x3());
+      final puzzle = (r as Ok).value;
+      expect(puzzle.metadata.title, equals('Mañana'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Dimension guardrails
+  // ---------------------------------------------------------------------------
+
+  group('dimension guardrails', () {
+    test('1×3 grid (width below minimum) → Err(unsupportedFormat)', () {
+      final bytes = PuzFixtureBuilder.build(
+        width: 3,
+        height: 3,
+        grid: ['ABC', 'DEF', 'GHI'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
+      );
+      final copy = Uint8List.fromList(bytes);
+      copy[0x2C] = 1; // width = 1
+      final r = parser.parse(copy);
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+
+    test('3×1 grid (height below minimum) → Err(unsupportedFormat)', () {
+      final bytes = PuzFixtureBuilder.build(
+        width: 3,
+        height: 3,
+        grid: ['ABC', 'DEF', 'GHI'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
+      );
+      final copy = Uint8List.fromList(bytes);
+      copy[0x2D] = 1; // height = 1
+      final r = parser.parse(copy);
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+
+    test('26×3 grid (width above maximum) → Err(unsupportedFormat)', () {
+      final bytes = PuzFixtureBuilder.build(
+        width: 3,
+        height: 3,
+        grid: ['ABC', 'DEF', 'GHI'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
+      );
+      final copy = Uint8List.fromList(bytes);
+      copy[0x2C] = 26; // width = 26
+      final r = parser.parse(copy);
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+
+    test('3×26 grid (height above maximum) → Err(unsupportedFormat)', () {
+      final bytes = PuzFixtureBuilder.build(
+        width: 3,
+        height: 3,
+        grid: ['ABC', 'DEF', 'GHI'],
+        clueTexts: [
+          '1-Across',
+          '1-Down',
+          '2-Down',
+          '3-Down',
+          '4-Across',
+          '5-Across'
+        ],
+      );
+      final copy = Uint8List.fromList(bytes);
+      copy[0x2D] = 26; // height = 26
+      final r = parser.parse(copy);
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+
+    test('2×2 grid (minimum valid size) → Ok', () {
+      final bytes = PuzFixtureBuilder.build(
+        width: 2,
+        height: 2,
+        grid: ['AB', 'CD'],
+        clueTexts: ['1-Across', '1-Down', '2-Down'],
+      );
+      final r = parser.parse(bytes);
+      expect(r, isA<Ok>());
+    });
+
+    test('25×25 grid (maximum valid size) → Ok', () {
+      final row = 'A' * 25;
+      final grid = List.filled(25, row);
+      // 25×25 all-white: row 0 → 1 across + 25 downs; rows 1-24 → 1 across each
+      final clueTexts = <String>[];
+      // interleaved: 1A, 1D, 2D, ..., 25D, then 2A (row 1), 3A (row 2), ...
+      clueTexts.add('1-Across');
+      for (var d = 1; d <= 25; d++) {
+        clueTexts.add('$d-Down');
+      }
+      for (var a = 2; a <= 25; a++) {
+        clueTexts.add('$a-Across');
+      }
+      final bytes = PuzFixtureBuilder.build(
+        width: 25,
+        height: 25,
+        grid: grid,
+        clueTexts: clueTexts,
+      );
+      final r = parser.parse(bytes);
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.metadata.width, equals(25));
+      expect(r.value.metadata.height, equals(25));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Hidden cell rejection
+  // ---------------------------------------------------------------------------
+
+  group('hidden cell rejection', () {
+    test('cell with byte 0x3A → Err(unsupportedFormat)', () {
+      final r = parser.parse(PuzFixtureBuilder.hiddenCell3x3());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Scramble flag — only bit 0x0004 locks the solution
+  // ---------------------------------------------------------------------------
+
+  group('scramble flag handling', () {
+    test('scramble bit 0x0004 set → Err(unsupportedFormat)', () {
+      final r = parser.parse(PuzFixtureBuilder.scrambled());
+      expect(r, isA<Err>());
+      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+    });
+
+    test('non-scramble metadata flag (0x0001 only) → Ok (parses successfully)',
+        () {
+      final r = parser.parse(PuzFixtureBuilder.nonScrambleFlag());
+      expect(r, isA<Ok>());
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Rebus-inclusive canonical checksum
+  // ---------------------------------------------------------------------------
+
+  group('rebus-inclusive canonical checksum', () {
+    test('plain puzzle and rebus puzzle have different IDs', () {
+      final plain = (parser.parse(PuzFixtureBuilder.minimal3x3()) as Ok).value;
+      final rebus = (parser.parse(PuzFixtureBuilder.rebus3x3()) as Ok).value;
+      expect(plain.metadata.id, isNot(equals(rebus.metadata.id)));
+    });
+
+    test('same rebus bytes produce the same ID (deterministic)', () {
+      final r1 = (parser.parse(PuzFixtureBuilder.rebus3x3()) as Ok).value;
+      final r2 = (parser.parse(PuzFixtureBuilder.rebus3x3()) as Ok).value;
+      expect(r1.metadata.id, equals(r2.metadata.id));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Error cases
   // ---------------------------------------------------------------------------
 

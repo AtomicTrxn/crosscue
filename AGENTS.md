@@ -61,9 +61,6 @@ Flutter/Dart commands run from the **Flutter project root**: `crosscue/`
 # Code generation (run after any @freezed / @riverpod / @DriftDatabase change)
 dart run build_runner build
 
-# Lint — must be 0 issues before committing
-flutter analyze
-
 # Run on emulator
 flutter run -d <device-id>
 
@@ -76,16 +73,17 @@ When adding packages, reference **`crosscue/pubspec.yaml`** — it lists all Pha
 
 ---
 
-## Before Every Commit
+## Before Every Push
 
 1. `dart run build_runner build` — regenerate if any annotated files changed
-2. `flutter analyze` — 0 issues required
+2. **`make ci`** — run the full pipeline (format → analyze → test → generated → build) from the repo root; do not substitute individual commands
 3. Stage only app source files — never commit `.claude/settings.local.json`, `*.save`, or temp files
 4. Follow the commit message style in CONVENTIONS.md
 
 The pre-push git hook runs `make ci` automatically when pushing to `main`,
 blocking the push on any failure. Run `make install-hooks` once after cloning
-to activate it. Use `make ci` manually before opening a PR on a feature branch.
+to activate it. On feature branches the hook does not fire — run `make ci`
+manually before opening a PR.
 
 ---
 

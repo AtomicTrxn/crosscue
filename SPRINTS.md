@@ -8,7 +8,7 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 ---
 
-## Sprint 17 — `.puz` Parser Compatibility Hardening ⬜
+## Sprint 17 — `.puz` Parser Compatibility Hardening ✅
 
 **Goal:** Make Crosscue's `.puz` importer compatible with more real-world Across Lite files and Crosshare-exported files, while keeping local imports safe and deterministic.
 
@@ -20,15 +20,15 @@ Status key: ✅ Done · 🔄 In Progress · ⬜ Planned · ⏸ Deferred
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Rebus RTBL/GRBS compatibility** | ⬜ | Crosshare writes `GRBS` values as 1-based indexes and `RTBL` entries as 0-based keys, then imports with `slot - 1`. Crosscue currently looks up `rebusTable[slot]` only. Update `PuzParser` to resolve rebus text with a compatibility order like `rebusTable[slot] ?? rebusTable[slot - 1]`, falling back to the single solution byte only if no table value exists. Add parser tests for both `01:EST;`/slot `1` and Crosshare-style ` 0:EST;`/slot `1`. |
-| **GEXT circle flag compatibility** | ⬜ | Crosscue currently checks only GEXT bit `0x10`; Crosshare reads/writes `0x80`. Accept both bits as circled during import so Crosshare-exported circles are preserved. Update stale comments in `SolutionCell` and parser docs so they describe compatibility rather than a single bit. Keep existing `0x10` tests and add `0x80` coverage. |
-| **String decoding for newer `.puz` files** | ⬜ | Crosshare switches string decoding to UTF-8 for newer version data and otherwise uses ISO-8859-1. Crosscue always uses Latin-1. Add a small decoder helper for null-terminated strings: use the version field at `0x18` as the first signal, decode UTF-8 when indicated, and fall back to Latin-1 if decoding fails or the file is an older version. Cover Unicode title/author/clue text with tests. |
-| **Dimension guardrails** | ⬜ | Crosscue only rejects zero width/height. Add app-supported bounds before allocating cells, for example min `2x2` and max `25x25` unless product direction chooses a different maximum. Return `ParseError.unsupportedFormat` for dimensions outside the supported app range and `ParseError.missingData` only for incomplete/truncated files. Add min/max tests. |
-| **Hidden-cell handling** | ⬜ | Crosshare treats solution byte `:` as a hidden cell and maps it to a block/hidden marker. Crosscue would currently treat `:` as a literal solution. Until the domain model supports hidden cells, reject `.puz` files containing `:` with `ParseError.unsupportedFormat` rather than importing wrong answers. Document hidden-cell support as deferred if rejected. |
-| **Scramble flag review** | ⬜ | Crosscue rejects any nonzero scrambled tag. Crosshare rejects when bit `0x0004` is set. Review the Across Lite spec and adjust only if nonzero values other than `0x0004` are valid non-scramble metadata. Add tests for scrambled rejection either way. |
-| **Canonical checksum includes rebus expansion** | ⬜ | Crosscue's `.puz` duplicate ID/checksum currently hashes raw solution bytes, so puzzles differing only by rebus expansion can collide. Include the normalized parsed solution strings, including rebus text, in the canonical checksum. Preserve deterministic IDs for unchanged non-rebus fixtures or document the expected ID change in tests. |
-| **Note cleanup policy** | ⬜ | Crosshare strips generated-by boilerplate like "created on/with ...". Decide whether Crosscue should preserve raw constructor notes or remove known generator boilerplate. If implemented, keep it conservative and fixture-backed so meaningful notes are not lost. |
-| **Real-world fixture expansion** | ⬜ | Add non-licensed/synthetic fixtures that mimic Crosshare's corpus cases: version 1.2 notes, odd numbering, partially-filled player grid, Crosshare-style rebus, `0x80` circles, malformed extensions, and hidden-cell rejection. Keep fixtures generated or legally safe; do not commit publisher-owned puzzle content. |
+| **Rebus RTBL/GRBS compatibility** | ✅ | `rebusTable[slot] ?? rebusTable[slot - 1]` fallback; both standard and Crosshare-style 0-based keys tested. |
+| **GEXT circle flag compatibility** | ✅ | Accepts both `0x10` (standard) and `0x80` (Crosshare); both bit values covered by tests. |
+| **String decoding for newer `.puz` files** | ✅ | Try UTF-8 first (`allowMalformed: false`), fall back to Latin-1 on `FormatException`. Unicode title/author tested (`Mañana` fixture). |
+| **Dimension guardrails** | ✅ | 2×2 min, 25×25 max. Zero → `missingData`; out-of-range → `unsupportedFormat`. Min/max boundary tests added. |
+| **Hidden-cell handling** | ✅ | Solution byte `0x3A` (`:`) → `ParseError.unsupportedFormat`. Deferred to future domain-model work. |
+| **Scramble flag review** | ✅ | Only bit `0x0004` locks the solution; other nonzero bits tolerated. Tests for both `0x0004` rejection and `0x0001` pass-through. |
+| **Canonical checksum includes rebus expansion** | ✅ | ID hashes resolved cell solutions (including rebus text) via `base64(utf8(resolvedSolution))`; plain vs. rebus IDs are distinct; IDs stable for unchanged ASCII puzzles. |
+| **Note cleanup policy** | ✅ | Decided to preserve constructor notes verbatim — no boilerplate stripping. `notes` field passed through as-is. |
+| **Real-world fixture expansion** | ✅ | Added `crosshareRebus3x3`, `circlesGext80_3x3`, `utf8Title3x3`, `hiddenCell3x3`, `nonScrambleFlag` to `PuzFixtureBuilder`; all fixtures used in new test groups. |
 
 ### Acceptance Criteria
 
