@@ -8,6 +8,12 @@ on:
     branches:
       - main
   workflow_call:
+    inputs:
+      skip-debug-apk:
+        description: 'Skip debug APK build (used by release pipeline)'
+        type: boolean
+        default: false
+        required: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -124,7 +130,7 @@ jobs:
   # Skipped when called from release.yml — the release job builds a signed APK instead.
   build-debug-apk:
     name: Build debug APK
-    if: github.event_name != 'workflow_call'
+    if: ${{ !inputs.skip-debug-apk }}
     needs: [analyze, test, generated]
     runs-on: ubuntu-latest
     defaults:
