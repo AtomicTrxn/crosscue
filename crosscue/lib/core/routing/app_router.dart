@@ -5,6 +5,8 @@ import 'package:crosscue/features/archive/presentation/screens/archive_screen.da
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/crosshare_settings_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/privacy_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/source_management_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/settings_screen.dart';
 import 'package:crosscue/features/solve/presentation/screens/solve_screen.dart';
@@ -52,6 +54,14 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: Routes.sourceManagement,
         builder: (context, state) => const SourceManagementScreen(),
+      ),
+      GoRoute(
+        path: Routes.crosshareSettings,
+        builder: (context, state) => const CrosshareSettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.privacySettings,
+        builder: (context, state) => const PrivacyScreen(),
       ),
       GoRoute(
         path: Routes.solve,

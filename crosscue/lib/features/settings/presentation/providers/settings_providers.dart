@@ -142,6 +142,31 @@ class CrashReportingNotifier extends _$CrashReportingNotifier {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Crosshare auto-download
+// ---------------------------------------------------------------------------
+
+@riverpod
+class CrosshareAutoDownloadNotifier extends _$CrosshareAutoDownloadNotifier {
+  @override
+  Future<bool> build() =>
+      ref.read(appSettingsProvider).getCrosshareAutoDownload();
+
+  Future<void> toggle() async {
+    final next = _nextBool(state);
+    await ref.read(appSettingsProvider).setCrosshareAutoDownload(next);
+    state = AsyncData(next);
+  }
+}
+
+@riverpod
+Future<String> crosshareLastDownloadedDate(Ref ref) =>
+    ref.read(appSettingsProvider).getCrosshareLastDownloadedDate();
+
+@riverpod
+Future<String> crosshareLastAttemptStatus(Ref ref) =>
+    ref.read(appSettingsProvider).getCrosshareLastAttemptStatus();
+
 bool _nextBool(AsyncValue<bool> current) {
   return switch (current) {
     AsyncData(:final value) => !value,

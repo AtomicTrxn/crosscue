@@ -427,3 +427,115 @@ abstract class _$CrashReportingNotifier extends $AsyncNotifier<bool> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(CrosshareAutoDownloadNotifier)
+final crosshareAutoDownloadProvider = CrosshareAutoDownloadNotifierProvider._();
+
+final class CrosshareAutoDownloadNotifierProvider
+    extends $AsyncNotifierProvider<CrosshareAutoDownloadNotifier, bool> {
+  CrosshareAutoDownloadNotifierProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'crosshareAutoDownloadProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$crosshareAutoDownloadNotifierHash();
+
+  @$internal
+  @override
+  CrosshareAutoDownloadNotifier create() => CrosshareAutoDownloadNotifier();
+}
+
+String _$crosshareAutoDownloadNotifierHash() =>
+    r'dd742dc3bd8d9898b9ec61606f6842148ed9636a';
+
+abstract class _$CrosshareAutoDownloadNotifier extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<AsyncValue<bool>, bool>,
+        AsyncValue<bool>,
+        Object?,
+        Object?>;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(crosshareLastDownloadedDate)
+final crosshareLastDownloadedDateProvider =
+    CrosshareLastDownloadedDateProvider._();
+
+final class CrosshareLastDownloadedDateProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  CrosshareLastDownloadedDateProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'crosshareLastDownloadedDateProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$crosshareLastDownloadedDateHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return crosshareLastDownloadedDate(ref);
+  }
+}
+
+String _$crosshareLastDownloadedDateHash() =>
+    r'cf58c3867a7a18b9ecb88387e691a7d8a5c2eba4';
+
+@ProviderFor(crosshareLastAttemptStatus)
+final crosshareLastAttemptStatusProvider =
+    CrosshareLastAttemptStatusProvider._();
+
+final class CrosshareLastAttemptStatusProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  CrosshareLastAttemptStatusProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'crosshareLastAttemptStatusProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$crosshareLastAttemptStatusHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return crosshareLastAttemptStatus(ref);
+  }
+}
+
+String _$crosshareLastAttemptStatusHash() =>
+    r'1d8669b93d76b129265d5569303f1f2136f1099d';

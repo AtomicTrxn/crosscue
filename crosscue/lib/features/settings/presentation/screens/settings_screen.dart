@@ -4,13 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
-import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 
-const _appVersionLabel = 'v1.0.0';
+const _appVersionLabel = 'v1.0.1';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,6 +25,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
+          // ── Appearance ─────────────────────────────────────────────────────
           const _SectionHeader('Appearance'),
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -81,6 +80,8 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Colorblind mode',
             subtitle: 'Adds a dot to correct letters',
           ),
+
+          // ── Touch & Sound ──────────────────────────────────────────────────
           const _SectionHeader('Touch & Sound'),
           _SwitchRow(
             value: _value(ref.watch(hapticsEnabledProvider), fallback: true),
@@ -105,86 +106,26 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Skip filled cells',
             subtitle: 'Jump over filled letters while typing',
           ),
-          _NavRow(
-            leading: Icons.keyboard_outlined,
-            title: 'Keyboard layout',
-            subtitle: 'QWERTY',
-            onTap: () =>
-                _showStub(context, 'Keyboard layouts are not wired yet'),
-          ),
-          const _SectionHeader('Notifications'),
-          _SwitchRow(
-            value: _value(ref.watch(puzzleReminderProvider), fallback: false),
-            onChanged: (_) {
-              ref.read(puzzleReminderProvider.notifier).toggle();
-              _showStub(context, 'Reminder scheduling is deferred');
-            },
-            leading: Icons.notifications_outlined,
-            title: 'Puzzle reminder',
-            subtitle: 'Off',
-          ),
-          _NavRow(
-            leading: Icons.schedule_outlined,
-            title: 'Puzzle reminder time',
-            subtitle: '8:00 AM',
-            onTap: () => _showStub(context, 'Reminder scheduling is deferred'),
-          ),
-          _SwitchRow(
-            value: _value(ref.watch(streakReminderProvider), fallback: false),
-            onChanged: (_) {
-              ref.read(streakReminderProvider.notifier).toggle();
-              _showStub(context, 'Streak reminders are deferred');
-            },
-            leading: Icons.local_fire_department_outlined,
-            title: 'Streak reminder',
-            subtitle: 'Off',
-          ),
-          _NavRow(
-            leading: Icons.schedule_outlined,
-            title: 'Streak reminder time',
-            subtitle: '7:00 PM',
-            onTap: () => _showStub(context, 'Streak reminders are deferred'),
-          ),
+
+          // ── Puzzles ────────────────────────────────────────────────────────
           const _SectionHeader('Puzzles'),
           _NavRow(
             leading: Icons.source_outlined,
-            title: 'Puzzle sources',
+            title: 'Puzzle Sources',
             subtitle: 'Import local files and manage sources',
             onTap: () => context.push(Routes.sourceManagement),
           ),
+
+          // ── Privacy & Data ─────────────────────────────────────────────────
           const _SectionHeader('Privacy & Data'),
-          _SwitchRow(
-            value: _value(ref.watch(crashReportingProvider), fallback: false),
-            onChanged: (_) {
-              ref.read(crashReportingProvider.notifier).toggle();
-            },
-            leading: Icons.bug_report_outlined,
-            title: 'Crash reporting',
-            subtitle: 'Save a local crash log on this device',
-          ),
           _NavRow(
-            leading: Icons.upload_file_outlined,
-            title: 'Export data',
-            subtitle: 'Save a local backup',
-            onTap: () => _exportData(context, ref),
+            leading: Icons.security_outlined,
+            title: 'Privacy & Data',
+            subtitle: 'Crash reporting, export, import and clear data',
+            onTap: () => context.push(Routes.privacySettings),
           ),
-          _NavRow(
-            leading: Icons.download_outlined,
-            title: 'Import data',
-            subtitle: 'Restore from a local backup',
-            onTap: () => _importData(context, ref),
-          ),
-          _NavRow(
-            leading: Icons.delete_forever_outlined,
-            title: 'Clear all data',
-            subtitle: 'Delete all puzzles, progress and settings',
-            trailing: Text(
-              'Delete',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            color: Theme.of(context).colorScheme.error,
-            onTap: () => _confirmClearAll(context, ref),
-          ),
+
+          // ── Help ───────────────────────────────────────────────────────────
           const _SectionHeader('Help'),
           _NavRow(
             leading: Icons.help_outline,
@@ -209,90 +150,12 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) => const _AboutDialog(),
     );
   }
-
-  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
-    try {
-      final count = await ref.read(statsExportServiceProvider).exportAndShare();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported $count completed sessions')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not export data: $e')),
-      );
-    }
-  }
-
-  Future<void> _importData(BuildContext context, WidgetRef ref) async {
-    try {
-      final count = await ref.read(statsExportServiceProvider).pickAndImport();
-      ref.invalidate(statsDataProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported $count completed sessions')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not import data: $e')),
-      );
-    }
-  }
-
-  Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Clear all data?'),
-        content: const Text(
-          'This will permanently delete every puzzle, solve session, '
-          'and setting. This cannot be undone.',
-        ),
-        actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: CrosscueColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete everything'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final db = ref.read(appDatabaseProvider);
-    await db.clearAllUserData();
-
-    ref.invalidate(hasSeenOnboardingProvider);
-    ref.invalidate(themeModeProvider);
-    ref.invalidate(hapticsEnabledProvider);
-    ref.invalidate(colorblindModeProvider);
-    ref.invalidate(soundsEnabledProvider);
-    ref.invalidate(skipFilledCellsProvider);
-    ref.invalidate(puzzleReminderProvider);
-    ref.invalidate(streakReminderProvider);
-    ref.invalidate(crashReportingProvider);
-
-    if (context.mounted) context.go(Routes.home);
-  }
 }
 
 class _AboutDialog extends StatelessWidget {
   const _AboutDialog();
 
-  static const _githubUrl = 'https://github.com/AtomicTrxn/crossque';
+  static const _githubUrl = 'https://github.com/AtomicTrxn/crosscue';
 
   @override
   Widget build(BuildContext context) {
@@ -361,6 +224,10 @@ class _AboutDialog extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader(this.label);
   final String label;
@@ -423,27 +290,22 @@ class _NavRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.trailing,
-    this.color,
   });
 
   final IconData leading;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final Widget? trailing;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color;
     return Column(
       children: [
         ListTile(
-          leading: Icon(leading, color: effectiveColor),
-          title: Text(title, style: TextStyle(color: effectiveColor)),
+          leading: Icon(leading),
+          title: Text(title),
           subtitle: Text(subtitle),
-          trailing: trailing ?? const Icon(Icons.chevron_right),
+          trailing: const Icon(Icons.chevron_right),
           onTap: onTap,
         ),
         _RowDivider(),
@@ -469,10 +331,4 @@ T _value<T>(AsyncValue<T> value, {required T fallback}) {
     AsyncData(:final value) => value,
     _ => fallback,
   };
-}
-
-void _showStub(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-  );
 }

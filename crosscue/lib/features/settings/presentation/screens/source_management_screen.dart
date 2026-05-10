@@ -6,7 +6,6 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
-import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
@@ -16,12 +15,11 @@ class SourceManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final registry = ref.watch(sourceRegistryProvider);
     final sources = registry.allSources;
-    final localSources = sources.where((source) => source.id == 'local_import');
-    final communitySources =
-        sources.where((source) => source.id != 'local_import');
+    final localSources = sources.where((s) => s.id == 'local_import');
+    final otherSources = sources.where((s) => s.id != 'local_import');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Puzzle sources')),
+      appBar: AppBar(title: const Text('Puzzle Sources')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
@@ -34,56 +32,11 @@ class SourceManagementScreen extends ConsumerWidget {
             )
           else
             for (final source in localSources) _SourceTile(source: source),
-          const Divider(),
-          const _SectionHeader('Community Crosswords'),
-          for (final source in communitySources)
+          for (final source in otherSources)
             if (source.id == 'crosshare_daily_mini')
-              const _CrosshareSourceTile()
+              _CrosshareTile()
             else
               _SourceTile(source: source),
-          ListTile(
-            leading: const Icon(Icons.fact_check_outlined),
-            title: const Text('Source review checklist'),
-            subtitle: const Text(
-              'Required before any online source can be enabled',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showReviewChecklist(context),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              CrosscueSpacing.screenH,
-              8,
-              CrosscueSpacing.screenH,
-              24,
-            ),
-            child: Text(
-              'Crosscue only enables user imports or sources with explicit '
-              'permission or open-license terms. Sources pending review stay '
-              'disabled until cleared.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReviewChecklist(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Source review checklist'),
-        content: const Text(
-          'Sources need reviewed terms, attribution, commercial-use, and cache policy before downloads are enabled.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
         ],
       ),
     );
@@ -91,65 +44,21 @@ class SourceManagementScreen extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Crosshare source tile — shows live download state
+// Crosshare tile — navigates to dedicated config screen
 // ---------------------------------------------------------------------------
 
-class _CrosshareSourceTile extends ConsumerWidget {
-  const _CrosshareSourceTile();
-
+class _CrosshareTile extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dlState = ref.watch(crosshareProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    ref.listen<CrosshareState>(crosshareProvider, (_, next) {
-      if (next is CrosshareSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloaded: ${next.title}')),
-        );
-        context.pop();
-      }
-    });
-
-    final isDownloading = dlState is CrosshareDownloading;
-
+  Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(
         Icons.check_circle_outline,
-        color: colorScheme.primary,
+        color: Theme.of(context).colorScheme.primary,
       ),
       title: const Text('Crosshare Daily Mini'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Free community crosswords · crosshare.org'),
-          if (dlState is CrosshareFailure) ...[
-            const SizedBox(height: 4),
-            Text(
-              dlState.message,
-              style: TextStyle(color: colorScheme.error, fontSize: 12),
-            ),
-          ],
-          if (dlState is CrosshareDuplicate) ...[
-            const SizedBox(height: 4),
-            const Text(
-              "Today's puzzle is already in your library.",
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ],
-      ),
-      trailing: isDownloading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : FilledButton(
-              onPressed: () => ref.read(crosshareProvider.notifier).download(),
-              child: const Text('Get today'),
-            ),
-      isThreeLine: dlState is CrosshareFailure || dlState is CrosshareDuplicate,
+      subtitle: const Text('Free community crosswords · crosshare.org'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.crosshareSettings),
     );
   }
 }
@@ -182,9 +91,6 @@ class _SourceTile extends StatelessWidget {
     if (source.id == 'local_import') {
       return '.puz and .ipuz files stay on this device';
     }
-    if (source.id == 'crosshare_daily_mini') {
-      return 'Community source candidate; downloads pending review';
-    }
 
     return status == LicenseStatus.prohibited
         ? 'Blocked${source.enabled ? '; needs review' : ''}'.trim()
@@ -212,7 +118,7 @@ class _SourceTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Close'),
           ),
         ],
       ),

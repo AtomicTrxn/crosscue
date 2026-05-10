@@ -34,4 +34,19 @@ abstract interface class AppSettingsRepository {
 
   Future<bool> getCrashReporting();
   Future<void> setCrashReporting(bool value);
+
+  /// Whether to automatically download the Crosshare daily mini on launch/foreground.
+  /// Defaults to true when no value is stored.
+  Future<bool> getCrosshareAutoDownload();
+  Future<void> setCrosshareAutoDownload(bool value);
+
+  /// The date (YYYY-MM-DD) on which the Crosshare puzzle was last successfully
+  /// downloaded. Empty string means never downloaded.
+  Future<String> getCrosshareLastDownloadedDate();
+  Future<void> setCrosshareLastDownloadedDate(String date);
+
+  /// Human-readable status of the last Crosshare download attempt.
+  /// One of: '', 'success', 'duplicate', 'not_found', 'network_error'.
+  Future<String> getCrosshareLastAttemptStatus();
+  Future<void> setCrosshareLastAttemptStatus(String status);
 }

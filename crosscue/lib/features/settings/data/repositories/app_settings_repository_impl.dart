@@ -24,6 +24,10 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const _keyPuzzleReminder = 'puzzle_reminder';
   static const _keyStreakReminder = 'streak_reminder';
   static const _keyCrashReporting = 'crash_reporting';
+  static const _keyCrosshareAutoDownload = 'crosshare_auto_download_enabled';
+  static const _keyCrosshareLastDownloadedDate =
+      'crosshare_last_downloaded_date';
+  static const _keyCrosshareLastAttemptStatus = 'crosshare_last_attempt_status';
 
   // ---------------------------------------------------------------------------
   // Onboarding
@@ -118,6 +122,39 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   @override
   Future<void> setCrashReporting(bool value) =>
       _setBool(_keyCrashReporting, value);
+
+  // ---------------------------------------------------------------------------
+  // Crosshare auto-download settings
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<bool> getCrosshareAutoDownload() async {
+    final v = await dao.getValue(_keyCrosshareAutoDownload);
+    if (v == null) return true; // Default: enabled
+    return v != 'false';
+  }
+
+  @override
+  Future<void> setCrosshareAutoDownload(bool value) =>
+      dao.setValue(_keyCrosshareAutoDownload, value.toString());
+
+  @override
+  Future<String> getCrosshareLastDownloadedDate() async {
+    return await dao.getValue(_keyCrosshareLastDownloadedDate) ?? '';
+  }
+
+  @override
+  Future<void> setCrosshareLastDownloadedDate(String date) =>
+      dao.setValue(_keyCrosshareLastDownloadedDate, date);
+
+  @override
+  Future<String> getCrosshareLastAttemptStatus() async {
+    return await dao.getValue(_keyCrosshareLastAttemptStatus) ?? '';
+  }
+
+  @override
+  Future<void> setCrosshareLastAttemptStatus(String status) =>
+      dao.setValue(_keyCrosshareLastAttemptStatus, status);
 
   Future<bool> _getBool(String key) async {
     final v = await dao.getValue(key);

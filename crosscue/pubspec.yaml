@@ -64,6 +64,7 @@ dependencies:
   # Keyboard visibility detection
   flutter_keyboard_visibility: ^6.0.0
   audioplayers: ^6.6.0
+  url_launcher: ^6.3.2
 
   # Local notifications (Phase 2 — uncomment when reminders are scoped in)
   # flutter_local_notifications: ^17.0.0

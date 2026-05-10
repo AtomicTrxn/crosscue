@@ -319,6 +319,24 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> setThemeMode(ThemeMode mode) async {}
+
+  @override
+  Future<bool> getCrosshareAutoDownload() async => true;
+
+  @override
+  Future<void> setCrosshareAutoDownload(bool value) async {}
+
+  @override
+  Future<String> getCrosshareLastDownloadedDate() async => '';
+
+  @override
+  Future<void> setCrosshareLastDownloadedDate(String date) async {}
+
+  @override
+  Future<String> getCrosshareLastAttemptStatus() async => '';
+
+  @override
+  Future<void> setCrosshareLastAttemptStatus(String status) async {}
 }
 
 final class _CompletedStatus {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -6,7 +7,7 @@ import 'package:crosscue/core/utils/result.dart';
 
 /// Errors that can occur when downloading a Crosshare puzzle.
 enum CrosshareDownloadError {
-  /// No puzzle link matching today's date was found on the dailyminis page.
+  /// No puzzle entry matching today's date was found on the dailyminis page.
   notFound,
 
   /// A network request failed (timeout, HTTP error, no connection).
@@ -16,17 +17,20 @@ enum CrosshareDownloadError {
 /// Downloads the Crosshare daily mini crossword as raw .puz bytes.
 ///
 /// Two-step process:
-///   1. GET https://crosshare.org/dailyminis — find today's puzzle ID by
-///      matching the date slug in crossword links on the page.
+///   1. GET https://crosshare.org/dailyminis/{year}/{month} — parse the
+///      embedded __NEXT_DATA__ JSON to find today's puzzle ID.
 ///   2. GET https://crosshare.org/api/puz/{id} — fetch the .puz file.
 ///
-/// No PDF fallback. If either step fails, returns [CrosshareDownloadError].
+/// The __NEXT_DATA__ blob has the shape:
+///   { props: { pageProps: { puzzles: [[dayOfMonth, {id, title, …}, …], …] } } }
+///
+/// No fallback. If either step fails, returns [CrosshareDownloadError].
 class CrosshareDownloader {
   CrosshareDownloader({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 
-  static const _dailyMinisUrl = 'https://crosshare.org/dailyminis';
+  static const _dailyMinisBase = 'https://crosshare.org/dailyminis';
   static const _puzApiBase = 'https://crosshare.org/api/puz';
 
   Future<Result<Uint8List, CrosshareDownloadError>> downloadToday() async {
@@ -49,51 +53,49 @@ class CrosshareDownloader {
     }
   }
 
-  /// Fetches the dailyminis page and extracts today's puzzle ID.
-  ///
-  /// Crosshare puzzle links have the form:
-  ///   /crosswords/{PUZZLE_ID}/daily-mini-crossword-{day}-{month}-{year}
-  ///
-  /// We construct the expected date slug and regex-match it against the HTML.
+  /// Fetches the month page and extracts today's puzzle ID from the embedded
+  /// Next.js data blob.
   Future<String?> _findTodayPuzzleId() async {
     try {
+      final today = DateTime.now();
+      final url = '$_dailyMinisBase/${today.year}/${today.month}';
+
       final response = await _dio.get<String>(
-        _dailyMinisUrl,
+        url,
         options: Options(responseType: ResponseType.plain),
       );
       if (response.statusCode != 200 || response.data == null) return null;
 
-      final today = DateTime.now();
-      final dateSlug = '${today.day}-${_monthName(today.month)}-${today.year}';
+      final html = response.data!;
 
-      // Match: /crosswords/{ID}/{slug-containing-dateSlug}
-      // Use [^/\s]* to match URL path characters without quotes or spaces.
-      final pattern = RegExp(
-        r'/crosswords/([A-Za-z0-9_-]+)/[^/\s]*' + RegExp.escape(dateSlug),
-      );
-      final match = pattern.firstMatch(response.data!);
-      return match?.group(1);
+      // Locate the __NEXT_DATA__ script block (avoids greedy regex on large HTML).
+      const marker = '<script id="__NEXT_DATA__" type="application/json">';
+      final start = html.indexOf(marker);
+      if (start == -1) return null;
+      final jsonStart = start + marker.length;
+      final jsonEnd = html.indexOf('</script>', jsonStart);
+      if (jsonEnd == -1) return null;
+
+      final data = jsonDecode(html.substring(jsonStart, jsonEnd));
+
+      // Navigate: props → pageProps → puzzles → [[day, {id, …}, …], …]
+      final puzzles = data['props']?['pageProps']?['puzzles'] as List<dynamic>?;
+      if (puzzles == null) return null;
+
+      for (final entry in puzzles) {
+        if (entry is! List || entry.length < 2) continue;
+        if (entry[0] == today.day) {
+          final puzzleData = entry[1];
+          if (puzzleData is Map) {
+            return puzzleData['id'] as String?;
+          }
+        }
+      }
+      return null;
     } on DioException {
       return null;
+    } catch (_) {
+      return null;
     }
-  }
-
-  static String _monthName(int month) {
-    const months = [
-      '',
-      'january',
-      'february',
-      'march',
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-    ];
-    return months[month];
   }
 }
