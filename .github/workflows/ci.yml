@@ -127,10 +127,11 @@ jobs:
           git diff --exit-code
 
   # ── Stage 3 (gated on all stage 2 jobs) ──────────────────────────────────────
-  # Skipped when called from release.yml — the release job builds a signed APK instead.
+  # Disabled by default on regular CI. Only runs when explicitly requested.
+  # Release pipeline skips via skip-debug-apk: true
   build-debug-apk:
     name: Build debug APK
-    if: ${{ !inputs.skip-debug-apk }}
+    if: ${{ inputs.skip-debug-apk == false }}
     needs: [analyze, test, generated]
     runs-on: ubuntu-latest
     defaults:
