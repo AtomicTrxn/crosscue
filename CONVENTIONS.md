@@ -353,7 +353,7 @@ Free-to-play does not mean free-to-republish. A puzzle can be publicly playable 
 |--------|-----------------|------|
 | Local `.puz` / `.ipuz` import | `userImport` | Safe — user supplies the file |
 | Indie/static feeds with explicit license | `openLicense` / `explicitPermission` | Safe only when constructor/site grants download + cache + display rights in writing |
-| Crosshare daily mini | `needsReview` | Technical path exists (`/api/puz/{id}`); blocked pending human legal review |
+| Crosshare daily mini | `openLicense` | **Approved 2026-05-10.** Each puzzle author-attributed on Crosshare; app links to source. User-generated content with perpetual offline storage accepted per legal review. |
 | Universal / Andrews McMeel | `needsReview` | Do not scrape — contact AMU for syndication/license |
 | LA Times | `needsReview` | Do not scrape/cache — terms prohibit archiving without permission |
 | Guardian | `needsReview` | Do not scrape — Open Platform API scope must be confirmed |
@@ -361,6 +361,16 @@ Free-to-play does not mean free-to-republish. A puzzle can be publicly playable 
 | NYT | `prohibited` | Do not implement |
 
 `needsReview` means "track the candidate, do not enable it." A source can only move to `explicitPermission` after human legal/business review.
+
+### Source approval documentation
+
+When a source moves from `needsReview` to `openLicense` or `explicitPermission`, update this table with:
+- A dated entry: `Approved YYYY-MM-DD`
+- Approver name (who made the decision)
+- Brief rationale (what makes it safe)
+- Reference to legal/business review (ticket, email, doc link)
+
+This prevents policy drift: code and docs must stay in sync. See the Crosshare entry above for the format.
 
 ### Source legal review checklist
 

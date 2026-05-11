@@ -58,7 +58,7 @@ class _CrosshareTile extends StatelessWidget {
       title: const Text('Crosshare Daily Mini'),
       subtitle: const Text('Free community crosswords · crosshare.org'),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () => context.push('crosshare'),
+      onTap: () => context.push(Routes.crosshareSettings),
     );
   }
 }
