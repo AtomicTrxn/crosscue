@@ -1,5 +1,5 @@
+import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:drift/drift.dart';
-import 'puzzles_table.dart';
 
 @DataClassName('ClueRow')
 class CluesTable extends Table {

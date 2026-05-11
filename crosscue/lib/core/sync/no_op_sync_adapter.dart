@@ -1,4 +1,4 @@
-import 'sync_adapter.dart';
+import 'package:crosscue/core/sync/sync_adapter.dart';
 
 /// Phase 1 no-op sync adapter. All puzzles stay local; no backend involved.
 /// Replace with a real implementation in Phase 2 without changing callers.

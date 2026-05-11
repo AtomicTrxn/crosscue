@@ -1,22 +1,14 @@
 import 'dart:async';
 
 import 'package:confetti/confetti.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:vibration/vibration.dart';
-
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
-import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
-import 'package:crosscue/core/domain/models/clue.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
@@ -25,6 +17,13 @@ import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart'
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
 import 'package:crosscue/features/solve/presentation/widgets/crossword_keyboard.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:vibration/vibration.dart';
 
 class SolveScreen extends ConsumerStatefulWidget {
   const SolveScreen({super.key, required this.puzzleId});
@@ -60,7 +59,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   }
 
   /// Auto-pause when app goes to background; auto-resume is handled by the
-  /// overlay tap (see [_PauseOverlay]) per topic-17 §4.
+  /// overlay tap (see [_PauseOverlay]).
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     if (lifecycleState == AppLifecycleState.paused ||
@@ -76,7 +75,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   bool get _hapticsOn {
     final async = ref.read(hapticsEnabledProvider);
     return async.when(
-        data: (v) => v, loading: () => true, error: (_, __) => true);
+      data: (v) => v,
+      loading: () => true,
+      error: (_, __) => true,
+    );
   }
 
   bool get _soundsOn {
@@ -108,18 +110,18 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     }
     _playFeedbackSound();
 
-    // Spec §08: wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)
+    // Wave flash (500ms) → confetti (800ms) → sheet slide up (350ms)
     final animationsDisabled = MediaQuery.of(context).disableAnimations;
 
     Future<void> showSheet() async {
       if (!mounted) return;
-      showModalBottomSheet<void>(
+      await showModalBottomSheet<void>(
         context: context,
         isDismissible: true,
         enableDrag: true,
         isScrollControlled: true,
-        // Deep navy overlay (spec §08: rgba(10,42,110,0.88))
-        barrierColor: const Color(0xE10A2A6E),
+        // Deep navy overlay (rgba(10,42,110,0.88))
+        barrierColor: CrosscueColors.barrierDeepNavy,
         builder: (ctx) => _CompletionSheet(
           solveState: solveState,
           onViewGrid: () => Navigator.of(ctx).pop(),
@@ -354,7 +356,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                       .resume(),
                 ),
 
-              // Confetti overlay — triggered on puzzle complete (spec §08)
+              // Confetti overlay — triggered on puzzle complete
               if (!MediaQuery.of(context).disableAnimations)
                 Align(
                   alignment: Alignment.topCenter,
@@ -363,12 +365,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     blastDirectionality: BlastDirectionality.explosive,
                     numberOfParticles: 20,
                     gravity: 0.3,
-                    colors: const [
-                      Color(0xFF1565C0),
-                      Color(0xFFFDD835),
-                      Color(0xFF4CAF50),
-                      Color(0xFFEF5350),
-                    ],
+                    colors: CrosscueColors.confettiPalette,
                   ),
                 ),
             ],
@@ -412,22 +409,55 @@ class _SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Size get preferredSize =>
       const Size.fromHeight(CrosscueSpacing.appBarHeightSolve);
 
+  /// Returns a human-readable source label for attribution display, or null
+  /// for local imports (which need no attribution).
+  String? _sourceLabel(String sourceId) {
+    if (sourceId == 'local_import') return null;
+    return switch (sourceId) {
+      'crosshare_daily_mini' => 'via Crosshare',
+      _ => 'via $sourceId',
+    };
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final sourceLabel = _sourceLabel(solveState.puzzle.metadata.sourceId);
+
     return AppBar(
       toolbarHeight: CrosscueSpacing.appBarHeightSolve,
       leading: BackButton(onPressed: () => context.pop()),
       centerTitle: true,
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 15,
+      title: sourceLabel != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  sourceLabel,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                ),
+              ],
+            )
+          : Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                  ),
+              overflow: TextOverflow.ellipsis,
             ),
-        overflow: TextOverflow.ellipsis,
-      ),
       actions: [
-        // Timer — tap to pause/resume (topic-17 §4)
+        // Timer — tap to pause/resume
         GestureDetector(
           onTap: () {
             final notifier = ref.read(solveProvider(puzzleId).notifier);
@@ -453,7 +483,7 @@ class _SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Completion bottom sheet — spec §08
+// Completion bottom sheet
 // ---------------------------------------------------------------------------
 
 class _CompletionSheet extends ConsumerWidget {
@@ -472,7 +502,7 @@ class _CompletionSheet extends ConsumerWidget {
     final status = solveState.status;
     final isRevealed = status == PuzzleStatus.revealed;
 
-    // Solve label per spec §08 + topic-11 completion types
+    // Solve label
     final solveLabel = switch (status) {
       PuzzleStatus.solved => 'Clean solve',
       PuzzleStatus.solvedWithHelp => 'Solved with checks',
@@ -519,7 +549,7 @@ class _CompletionSheet extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Drag handle — 36×4dp (spec §08)
+                // Drag handle — 36×4dp
                 Container(
                   width: CrosscueSpacing.dragHandleW,
                   height: CrosscueSpacing.dragHandleH,
@@ -530,7 +560,7 @@ class _CompletionSheet extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Solve label — 14px w600 #1A1A1A (spec §08)
+                // Solve label — 14px w600 #1A1A1A
                 Text(
                   solveLabel,
                   style: const TextStyle(
@@ -541,7 +571,7 @@ class _CompletionSheet extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Time — 52px Roboto Mono w700 letterSpacing -2 (spec §08)
+                // Time — 52px Roboto Mono w700 letterSpacing -2
                 Text(
                   timeStr,
                   style: const TextStyle(
@@ -572,7 +602,7 @@ class _CompletionSheet extends ConsumerWidget {
                   const SizedBox(height: 12),
                 ],
 
-                // Streak row — 🔥 + "N-day streak" 15px w600 (spec §08)
+                // Streak row — 🔥 + "N-day streak" 15px w600
                 if (streak > 0) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -595,7 +625,7 @@ class _CompletionSheet extends ConsumerWidget {
 
                 const SizedBox(height: 16),
 
-                // Share result — outlined, hidden if revealed (spec §08)
+                // Share result — outlined, hidden if revealed
                 if (!isRevealed) ...[
                   SizedBox(
                     width: double.infinity,
@@ -626,7 +656,7 @@ class _CompletionSheet extends ConsumerWidget {
                   const SizedBox(height: 8),
                 ],
 
-                // View filled grid — text button 13px #999999 (spec §08)
+                // View filled grid — text button 13px #999999
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
@@ -643,7 +673,7 @@ class _CompletionSheet extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Next puzzle — filled #1565C0 15px w600 (spec §08)
+                // Next puzzle — filled #1565C0 15px w600
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -670,7 +700,7 @@ class _CompletionSheet extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Pause overlay (topic-17 §4)
+// Pause overlay
 // ---------------------------------------------------------------------------
 
 class _PauseOverlay extends StatelessWidget {
@@ -721,7 +751,7 @@ class _PauseOverlay extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Check / Reveal overflow menu (topic-11)
+// Check / Reveal overflow menu
 // ---------------------------------------------------------------------------
 
 enum _CheckRevealOption {

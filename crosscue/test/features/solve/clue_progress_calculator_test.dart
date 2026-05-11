@@ -1,5 +1,3 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
@@ -8,6 +6,7 @@ import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ClueProgressCalculator', () {

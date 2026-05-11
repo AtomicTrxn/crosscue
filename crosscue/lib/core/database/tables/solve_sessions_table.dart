@@ -1,5 +1,5 @@
+import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:drift/drift.dart';
-import 'puzzles_table.dart';
 
 /// TypeConverter: PuzzleStatus domain enum ↔ DB status string.
 /// DB values: not_started | in_progress | completed | revealed
@@ -34,7 +34,7 @@ class SolveSessionsTable extends Table {
   DateTimeColumn get completedAt => dateTime().nullable()();
 
   /// Calendar date string in device-local timezone: 'yyyy-MM-dd'.
-  /// Used by streak algorithm (see topic-15).
+  /// Used by streak algorithm.
   TextColumn get solvedDateLocal => text().nullable()();
   TextColumn get solvedTimezone => text().nullable()();
 
@@ -55,7 +55,7 @@ class SolveSessionsTable extends Table {
   IntColumn get focusCol => integer().withDefault(const Constant(0))();
   TextColumn get direction => text().withDefault(const Constant('across'))();
 
-  // Sync-readiness columns (topic-09) — NoOpSyncAdapter in Phase 1
+  // Sync-readiness columns — NoOpSyncAdapter in Phase 1
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   IntColumn get syncVersion => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();

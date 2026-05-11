@@ -1,15 +1,14 @@
 import 'dart:ui';
 
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/routing/app_router.dart';
+import 'package:crosscue/core/theme/app_theme.dart';
+import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'core/domain/models/enums.dart';
-import 'core/providers/core_providers.dart';
-import 'core/routing/app_router.dart';
-import 'core/theme/app_theme.dart';
-import 'features/import/data/services/crosshare_auto_download_service.dart';
-import 'features/settings/presentation/providers/settings_providers.dart';
 
 ThemeMode _toFlutterThemeMode(AppThemeMode m) => switch (m) {
       AppThemeMode.light => ThemeMode.light,

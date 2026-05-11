@@ -1,7 +1,6 @@
+import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:crosscue/core/theme/design_tokens.dart';
 
 // ---------------------------------------------------------------------------
 // Top-level helper
@@ -58,7 +57,7 @@ class SettingsNavRow extends StatelessWidget {
     super.key,
     required this.leading,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onTap,
     this.trailing,
     this.color,
@@ -66,7 +65,9 @@ class SettingsNavRow extends StatelessWidget {
 
   final IconData leading;
   final String title;
-  final String subtitle;
+
+  /// Subtitle text. When null the subtitle slot is omitted entirely.
+  final String? subtitle;
   final VoidCallback onTap;
 
   /// Optional trailing widget. Defaults to a chevron icon.
@@ -82,7 +83,7 @@ class SettingsNavRow extends StatelessWidget {
         ListTile(
           leading: Icon(leading, color: color),
           title: Text(title, style: TextStyle(color: color)),
-          subtitle: Text(subtitle),
+          subtitle: subtitle != null ? Text(subtitle!) : null,
           trailing: trailing ?? const Icon(Icons.chevron_right),
           onTap: onTap,
         ),

@@ -54,7 +54,7 @@ home/
     ├── providers/
     │   └── home_providers.dart # puzzleListProvider (@riverpod Future<List<PuzzleMetadata>>)
     └── screens/
-        └── home_screen.dart   # HomeScreen + _PuzzleList + _PuzzleTile + _EmptyState
+        └── home_screen.dart   # HomeScreen (featured puzzle card, recent list, pie progress, _EmptyState)
 ```
 
 **Data flow:**
@@ -83,13 +83,17 @@ import/
 │   ├── parsers/ipuz_parser.dart         # .ipuz JSON parser (5 MB guard)
 │   ├── daos/puzzle_dao.dart             # Drift DAO: insert/get/delete puzzles + clues
 │   ├── daos/grid_serializer.dart        # Grid<SolutionCell> ↔ JSON string (for DB storage)
+│   ├── downloaders/crosshare_downloader.dart  # HTTP + HTML scraper for Crosshare Daily Mini
 │   ├── repositories/import_repository_impl.dart  # Orchestrates parse + duplicate check + persist
+│   ├── services/crosshare_auto_download_service.dart  # Foreground-trigger auto-downloader
 │   └── sources/
 │       ├── source_registry.dart         # SourceRegistry + SourceRegistrationException
 │       └── local_import_source.dart     # LocalImportSource (id='local_import', userImport)
 └── presentation/
     ├── providers/import_providers.dart  # importRepositoryProvider (keepAlive)
-    ├── notifiers/import_notifier.dart   # ImportNotifier + ImportState sealed class
+    ├── notifiers/
+    │   ├── import_notifier.dart         # ImportNotifier + @freezed ImportState (idle/picking/parsing/success/duplicate/failure)
+    │   └── crosshare_notifier.dart      # CrosshareNotifier + @freezed CrosshareState
     └── screens/import_screen.dart       # File picker UI
 ```
 
@@ -117,16 +121,19 @@ live in `core/domain/models/` (see Core: Domain Models below).
 solve/
 ├── domain/
 │   ├── models/
-│       ├── cell_progress.dart    # @freezed abstract class — one cell of user progress (solve-only)
-│       └── focus_position.dart   # @freezed abstract class — cursor row/col/direction (solve-only)
-│   └── repositories/solve_repository.dart # Abstract solve contract
+│   │   ├── cell_progress.dart    # @freezed abstract class — one cell of user progress (solve-only)
+│   │   ├── focus_position.dart   # @freezed abstract class — cursor row/col/direction (solve-only)
+│   │   └── solve_errors.dart     # sealed SolveLoadError, PuzzleNotFoundError, SolveSessionLoadError
+│   ├── repositories/solve_repository.dart # Abstract solve contract
+│   └── services/
+│       └── clue_progress_calculator.dart  # cellsFor(Clue) + isWordComplete — single source of truth
 ├── data/
 │   ├── daos/solve_session_dao.dart          # Autosave, resume, getLatestSession()
 │   └── repositories/solve_repository_impl.dart  # createOrResumeSession + save
 └── presentation/
     ├── providers/solve_providers.dart  # solveRepositoryProvider (keepAlive)
     ├── notifiers/
-    │   ├── solve_state.dart      # Plain immutable class (not Freezed — contains Grid<T>)
+    │   ├── solve_state.dart      # Plain immutable class (not Freezed — contains Grid<T>); memoizes sortedClues
     │   └── solve_notifier.dart   # @riverpod AsyncNotifier family (puzzleId: String)
     ├── screens/
     │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + CluePanel + completion sheet
@@ -198,6 +205,26 @@ typedef CompletedSessionStat = ({
 
 ---
 
+## Feature: `settings`
+
+App configuration: theme, haptics, sounds, puzzle sources, privacy, and about.
+
+```
+settings/
+├── data/daos/app_settings_dao.dart               # Key/value settings store (Drift)
+└── presentation/
+    ├── providers/settings_providers.dart          # appSettingsProvider + per-setting notifiers
+    ├── widgets/settings_rows.dart                 # Shared: SettingsSwitchRow, SettingsNavRow,
+    │                                              #   SettingsSectionHeader, SettingsRowDivider
+    └── screens/
+        ├── settings_screen.dart                   # Root settings (theme, haptics, sounds, skip cells)
+        ├── source_management_screen.dart          # Puzzle source list (local + Crosshare)
+        ├── crosshare_settings_screen.dart         # Crosshare Daily Mini on/off + schedule config
+        └── privacy_screen.dart                    # Crash reporting, data export/import, clear all data
+```
+
+---
+
 ## Core: Domain Models
 
 Shared models consumed by more than one feature. Solve-only models (`CellProgress`,
@@ -256,54 +283,49 @@ core/routing/
 └── app_shell.dart   # StatefulShellRoute (4-tab bottom nav)
 ```
 
-**Route tree:**
-```
-/onboarding          → OnboardingScreen   (full page, no shell)
-/import              → ImportScreen        (full page, no shell)
-/solve/:puzzleId     → SolveScreen         (full page, no shell)
-/                    → HomeScreen          (tab 0)
-/archive             → ArchiveScreen       (tab 1)
-/stats               → StatsScreen         (tab 2)
-/settings            → SettingsScreen      (tab 3)
-```
+**Route hierarchy:**
 
-Navigate to solve: `context.push('/solve/${Uri.encodeComponent(puzzle.id)}')`
-SolveNotifier receives: `Uri.decodeComponent(puzzleId)` before DB lookup.
+| Route | Type | Screen |
+|-------|------|--------|
+| `/` | Shell tab (Home) | `HomeScreen` |
+| `/archive` | Shell tab | `ArchiveScreen` |
+| `/stats` | Shell tab | `StatsScreen` |
+| `/settings` | Shell tab | `SettingsScreen` |
+| `/settings/sources` | Nested under `/settings` | `SourceManagementScreen` |
+| `/settings/sources/crosshare` | Nested under `/settings/sources` | `CrosshareSettingsScreen` |
+| `/settings/privacy` | Nested under `/settings` | `PrivacyScreen` |
+| `/onboarding` | Full-page (no shell) | `OnboardingScreen` |
+| `/import` | Full-page (no shell) | `ImportScreen` |
+| `/solve/:puzzleId` | Full-page (no shell) | `SolveScreen` |
+
+Navigate to solve: `context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id)))`
+`SolveNotifier` receives: `Uri.decodeComponent(puzzleId)` before DB lookup.
+
+Always use `Routes` constants — never raw strings.
 
 ---
 
 ## Core: Providers
 
-```
-core/providers/core_providers.dart
-  appDatabaseProvider        — @Riverpod(keepAlive: true) AppDatabase
-  syncAdapterProvider        — @Riverpod(keepAlive: true) NoOpSyncAdapter (Phase 1)
-  entitlementServiceProvider — @Riverpod(keepAlive: true) FreeEntitlementService (Phase 1)
-  crashReporterProvider      — @Riverpod(keepAlive: true) NoOpCrashReporter (Phase 1)
+All shared infrastructure is exposed via Riverpod providers in `lib/core/providers/`.
+Use `ref.watch(providerNameProvider)` from any feature presentation layer.
 
-features/settings/presentation/providers/settings_providers.dart
-  appSettingsProvider        — @Riverpod(keepAlive: true) AppSettingsRepository
-                               (returns AppSettingsRepositoryImpl; interface in domain/, impl in data/)
-  hasSeenOnboardingProvider  — @riverpod Future<bool>
-  themeModeProvider          — @riverpod class ThemeModeNotifier
-  hapticsEnabledProvider     — @riverpod class HapticsEnabledNotifier
-
-import/.../import_providers.dart
-  importRepositoryProvider   — @Riverpod(keepAlive: true) ImportRepository
-
-solve/.../solve_providers.dart
-  solveRepositoryProvider    — @Riverpod(keepAlive: true) SolveRepository
-
-archive/.../archive_providers.dart
-  archiveRepositoryProvider  — @Riverpod(keepAlive: true) ArchiveRepository
-  archiveEntriesProvider     — @riverpod Future<List<ArchiveEntry>>
-
-stats/.../stats_providers.dart
-  statsRepositoryProvider    — @Riverpod(keepAlive: true) StatsRepository
-  statsDataProvider          — @riverpod Future<StatsData>
-```
+Provider categories:
+- **Database & repositories** — exposed as their interface type; all `@Riverpod(keepAlive: true)`.  
+  `appDatabaseProvider`, `importRepositoryProvider`, `solveRepositoryProvider`,  
+  `archiveRepositoryProvider`, `statsRepositoryProvider`, `appSettingsProvider`
+- **HTTP / network** — `dioProvider`, `crosshareDownloaderProvider`
+- **Platform services** — `crashReporterProvider`, `soundPlayerProvider`, `appVersionProvider`
+- **Lifecycle** — `appLifecycleObserverProvider` (registers a `WidgetsBindingObserver` for auto-download on foreground)
+- **Settings & user preferences** — `settings_providers.dart`: `hasSeenOnboardingProvider`,  
+  `themeModeProvider`, `hapticsEnabledProvider`, `soundsEnabledProvider`, `skipFilledCellsProvider`,  
+  `colorblindModeProvider`
+- **Source registry** — `sourceRegistryProvider` exposes all registered `PuzzleSource` definitions
 
 `keepAlive: true` on all repository and infrastructure providers — these must survive navigation.
+
+Use IDE autocomplete (`*Provider`) to discover the full list — this section is categorical,
+not exhaustive, to avoid going stale.
 
 ---
 
@@ -340,3 +362,34 @@ stats/.../stats_providers.dart
 8. **Update `SPRINTS.md`** — mark tasks ✅ as they land; update the sprint goal if scope changed
 
 9. **Update `research/INDEX.md`** — mark topics ✅ / 🔄 as their conclusions are implemented
+
+---
+
+## Recent Architectural Decisions
+
+- **Crosshare source approval (v1.1, May 2026)**: Crosshare Daily Mini approved
+  as `openLicense`. The source is gated behind the `SourceRegistry` legal guardrail;
+  see `source_registry.dart` and `CONVENTIONS.md` "Source approval documentation".
+
+- **Settings nested routes (v1.1, May 2026)**: Sub-pages under `/settings/sources`,
+  `/settings/sources/crosshare`, and `/settings/privacy` are nested `GoRoute` entries
+  inside the Settings shell branch. Always use absolute `Routes` constants when navigating.
+
+- **Cell-progress orphan fix (Sprint 1)**: `saveCellProgress` deletes-then-inserts
+  to avoid stale rows when a user backtracks or resets a cell.
+
+- **Clue math consolidation (Sprint 4)**: All clue-cell iteration and word-completion
+  logic lives in `features/solve/domain/services/clue_progress_calculator.dart`.
+  Do not duplicate `_clueCells` / `_isWordComplete` helpers in widgets or notifiers.
+
+- **Settings widget library (Sprint 4)**: Shared row widgets (`SettingsSwitchRow`,
+  `SettingsNavRow`, `SettingsSectionHeader`, `SettingsRowDivider`) live in
+  `features/settings/presentation/widgets/settings_rows.dart`. Use them in all
+  settings-adjacent screens to keep visual consistency.
+
+- **Freeze-sealed error types (Sprint 4)**: `SolveLoadError` and its subtypes are
+  plain sealed classes in `solve/domain/models/solve_errors.dart`. Presentation
+  switches on error type via `switch (e) { PuzzleNotFoundError() => ..., ... }`.
+
+- **Runtime app version (Sprint 5)**: `appVersionProvider` in `core_providers.dart`
+  reads the version from `PackageInfo.fromPlatform()`. Never hardcode a version string.

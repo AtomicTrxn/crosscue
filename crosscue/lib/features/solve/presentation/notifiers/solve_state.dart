@@ -1,17 +1,17 @@
-import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 
 /// Full state for the solve screen.
 ///
 /// Uses a plain immutable class (not Freezed) because Grid<T> generics
 /// are incompatible with Freezed's code generator.
 class SolveState {
-  const SolveState({
+  SolveState({
     required this.puzzle,
     required this.progress,
     required this.focus,
@@ -39,7 +39,7 @@ class SolveState {
   final int? sessionId;
 
   // ---------------------------------------------------------------------------
-  // Check / reveal counters (topic-11)
+  // Check / reveal counters
   // ---------------------------------------------------------------------------
 
   /// Number of times any check action has been triggered.
@@ -59,6 +59,24 @@ class SolveState {
 
   /// Previous clean personal best for this puzzle's size bucket, if one exists.
   final int? previousPersonalBestMs;
+
+  // ---------------------------------------------------------------------------
+  // Sorted clue cache
+  // ---------------------------------------------------------------------------
+
+  /// Clues sorted for Tab/Shift+arrow navigation: Across before Down for the
+  /// same number. Computed once per SolveState instance because clue order is
+  /// immutable — sorting on every Tab keypress was O(n log n) wasted work.
+  late final List<Clue> sortedClues = _buildSortedClues();
+
+  List<Clue> _buildSortedClues() {
+    return [...puzzle.clues]..sort((a, b) {
+        if (a.direction == b.direction) {
+          return a.number.compareTo(b.number);
+        }
+        return a.direction == Direction.across ? -1 : 1;
+      });
+  }
 
   // ---------------------------------------------------------------------------
   // Derived helpers

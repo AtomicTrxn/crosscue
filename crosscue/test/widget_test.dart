@@ -1,8 +1,7 @@
 // Smoke test: app launches without crashing.
+import 'package:crosscue/app.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:crosscue/app.dart';
 
 void main() {
   testWidgets('App launches without crashing', (WidgetTester tester) async {

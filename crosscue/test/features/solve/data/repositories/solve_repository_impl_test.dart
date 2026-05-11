@@ -1,8 +1,5 @@
 // Tests for SolveRepositoryImpl — session create/resume and progress persistence.
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
@@ -11,6 +8,8 @@ import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/solve/data/repositories/solve_repository_impl.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/puz_fixture_builder.dart';
 
@@ -166,7 +165,9 @@ void main() {
       final progress = Grid<CellProgress>.generate(3, 3, (r, c) {
         if (r == 1 && c == 2) {
           return const CellProgress(
-              letter: 'Q', state: CellState.checkedCorrect);
+            letter: 'Q',
+            state: CellState.checkedCorrect,
+          );
         }
         return CellProgress.blank;
       });
@@ -190,7 +191,9 @@ void main() {
       final resumed = await repo.createOrResumeSession(puzzle);
       expect(resumed.progress.cell(1, 2).letter, equals('Q'));
       expect(
-          resumed.progress.cell(1, 2).state, equals(CellState.checkedCorrect));
+        resumed.progress.cell(1, 2).state,
+        equals(CellState.checkedCorrect),
+      );
     });
   });
 
@@ -278,7 +281,10 @@ void main() {
 
       // Save a filled grid
       final filled = Grid<CellProgress>.generate(
-          3, 3, (_, __) => const CellProgress(letter: 'A'));
+        3,
+        3,
+        (_, __) => const CellProgress(letter: 'A'),
+      );
       await repo.saveProgress(
         sessionId: session.sessionId,
         puzzleWidth: 3,
@@ -315,8 +321,11 @@ void main() {
       final resumed = await repo.createOrResumeSession(puzzle);
       for (var r = 0; r < 3; r++) {
         for (var c = 0; c < 3; c++) {
-          expect(resumed.progress.cell(r, c), equals(CellProgress.blank),
-              reason: 'cell ($r,$c) should be blank after reset');
+          expect(
+            resumed.progress.cell(r, c),
+            equals(CellProgress.blank),
+            reason: 'cell ($r,$c) should be blank after reset',
+          );
         }
       }
     });

@@ -1,6 +1,6 @@
 import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
+import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 
 /// Typed wrapper around [AppSettingsDao].
 /// All values are JSON-encoded strings in the DB; this class handles conversion.

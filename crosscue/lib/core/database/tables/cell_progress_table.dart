@@ -1,5 +1,5 @@
+import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:drift/drift.dart';
-import 'solve_sessions_table.dart';
 
 @DataClassName('CellProgressRow')
 class CellProgressTable extends Table {
@@ -17,7 +17,7 @@ class CellProgressTable extends Table {
   BoolColumn get wasChecked => boolean().withDefault(const Constant(false))();
   BoolColumn get wasRevealed => boolean().withDefault(const Constant(false))();
 
-  /// Hash of the last wrong guess to avoid double-counting mistakes (topic-11).
+  /// Hash of the last wrong guess to avoid double-counting mistakes.
   TextColumn get lastWrongGuessHash => text().nullable()();
 
   /// isPencil stored for post-MVP pencil mode without requiring a migration.

@@ -1,9 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/routing/routes.dart';
@@ -12,10 +8,13 @@ import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
-import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -202,7 +201,7 @@ class _FeaturedPuzzle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _ctaLabel(entry);
-    // Subtitle: size (+ difficulty if present) — spec §01 "source · size · difficulty"
+    // Subtitle: size (+ difficulty if present)
     final sizeParts = ['${puzzle.width}×${puzzle.height}'];
     if (puzzle.difficulty != null && puzzle.difficulty!.isNotEmpty) {
       sizeParts.add(puzzle.difficulty!);
@@ -246,7 +245,7 @@ class _FeaturedPuzzle extends StatelessWidget {
               _PieProgress(value: completionFraction),
             ],
           ),
-          // Constructor line — separate 12px #999 per spec §01
+          // Constructor line — separate 12px #999
           if (puzzle.author.isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(
@@ -437,7 +436,7 @@ class _PieProgress extends StatelessWidget {
         painter: _PieProgressPainter(
           value: value.clamp(0.0, 1.0),
           fill: CrosscueColors.primary,
-          track: const Color(0xFFE0E0E0),
+          track: CrosscueColors.trackGrey,
         ),
       ),
     );

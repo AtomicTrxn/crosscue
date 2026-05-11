@@ -1,10 +1,9 @@
 // Crosscue app theme — light + dark ThemeData seeded from Crosscue brand blue.
 // Use with dynamic_color package for Material You on Android 12+.
 
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
-
-import 'crossword_theme.dart';
-import 'design_tokens.dart';
 
 abstract final class AppTheme {
   /// Light theme — fallback when dynamic color is unavailable.
@@ -57,7 +56,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
-        // 1px bottom border on every AppBar (spec §01–06)
+        // 1px bottom border on every AppBar
         shape: Border(
           bottom: BorderSide(
             color: isLight

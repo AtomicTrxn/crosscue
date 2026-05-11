@@ -1,16 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 // ---------------------------------------------------------------------------
-// Mock 5×5 grid data (hardcoded, never stored in Drift — topic-17 §7)
+// Mock 5×5 grid data (hardcoded, never stored in Drift)
 // Spec grid (design/README.md §07):
 //   Row 0: A  C  E  .  .    (. = black)
 //   Row 1: L  O  .  T  E
@@ -37,7 +36,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0; // 0,1,2 = tutorial steps; 3 = done card
-  // Start with cell (1,1) pre-focused per spec §07 (active cell = "O")
+  // Start with cell (1,1) pre-focused (active cell = "O")
   int? _focusRow = 1;
   int? _focusCol = 1;
   bool _focusIsAcross = true;
@@ -95,7 +94,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() {
       _step++;
       if (_step == 2) {
-        // Auto-advance step 3 after 3 s (topic-17 §7)
+        // Auto-advance step 3 after 3 s
         _step3Timer = Timer(const Duration(seconds: 3), () {
           if (mounted) setState(() => _step = 3);
         });
@@ -126,7 +125,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   const SizedBox(width: 60),
                   if (_step < 3) _StepDots(current: _step, total: 3),
-                  // White translucent text on navy background (spec §07)
+                  // White translucent text on navy background
                   TextButton(
                     onPressed: _skip,
                     style: TextButton.styleFrom(
@@ -215,7 +214,7 @@ class _StepDots extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Mock grid — spec §07 layout with pre-filled letters and proper highlights
+// Mock grid — pre-filled letters and proper highlights
 // ---------------------------------------------------------------------------
 
 class _MockGrid extends StatelessWidget {
@@ -397,7 +396,7 @@ class _InstructionCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle — 36×4dp #E8E8E8 (spec §07)
+          // Drag handle — 36×4dp #E8E8E8
           Container(
             width: CrosscueSpacing.dragHandleW,
             height: CrosscueSpacing.dragHandleH,
@@ -443,7 +442,7 @@ class _StepHeading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Step label: 11px w600 #1565C0 UPPERCASE letterSpacing 0.08em (spec §07)
+        // Step label: 11px w600 #1565C0 UPPERCASE letterSpacing 0.08em
         Text(
           stepLabel,
           style: const TextStyle(
@@ -454,7 +453,7 @@ class _StepHeading extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        // Title: 20px w700 #1A1A1A lineHeight 1.25 (spec §07)
+        // Title: 20px w700 #1A1A1A lineHeight 1.25
         Text(
           title,
           style: const TextStyle(
@@ -465,7 +464,7 @@ class _StepHeading extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Body: 14px #555555 lineHeight 1.5 (spec §07)
+        // Body: 14px #555555 lineHeight 1.5
         Text(
           body,
           style: const TextStyle(
@@ -484,8 +483,11 @@ class _StepHeading extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Step1Card extends StatelessWidget {
-  const _Step1Card(
-      {required this.done, required this.onLetter, required this.onNext});
+  const _Step1Card({
+    required this.done,
+    required this.onLetter,
+    required this.onNext,
+  });
   final bool done;
   final void Function(String) onLetter;
   final VoidCallback onNext;
@@ -506,7 +508,7 @@ class _Step1Card extends StatelessWidget {
         // Mini A–Z keyboard strip for the mock grid
         _LetterStrip(onLetter: onLetter),
         const SizedBox(height: 12),
-        // CTA: 48dp height, 10dp radius (spec §07)
+        // CTA: 48dp height, 10dp radius
         FilledButton(
           onPressed: done ? onNext : null,
           style: FilledButton.styleFrom(
@@ -599,8 +601,10 @@ class _DoneCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text("You're ready to solve!",
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          "You're ready to solve!",
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         Text(
           'Import a puzzle file to get started.',

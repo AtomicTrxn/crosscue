@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 
 /// Abstract contract for the import data layer.
@@ -11,8 +11,10 @@ abstract class ImportRepository {
   ///
   /// [sourceId] is stored on the puzzle's metadata so queries can filter by
   /// origin. Defaults to `'local_import'` for user-supplied files.
-  Future<ImportJobResult> importBytes(Uint8List bytes,
-      {String sourceId = 'local_import'});
+  Future<ImportJobResult> importBytes(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+  });
 
   /// Returns metadata for every puzzle currently stored in the database.
   Future<List<PuzzleMetadata>> getAllMetadata();

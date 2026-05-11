@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -41,17 +42,17 @@ Map<String, dynamic> _base3x3({
           [
             {'cell': 1},
             {'cell': 2},
-            {'cell': 3}
+            {'cell': 3},
           ],
           [
             {'cell': 4},
             0,
-            0
+            0,
           ],
           [
             {'cell': 5},
             0,
-            0
+            0,
           ],
         ],
     'solution': solution ??
@@ -80,282 +81,316 @@ Map<String, dynamic> _base3x3({
 Uint8List _minimal3x3() => _jsonBytes(_base3x3());
 
 /// Clues with lowercase direction keys ('across'/'down').
-Uint8List _lowercaseClueKeys() => _jsonBytes(_base3x3(
-      clues: {
-        'across': [
-          [1, '1 Across'],
-          [4, '4 Across'],
-          [5, '5 Across'],
-        ],
-        'down': [
-          [1, '1 Down'],
-          [2, '2 Down'],
-          [3, '3 Down'],
-        ],
-      },
-    ));
+Uint8List _lowercaseClueKeys() => _jsonBytes(
+      _base3x3(
+        clues: {
+          'across': [
+            [1, '1 Across'],
+            [4, '4 Across'],
+            [5, '5 Across'],
+          ],
+          'down': [
+            [1, '1 Down'],
+            [2, '2 Down'],
+            [3, '3 Down'],
+          ],
+        },
+      ),
+    );
 
 /// Clues with all-uppercase direction keys ('ACROSS'/'DOWN').
-Uint8List _uppercaseClueKeys() => _jsonBytes(_base3x3(
-      clues: {
-        'ACROSS': [
-          [1, '1 Across'],
-          [4, '4 Across'],
-          [5, '5 Across'],
-        ],
-        'DOWN': [
-          [1, '1 Down'],
-          [2, '2 Down'],
-          [3, '3 Down'],
-        ],
-      },
-    ));
+Uint8List _uppercaseClueKeys() => _jsonBytes(
+      _base3x3(
+        clues: {
+          'ACROSS': [
+            [1, '1 Across'],
+            [4, '4 Across'],
+            [5, '5 Across'],
+          ],
+          'DOWN': [
+            [1, '1 Down'],
+            [2, '2 Down'],
+            [3, '3 Down'],
+          ],
+        },
+      ),
+    );
 
 /// Clues in object format {number, clue}.
-Uint8List _objectFormatClues() => _jsonBytes(_base3x3(
-      clues: {
-        'Across': [
-          {'number': 1, 'clue': '1 Across (obj)'},
-          {'number': 4, 'clue': '4 Across (obj)'},
-          {'number': 5, 'clue': '5 Across (obj)'},
-        ],
-        'Down': [
-          {'number': 1, 'clue': '1 Down (obj)'},
-          {'number': 2, 'clue': '2 Down (obj)'},
-          {'number': 3, 'clue': '3 Down (obj)'},
-        ],
-      },
-    ));
+Uint8List _objectFormatClues() => _jsonBytes(
+      _base3x3(
+        clues: {
+          'Across': [
+            {'number': 1, 'clue': '1 Across (obj)'},
+            {'number': 4, 'clue': '4 Across (obj)'},
+            {'number': 5, 'clue': '5 Across (obj)'},
+          ],
+          'Down': [
+            {'number': 1, 'clue': '1 Down (obj)'},
+            {'number': 2, 'clue': '2 Down (obj)'},
+            {'number': 3, 'clue': '3 Down (obj)'},
+          ],
+        },
+      ),
+    );
 
 /// Clues with HTML in the text.
-Uint8List _htmlClues() => _jsonBytes(_base3x3(
-      clues: {
-        'Across': [
-          [1, '<b>Bold</b> clue &amp; more'],
-          [4, '4 Across'],
-          [5, '5 Across'],
-        ],
-        'Down': [
-          [1, '1 Down'],
-          [2, '2 Down'],
-          [3, '3 Down'],
-        ],
-      },
-    ));
+Uint8List _htmlClues() => _jsonBytes(
+      _base3x3(
+        clues: {
+          'Across': [
+            [1, '<b>Bold</b> clue &amp; more'],
+            [4, '4 Across'],
+            [5, '5 Across'],
+          ],
+          'Down': [
+            [1, '1 Down'],
+            [2, '2 Down'],
+            [3, '3 Down'],
+          ],
+        },
+      ),
+    );
 
 /// Puzzle with 'date' in ISO YYYY-MM-DD format.
-Uint8List _withIsoDate() => _jsonBytes(_base3x3(
-      extra: {'date': '2026-05-01'},
-    ));
+Uint8List _withIsoDate() => _jsonBytes(
+      _base3x3(
+        extra: {'date': '2026-05-01'},
+      ),
+    );
 
 /// Puzzle with 'date' in US MM/DD/YYYY format.
-Uint8List _withUsDate() => _jsonBytes(_base3x3(
-      extra: {'date': '05/01/2026'},
-    ));
+Uint8List _withUsDate() => _jsonBytes(
+      _base3x3(
+        extra: {'date': '05/01/2026'},
+      ),
+    );
 
 /// Puzzle with a 'date' that cannot be parsed (stays null, no error).
-Uint8List _withBadDate() => _jsonBytes(_base3x3(
-      extra: {'date': 'not a date'},
-    ));
+Uint8List _withBadDate() => _jsonBytes(
+      _base3x3(
+        extra: {'date': 'not a date'},
+      ),
+    );
 
 /// Puzzle with publisher and editor metadata.
-Uint8List _withPublisherEditor() => _jsonBytes(_base3x3(
-      extra: {
-        'intro': 'A fine puzzle',
-        'publisher': 'Crossword Co.',
-        'editor': 'Ed Itor',
-      },
-    ));
+Uint8List _withPublisherEditor() => _jsonBytes(
+      _base3x3(
+        extra: {
+          'intro': 'A fine puzzle',
+          'publisher': 'Crossword Co.',
+          'editor': 'Ed Itor',
+        },
+      ),
+    );
 
 /// Solution row containing numeric 0 as a black cell.
-Uint8List _numericZeroBlack() => _jsonBytes(_base3x3(
-      solution: [
-        [0, 'B', 'C'],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      puzzle: [
-        [
-          '#',
-          {'cell': 1},
-          {'cell': 2},
+Uint8List _numericZeroBlack() => _jsonBytes(
+      _base3x3(
+        solution: [
+          [0, 'B', 'C'],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        [
-          {'cell': 3},
-          0,
-          0
+        puzzle: [
+          [
+            '#',
+            {'cell': 1},
+            {'cell': 2},
+          ],
+          [
+            {'cell': 3},
+            0,
+            0,
+          ],
+          [
+            {'cell': 4},
+            0,
+            0,
+          ],
         ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-      ],
-      clues: {
-        'Across': [
-          [1, '1 Across'],
-          [3, '3 Across'],
-          [4, '4 Across'],
-        ],
-        'Down': [
-          [1, '1 Down'],
-          [2, '2 Down'],
-        ],
-      },
-    ));
+        clues: {
+          'Across': [
+            [1, '1 Across'],
+            [3, '3 Across'],
+            [4, '4 Across'],
+          ],
+          'Down': [
+            [1, '1 Down'],
+            [2, '2 Down'],
+          ],
+        },
+      ),
+    );
 
 /// Map-valued solution cell where 'value' is numeric (should not be used as answer).
-Uint8List _mapCellNumericValue() => _jsonBytes(_base3x3(
-      solution: [
-        [
-          {'cell': 'A', 'value': 1},
-          'B',
-          'C'
+Uint8List _mapCellNumericValue() => _jsonBytes(
+      _base3x3(
+        solution: [
+          [
+            {'cell': 'A', 'value': 1},
+            'B',
+            'C',
+          ],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-    ));
+      ),
+    );
 
 /// Map-valued solution cell where answer is in 'cell' key (rebus).
-Uint8List _mapCellRebus() => _jsonBytes(_base3x3(
-      solution: [
-        [
-          {'cell': 'EST'},
-          'B',
-          'C'
+Uint8List _mapCellRebus() => _jsonBytes(
+      _base3x3(
+        solution: [
+          [
+            {'cell': 'EST'},
+            'B',
+            'C',
+          ],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-    ));
+      ),
+    );
 
 /// Map-valued solution cell where answer is in 'answer' key.
-Uint8List _mapCellAnswerKey() => _jsonBytes(_base3x3(
-      solution: [
-        [
-          {'answer': 'X'},
-          'B',
-          'C'
+Uint8List _mapCellAnswerKey() => _jsonBytes(
+      _base3x3(
+        solution: [
+          [
+            {'answer': 'X'},
+            'B',
+            'C',
+          ],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-    ));
+      ),
+    );
 
 /// Circle via style.shape == 'circle'.
-Uint8List _circleStyleShape() => _jsonBytes(_base3x3(
-      puzzle: [
-        [
-          {
-            'cell': 1,
-            'style': {'shape': 'circle'}
-          },
-          {'cell': 2},
-          {'cell': 3},
+Uint8List _circleStyleShape() => _jsonBytes(
+      _base3x3(
+        puzzle: [
+          [
+            {
+              'cell': 1,
+              'style': {'shape': 'circle'},
+            },
+            {'cell': 2},
+            {'cell': 3},
+          ],
+          [
+            {'cell': 4},
+            0,
+            0,
+          ],
+          [
+            {'cell': 5},
+            0,
+            0,
+          ],
         ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-    ));
+      ),
+    );
 
 /// Circle via cell-level 'circle: true'.
-Uint8List _circleCellTrue() => _jsonBytes(_base3x3(
-      puzzle: [
-        [
-          {'cell': 1, 'circle': true},
-          {'cell': 2},
-          {'cell': 3},
+Uint8List _circleCellTrue() => _jsonBytes(
+      _base3x3(
+        puzzle: [
+          [
+            {'cell': 1, 'circle': true},
+            {'cell': 2},
+            {'cell': 3},
+          ],
+          [
+            {'cell': 4},
+            0,
+            0,
+          ],
+          [
+            {'cell': 5},
+            0,
+            0,
+          ],
         ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-    ));
+      ),
+    );
 
 /// Circle via style.shapebg == 'circle' (existing standard path).
-Uint8List _circleStyleShapebg() => _jsonBytes(_base3x3(
-      puzzle: [
-        [
-          {
-            'cell': 1,
-            'style': {'shapebg': 'circle'}
-          },
-          {'cell': 2},
-          {'cell': 3},
+Uint8List _circleStyleShapebg() => _jsonBytes(
+      _base3x3(
+        puzzle: [
+          [
+            {
+              'cell': 1,
+              'style': {'shapebg': 'circle'},
+            },
+            {'cell': 2},
+            {'cell': 3},
+          ],
+          [
+            {'cell': 4},
+            0,
+            0,
+          ],
+          [
+            {'cell': 5},
+            0,
+            0,
+          ],
         ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-    ));
+      ),
+    );
 
 /// 3×3 puzzle with a multi-char rebus solution in cell (0,0).
-Uint8List _rebus3x3() => _jsonBytes(_base3x3(
-      solution: [
-        ['EST', 'B', 'C'],
-        ['D', 'E', 'F'],
-        ['G', 'H', 'I'],
-      ],
-      clues: {
-        'Across': [
-          [1, '1 Across (rebus)'],
-          [4, '4 Across'],
-          [5, '5 Across'],
+Uint8List _rebus3x3() => _jsonBytes(
+      _base3x3(
+        solution: [
+          ['EST', 'B', 'C'],
+          ['D', 'E', 'F'],
+          ['G', 'H', 'I'],
         ],
-        'Down': [
-          [1, '1 Down (rebus)'],
-          [2, '2 Down'],
-          [3, '3 Down'],
-        ],
-      },
-    ));
+        clues: {
+          'Across': [
+            [1, '1 Across (rebus)'],
+            [4, '4 Across'],
+            [5, '5 Across'],
+          ],
+          'Down': [
+            [1, '1 Down (rebus)'],
+            [2, '2 Down'],
+            [3, '3 Down'],
+          ],
+        },
+      ),
+    );
 
 /// Barred grid (cell-side bar key in style).
-Uint8List _barred3x3() => _jsonBytes(_base3x3(
-      puzzle: [
-        [
-          {
-            'cell': 1,
-            'style': {'barred': 'R'}
-          },
-          {'cell': 2},
-          {'cell': 3}
+Uint8List _barred3x3() => _jsonBytes(
+      _base3x3(
+        puzzle: [
+          [
+            {
+              'cell': 1,
+              'style': {'barred': 'R'},
+            },
+            {'cell': 2},
+            {'cell': 3},
+          ],
+          [
+            {'cell': 4},
+            0,
+            0,
+          ],
+          [
+            {'cell': 5},
+            0,
+            0,
+          ],
         ],
-        [
-          {'cell': 4},
-          0,
-          0
-        ],
-        [
-          {'cell': 5},
-          0,
-          0
-        ],
-      ],
-    ));
+      ),
+    );
 
 /// Solution rows that are not lists (defensive shape validation).
 Uint8List _malformedSolutionRow() {
@@ -424,14 +459,16 @@ void main() {
 
     test('returns false for non-crossword JSON', () {
       final bytes = _jsonBytes({
-        'kind': ['http://ipuz.org/wordplay#1']
+        'kind': ['http://ipuz.org/wordplay#1'],
       });
       expect(parser.canParse(bytes), isFalse);
     });
 
     test('returns false for plain text', () {
-      expect(parser.canParse(Uint8List.fromList('hello world'.codeUnits)),
-          isFalse);
+      expect(
+        parser.canParse(Uint8List.fromList('hello world'.codeUnits)),
+        isFalse,
+      );
     });
   });
 
@@ -483,8 +520,11 @@ void main() {
       final grid = puzzle.grid;
       for (var r = 0; r < 3; r++) {
         for (var c = 0; c < 3; c++) {
-          expect(grid.cell(r, c).isBlack, isFalse,
-              reason: 'cell ($r,$c) should be white');
+          expect(
+            grid.cell(r, c).isBlack,
+            isFalse,
+            reason: 'cell ($r,$c) should be white',
+          );
         }
       }
     });
@@ -770,7 +810,7 @@ void main() {
         'kind': ['http://ipuz.org/crossword#1'],
         'dimensions': {'width': 3, 'height': 3},
         'solution': [
-          ['A', 'B', 'C']
+          ['A', 'B', 'C'],
         ],
         'clues': {'Across': [], 'Down': []},
       });

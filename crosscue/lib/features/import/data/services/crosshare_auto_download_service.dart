@@ -1,11 +1,10 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'crosshare_auto_download_service.g.dart';
 

@@ -1,9 +1,8 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/features/archive/data/repositories/archive_repository_impl.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/domain/repositories/archive_repository.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'archive_providers.g.dart';
 

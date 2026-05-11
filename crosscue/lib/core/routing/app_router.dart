@@ -1,19 +1,18 @@
-import 'package:go_router/go_router.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
+import 'package:crosscue/core/routing/app_shell.dart';
+import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/screens/crosshare_settings_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/privacy_screen.dart';
-import 'package:crosscue/features/settings/presentation/screens/source_management_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/settings_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/source_management_screen.dart';
 import 'package:crosscue/features/solve/presentation/screens/solve_screen.dart';
 import 'package:crosscue/features/stats/presentation/screens/stats_screen.dart';
-import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
-import 'app_shell.dart';
-import 'routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
 
@@ -63,48 +62,56 @@ GoRouter appRouter(Ref ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.home,
-              builder: (context, state) => const HomeScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.archive,
-              builder: (context, state) => const ArchiveScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.stats,
-              builder: (context, state) => const StatsScreen(),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.home,
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.archive,
+                builder: (context, state) => const ArchiveScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.stats,
+                builder: (context, state) => const StatsScreen(),
+              ),
+            ],
+          ),
           // Settings branch with nested sub-pages
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Routes.settings,
-              builder: (context, state) => const SettingsScreen(),
-              routes: [
-                GoRoute(
-                  path: 'sources',
-                  builder: (context, state) => const SourceManagementScreen(),
-                  routes: [
-                    GoRoute(
-                      path: 'crosshare',
-                      builder: (context, state) =>
-                          const CrosshareSettingsScreen(),
-                    ),
-                  ],
-                ),
-                GoRoute(
-                  path: 'privacy',
-                  builder: (context, state) => const PrivacyScreen(),
-                ),
-              ],
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.settings,
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'sources',
+                    builder: (context, state) => const SourceManagementScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'crosshare',
+                        builder: (context, state) =>
+                            const CrosshareSettingsScreen(),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'privacy',
+                    builder: (context, state) => const PrivacyScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     ],

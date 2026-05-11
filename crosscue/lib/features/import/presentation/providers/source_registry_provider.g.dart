@@ -12,7 +12,7 @@ part of 'source_registry_provider.dart';
 ///
 /// Phase 1 exposes only the local user-import source. Future network sources
 /// must be registered here only after their license status is cleared by the
-/// topic-07 guardrails.
+///
 
 @ProviderFor(sourceRegistry)
 final sourceRegistryProvider = SourceRegistryProvider._();
@@ -21,7 +21,7 @@ final sourceRegistryProvider = SourceRegistryProvider._();
 ///
 /// Phase 1 exposes only the local user-import source. Future network sources
 /// must be registered here only after their license status is cleared by the
-/// topic-07 guardrails.
+///
 
 final class SourceRegistryProvider
     extends $FunctionalProvider<SourceRegistry, SourceRegistry, SourceRegistry>
@@ -30,7 +30,7 @@ final class SourceRegistryProvider
   ///
   /// Phase 1 exposes only the local user-import source. Future network sources
   /// must be registered here only after their license status is cleared by the
-  /// topic-07 guardrails.
+  ///
   SourceRegistryProvider._()
       : super(
           from: null,

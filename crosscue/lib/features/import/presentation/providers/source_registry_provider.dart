@@ -1,8 +1,7 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/features/import/data/sources/crosshare_source.dart';
 import 'package:crosscue/features/import/data/sources/local_import_source.dart';
 import 'package:crosscue/features/import/data/sources/source_registry.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'source_registry_provider.g.dart';
 
@@ -10,7 +9,7 @@ part 'source_registry_provider.g.dart';
 ///
 /// Phase 1 exposes only the local user-import source. Future network sources
 /// must be registered here only after their license status is cleared by the
-/// topic-07 guardrails.
+///
 @Riverpod(keepAlive: true)
 SourceRegistry sourceRegistry(Ref ref) {
   return SourceRegistry()

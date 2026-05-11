@@ -1,34 +1,35 @@
 import 'dart:io';
 
+import 'package:crosscue/core/database/tables/app_settings_table.dart';
+import 'package:crosscue/core/database/tables/cell_progress_table.dart';
+import 'package:crosscue/core/database/tables/clues_table.dart';
+import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
+import 'package:crosscue/core/database/tables/puzzles_table.dart';
+import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
+import 'package:crosscue/core/database/tables/sources_table.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
+import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
+import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
+import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
-import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
-import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
-import 'tables/app_settings_table.dart';
-import 'tables/cell_progress_table.dart';
-import 'tables/clues_table.dart';
-import 'tables/puzzles_table.dart';
-import 'tables/imported_solve_stats_table.dart';
-import 'tables/solve_sessions_table.dart';
-import 'tables/sources_table.dart';
-
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [
-  SourcesTable,
-  PuzzlesTable,
-  CluesTable,
-  SolveSessionsTable,
-  CellProgressTable,
-  AppSettingsTable,
-  ImportedSolveStatsTable,
-])
+@DriftDatabase(
+  tables: [
+    SourcesTable,
+    PuzzlesTable,
+    CluesTable,
+    SolveSessionsTable,
+    CellProgressTable,
+    AppSettingsTable,
+    ImportedSolveStatsTable,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
@@ -87,6 +88,12 @@ class AppDatabase extends _$AppDatabase {
   /// Cascade rules mean deleting from [PuzzlesTable] automatically removes all
   /// dependent [CluesTable], [SolveSessionsTable], and [CellProgressTable] rows.
   /// Called from the Settings → "Clear all data" action.
+  ///
+  /// **Idempotency note (T5 verification):** [sourcesTable] is intentionally
+  /// NOT cleared here. The seed rows inserted during [onCreate] (e.g.
+  /// `local_import`) remain intact after this call, so no re-seeding is
+  /// needed. See test `preserves sources seed row after clear` in
+  /// `test/core/database/app_database_test.dart`.
   Future<void> clearAllUserData() async {
     await transaction(() async {
       await delete(puzzlesTable).go();

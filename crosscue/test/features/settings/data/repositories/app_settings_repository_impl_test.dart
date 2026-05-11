@@ -3,12 +3,11 @@
 //
 // C4 coverage also lives here (getCrosshareAutoDownload defaults to false).
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late AppDatabase db;
@@ -100,7 +99,9 @@ void main() {
     test('persists deuteranopia', () async {
       await repo.setColorblindMode(ColorblindMode.deuteranopia);
       expect(
-          await repo.getColorblindMode(), equals(ColorblindMode.deuteranopia));
+        await repo.getColorblindMode(),
+        equals(ColorblindMode.deuteranopia),
+      );
     });
 
     test('returns none after resetting', () async {

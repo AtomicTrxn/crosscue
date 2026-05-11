@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
@@ -23,6 +20,8 @@ import 'package:crosscue/features/solve/presentation/providers/solve_providers.d
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('rebus input writes a multi-letter cell and advances once', () async {
@@ -38,8 +37,10 @@ void main() {
 
     expect(wordComplete, isFalse);
     expect(solveState.progress.cell(0, 0).letter, equals('EST'));
-    expect(solveState.focus,
-        const FocusPosition(row: 0, col: 1, direction: Direction.across));
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 1, direction: Direction.across),
+    );
   });
 
   test('backspace clears current cell before retreating within the word',
@@ -57,15 +58,19 @@ void main() {
 
     notifier.backspace();
     var solveState = container.read(provider).value!;
-    expect(solveState.focus,
-        const FocusPosition(row: 0, col: 1, direction: Direction.across));
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 1, direction: Direction.across),
+    );
     expect(solveState.progress.cell(0, 1).letter, isEmpty);
     expect(solveState.progress.cell(0, 0).letter, equals('A'));
 
     notifier.backspace();
     solveState = container.read(provider).value!;
-    expect(solveState.focus,
-        const FocusPosition(row: 0, col: 0, direction: Direction.across));
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 0, direction: Direction.across),
+    );
     expect(solveState.progress.cell(0, 0).letter, isEmpty);
   });
 
@@ -194,8 +199,10 @@ final class _FakeImportRepository implements ImportRepository {
   Future<Puzzle?> getPuzzle(String id) async => id == puzzle.id ? puzzle : null;
 
   @override
-  Future<ImportJobResult> importBytes(Uint8List bytes,
-          {String sourceId = 'local_import'}) async =>
+  Future<ImportJobResult> importBytes(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+  }) async =>
       ImportJobResult.success(puzzle);
 }
 

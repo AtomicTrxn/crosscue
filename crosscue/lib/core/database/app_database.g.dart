@@ -2903,7 +2903,7 @@ class SolveSessionRow extends DataClass implements Insertable<SolveSessionRow> {
   final DateTime? completedAt;
 
   /// Calendar date string in device-local timezone: 'yyyy-MM-dd'.
-  /// Used by streak algorithm (see topic-15).
+  /// Used by streak algorithm.
   final String? solvedDateLocal;
   final String? solvedTimezone;
   final int elapsedMs;
@@ -3850,7 +3850,7 @@ class CellProgressRow extends DataClass implements Insertable<CellProgressRow> {
   final bool wasChecked;
   final bool wasRevealed;
 
-  /// Hash of the last wrong guess to avoid double-counting mistakes (topic-11).
+  /// Hash of the last wrong guess to avoid double-counting mistakes.
   final String? lastWrongGuessHash;
 
   /// isPencil stored for post-MVP pencil mode without requiring a migration.

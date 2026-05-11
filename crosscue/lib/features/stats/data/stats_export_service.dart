@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-
-import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 
 class StatsExportService {
   const StatsExportService({required this.dao});
@@ -15,15 +14,17 @@ class StatsExportService {
   Future<int> exportAndShare() async {
     final records = await dao.getExportRecords();
     final payload = records
-        .map((record) => {
-              'completionType': record.completionType,
-              'elapsedMs': record.elapsedMs,
-              'solvedDateLocal': record.solvedDateLocal,
-              'solvedTimezone': record.solvedTimezone,
-              'width': record.width,
-              'height': record.height,
-              'puzzleTitle': record.puzzleTitle,
-            })
+        .map(
+          (record) => {
+            'completionType': record.completionType,
+            'elapsedMs': record.elapsedMs,
+            'solvedDateLocal': record.solvedDateLocal,
+            'solvedTimezone': record.solvedTimezone,
+            'width': record.width,
+            'height': record.height,
+            'puzzleTitle': record.puzzleTitle,
+          },
+        )
         .toList();
 
     final dir = await getTemporaryDirectory();

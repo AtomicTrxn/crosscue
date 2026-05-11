@@ -3,13 +3,12 @@
 
 import 'dart:typed_data';
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/import/data/repositories/import_repository_impl.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/ipuz_fixture.dart';
 import '../../../../helpers/puz_fixture_builder.dart';

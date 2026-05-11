@@ -9,14 +9,13 @@
 
 import 'dart:typed_data';
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/import/data/parsers/ipuz_parser.dart';
 import 'package:crosscue/features/import/data/parsers/puz_parser.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/puz_fixture_builder.dart';
 
@@ -28,12 +27,13 @@ void main() {
   group('C1 – AppThemeMode domain enum', () {
     test('has light, dark, system values', () {
       expect(
-          AppThemeMode.values,
-          containsAll([
-            AppThemeMode.light,
-            AppThemeMode.dark,
-            AppThemeMode.system,
-          ]));
+        AppThemeMode.values,
+        containsAll([
+          AppThemeMode.light,
+          AppThemeMode.dark,
+          AppThemeMode.system,
+        ]),
+      );
     });
 
     test('AppSettingsRepositoryImpl.getThemeMode returns AppThemeMode',

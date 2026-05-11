@@ -1,4 +1,4 @@
-import 'entitlement_service.dart';
+import 'package:crosscue/core/entitlement/entitlement_service.dart';
 
 /// Phase 1 entitlement service — all features are free.
 /// No ads, no paywalls, no feature gating in Phase 1.

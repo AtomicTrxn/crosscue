@@ -2,9 +2,8 @@
 // Access via: Theme.of(context).extension<CrosswordTheme>()!
 // Or via the convenience extension: context.cw
 
+import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
-
-import 'design_tokens.dart';
 
 @immutable
 class CrosswordTheme extends ThemeExtension<CrosswordTheme> {

@@ -9,12 +9,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/stats/data/services/stats_export_service_impl.dart';
 import 'package:crosscue/features/stats/domain/services/stats_export_service.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late AppDatabase db;
@@ -43,15 +42,17 @@ void main() {
 
     test('includes imported records in export JSON', () async {
       // Seed one imported record via the DAO.
-      await db.statsDao.insertImportedRecord((
-        completionType: 'clean',
-        elapsedMs: 90000,
-        solvedDateLocal: '2025-01-01',
-        solvedTimezone: 'America/Chicago',
-        width: 5,
-        height: 5,
-        puzzleTitle: 'Test Puzzle',
-      ));
+      await db.statsDao.insertImportedRecord(
+        (
+          completionType: 'clean',
+          elapsedMs: 90000,
+          solvedDateLocal: '2025-01-01',
+          solvedTimezone: 'America/Chicago',
+          width: 5,
+          height: 5,
+          puzzleTitle: 'Test Puzzle',
+        ),
+      );
 
       final result = await service.generateExportBytes();
       expect(result.isOk, isTrue);
@@ -257,15 +258,17 @@ void main() {
   group('export → import round-trip', () {
     test('exported bytes can be re-imported without duplicates', () async {
       // Seed one record.
-      await db.statsDao.insertImportedRecord((
-        completionType: 'clean',
-        elapsedMs: 75000,
-        solvedDateLocal: '2025-06-01',
-        solvedTimezone: null,
-        width: 5,
-        height: 5,
-        puzzleTitle: 'Round Trip Puzzle',
-      ));
+      await db.statsDao.insertImportedRecord(
+        (
+          completionType: 'clean',
+          elapsedMs: 75000,
+          solvedDateLocal: '2025-06-01',
+          solvedTimezone: null,
+          width: 5,
+          height: 5,
+          puzzleTitle: 'Round Trip Puzzle',
+        ),
+      );
 
       final exportResult = await service.generateExportBytes();
       expect(exportResult.isOk, isTrue);

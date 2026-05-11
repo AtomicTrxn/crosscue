@@ -1,9 +1,8 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
-import 'clue.dart';
-import 'grid.dart';
-import 'solution_cell.dart';
+import 'package:crosscue/core/domain/models/solution_cell.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'puzzle.freezed.dart';
 
