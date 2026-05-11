@@ -60,6 +60,7 @@ class CrosshareNotifier extends _$CrosshareNotifier {
       final statusStr = switch (dlResult.error) {
         CrosshareDownloadError.notFound => CrosshareStatus.notFound,
         CrosshareDownloadError.networkError => CrosshareStatus.networkError,
+        CrosshareDownloadError.malformedPage => CrosshareStatus.networkError,
       };
       await _persistStatus(statusStr);
       state = CrosshareFailure(_downloadErrorMessage(dlResult.error));
@@ -114,6 +115,8 @@ class CrosshareNotifier extends _$CrosshareNotifier {
         "Today's puzzle isn't available yet. Try again later.",
       CrosshareDownloadError.networkError =>
         'Could not reach Crosshare. Check your connection and try again.',
+      CrosshareDownloadError.malformedPage =>
+        'Unable to parse puzzle data. The Crosshare page may have changed.',
     };
   }
 

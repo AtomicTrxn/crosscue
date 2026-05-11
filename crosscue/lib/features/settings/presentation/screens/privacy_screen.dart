@@ -6,7 +6,7 @@ import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
-import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:crosscue/features/stats/presentation/notifiers/stats_export_notifier.dart';
 
 class PrivacyScreen extends ConsumerWidget {
   const PrivacyScreen({super.key});
@@ -26,18 +26,8 @@ class PrivacyScreen extends ConsumerWidget {
             title: 'Crash reporting',
             subtitle: 'Save a local crash log on this device',
           ),
-          _NavRow(
-            leading: Icons.upload_file_outlined,
-            title: 'Export data',
-            subtitle: 'Save a local backup',
-            onTap: () => _exportData(context, ref),
-          ),
-          _NavRow(
-            leading: Icons.download_outlined,
-            title: 'Import data',
-            subtitle: 'Restore from a local backup',
-            onTap: () => _importData(context, ref),
-          ),
+          const _ExportRow(leading: Icons.upload_file_outlined),
+          const _ImportRow(leading: Icons.download_outlined),
           _NavRow(
             leading: Icons.delete_forever_outlined,
             title: 'Clear all data',
@@ -52,37 +42,6 @@ class PrivacyScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _exportData(BuildContext context, WidgetRef ref) async {
-    try {
-      final count = await ref.read(statsExportServiceProvider).exportAndShare();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exported $count completed sessions')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not export data: $e')),
-      );
-    }
-  }
-
-  Future<void> _importData(BuildContext context, WidgetRef ref) async {
-    try {
-      final count = await ref.read(statsExportServiceProvider).pickAndImport();
-      ref.invalidate(statsDataProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Imported $count completed sessions')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not import data: $e')),
-      );
-    }
   }
 
   Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
@@ -133,6 +92,105 @@ class PrivacyScreen extends ConsumerWidget {
     ref.invalidate(crosshareLastAttemptStatusProvider);
 
     if (context.mounted) context.go(Routes.home);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export / Import rows — reactive wrappers around StatsExportNotifier
+// ---------------------------------------------------------------------------
+
+class _ExportRow extends ConsumerWidget {
+  const _ExportRow({required this.leading});
+  final IconData leading;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(statsExportProvider);
+    final busy = state is StatsExportBusy;
+
+    // Show snackbar on terminal states.
+    ref.listen(statsExportProvider, (_, next) {
+      if (!context.mounted) return;
+      if (next is StatsExportFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: ${next.message}')),
+        );
+        ref.read(statsExportProvider.notifier).reset();
+      } else if (next is StatsExportSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export shared successfully')),
+        );
+        ref.read(statsExportProvider.notifier).reset();
+      }
+    });
+
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(leading),
+          title: const Text('Export data'),
+          subtitle: const Text('Save a local backup'),
+          trailing: busy
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.chevron_right),
+          onTap: busy
+              ? null
+              : () => ref.read(statsExportProvider.notifier).export(),
+        ),
+        _RowDivider(),
+      ],
+    );
+  }
+}
+
+class _ImportRow extends ConsumerWidget {
+  const _ImportRow({required this.leading});
+  final IconData leading;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(statsExportProvider);
+    final busy = state is StatsExportBusy;
+
+    ref.listen(statsExportProvider, (_, next) {
+      if (!context.mounted) return;
+      if (next is StatsExportFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Import failed: ${next.message}')),
+        );
+        ref.read(statsExportProvider.notifier).reset();
+      } else if (next is StatsExportSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Imported ${next.count} sessions')),
+        );
+        ref.read(statsExportProvider.notifier).reset();
+      }
+    });
+
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(leading),
+          title: const Text('Import data'),
+          subtitle: const Text('Restore from a local backup'),
+          trailing: busy
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.chevron_right),
+          onTap: busy
+              ? null
+              : () => ref.read(statsExportProvider.notifier).import_(),
+        ),
+        _RowDivider(),
+      ],
+    );
   }
 }
 

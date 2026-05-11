@@ -53,13 +53,18 @@ final class StatsRepositoryProvider extends $FunctionalProvider<StatsRepository,
 
 String _$statsRepositoryHash() => r'c9fab6d45f2922cf29c95d00f482084b62035d54';
 
+/// Singleton export service — generates/parses JSON only; no file system.
+
 @ProviderFor(statsExportService)
 final statsExportServiceProvider = StatsExportServiceProvider._();
+
+/// Singleton export service — generates/parses JSON only; no file system.
 
 final class StatsExportServiceProvider extends $FunctionalProvider<
     StatsExportService,
     StatsExportService,
     StatsExportService> with $Provider<StatsExportService> {
+  /// Singleton export service — generates/parses JSON only; no file system.
   StatsExportServiceProvider._()
       : super(
           from: null,
@@ -95,7 +100,7 @@ final class StatsExportServiceProvider extends $FunctionalProvider<
 }
 
 String _$statsExportServiceHash() =>
-    r'67d362a0ae4d62ec8459402d43d1e13ab11e2829';
+    r'4d80683fb5dcaaac6ad9bf0065c7039b4b2f1694';
 
 /// Aggregated stats derived from all solve sessions.
 /// Re-fetched each time the provider is watched (no keepAlive),
