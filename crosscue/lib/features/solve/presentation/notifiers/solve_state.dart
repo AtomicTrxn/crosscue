@@ -1,4 +1,5 @@
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
@@ -89,12 +90,7 @@ class SolveState {
   List<(int, int)> get activeWordCells {
     final clue = activeClue;
     if (clue == null) return [];
-    return [
-      for (var i = 0; i < clue.length; i++)
-        clue.direction == Direction.across
-            ? (clue.startRow, clue.startCol + i)
-            : (clue.startRow + i, clue.startCol),
-    ];
+    return ClueProgressCalculator.cellsFor(clue);
   }
 
   bool isFocused(int row, int col) => row == focus.row && col == focus.col;

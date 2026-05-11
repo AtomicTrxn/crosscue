@@ -41,7 +41,7 @@ final class ImportNotifierProvider
   }
 }
 
-String _$importNotifierHash() => r'bb302d785e19a45f06b9da924f00cebc44c81834';
+String _$importNotifierHash() => r'b22363c54a2d073adaee0737c88e3be54dd12d1e';
 
 abstract class _$ImportNotifier extends $Notifier<ImportState> {
   ImportState build();

@@ -33,7 +33,7 @@ dependencies:
   dio: ^5.4.0
 
   # File formats
-  xml: ^6.6.0          # .jpz XML parsing (Phase 2)
+  # xml: ^6.6.0          # .jpz XML parsing — re-enable in Phase 2 when .jpz import is wired
 
   # File I/O
   file_picker: ^8.0.0
@@ -49,20 +49,19 @@ dependencies:
   dynamic_color: ^1.7.0
 
   # Animations
-  flutter_animate: ^4.5.0
+  # flutter_animate: ^4.5.0  # unused — re-enable when animation-heavy screens land
   confetti: ^0.7.0
 
   # Haptics
   vibration: ^2.0.0
 
-  # Loading skeletons
-  shimmer: ^3.0.0
+  # Loading skeletons — unused until Phase 2 list views
+  # shimmer: ^3.0.0
 
   # Crash reporting (Sprint 7 — add back when wiring Sentry)
   # sentry_flutter: ^8.0.0
 
-  # Keyboard visibility detection
-  flutter_keyboard_visibility: ^6.0.0
+  # flutter_keyboard_visibility: ^6.0.0  # unused — re-enable if soft-keyboard detection is needed
   audioplayers: ^6.6.0
   url_launcher: ^6.3.2
 

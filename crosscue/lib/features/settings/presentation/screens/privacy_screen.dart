@@ -6,6 +6,7 @@ import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:crosscue/features/stats/presentation/notifiers/stats_export_notifier.dart';
 
 class PrivacyScreen extends ConsumerWidget {
@@ -18,8 +19,9 @@ class PrivacyScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          _SwitchRow(
-            value: _value(ref.watch(crashReportingProvider), fallback: false),
+          SettingsSwitchRow(
+            value: asyncSettingValue(ref.watch(crashReportingProvider),
+                fallback: false),
             onChanged: (_) =>
                 ref.read(crashReportingProvider.notifier).toggle(),
             leading: Icons.bug_report_outlined,
@@ -28,7 +30,7 @@ class PrivacyScreen extends ConsumerWidget {
           ),
           const _ExportRow(leading: Icons.upload_file_outlined),
           const _ImportRow(leading: Icons.download_outlined),
-          _NavRow(
+          SettingsNavRow(
             leading: Icons.delete_forever_outlined,
             title: 'Clear all data',
             subtitle: 'Delete all puzzles, progress and settings',
@@ -84,8 +86,6 @@ class PrivacyScreen extends ConsumerWidget {
     ref.invalidate(colorblindModeProvider);
     ref.invalidate(soundsEnabledProvider);
     ref.invalidate(skipFilledCellsProvider);
-    ref.invalidate(puzzleReminderProvider);
-    ref.invalidate(streakReminderProvider);
     ref.invalidate(crashReportingProvider);
     ref.invalidate(crosshareAutoDownloadProvider);
     ref.invalidate(crosshareLastDownloadedDateProvider);
@@ -141,7 +141,7 @@ class _ExportRow extends ConsumerWidget {
               ? null
               : () => ref.read(statsExportProvider.notifier).export(),
         ),
-        _RowDivider(),
+        const SettingsRowDivider(),
       ],
     );
   }
@@ -188,98 +188,8 @@ class _ImportRow extends ConsumerWidget {
               ? null
               : () => ref.read(statsExportProvider.notifier).import_(),
         ),
-        _RowDivider(),
+        const SettingsRowDivider(),
       ],
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// Local widgets (mirrors settings_screen.dart pattern)
-// ---------------------------------------------------------------------------
-
-class _SwitchRow extends StatelessWidget {
-  const _SwitchRow({
-    required this.value,
-    required this.onChanged,
-    required this.leading,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final IconData leading;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SwitchListTile(
-          value: value,
-          onChanged: onChanged,
-          secondary: Icon(leading),
-          title: Text(title),
-          subtitle: Text(subtitle),
-        ),
-        _RowDivider(),
-      ],
-    );
-  }
-}
-
-class _NavRow extends StatelessWidget {
-  const _NavRow({
-    required this.leading,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.trailing,
-    this.color,
-  });
-
-  final IconData leading;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Widget? trailing;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveColor = color;
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(leading, color: effectiveColor),
-          title: Text(title, style: TextStyle(color: effectiveColor)),
-          subtitle: Text(subtitle),
-          trailing: trailing ?? const Icon(Icons.chevron_right),
-          onTap: onTap,
-        ),
-        _RowDivider(),
-      ],
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return Divider(
-      height: 1,
-      indent: CrosscueSpacing.screenH,
-      color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
-    );
-  }
-}
-
-T _value<T>(AsyncValue<T> value, {required T fallback}) {
-  return switch (value) {
-    AsyncData(:final value) => value,
-    _ => fallback,
-  };
 }

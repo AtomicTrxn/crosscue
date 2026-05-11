@@ -18,6 +18,8 @@ import 'package:crosscue/features/stats/presentation/providers/stats_providers.d
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
@@ -178,7 +180,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   FocusPosition _focusForClue(SolveState solveState, Clue clue) {
     var targetRow = clue.startRow;
     var targetCol = clue.startCol;
-    for (final (row, col) in _clueCells(clue)) {
+    for (final (row, col) in ClueProgressCalculator.cellsFor(clue)) {
       if (solveState.progress.cell(row, col).letter.isEmpty) {
         targetRow = row;
         targetCol = col;
@@ -210,13 +212,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     return direction == Direction.across ? Direction.down : Direction.across;
   }
 
-  List<(int, int)> _clueCells(Clue clue) => [
-        for (var i = 0; i < clue.length; i++)
-          clue.direction == Direction.across
-              ? (clue.startRow, clue.startCol + i)
-              : (clue.startRow + i, clue.startCol),
-      ];
-
   @override
   Widget build(BuildContext context) {
     final solveAsync = ref.watch(solveProvider(widget.puzzleId));
@@ -225,15 +220,39 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Could not load puzzle:\n$e'),
+      error: (e, _) {
+        final message = switch (e) {
+          PuzzleNotFoundError() =>
+            'This puzzle no longer exists. It may have been deleted.',
+          SolveSessionLoadError(:final cause) =>
+            'Could not load session: $cause',
+          _ => 'Could not load puzzle. Please go back and try again.',
+        };
+        return Scaffold(
+          appBar: AppBar(title: const Text('Error')),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Go back'),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
       data: (solveState) {
         _maybeShowCompletionSheet(solveState);
         _syncClueSelectors(solveState);
