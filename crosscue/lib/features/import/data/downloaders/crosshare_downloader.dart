@@ -12,6 +12,10 @@ enum CrosshareDownloadError {
 
   /// A network request failed (timeout, HTTP error, no connection).
   networkError,
+
+  /// The HTML page was fetched successfully but could not be parsed.
+  /// The Crosshare page structure may have changed.
+  malformedPage,
 }
 
 /// Downloads the Crosshare daily mini crossword as raw .puz bytes.
@@ -24,7 +28,8 @@ enum CrosshareDownloadError {
 /// The __NEXT_DATA__ blob has the shape:
 ///   { props: { pageProps: { puzzles: [[dayOfMonth, {id, title, …}, …], …] } } }
 ///
-/// No fallback. If either step fails, returns [CrosshareDownloadError].
+/// Downloaded puzzle bytes are persisted to the local database via
+/// [ImportRepository]. No raw bytes are retained beyond the import call.
 class CrosshareDownloader {
   CrosshareDownloader({required Dio dio}) : _dio = dio;
 
@@ -32,6 +37,12 @@ class CrosshareDownloader {
 
   static const _dailyMinisBase = 'https://crosshare.org/dailyminis';
   static const _puzApiBase = 'https://crosshare.org/api/puz';
+  static const _userAgent = 'Crosscue/1.1 (Android; crosscue app)';
+
+  // Limits applied per-request to prevent runaway downloads.
+  static const _maxHtmlBytes = 10 * 1024 * 1024; // 10 MB
+  static const _pageTimeout = Duration(seconds: 15);
+  static const _puzTimeout = Duration(seconds: 10);
 
   Future<Result<Uint8List, CrosshareDownloadError>> downloadToday() async {
     try {
@@ -40,7 +51,11 @@ class CrosshareDownloader {
 
       final response = await _dio.get<List<int>>(
         '$_puzApiBase/$id',
-        options: Options(responseType: ResponseType.bytes),
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'User-Agent': _userAgent},
+          receiveTimeout: _puzTimeout,
+        ),
       );
       if (response.statusCode != 200 || response.data == null) {
         return const Err(CrosshareDownloadError.networkError);
@@ -48,6 +63,8 @@ class CrosshareDownloader {
       return Ok(Uint8List.fromList(response.data!));
     } on DioException {
       return const Err(CrosshareDownloadError.networkError);
+    } on _MalformedPageException {
+      return const Err(CrosshareDownloadError.malformedPage);
     } catch (_) {
       return const Err(CrosshareDownloadError.networkError);
     }
@@ -55,47 +72,78 @@ class CrosshareDownloader {
 
   /// Fetches the month page and extracts today's puzzle ID from the embedded
   /// Next.js data blob.
+  ///
+  /// Returns `null` if today's puzzle is not listed.
+  /// Returns [CrosshareDownloadError.malformedPage] (via throw) if the page
+  /// was fetched but could not be parsed — callers should treat this as a
+  /// distinct failure so it can be logged separately.
   Future<String?> _findTodayPuzzleId() async {
+    final today = DateTime.now();
+    final url = '$_dailyMinisBase/${today.year}/${today.month}';
+
+    final Response<String> response;
     try {
-      final today = DateTime.now();
-      final url = '$_dailyMinisBase/${today.year}/${today.month}';
-
-      final response = await _dio.get<String>(
+      response = await _dio.get<String>(
         url,
-        options: Options(responseType: ResponseType.plain),
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {'User-Agent': _userAgent},
+          receiveTimeout: _pageTimeout,
+        ),
       );
-      if (response.statusCode != 200 || response.data == null) return null;
+    } on DioException {
+      rethrow; // propagate as networkError in caller
+    }
 
-      final html = response.data!;
+    if (response.statusCode != 200 || response.data == null) return null;
 
-      // Locate the __NEXT_DATA__ script block (avoids greedy regex on large HTML).
-      const marker = '<script id="__NEXT_DATA__" type="application/json">';
-      final start = html.indexOf(marker);
-      if (start == -1) return null;
-      final jsonStart = start + marker.length;
-      final jsonEnd = html.indexOf('</script>', jsonStart);
-      if (jsonEnd == -1) return null;
+    final html = response.data!;
+    if (html.length > _maxHtmlBytes) {
+      throw const _MalformedPageException('HTML response too large');
+    }
 
-      final data = jsonDecode(html.substring(jsonStart, jsonEnd));
+    // Extract the __NEXT_DATA__ JSON block via regex to avoid index arithmetic.
+    final match = RegExp(
+      r'<script[^>]+id="__NEXT_DATA__"[^>]*type="application/json"[^>]*>([\s\S]*?)</script>',
+    ).firstMatch(html);
+    if (match == null) {
+      throw const _MalformedPageException(
+          '__NEXT_DATA__ script block not found');
+    }
 
-      // Navigate: props → pageProps → puzzles → [[day, {id, …}, …], …]
-      final puzzles = data['props']?['pageProps']?['puzzles'] as List<dynamic>?;
-      if (puzzles == null) return null;
+    final Map<String, dynamic> data;
+    try {
+      data = jsonDecode(match.group(1)!) as Map<String, dynamic>;
+    } catch (e) {
+      throw _MalformedPageException('Failed to decode __NEXT_DATA__ JSON: $e');
+    }
 
-      for (final entry in puzzles) {
-        if (entry is! List || entry.length < 2) continue;
-        if (entry[0] == today.day) {
-          final puzzleData = entry[1];
-          if (puzzleData is Map) {
-            return puzzleData['id'] as String?;
-          }
+    // Navigate: props → pageProps → puzzles → [[day, {id, …}, …], …]
+    final puzzles = data['props']?['pageProps']?['puzzles'] as List<dynamic>?;
+    if (puzzles == null) {
+      throw const _MalformedPageException(
+          'Expected puzzles array at props.pageProps.puzzles');
+    }
+
+    for (final entry in puzzles) {
+      if (entry is! List || entry.length < 2) continue;
+      if (entry[0] == today.day) {
+        final puzzleData = entry[1];
+        if (puzzleData is Map) {
+          return puzzleData['id'] as String?;
         }
       }
-      return null;
-    } on DioException {
-      return null;
-    } catch (_) {
-      return null;
     }
+    return null; // Today's puzzle not in list → notFound
   }
+}
+
+/// Internal sentinel thrown when HTML parsing fails; converted to
+/// [CrosshareDownloadError.malformedPage] by [downloadToday].
+class _MalformedPageException implements Exception {
+  const _MalformedPageException(this.message);
+  final String message;
+
+  @override
+  String toString() => '_MalformedPageException: $message';
 }

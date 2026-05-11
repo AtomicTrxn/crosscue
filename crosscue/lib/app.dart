@@ -8,6 +8,7 @@ import 'core/domain/models/enums.dart';
 import 'core/providers/core_providers.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/import/data/services/crosshare_auto_download_service.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
 
 ThemeMode _toFlutterThemeMode(AppThemeMode m) => switch (m) {
@@ -30,6 +31,14 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
   void initState() {
     super.initState();
     _installCrashHandlers();
+    // Register the app-lifecycle observer once for the full app lifetime.
+    // Must be read here (not watched) so the keepAlive provider is created
+    // exactly once and is not re-created on rebuilds.
+    ref.read(appLifecycleObserverProvider);
+    // Trigger auto-download on first launch (post-frame so providers are ready).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
+    });
   }
 
   void _installCrashHandlers() {

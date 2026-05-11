@@ -58,6 +58,7 @@ class CrosshareAutoDownloadService {
       final status = switch (dlResult.error) {
         CrosshareDownloadError.notFound => CrosshareStatus.notFound,
         CrosshareDownloadError.networkError => CrosshareStatus.networkError,
+        CrosshareDownloadError.malformedPage => CrosshareStatus.networkError,
       };
       await _settings.setCrosshareLastAttemptStatus(status);
       return;
