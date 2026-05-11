@@ -29,6 +29,22 @@ class _FakeAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Adapter whose [fetch] never completes — used to verify the hard timeout.
+class _HangingAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    await Future<void>.delayed(const Duration(days: 1));
+    throw StateError('should never reach here');
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 /// Creates a [CrosshareDownloader] backed by a fake adapter.
 CrosshareDownloader _downloaderWith(_ResponseFn handler) {
   final dio = Dio();
@@ -214,6 +230,74 @@ void main() {
       final result = await downloader.downloadToday();
       expect(result.isErr, isTrue);
       expect(result.error, CrosshareDownloadError.networkError);
+    });
+
+    // ── Hard timeout ────────────────────────────────────────────────────────
+
+    test(
+      'returns networkError when download hangs past hard timeout',
+      () async {
+        final dio = Dio();
+        dio.httpClientAdapter = _HangingAdapter();
+        final downloader = CrosshareDownloader(dio: dio);
+
+        final result = await downloader.downloadToday();
+        expect(result.isErr, isTrue);
+        expect(result.error, CrosshareDownloadError.networkError);
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
+
+    // ── Request options ─────────────────────────────────────────────────────
+
+    test(
+        'sets connectTimeout and disables persistentConnection on page request',
+        () async {
+      final today = DateTime.now().day;
+      Duration? capturedConnectTimeout;
+      bool? capturedPersistentConnection;
+
+      final downloader = _downloaderWith((options) {
+        if (options.path.contains('dailyminis')) {
+          capturedConnectTimeout = options.connectTimeout;
+          capturedPersistentConnection = options.persistentConnection;
+          return ResponseBody.fromString(
+            _htmlWithPuzzle(today, 'opt-test'),
+            200,
+          );
+        }
+        return ResponseBody.fromBytes(_fakePuzBytes, 200);
+      });
+
+      await downloader.downloadToday();
+      expect(capturedConnectTimeout, isNotNull);
+      expect(capturedConnectTimeout!.inSeconds, greaterThan(0));
+      expect(capturedPersistentConnection, isFalse);
+    });
+
+    test('sets connectTimeout and disables persistentConnection on puz request',
+        () async {
+      final today = DateTime.now().day;
+      Duration? capturedConnectTimeout;
+      bool? capturedPersistentConnection;
+
+      final downloader = _downloaderWith((options) {
+        if (options.path.contains('dailyminis')) {
+          return ResponseBody.fromString(
+            _htmlWithPuzzle(today, 'opt-test2'),
+            200,
+          );
+        }
+        // puz endpoint
+        capturedConnectTimeout = options.connectTimeout;
+        capturedPersistentConnection = options.persistentConnection;
+        return ResponseBody.fromBytes(_fakePuzBytes, 200);
+      });
+
+      await downloader.downloadToday();
+      expect(capturedConnectTimeout, isNotNull);
+      expect(capturedConnectTimeout!.inSeconds, greaterThan(0));
+      expect(capturedPersistentConnection, isFalse);
     });
   });
 }

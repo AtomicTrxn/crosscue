@@ -36,14 +36,30 @@ class CrosshareDownloader {
 
   static const _dailyMinisBase = 'https://crosshare.org/dailyminis';
   static const _puzApiBase = 'https://crosshare.org/api/puz';
-  static const _userAgent = 'Crosscue/1.1 (Android; crosscue app)';
+  static const _userAgent = 'Crosscue/1.2 (Android; crosscue app)';
 
-  // Limits applied per-request to prevent runaway downloads.
+  // Per-request timeouts (connect + receive each).
+  static const _connectTimeout = Duration(seconds: 10);
+  static const _pageReceiveTimeout = Duration(seconds: 15);
+  static const _puzReceiveTimeout = Duration(seconds: 10);
+
+  // Hard wall-clock cap for the entire two-step download.
+  // Dio's receiveTimeout only resets between chunks; if the server stalls
+  // mid-stream (or a middlebox drops packets silently after the TCP handshake),
+  // Dio can hang indefinitely. This guard guarantees we always return.
+  static const _hardTimeout = Duration(seconds: 35);
+
+  // Max HTML response body size.
   static const _maxHtmlBytes = 10 * 1024 * 1024; // 10 MB
-  static const _pageTimeout = Duration(seconds: 15);
-  static const _puzTimeout = Duration(seconds: 10);
 
-  Future<Result<Uint8List, CrosshareDownloadError>> downloadToday() async {
+  Future<Result<Uint8List, CrosshareDownloadError>> downloadToday() {
+    return _doDownload().timeout(
+      _hardTimeout,
+      onTimeout: () => const Err(CrosshareDownloadError.networkError),
+    );
+  }
+
+  Future<Result<Uint8List, CrosshareDownloadError>> _doDownload() async {
     try {
       final id = await _findTodayPuzzleId();
       if (id == null) return const Err(CrosshareDownloadError.notFound);
@@ -53,7 +69,11 @@ class CrosshareDownloader {
         options: Options(
           responseType: ResponseType.bytes,
           headers: {'User-Agent': _userAgent},
-          receiveTimeout: _puzTimeout,
+          connectTimeout: _connectTimeout,
+          receiveTimeout: _puzReceiveTimeout,
+          // Disable keep-alive so a stale connection from a previous attempt
+          // cannot be reused and cause a silent hang.
+          persistentConnection: false,
         ),
       );
       if (response.statusCode != 200 || response.data == null) {
@@ -73,9 +93,8 @@ class CrosshareDownloader {
   /// Next.js data blob.
   ///
   /// Returns `null` if today's puzzle is not listed.
-  /// Returns [CrosshareDownloadError.malformedPage] (via throw) if the page
-  /// was fetched but could not be parsed — callers should treat this as a
-  /// distinct failure so it can be logged separately.
+  /// Throws [_MalformedPageException] if the page was fetched but could not be
+  /// parsed — callers treat this as a distinct failure.
   Future<String?> _findTodayPuzzleId() async {
     final today = DateTime.now();
     final url = '$_dailyMinisBase/${today.year}/${today.month}';
@@ -87,7 +106,9 @@ class CrosshareDownloader {
         options: Options(
           responseType: ResponseType.plain,
           headers: {'User-Agent': _userAgent},
-          receiveTimeout: _pageTimeout,
+          connectTimeout: _connectTimeout,
+          receiveTimeout: _pageReceiveTimeout,
+          persistentConnection: false,
         ),
       );
     } on DioException {
@@ -142,7 +163,7 @@ class CrosshareDownloader {
 }
 
 /// Internal sentinel thrown when HTML parsing fails; converted to
-/// [CrosshareDownloadError.malformedPage] by [downloadToday].
+/// [CrosshareDownloadError.malformedPage] by [_doDownload].
 class _MalformedPageException implements Exception {
   const _MalformedPageException(this.message);
   final String message;

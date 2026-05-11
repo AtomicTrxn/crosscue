@@ -39,6 +39,18 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   Future<void> download() async {
     state = const CrosshareDownloading();
 
+    try {
+      await _runDownload();
+    } catch (_) {
+      // Safety net: if anything unexpected escapes _runDownload, recover
+      // rather than leaving the UI permanently stuck in the spinning state.
+      state = const CrosshareFailure(
+        message: 'An unexpected error occurred. Please try again.',
+      );
+    }
+  }
+
+  Future<void> _runDownload() async {
     // Step 1: fetch .puz bytes from Crosshare
     final downloader = ref.read(crosshareDownloaderProvider);
     final dlResult = await downloader.downloadToday();
