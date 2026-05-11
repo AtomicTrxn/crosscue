@@ -262,7 +262,6 @@ class PuzParser implements PuzzleParser {
       format: PuzzleFormat.puz,
       width: width,
       height: height,
-      totalClues: clues.length,
       importedAt: DateTime.now().toUtc(),
       notes: notes.isEmpty ? null : notes,
       checksum: digest,

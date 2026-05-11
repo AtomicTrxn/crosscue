@@ -9,6 +9,7 @@ import 'package:crosscue/features/solve/domain/services/clue_progress_calculator
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
@@ -40,7 +41,7 @@ class SolveNotifier extends _$SolveNotifier {
     final solveRepo = ref.read(solveRepositoryProvider);
 
     final puzzle = await importRepo.getPuzzle(Uri.decodeComponent(puzzleId));
-    if (puzzle == null) throw Exception('Puzzle not found: $puzzleId');
+    if (puzzle == null) throw PuzzleNotFoundError(puzzleId);
 
     final session = await solveRepo.createOrResumeSession(puzzle);
     final stats = await ref.read(statsRepositoryProvider).getStats();
@@ -147,7 +148,7 @@ class SolveNotifier extends _$SolveNotifier {
 
     var targetRow = clue.startRow;
     var targetCol = clue.startCol;
-    for (final (row, col) in _clueCells(clue)) {
+    for (final (row, col) in ClueProgressCalculator.cellsFor(clue)) {
       if (s.progress.cell(row, col).letter.isEmpty) {
         targetRow = row;
         targetCol = col;
@@ -296,7 +297,7 @@ class SolveNotifier extends _$SolveNotifier {
     var progress = s.progress;
     var checkedAny = false;
     var hasIncorrect = false;
-    for (final (r, c) in _clueCells(clue)) {
+    for (final (r, c) in ClueProgressCalculator.cellsFor(clue)) {
       final cell = progress.cell(r, c);
       if (cell.letter.isEmpty) continue;
       final correct = cell.letter.toUpperCase() ==
@@ -406,7 +407,7 @@ class SolveNotifier extends _$SolveNotifier {
     if (clue == null) return;
 
     var progress = s.progress;
-    for (final (r, c) in _clueCells(clue)) {
+    for (final (r, c) in ClueProgressCalculator.cellsFor(clue)) {
       final solution = s.puzzle.grid.cell(r, c).solution;
       progress = progress.withCell(
         r,
@@ -609,7 +610,7 @@ class SolveNotifier extends _$SolveNotifier {
   }) {
     final clue = _clueFor(s, row, col, s.focus.direction);
     if (clue == null) return s.focus;
-    final cells = _clueCells(clue);
+    final cells = ClueProgressCalculator.cellsFor(clue);
     final idx = cells.indexWhere((p) => p.$1 == row && p.$2 == col);
     if (idx == -1 || idx >= cells.length - 1) return s.focus;
     if (skipFilledCells) {
@@ -635,7 +636,7 @@ class SolveNotifier extends _$SolveNotifier {
   FocusPosition _retreatFocus(SolveState s, int row, int col) {
     final clue = _clueFor(s, row, col, s.focus.direction);
     if (clue == null) return s.focus;
-    final cells = _clueCells(clue);
+    final cells = ClueProgressCalculator.cellsFor(clue);
     final idx = cells.indexWhere((p) => p.$1 == row && p.$2 == col);
     if (idx <= 0) return s.focus;
     final (pr, pc) = cells[idx - 1];
@@ -659,9 +660,6 @@ class SolveNotifier extends _$SolveNotifier {
     }
     return null;
   }
-
-  List<(int, int)> _clueCells(Clue clue) =>
-      ClueProgressCalculator.cellsFor(clue);
 
   bool _isWordComplete(SolveState s, Clue clue) =>
       ClueProgressCalculator.isClueCorrect(

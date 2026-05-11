@@ -101,7 +101,6 @@ Puzzle _puzzle() {
       format: PuzzleFormat.puz,
       width: 2,
       height: 2,
-      totalClues: 3,
       importedAt: DateTime.utc(2026),
     ),
     grid: Grid(

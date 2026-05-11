@@ -1,3 +1,4 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
@@ -7,37 +8,24 @@ import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 
+part 'crosshare_notifier.freezed.dart';
 part 'crosshare_notifier.g.dart';
 
 // ---------------------------------------------------------------------------
 // UI state
 // ---------------------------------------------------------------------------
 
-sealed class CrosshareState {
-  const CrosshareState();
-}
-
-class CrosshareIdle extends CrosshareState {
-  const CrosshareIdle();
-}
-
-class CrosshareDownloading extends CrosshareState {
-  const CrosshareDownloading();
-}
-
-class CrosshareSuccess extends CrosshareState {
-  const CrosshareSuccess(this.puzzleId, this.title);
-  final String puzzleId;
-  final String title;
-}
-
-class CrosshareDuplicate extends CrosshareState {
-  const CrosshareDuplicate();
-}
-
-class CrosshareFailure extends CrosshareState {
-  const CrosshareFailure(this.message);
-  final String message;
+@freezed
+class CrosshareState with _$CrosshareState {
+  const factory CrosshareState.idle() = CrosshareIdle;
+  const factory CrosshareState.downloading() = CrosshareDownloading;
+  const factory CrosshareState.success({
+    required String puzzleId,
+    required String title,
+  }) = CrosshareSuccess;
+  const factory CrosshareState.duplicate() = CrosshareDuplicate;
+  const factory CrosshareState.failure({required String message}) =
+      CrosshareFailure;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +51,7 @@ class CrosshareNotifier extends _$CrosshareNotifier {
         CrosshareDownloadError.malformedPage => CrosshareStatus.networkError,
       };
       await _persistStatus(statusStr);
-      state = CrosshareFailure(_downloadErrorMessage(dlResult.error));
+      state = CrosshareFailure(message: _downloadErrorMessage(dlResult.error));
       return;
     }
 
@@ -78,13 +66,14 @@ class CrosshareNotifier extends _$CrosshareNotifier {
     switch (importResult) {
       case JobSuccess(:final puzzle):
         await _persistStatus(CrosshareStatus.success, date: today);
-        state = CrosshareSuccess(puzzle.id, puzzle.metadata.title);
+        state =
+            CrosshareSuccess(puzzleId: puzzle.id, title: puzzle.metadata.title);
       case JobDuplicate():
         await _persistStatus(CrosshareStatus.duplicate, date: today);
         state = const CrosshareDuplicate();
       case JobFailure(:final error):
         await _persistStatus(CrosshareStatus.networkError);
-        state = CrosshareFailure(_parseErrorMessage(error));
+        state = CrosshareFailure(message: _parseErrorMessage(error));
     }
 
     // Invalidate status providers so the config screen reflects the new state.

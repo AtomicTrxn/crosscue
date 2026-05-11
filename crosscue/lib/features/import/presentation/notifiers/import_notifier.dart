@@ -1,49 +1,32 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 
+part 'import_notifier.freezed.dart';
 part 'import_notifier.g.dart';
 
 // ---------------------------------------------------------------------------
 // UI state
 // ---------------------------------------------------------------------------
 
-sealed class ImportState {
-  const ImportState();
-}
-
-class ImportIdle extends ImportState {
-  const ImportIdle();
-}
-
-class ImportPicking extends ImportState {
-  const ImportPicking();
-}
-
-class ImportParsing extends ImportState {
-  const ImportParsing(this.fileName);
-  final String fileName;
-}
-
-class ImportSuccess extends ImportState {
-  const ImportSuccess(this.puzzleId, this.title);
-  final String puzzleId;
-  final String title;
-}
-
-class ImportDuplicate extends ImportState {
-  const ImportDuplicate(this.fileName);
-  final String fileName;
-}
-
-class ImportFailure extends ImportState {
-  const ImportFailure(this.message);
-  final String message;
+@freezed
+class ImportState with _$ImportState {
+  const factory ImportState.idle() = ImportIdle;
+  const factory ImportState.picking() = ImportPicking;
+  const factory ImportState.parsing({required String fileName}) = ImportParsing;
+  const factory ImportState.success({
+    required String puzzleId,
+    required String title,
+  }) = ImportSuccess;
+  const factory ImportState.duplicate({required String fileName}) =
+      ImportDuplicate;
+  const factory ImportState.failure({required String message}) = ImportFailure;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +51,7 @@ class ImportNotifier extends _$ImportNotifier {
         withData: true,
       );
     } catch (e) {
-      state = ImportFailure('Could not open file picker: $e');
+      state = ImportFailure(message: 'Could not open file picker: $e');
       return;
     }
 
@@ -83,29 +66,30 @@ class ImportNotifier extends _$ImportNotifier {
     final ext = file.extension?.toLowerCase() ?? '';
     if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) {
       state = const ImportFailure(
-        'Unsupported file type. Please choose a .puz or .ipuz file.',
+        message: 'Unsupported file type. Please choose a .puz or .ipuz file.',
       );
       return;
     }
 
     final bytes = file.bytes;
     if (bytes == null) {
-      state = const ImportFailure('Could not read file data.');
+      state = const ImportFailure(message: 'Could not read file data.');
       return;
     }
 
-    state = ImportParsing(file.name);
+    state = ImportParsing(fileName: file.name);
 
     final repo = ref.read(importRepositoryProvider);
     final importResult = await repo.importBytes(Uint8List.fromList(bytes));
 
     switch (importResult) {
       case JobSuccess(:final puzzle):
-        state = ImportSuccess(puzzle.id, puzzle.metadata.title);
+        state =
+            ImportSuccess(puzzleId: puzzle.id, title: puzzle.metadata.title);
       case JobDuplicate():
-        state = ImportDuplicate(file.name);
+        state = ImportDuplicate(fileName: file.name);
       case JobFailure(:final error):
-        state = ImportFailure(_errorMessage(error));
+        state = ImportFailure(message: _errorMessage(error));
     }
   }
 
