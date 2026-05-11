@@ -106,30 +106,6 @@ class SkipFilledCellsNotifier extends _$SkipFilledCellsNotifier {
 }
 
 @riverpod
-class PuzzleReminderNotifier extends _$PuzzleReminderNotifier {
-  @override
-  Future<bool> build() => ref.read(appSettingsProvider).getPuzzleReminder();
-
-  Future<void> toggle() async {
-    final next = _nextBool(state);
-    await ref.read(appSettingsProvider).setPuzzleReminder(next);
-    state = AsyncData(next);
-  }
-}
-
-@riverpod
-class StreakReminderNotifier extends _$StreakReminderNotifier {
-  @override
-  Future<bool> build() => ref.read(appSettingsProvider).getStreakReminder();
-
-  Future<void> toggle() async {
-    final next = _nextBool(state);
-    await ref.read(appSettingsProvider).setStreakReminder(next);
-    state = AsyncData(next);
-  }
-}
-
-@riverpod
 class CrashReportingNotifier extends _$CrashReportingNotifier {
   @override
   Future<bool> build() => ref.read(appSettingsProvider).getCrashReporting();

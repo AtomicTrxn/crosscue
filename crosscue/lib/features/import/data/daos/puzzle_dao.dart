@@ -140,7 +140,6 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
       format: PuzzleFormat.values.byName(row.format),
       width: row.width,
       height: row.height,
-      totalClues: 0, // loaded lazily
       importedAt: row.createdAt,
       publishDate: row.publishDate,
       notes: row.notes,

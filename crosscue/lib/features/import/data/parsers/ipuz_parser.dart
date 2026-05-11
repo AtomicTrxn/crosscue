@@ -270,7 +270,6 @@ class IpuzParser implements PuzzleParser {
       format: PuzzleFormat.ipuz,
       width: width,
       height: height,
-      totalClues: clues.length,
       importedAt: DateTime.now().toUtc(),
       notes: notes.isEmpty ? null : notes,
       checksum: digest,

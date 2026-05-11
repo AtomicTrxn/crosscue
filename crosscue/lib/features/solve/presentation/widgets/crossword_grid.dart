@@ -10,6 +10,7 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'crossword_grid_painter.dart';
@@ -514,7 +515,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
 
     for (final clue in current.puzzle.clues) {
       if (!_isWordComplete(previous, clue) && _isWordComplete(current, clue)) {
-        for (final cell in _clueCells(clue)) {
+        for (final cell in ClueProgressCalculator.cellsFor(clue)) {
           effects.putIfAbsent(
             cell,
             () => const GridCellEffect(GridCellEffectType.wordComplete),
@@ -587,7 +588,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       status == PuzzleStatus.revealed;
 
   bool _isWordComplete(SolveState state, Clue clue) {
-    for (final (r, c) in _clueCells(clue)) {
+    for (final (r, c) in ClueProgressCalculator.cellsFor(clue)) {
       final progress = state.progress.cell(r, c);
       final solution = state.puzzle.grid.cell(r, c).solution;
       if (progress.letter.isEmpty ||
@@ -597,13 +598,6 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     }
     return true;
   }
-
-  List<(int, int)> _clueCells(Clue clue) => [
-        for (var i = 0; i < clue.length; i++)
-          clue.direction == Direction.across
-              ? (clue.startRow, clue.startCol + i)
-              : (clue.startRow + i, clue.startCol),
-      ];
 }
 
 // Actions available from the long-press cell menu

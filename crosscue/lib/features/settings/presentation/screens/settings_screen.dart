@@ -7,6 +7,7 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 
 const _appVersionLabel = 'v1.0.1';
 
@@ -15,7 +16,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = _value(
+    final themeMode = asyncSettingValue(
       ref.watch(themeModeProvider),
       fallback: AppThemeMode.system,
     );
@@ -26,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           // ── Appearance ─────────────────────────────────────────────────────
-          const _SectionHeader('Appearance'),
+          const SettingsSectionHeader('Appearance'),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               CrosscueSpacing.screenH,
@@ -67,9 +68,9 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          _RowDivider(),
-          _SwitchRow(
-            value: _value(
+          const SettingsRowDivider(),
+          SettingsSwitchRow(
+            value: asyncSettingValue(
                   ref.watch(colorblindModeProvider),
                   fallback: ColorblindMode.none,
                 ) !=
@@ -82,24 +83,27 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // ── Touch & Sound ──────────────────────────────────────────────────
-          const _SectionHeader('Touch & Sound'),
-          _SwitchRow(
-            value: _value(ref.watch(hapticsEnabledProvider), fallback: true),
+          const SettingsSectionHeader('Touch & Sound'),
+          SettingsSwitchRow(
+            value: asyncSettingValue(ref.watch(hapticsEnabledProvider),
+                fallback: true),
             onChanged: (_) =>
                 ref.read(hapticsEnabledProvider.notifier).toggle(),
             leading: Icons.vibration_outlined,
             title: 'Haptic feedback',
             subtitle: 'Vibrate on cell tap and puzzle events',
           ),
-          _SwitchRow(
-            value: _value(ref.watch(soundsEnabledProvider), fallback: false),
+          SettingsSwitchRow(
+            value: asyncSettingValue(ref.watch(soundsEnabledProvider),
+                fallback: false),
             onChanged: (_) => ref.read(soundsEnabledProvider.notifier).toggle(),
             leading: Icons.volume_up_outlined,
             title: 'Sounds',
             subtitle: 'Play subtle feedback sounds',
           ),
-          _SwitchRow(
-            value: _value(ref.watch(skipFilledCellsProvider), fallback: false),
+          SettingsSwitchRow(
+            value: asyncSettingValue(ref.watch(skipFilledCellsProvider),
+                fallback: false),
             onChanged: (_) =>
                 ref.read(skipFilledCellsProvider.notifier).toggle(),
             leading: Icons.skip_next_outlined,
@@ -108,8 +112,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // ── Puzzles ────────────────────────────────────────────────────────
-          const _SectionHeader('Puzzles'),
-          _NavRow(
+          const SettingsSectionHeader('Puzzles'),
+          SettingsNavRow(
             leading: Icons.source_outlined,
             title: 'Puzzle Sources',
             subtitle: 'Import local files and manage sources',
@@ -117,8 +121,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // ── Privacy & Data ─────────────────────────────────────────────────
-          const _SectionHeader('Privacy & Data'),
-          _NavRow(
+          const SettingsSectionHeader('Privacy & Data'),
+          SettingsNavRow(
             leading: Icons.security_outlined,
             title: 'Privacy & Data',
             subtitle: 'Crash reporting, export, import and clear data',
@@ -126,14 +130,14 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // ── Help ───────────────────────────────────────────────────────────
-          const _SectionHeader('Help'),
-          _NavRow(
+          const SettingsSectionHeader('Help'),
+          SettingsNavRow(
             leading: Icons.help_outline,
             title: 'How to play',
             subtitle: 'Replay the onboarding walkthrough',
             onTap: () => context.push(Routes.onboardingReplay),
           ),
-          _NavRow(
+          SettingsNavRow(
             leading: Icons.info_outline,
             title: 'About Crosscue',
             subtitle: _appVersionLabel,
@@ -222,113 +226,4 @@ class _AboutDialog extends StatelessWidget {
       ],
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        CrosscueSpacing.screenH,
-        CrosscueSpacing.sectionTop,
-        CrosscueSpacing.screenH,
-        CrosscueSpacing.sectionBot,
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              letterSpacing: 1.0,
-            ),
-      ),
-    );
-  }
-}
-
-class _SwitchRow extends StatelessWidget {
-  const _SwitchRow({
-    required this.value,
-    required this.onChanged,
-    required this.leading,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final IconData leading;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SwitchListTile(
-          value: value,
-          onChanged: onChanged,
-          secondary: Icon(leading),
-          title: Text(title),
-          subtitle: Text(subtitle),
-        ),
-        _RowDivider(),
-      ],
-    );
-  }
-}
-
-class _NavRow extends StatelessWidget {
-  const _NavRow({
-    required this.leading,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData leading;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(leading),
-          title: Text(title),
-          subtitle: Text(subtitle),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: onTap,
-        ),
-        _RowDivider(),
-      ],
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return Divider(
-      height: 1,
-      indent: CrosscueSpacing.screenH,
-      color: isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
-    );
-  }
-}
-
-T _value<T>(AsyncValue<T> value, {required T fallback}) {
-  return switch (value) {
-    AsyncData(:final value) => value,
-    _ => fallback,
-  };
 }
