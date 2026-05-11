@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 
 // ---------------------------------------------------------------------------
 // Fake Dio adapter — returns canned responses without network
@@ -49,7 +48,7 @@ String _htmlWithPuzzle(int day, String id) {
         'puzzles': [
           [
             day,
-            {'id': id, 'title': 'Test Puzzle'}
+            {'id': id, 'title': 'Test Puzzle'},
           ],
         ],
       },
@@ -184,7 +183,7 @@ void main() {
       final downloader = _downloaderWith((options) {
         if (options.path.contains('dailyminis')) {
           final json = jsonEncode({
-            'props': {'pageProps': {}}
+            'props': {'pageProps': {}},
           });
           return ResponseBody.fromString(
             '<html><script id="__NEXT_DATA__" type="application/json">'

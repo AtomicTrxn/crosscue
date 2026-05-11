@@ -1,8 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
@@ -10,6 +5,10 @@ import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 // ---------------------------------------------------------------------------
 // Sort / filter enums
@@ -88,7 +87,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   // ---------------------------------------------------------------------------
 
   static List<ArchiveEntry> _applyFilter(
-      List<ArchiveEntry> entries, _FilterMode filter) {
+    List<ArchiveEntry> entries,
+    _FilterMode filter,
+  ) {
     return switch (filter) {
       _FilterMode.all => entries,
       _FilterMode.notStarted => entries.where((e) => e.isNotStarted).toList(),
@@ -99,7 +100,9 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   }
 
   static List<ArchiveEntry> _applySort(
-      List<ArchiveEntry> entries, _SortOrder sort) {
+    List<ArchiveEntry> entries,
+    _SortOrder sort,
+  ) {
     final copy = List<ArchiveEntry>.from(entries);
     switch (sort) {
       case _SortOrder.importDate:
@@ -174,17 +177,21 @@ class _FilterChips extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(
-            horizontal: CrosscueSpacing.screenH, vertical: 10),
+          horizontal: CrosscueSpacing.screenH,
+          vertical: 10,
+        ),
         child: Row(
           children: _FilterMode.values
-              .map((f) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _FilterChip(
-                      label: _filterLabel(f),
-                      selected: current == f,
-                      onTap: () => onSelected(f),
-                    ),
-                  ))
+              .map(
+                (f) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _FilterChip(
+                    label: _filterLabel(f),
+                    selected: current == f,
+                    onTap: () => onSelected(f),
+                  ),
+                ),
+              )
               .toList(),
         ),
       ),
@@ -467,11 +474,16 @@ class _EmptyArchive extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined,
-              size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.inbox_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 16),
-          Text('No puzzles yet',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'No puzzles yet',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           Text(
             'Import a puzzle to get started.',

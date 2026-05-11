@@ -1,9 +1,10 @@
+// ignore_for_file: avoid_dynamic_calls
 import 'dart:typed_data';
 
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/import/data/parsers/puz_parser.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/puz_fixture_builder.dart';
@@ -88,8 +89,11 @@ void main() {
       final grid = puzzle.grid;
       for (var r = 0; r < 3; r++) {
         for (var c = 0; c < 3; c++) {
-          expect(grid.cell(r, c).isBlack, isFalse,
-              reason: 'cell ($r,$c) should be white');
+          expect(
+            grid.cell(r, c).isBlack,
+            isFalse,
+            reason: 'cell ($r,$c) should be white',
+          );
         }
       }
     });
@@ -246,7 +250,7 @@ void main() {
           '2-Down',
           '3-Down',
           '4-Across',
-          '5-Across'
+          '5-Across',
         ],
       );
       final copy = Uint8List.fromList(bytes);
@@ -267,7 +271,7 @@ void main() {
           '2-Down',
           '3-Down',
           '4-Across',
-          '5-Across'
+          '5-Across',
         ],
       );
       final copy = Uint8List.fromList(bytes);
@@ -288,7 +292,7 @@ void main() {
           '2-Down',
           '3-Down',
           '4-Across',
-          '5-Across'
+          '5-Across',
         ],
       );
       final copy = Uint8List.fromList(bytes);
@@ -309,7 +313,7 @@ void main() {
           '2-Down',
           '3-Down',
           '4-Across',
-          '5-Across'
+          '5-Across',
         ],
       );
       final copy = Uint8List.fromList(bytes);
@@ -424,8 +428,10 @@ void main() {
     test('truncated file → Err(invalidFormat)', () {
       final r = parser.parse(PuzFixtureBuilder.truncated());
       expect(r, isA<Err>());
-      expect((r as Err).error,
-          isIn([ParseError.invalidFormat, ParseError.missingData]));
+      expect(
+        (r as Err).error,
+        isIn([ParseError.invalidFormat, ParseError.missingData]),
+      );
     });
 
     test('oversized file → Err(fileTooLarge)', () {
@@ -446,7 +452,7 @@ void main() {
           '2-Down',
           '3-Down',
           '4-Across',
-          '5-Across'
+          '5-Across',
         ],
       );
       // Overwrite width byte to 0

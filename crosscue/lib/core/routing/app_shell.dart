@@ -1,8 +1,7 @@
+import 'package:crosscue/core/routing/nav_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'nav_icons.dart';
 
 /// Persistent 4-tab shell. Shown for Home, Archive, Stats, and Settings tabs.
 /// Full-page routes (Solve, Import, Onboarding) push over this shell.

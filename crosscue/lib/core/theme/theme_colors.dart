@@ -1,6 +1,5 @@
+import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
-
-import 'design_tokens.dart';
 
 extension CrosscueThemeColors on BuildContext {
   bool get isCrosscueLight => Theme.of(this).brightness == Brightness.light;

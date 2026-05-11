@@ -8,6 +8,50 @@ part of 'core_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// App version string in the form `v1.2.3`, derived from [PackageInfo].
+///
+/// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+
+@ProviderFor(appVersion)
+final appVersionProvider = AppVersionProvider._();
+
+/// App version string in the form `v1.2.3`, derived from [PackageInfo].
+///
+/// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+
+final class AppVersionProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  /// App version string in the form `v1.2.3`, derived from [PackageInfo].
+  ///
+  /// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+  AppVersionProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'appVersionProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$appVersionHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return appVersion(ref);
+  }
+}
+
+String _$appVersionHash() => r'f828c62d453bc5def96d4002a8a3793f42dd82b8';
+
 /// Shared [Dio] HTTP client for all network sources.
 
 @ProviderFor(dio)

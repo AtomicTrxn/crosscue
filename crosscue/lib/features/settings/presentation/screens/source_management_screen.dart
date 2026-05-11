@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart' hide Router;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
+import 'package:flutter/material.dart' hide Router;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SourceManagementScreen extends ConsumerWidget {
   const SourceManagementScreen({super.key});
@@ -34,7 +33,7 @@ class SourceManagementScreen extends ConsumerWidget {
             for (final source in localSources) _SourceTile(source: source),
           for (final source in otherSources)
             if (source.id == 'crosshare_daily_mini')
-              _CrosshareTile()
+              const _CrosshareTile()
             else
               _SourceTile(source: source),
         ],
@@ -48,6 +47,8 @@ class SourceManagementScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _CrosshareTile extends StatelessWidget {
+  const _CrosshareTile();
+
   @override
   Widget build(BuildContext context) {
     return ListTile(

@@ -1,15 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
-
-const _appVersionLabel = 'v1.0.1';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -20,6 +18,11 @@ class SettingsScreen extends ConsumerWidget {
       ref.watch(themeModeProvider),
       fallback: AppThemeMode.system,
     );
+    final appVersion = ref.watch(appVersionProvider).when(
+          data: (v) => v,
+          loading: () => null,
+          error: (_, __) => null,
+        );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -85,8 +88,10 @@ class SettingsScreen extends ConsumerWidget {
           // ── Touch & Sound ──────────────────────────────────────────────────
           const SettingsSectionHeader('Touch & Sound'),
           SettingsSwitchRow(
-            value: asyncSettingValue(ref.watch(hapticsEnabledProvider),
-                fallback: true),
+            value: asyncSettingValue(
+              ref.watch(hapticsEnabledProvider),
+              fallback: true,
+            ),
             onChanged: (_) =>
                 ref.read(hapticsEnabledProvider.notifier).toggle(),
             leading: Icons.vibration_outlined,
@@ -94,16 +99,20 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Vibrate on cell tap and puzzle events',
           ),
           SettingsSwitchRow(
-            value: asyncSettingValue(ref.watch(soundsEnabledProvider),
-                fallback: false),
+            value: asyncSettingValue(
+              ref.watch(soundsEnabledProvider),
+              fallback: false,
+            ),
             onChanged: (_) => ref.read(soundsEnabledProvider.notifier).toggle(),
             leading: Icons.volume_up_outlined,
             title: 'Sounds',
             subtitle: 'Play subtle feedback sounds',
           ),
           SettingsSwitchRow(
-            value: asyncSettingValue(ref.watch(skipFilledCellsProvider),
-                fallback: false),
+            value: asyncSettingValue(
+              ref.watch(skipFilledCellsProvider),
+              fallback: false,
+            ),
             onChanged: (_) =>
                 ref.read(skipFilledCellsProvider.notifier).toggle(),
             leading: Icons.skip_next_outlined,
@@ -140,24 +149,26 @@ class SettingsScreen extends ConsumerWidget {
           SettingsNavRow(
             leading: Icons.info_outline,
             title: 'About Crosscue',
-            subtitle: _appVersionLabel,
-            onTap: () => _showAboutDialog(context),
+            subtitle: appVersion,
+            onTap: () => _showAboutDialog(context, appVersion),
           ),
         ],
       ),
     );
   }
 
-  void _showAboutDialog(BuildContext context) {
+  void _showAboutDialog(BuildContext context, String? version) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => const _AboutDialog(),
+      builder: (ctx) => _AboutDialog(version: version),
     );
   }
 }
 
 class _AboutDialog extends StatelessWidget {
-  const _AboutDialog();
+  const _AboutDialog({this.version});
+
+  final String? version;
 
   static const _githubUrl = 'https://github.com/AtomicTrxn/crosscue';
 
@@ -195,14 +206,16 @@ class _AboutDialog extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            _appVersionLabel,
-            style: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          if (version != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              version!,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () async {

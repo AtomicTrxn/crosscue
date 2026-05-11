@@ -1,11 +1,10 @@
-import 'package:drift/drift.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/cell_progress_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
-import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:drift/drift.dart';
 
 part 'solve_session_dao.g.dart';
 
@@ -21,8 +20,10 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
   /// Returns the most recent in-progress session for [puzzleId], or null.
   Future<SolveSessionRow?> findActiveSession(String puzzleId) =>
       (select(solveSessionsTable)
-            ..where((t) =>
-                t.puzzleId.equals(puzzleId) & t.status.equals('in_progress'))
+            ..where(
+              (t) =>
+                  t.puzzleId.equals(puzzleId) & t.status.equals('in_progress'),
+            )
             ..orderBy([(t) => OrderingTerm.desc(t.lastPlayedAt)])
             ..limit(1))
           .getSingleOrNull();
@@ -78,25 +79,27 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
   }) {
     final now = DateTime.now().toUtc();
     return (update(solveSessionsTable)..where((t) => t.id.equals(sessionId)))
-        .write(SolveSessionsTableCompanion(
-      elapsedMs: Value(elapsedMs),
-      focusRow: Value(focusRow),
-      focusCol: Value(focusCol),
-      direction: Value(direction),
-      status: Value(status),
-      isPaused: Value(isPaused),
-      checkCount: Value(checkCount),
-      revealCount: Value(revealCount),
-      usedCheck: Value(usedCheck),
-      usedReveal: Value(usedReveal),
-      cleanSolveEligible: Value(cleanSolveEligible),
-      lastPlayedAt: Value(now),
-      updatedAt: Value(now),
-      completionType: Value(completionType),
-      completedAt: Value(completedAt),
-      solvedDateLocal: Value(solvedDateLocal),
-      solvedTimezone: Value(solvedTimezone),
-    ));
+        .write(
+      SolveSessionsTableCompanion(
+        elapsedMs: Value(elapsedMs),
+        focusRow: Value(focusRow),
+        focusCol: Value(focusCol),
+        direction: Value(direction),
+        status: Value(status),
+        isPaused: Value(isPaused),
+        checkCount: Value(checkCount),
+        revealCount: Value(revealCount),
+        usedCheck: Value(usedCheck),
+        usedReveal: Value(usedReveal),
+        cleanSolveEligible: Value(cleanSolveEligible),
+        lastPlayedAt: Value(now),
+        updatedAt: Value(now),
+        completionType: Value(completionType),
+        completedAt: Value(completedAt),
+        solvedDateLocal: Value(solvedDateLocal),
+        solvedTimezone: Value(solvedTimezone),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -121,15 +124,17 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
       for (var c = 0; c < width; c++) {
         final cell = progress.cell(r, c);
         if (cell.letter.isEmpty && cell.state == CellState.empty) continue;
-        companions.add(CellProgressTableCompanion.insert(
-          sessionId: sessionId,
-          row: r,
-          col: c,
-          guess: Value(cell.letter.isEmpty ? null : cell.letter),
-          state: Value(cell.state.name),
-          isPencil: Value(cell.isPencil),
-          updatedAt: now,
-        ));
+        companions.add(
+          CellProgressTableCompanion.insert(
+            sessionId: sessionId,
+            row: r,
+            col: c,
+            guess: Value(cell.letter.isEmpty ? null : cell.letter),
+            state: Value(cell.state.name),
+            isPencil: Value(cell.isPencil),
+            updatedAt: now,
+          ),
+        );
       }
     }
 

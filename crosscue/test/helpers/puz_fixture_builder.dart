@@ -322,7 +322,10 @@ class PuzFixtureBuilder {
         sb.write(' ${slot.toString().padLeft(2, '0')}:$value;');
       });
       _writeExtBlock(
-          buf, 'RTBL', Uint8List.fromList(latin1.encode(sb.toString())));
+        buf,
+        'RTBL',
+        Uint8List.fromList(latin1.encode(sb.toString())),
+      );
     }
 
     if (gextMap.isNotEmpty) {
@@ -341,7 +344,8 @@ class PuzFixtureBuilder {
   static void _writeExtBlock(BytesBuilder buf, String tag, Uint8List data) {
     buf.add(latin1.encode(tag)); // 4-byte tag
     buf.add(
-        [data.length & 0xFF, (data.length >> 8) & 0xFF]); // length uint16 LE
+      [data.length & 0xFF, (data.length >> 8) & 0xFF],
+    ); // length uint16 LE
     buf.add([0x00, 0x00]); // checksum placeholder (ignored by parser)
     buf.add(data);
     buf.addByte(0x00); // null terminator

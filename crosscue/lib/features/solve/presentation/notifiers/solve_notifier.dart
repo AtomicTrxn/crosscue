@@ -1,20 +1,19 @@
 import 'dart:async';
 
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
+import 'package:crosscue/core/domain/models/clue.dart';
+import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/providers/solve_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
-import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
-import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
-import 'package:crosscue/core/domain/models/clue.dart';
-import 'package:crosscue/core/domain/models/enums.dart';
-import 'package:crosscue/features/solve/domain/models/focus_position.dart';
-import 'package:crosscue/core/domain/models/grid.dart';
-import 'solve_state.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'solve_notifier.g.dart';
 
@@ -199,13 +198,13 @@ class SolveNotifier extends _$SolveNotifier {
     final r = s.focus.row;
     final c = s.focus.col;
 
-    // Do not overwrite a revealed cell (topic-11)
+    // Do not overwrite a revealed cell
     if (s.progress.cell(r, c).state == CellState.revealed) return false;
     final clue = _clueFor(s, r, c, s.focus.direction);
     final wasWordComplete = clue != null && _isWordComplete(s, clue);
 
     // Any typed letter resets the cell to plain filled — clears checkedIncorrect,
-    // checkedCorrect, and pencil marks alike (topic-11).
+    // checkedCorrect, and pencil marks alike.
     final newProgress = s.progress.withCell(
       r,
       c,
@@ -276,11 +275,13 @@ class SolveNotifier extends _$SolveNotifier {
       cell.copyWith(state: newState),
     );
 
-    state = AsyncData(s.copyWith(
-      progress: newProgress,
-      checkCount: s.checkCount + 1,
-      usedCheck: true,
-    ));
+    state = AsyncData(
+      s.copyWith(
+        progress: newProgress,
+        checkCount: s.checkCount + 1,
+        usedCheck: true,
+      ),
+    );
     _scheduleSave(refreshArchive: true);
     _checkCompletion();
     return correct ? CheckResult.allCorrect : CheckResult.hasIncorrect;
@@ -308,18 +309,20 @@ class SolveNotifier extends _$SolveNotifier {
         r,
         c,
         cell.copyWith(
-            state: correct
-                ? CellState.checkedCorrect
-                : CellState.checkedIncorrect),
+          state:
+              correct ? CellState.checkedCorrect : CellState.checkedIncorrect,
+        ),
       );
     }
     if (!checkedAny) return CheckResult.noop;
 
-    state = AsyncData(s.copyWith(
-      progress: progress,
-      checkCount: s.checkCount + 1,
-      usedCheck: true,
-    ));
+    state = AsyncData(
+      s.copyWith(
+        progress: progress,
+        checkCount: s.checkCount + 1,
+        usedCheck: true,
+      ),
+    );
     _scheduleSave(refreshArchive: true);
     _checkCompletion();
     return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
@@ -346,26 +349,28 @@ class SolveNotifier extends _$SolveNotifier {
           r,
           c,
           cell.copyWith(
-              state: correct
-                  ? CellState.checkedCorrect
-                  : CellState.checkedIncorrect),
+            state:
+                correct ? CellState.checkedCorrect : CellState.checkedIncorrect,
+          ),
         );
       }
     }
     if (!checkedAny) return CheckResult.noop;
 
-    state = AsyncData(s.copyWith(
-      progress: progress,
-      checkCount: s.checkCount + 1,
-      usedCheck: true,
-    ));
+    state = AsyncData(
+      s.copyWith(
+        progress: progress,
+        checkCount: s.checkCount + 1,
+        usedCheck: true,
+      ),
+    );
     _scheduleSave(refreshArchive: true);
     _checkCompletion();
     return hasIncorrect ? CheckResult.hasIncorrect : CheckResult.allCorrect;
   }
 
   // ---------------------------------------------------------------------------
-  // Reveal actions (topic-11)
+  // Reveal actions
   // --------------------------------------------------------------------
 
   /// Fills the focused cell with the solution and marks it revealed.
@@ -431,7 +436,7 @@ class SolveNotifier extends _$SolveNotifier {
   }
 
   /// Fills the entire puzzle — sets status to [PuzzleStatus.revealed]
-  /// (does NOT count as a solve; topic-11).
+  /// (does NOT count as a solve).
   void revealPuzzle() {
     final s = _s;
     if (s == null || _isTerminal(s.status)) return;
@@ -505,18 +510,20 @@ class SolveNotifier extends _$SolveNotifier {
     _timerSub?.cancel();
     _startTimer();
 
-    state = AsyncData(s.copyWith(
-      progress: blank,
-      focus: focus,
-      status: PuzzleStatus.inProgress,
-      elapsedSeconds: 0,
-      isPaused: false,
-      checkCount: 0,
-      revealCount: 0,
-      usedCheck: false,
-      usedReveal: false,
-      cleanSolveEligible: true,
-    ));
+    state = AsyncData(
+      s.copyWith(
+        progress: blank,
+        focus: focus,
+        status: PuzzleStatus.inProgress,
+        elapsedSeconds: 0,
+        isPaused: false,
+        checkCount: 0,
+        revealCount: 0,
+        usedCheck: false,
+        usedReveal: false,
+        cleanSolveEligible: true,
+      ),
+    );
 
     _refreshArchiveAfterSave = true;
     _saveNow(); // Persist the reset immediately
@@ -526,7 +533,7 @@ class SolveNotifier extends _$SolveNotifier {
   // Keys
   // ---------------------------------------------------------------------------
 
-  /// Handles the backspace keypress (topic-11).
+  /// Handles the backspace keypress.
   void backspace() {
     final s = _s;
     if (s == null || s.isPaused) return;
@@ -535,7 +542,7 @@ class SolveNotifier extends _$SolveNotifier {
     final c = s.focus.col;
     final current = s.progress.cell(r, c);
 
-    // Do not erase a revealed cell (topic-11)
+    // Do not erase a revealed cell
     if (current.state == CellState.revealed) return;
 
     // Erase the current cell if it has content, or retreat to the previous cell
@@ -692,7 +699,7 @@ class SolveNotifier extends _$SolveNotifier {
     _saveDebounce?.cancel();
     _refreshArchiveAfterSave = false;
 
-    // Distinguish reveal-assisted from check-only from clean (spec §08)
+    // Distinguish reveal-assisted from check-only from clean
     final finalStatus = s.usedReveal
         ? PuzzleStatus.solvedWithReveal
         : s.usedCheck
@@ -732,7 +739,7 @@ class SolveNotifier extends _$SolveNotifier {
     );
   }
 
-  /// Derives [CompletionType] from the solve flags (topic-15).
+  /// Derives [CompletionType] from the solve flags.
   CompletionType _deriveCompletionType(SolveState s) {
     if (s.status == PuzzleStatus.revealed) return CompletionType.revealed;
     if (s.usedReveal) return CompletionType.hinted;

@@ -44,12 +44,14 @@ class GridSerializer {
         if (cell['black'] == true) {
           cells.add(SolutionCell.black);
         } else {
-          cells.add(SolutionCell(
-            isBlack: false,
-            solution: cell['solution'] as String? ?? '',
-            number: cell['number'] as int?,
-            circled: cell['circled'] == true,
-          ));
+          cells.add(
+            SolutionCell(
+              isBlack: false,
+              solution: cell['solution'] as String? ?? '',
+              number: cell['number'] as int?,
+              circled: cell['circled'] == true,
+            ),
+          );
         }
       }
     }

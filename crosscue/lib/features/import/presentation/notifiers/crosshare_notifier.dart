@@ -1,12 +1,11 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'crosshare_notifier.freezed.dart';
 part 'crosshare_notifier.g.dart';

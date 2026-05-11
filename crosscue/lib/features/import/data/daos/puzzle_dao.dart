@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/clues_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
@@ -9,7 +7,8 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
-import 'grid_serializer.dart';
+import 'package:crosscue/features/import/data/daos/grid_serializer.dart';
+import 'package:drift/drift.dart';
 
 part 'puzzle_dao.g.dart';
 

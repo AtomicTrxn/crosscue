@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
-
-import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
+import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_parser.dart';
+import 'package:crypto/crypto.dart';
 
 /// Parses Across Lite .puz binary files.
 ///
@@ -75,8 +74,10 @@ class PuzParser implements PuzzleParser {
 
   @override
   @override
-  Result<Puzzle, ParseError> parse(Uint8List bytes,
-      {String sourceId = 'local_import'}) {
+  Result<Puzzle, ParseError> parse(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+  }) {
     try {
       return _doParse(bytes, sourceId: sourceId);
     } catch (e) {
@@ -84,8 +85,10 @@ class PuzParser implements PuzzleParser {
     }
   }
 
-  Result<Puzzle, ParseError> _doParse(Uint8List bytes,
-      {String sourceId = 'local_import'}) {
+  Result<Puzzle, ParseError> _doParse(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+  }) {
     if (bytes.length > _maxBytes) return const Err(ParseError.fileTooLarge);
     if (!canParse(bytes)) return const Err(ParseError.invalidFormat);
 
@@ -220,11 +223,13 @@ class PuzParser implements PuzzleParser {
       final circled =
           (gextFlags[i] ?? 0) & (_gextCircledBit | _gextCircledBit2) != 0;
 
-      cells.add(SolutionCell(
-        isBlack: false,
-        solution: solution,
-        circled: circled,
-      ));
+      cells.add(
+        SolutionCell(
+          isBlack: false,
+          solution: solution,
+          circled: circled,
+        ),
+      );
     }
 
     final grid = Grid<SolutionCell>(
@@ -267,12 +272,14 @@ class PuzParser implements PuzzleParser {
       checksum: digest,
     );
 
-    return Ok(Puzzle(
-      metadata: metadata,
-      grid: numberedGrid,
-      clues: clues,
-      notes: notes,
-    ));
+    return Ok(
+      Puzzle(
+        metadata: metadata,
+        grid: numberedGrid,
+        clues: clues,
+        notes: notes,
+      ),
+    );
   }
 
   // ---- helpers ----
@@ -362,14 +369,16 @@ class PuzParser implements PuzzleParser {
     for (var i = 0; i < orderedStarts.length && i < texts.length; i++) {
       final (dir, start) = orderedStarts[i];
       final length = _measureLength(grid, start.row, start.col, dir);
-      clues.add(Clue(
-        number: start.number,
-        direction: dir,
-        text: texts[i],
-        startRow: start.row,
-        startCol: start.col,
-        length: length,
-      ));
+      clues.add(
+        Clue(
+          number: start.number,
+          direction: dir,
+          text: texts[i],
+          startRow: start.row,
+          startCol: start.col,
+          length: length,
+        ),
+      );
     }
 
     return clues;

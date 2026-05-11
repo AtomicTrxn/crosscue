@@ -1,6 +1,5 @@
+import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import 'enums.dart';
 
 part 'clue.freezed.dart';
 

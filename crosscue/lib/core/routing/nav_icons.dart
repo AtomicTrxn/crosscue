@@ -104,7 +104,9 @@ class _NavIconPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          const Rect.fromLTWH(8, 12, 5, 4), const Radius.circular(1)),
+        const Rect.fromLTWH(8, 12, 5, 4),
+        const Radius.circular(1),
+      ),
       cutout,
     );
   }

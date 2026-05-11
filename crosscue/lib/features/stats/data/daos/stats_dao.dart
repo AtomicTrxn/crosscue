@@ -1,9 +1,8 @@
-import 'package:drift/drift.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
+import 'package:drift/drift.dart';
 
 part 'stats_dao.g.dart';
 
@@ -71,14 +70,16 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     final importedRows = await select(importedSolveStatsTable).get();
     return [
       ...localRows,
-      ...importedRows.map((row) => (
-            completionType: row.completionType,
-            elapsedMs: row.elapsedMs,
-            solvedDateLocal: row.solvedDateLocal,
-            width: row.width,
-            height: row.height,
-            difficulty: null,
-          )),
+      ...importedRows.map(
+        (row) => (
+          completionType: row.completionType,
+          elapsedMs: row.elapsedMs,
+          solvedDateLocal: row.solvedDateLocal,
+          width: row.width,
+          height: row.height,
+          difficulty: null,
+        ),
+      ),
     ];
   }
 
@@ -109,15 +110,17 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     final importedRows = await select(importedSolveStatsTable).get();
     return [
       ...localRecords,
-      ...importedRows.map((row) => (
-            completionType: row.completionType,
-            elapsedMs: row.elapsedMs,
-            solvedDateLocal: row.solvedDateLocal,
-            solvedTimezone: row.solvedTimezone,
-            width: row.width,
-            height: row.height,
-            puzzleTitle: row.puzzleTitle,
-          )),
+      ...importedRows.map(
+        (row) => (
+          completionType: row.completionType,
+          elapsedMs: row.elapsedMs,
+          solvedDateLocal: row.solvedDateLocal,
+          solvedTimezone: row.solvedTimezone,
+          width: row.width,
+          height: row.height,
+          puzzleTitle: row.puzzleTitle,
+        ),
+      ),
     ];
   }
 
@@ -142,7 +145,8 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     final importedDates = await (selectOnly(importedSolveStatsTable)
           ..addColumns([importedSolveStatsTable.solvedDateLocal])
           ..where(
-              importedSolveStatsTable.completionType.isNotValue('revealed')))
+            importedSolveStatsTable.completionType.isNotValue('revealed'),
+          ))
         .map((r) => r.read(importedSolveStatsTable.solvedDateLocal))
         .get();
     return [...localDates, ...importedDates];

@@ -1,19 +1,18 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:crosscue/core/providers/core_providers.dart';
-import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
-import 'crossword_grid_painter.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid_painter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The interactive crossword grid.
 ///
@@ -80,7 +79,10 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   bool get _hapticsOn {
     final async = ref.read(hapticsEnabledProvider);
     return async.when(
-        data: (v) => v, loading: () => true, error: (_, __) => true);
+      data: (v) => v,
+      loading: () => true,
+      error: (_, __) => true,
+    );
   }
 
   bool get _soundsOn {
@@ -98,8 +100,13 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     }
   }
 
-  void _onTap(BuildContext context, Offset localPosition, double cellSize,
-      double offsetX, double offsetY) {
+  void _onTap(
+    BuildContext context,
+    Offset localPosition,
+    double cellSize,
+    double offsetX,
+    double offsetY,
+  ) {
     final puzzle = widget.solveState.puzzle;
     final col = ((localPosition.dx - offsetX) / cellSize).floor();
     final row = ((localPosition.dy - offsetY) / cellSize).floor();
@@ -115,8 +122,13 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     _requestFocus();
   }
 
-  void _onLongPress(BuildContext context, Offset localPosition, double cellSize,
-      double offsetX, double offsetY) {
+  void _onLongPress(
+    BuildContext context,
+    Offset localPosition,
+    double cellSize,
+    double offsetX,
+    double offsetY,
+  ) {
     final puzzle = widget.solveState.puzzle;
     final col = ((localPosition.dx - offsetX) / cellSize).floor();
     final row = ((localPosition.dy - offsetY) / cellSize).floor();
@@ -149,16 +161,24 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
       ),
       items: const [
         PopupMenuItem(
-            value: _CellAction.enterRebus, child: Text('Enter rebus')),
+          value: _CellAction.enterRebus,
+          child: Text('Enter rebus'),
+        ),
         PopupMenuDivider(),
         PopupMenuItem(
-            value: _CellAction.checkLetter, child: Text('Check letter')),
+          value: _CellAction.checkLetter,
+          child: Text('Check letter'),
+        ),
         PopupMenuItem(value: _CellAction.checkWord, child: Text('Check word')),
         PopupMenuDivider(),
         PopupMenuItem(
-            value: _CellAction.revealLetter, child: Text('Reveal letter')),
+          value: _CellAction.revealLetter,
+          child: Text('Reveal letter'),
+        ),
         PopupMenuItem(
-            value: _CellAction.revealWord, child: Text('Reveal word')),
+          value: _CellAction.revealWord,
+          child: Text('Reveal word'),
+        ),
       ],
     ).then((action) {
       if (action == null) return;
@@ -249,7 +269,10 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     };
     if (arrowMove != null) {
       if (shiftPressed) {
-        final clue = arrowMove.$1 + arrowMove.$2 > 0
+        // arrowMove is (Δrow, Δcol, direction). Down/Right tuples have a
+        // positive sum (+1); Up/Left tuples have a negative sum (−1).
+        final isForward = arrowMove.$1 + arrowMove.$2 > 0;
+        final clue = isForward
             ? _findNextClue(state, currentFocus)
             : _findPreviousClue(state, currentFocus);
         final focus = clue == null ? null : notifier.focusClue(clue);
@@ -292,14 +315,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   }
 
   Clue? _findPreviousClue(SolveState state, FocusPosition currentFocus) {
-    // Find the previous clue based on clue order
-    // Sort clues by: across clues first, then down clues, then by starting position
-    final clues = [...state.puzzle.clues]..sort((a, b) {
-        if (a.direction == b.direction) {
-          return a.number.compareTo(b.number);
-        }
-        return a.direction == Direction.across ? -1 : 1;
-      });
+    final clues = state.sortedClues;
 
     final currentClueIndex = clues.indexWhere(
       (clue) =>
@@ -317,13 +333,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
   }
 
   Clue? _findNextClue(SolveState state, FocusPosition currentFocus) {
-    // Find the next clue based on clue order
-    final clues = [...state.puzzle.clues]..sort((a, b) {
-        if (a.direction == b.direction) {
-          return a.number.compareTo(b.number);
-        }
-        return a.direction == Direction.across ? -1 : 1;
-      });
+    final clues = state.sortedClues;
 
     final currentClueIndex = clues.indexWhere(
       (clue) =>

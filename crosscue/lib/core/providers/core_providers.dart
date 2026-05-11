@@ -1,7 +1,3 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/widgets.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/core/audio/sound_player.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/entitlement/entitlement_service.dart';
@@ -10,8 +6,21 @@ import 'package:crosscue/core/sync/no_op_sync_adapter.dart';
 import 'package:crosscue/core/sync/sync_adapter.dart';
 import 'package:crosscue/core/telemetry/crash_reporter.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'core_providers.g.dart';
+
+/// App version string in the form `v1.2.3`, derived from [PackageInfo].
+///
+/// Returns a fallback `'v—'` on platforms where [PackageInfo] is unavailable.
+@Riverpod(keepAlive: true)
+Future<String> appVersion(Ref ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return 'v${info.version}';
+}
 
 /// Shared [Dio] HTTP client for all network sources.
 @Riverpod(keepAlive: true)

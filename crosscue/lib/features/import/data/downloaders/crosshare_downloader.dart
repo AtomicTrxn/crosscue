@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
-
 import 'package:crosscue/core/utils/result.dart';
+import 'package:dio/dio.dart';
 
 /// Errors that can occur when downloading a Crosshare puzzle.
 enum CrosshareDownloadError {
@@ -108,7 +107,8 @@ class CrosshareDownloader {
     ).firstMatch(html);
     if (match == null) {
       throw const _MalformedPageException(
-          '__NEXT_DATA__ script block not found');
+        '__NEXT_DATA__ script block not found',
+      );
     }
 
     final Map<String, dynamic> data;
@@ -119,10 +119,13 @@ class CrosshareDownloader {
     }
 
     // Navigate: props → pageProps → puzzles → [[day, {id, …}, …], …]
-    final puzzles = data['props']?['pageProps']?['puzzles'] as List<dynamic>?;
+    final props = data['props'] as Map<String, dynamic>?;
+    final pageProps = props?['pageProps'] as Map<String, dynamic>?;
+    final puzzles = pageProps?['puzzles'] as List<dynamic>?;
     if (puzzles == null) {
       throw const _MalformedPageException(
-          'Expected puzzles array at props.pageProps.puzzles');
+        'Expected puzzles array at props.pageProps.puzzles',
+      );
     }
 
     for (final entry in puzzles) {

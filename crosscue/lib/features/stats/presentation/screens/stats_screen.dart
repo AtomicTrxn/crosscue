@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -409,8 +408,9 @@ class _PersonalBestsSection extends StatelessWidget {
           const SizedBox(height: 10),
           if (stats.personalBestMiniMs != null) ...[
             _PBRow(
-                label: 'Mini (≤7×7)',
-                value: formatMs(stats.personalBestMiniMs!)),
+              label: 'Mini (≤7×7)',
+              value: formatMs(stats.personalBestMiniMs!),
+            ),
             const _RowDivider(),
           ],
           if (stats.personalBest15x15Ms != null) ...[
@@ -475,7 +475,10 @@ class _DifficultySection extends StatelessWidget {
       _DifficultyRowData('Medium', 'medium', CrosscueColors.primary),
       _DifficultyRowData('Hard', 'hard', Color(0xFFFF9800)),
       _DifficultyRowData(
-          'Themeless', 'themeless', CrosscueColors.onSurface3Light),
+        'Themeless',
+        'themeless',
+        CrosscueColors.onSurface3Light,
+      ),
     ];
     final total = stats.difficultyBreakdown.values
         .fold<int>(0, (sum, count) => sum + count);
@@ -696,8 +699,11 @@ class _EmptyStats extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bar_chart_outlined,
-              size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.bar_chart_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(height: 16),
           Text('No stats yet', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

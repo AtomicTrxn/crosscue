@@ -3,11 +3,10 @@
 // The streak algorithm (_currentStreak, _longestStreak) is tested indirectly
 // via getStats() with seeded imported_solve_stats rows (no puzzle FK needed).
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/stats/data/repositories/stats_repository_impl.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late AppDatabase db;
@@ -31,15 +30,17 @@ void main() {
     int height = 5,
     String? puzzleTitle,
   }) =>
-      db.statsDao.insertImportedRecord((
-        completionType: completionType,
-        elapsedMs: elapsedMs,
-        solvedDateLocal: date,
-        solvedTimezone: null,
-        width: width,
-        height: height,
-        puzzleTitle: puzzleTitle ?? 'Puzzle $date',
-      ));
+      db.statsDao.insertImportedRecord(
+        (
+          completionType: completionType,
+          elapsedMs: elapsedMs,
+          solvedDateLocal: date,
+          solvedTimezone: null,
+          width: width,
+          height: height,
+          puzzleTitle: puzzleTitle ?? 'Puzzle $date',
+        ),
+      );
 
   // ---------------------------------------------------------------------------
   // Empty state
@@ -101,9 +102,15 @@ void main() {
         () async {
       await seed(date: '2025-01-01', completionType: 'clean', elapsedMs: 60000);
       await seed(
-          date: '2025-01-02', completionType: 'checked', elapsedMs: 90000);
+        date: '2025-01-02',
+        completionType: 'checked',
+        elapsedMs: 90000,
+      );
       await seed(
-          date: '2025-01-03', completionType: 'revealed', elapsedMs: 30000);
+        date: '2025-01-03',
+        completionType: 'revealed',
+        elapsedMs: 30000,
+      );
 
       final stats = await repo.getStats();
       // avg of [60000, 90000] = 75000; revealed excluded
@@ -146,11 +153,13 @@ void main() {
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
       await seed(date: fmt(today));
       await seed(
-          date: fmt(today.subtract(const Duration(days: 1))),
-          puzzleTitle: 'yesterday');
+        date: fmt(today.subtract(const Duration(days: 1))),
+        puzzleTitle: 'yesterday',
+      );
       await seed(
-          date: fmt(today.subtract(const Duration(days: 2))),
-          puzzleTitle: '2 days ago');
+        date: fmt(today.subtract(const Duration(days: 2))),
+        puzzleTitle: '2 days ago',
+      );
 
       final stats = await repo.getStats();
       expect(stats.currentStreak, equals(3));
@@ -163,8 +172,9 @@ void main() {
       await seed(date: fmt(today));
       // Gap: skip yesterday
       await seed(
-          date: fmt(today.subtract(const Duration(days: 2))),
-          puzzleTitle: '2 days ago');
+        date: fmt(today.subtract(const Duration(days: 2))),
+        puzzleTitle: '2 days ago',
+      );
 
       final stats = await repo.getStats();
       expect(stats.currentStreak, equals(1));
@@ -186,7 +196,10 @@ void main() {
           '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
       // Only revealed today — should not contribute to streak
       await seed(
-          date: fmt(today), completionType: 'revealed', puzzleTitle: 'rev');
+        date: fmt(today),
+        completionType: 'revealed',
+        puzzleTitle: 'rev',
+      );
 
       final stats = await repo.getStats();
       expect(stats.currentStreak, equals(0));
@@ -212,8 +225,9 @@ void main() {
       // Streak 3: Feb 1–5 (length 5)
       for (var i = 1; i <= 5; i++) {
         await seed(
-            date: '2025-02-${i.toString().padLeft(2, '0')}',
-            puzzleTitle: 'c$i');
+          date: '2025-02-${i.toString().padLeft(2, '0')}',
+          puzzleTitle: 'c$i',
+        );
       }
 
       final stats = await repo.getStats();
@@ -238,18 +252,20 @@ void main() {
   group('personalBests', () {
     test('personal best for mini (≤7×7) from clean solve', () async {
       await seed(
-          date: '2025-01-01',
-          completionType: 'clean',
-          elapsedMs: 45000,
-          width: 5,
-          height: 5);
+        date: '2025-01-01',
+        completionType: 'clean',
+        elapsedMs: 45000,
+        width: 5,
+        height: 5,
+      );
       await seed(
-          date: '2025-01-02',
-          completionType: 'clean',
-          elapsedMs: 30000,
-          width: 5,
-          height: 5,
-          puzzleTitle: 'faster');
+        date: '2025-01-02',
+        completionType: 'clean',
+        elapsedMs: 30000,
+        width: 5,
+        height: 5,
+        puzzleTitle: 'faster',
+      );
 
       final stats = await repo.getStats();
       expect(stats.personalBestMiniMs, equals(30000));
@@ -257,11 +273,12 @@ void main() {
 
     test('personal best for 15×15 from clean solve', () async {
       await seed(
-          date: '2025-01-01',
-          completionType: 'clean',
-          elapsedMs: 600000,
-          width: 15,
-          height: 15);
+        date: '2025-01-01',
+        completionType: 'clean',
+        elapsedMs: 600000,
+        width: 15,
+        height: 15,
+      );
 
       final stats = await repo.getStats();
       expect(stats.personalBest15x15Ms, equals(600000));
@@ -269,11 +286,12 @@ void main() {
 
     test('non-clean solve does not count as personal best', () async {
       await seed(
-          date: '2025-01-01',
-          completionType: 'checked',
-          elapsedMs: 10000,
-          width: 15,
-          height: 15);
+        date: '2025-01-01',
+        completionType: 'checked',
+        elapsedMs: 10000,
+        width: 15,
+        height: 15,
+      );
 
       final stats = await repo.getStats();
       expect(stats.personalBest15x15Ms, isNull);

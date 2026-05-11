@@ -1,15 +1,14 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-
-import 'package:crosscue/core/theme/crossword_theme.dart';
-import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
+import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:flutter/material.dart';
 
 /// Paints the crossword grid using direct canvas calls.
 class CrosswordGridPainter extends CustomPainter {
@@ -196,7 +195,7 @@ class CrosswordGridPainter extends CustomPainter {
       return theme.wordHighlight;
     }
     if (_isCompletedCell(state, row, col)) {
-      return const Color(0xFFC8E6C9);
+      return CrosscueColors.completedCellBg;
     }
     return _cellBg(grid.cell(row, col));
   }
@@ -279,7 +278,7 @@ class CrosswordGridPainter extends CustomPainter {
 
   Color _letterColorFor(int row, int col) {
     if (_isCompletedCell(solveState, row, col)) {
-      return const Color(0xFF2E7D32);
+      return CrosscueColors.completedCellFg;
     }
     return theme.cellText;
   }

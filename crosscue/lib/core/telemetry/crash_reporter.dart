@@ -9,8 +9,11 @@ import 'package:path_provider/path_provider.dart';
 /// IMPORTANT: Never log puzzle content, clue text, solution, or user guesses.
 abstract class CrashReporter {
   Future<void> init({required bool enabled});
-  Future<void> reportError(Object error, StackTrace stackTrace,
-      {Map<String, dynamic>? extras});
+  Future<void> reportError(
+    Object error,
+    StackTrace stackTrace, {
+    Map<String, dynamic>? extras,
+  });
   Future<String?> readLog();
   Future<void> setEnabled(bool enabled);
 }

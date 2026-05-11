@@ -1,8 +1,7 @@
-import 'package:intl/intl.dart';
-
+import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
-import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
+import 'package:intl/intl.dart';
 
 /// Fetches raw session data from [StatsDao] and computes all aggregated stats
 /// (streaks, averages, personal bests) in pure Dart.
@@ -121,7 +120,7 @@ class StatsRepositoryImpl implements StatsRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // Streak algorithm (topic-15)
+  // Streak algorithm
   // ---------------------------------------------------------------------------
 
   /// Current streak: consecutive solved days ending today or yesterday.

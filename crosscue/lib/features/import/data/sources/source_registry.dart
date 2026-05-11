@@ -14,7 +14,7 @@ class SourceRegistrationException implements Exception {
 
 /// Registry of all [PuzzleSource] instances known to the app.
 ///
-/// Enforces the legal guardrail from topic-07:
+/// Enforces the legal guardrail
 /// - [LicenseStatus.prohibited] sources cannot be registered at all.
 /// - [LicenseStatus.needsReview] sources can be registered (for tracking)
 ///   but are excluded from [enabledSources].
@@ -61,9 +61,11 @@ class SourceRegistry {
   /// Excludes [LicenseStatus.prohibited] (can't be registered anyway) and
   /// [LicenseStatus.needsReview] (pending legal sign-off).
   List<PuzzleSource> get enabledSources => _sources.values
-      .where((s) =>
-          s.enabled &&
-          s.licenseStatus != LicenseStatus.prohibited &&
-          s.licenseStatus != LicenseStatus.needsReview)
+      .where(
+        (s) =>
+            s.enabled &&
+            s.licenseStatus != LicenseStatus.prohibited &&
+            s.licenseStatus != LicenseStatus.needsReview,
+      )
       .toList();
 }

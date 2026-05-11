@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CrosshareSettingsScreen extends ConsumerWidget {
   const CrosshareSettingsScreen({super.key});

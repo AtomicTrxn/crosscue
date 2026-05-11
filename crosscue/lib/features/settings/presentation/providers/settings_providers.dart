@@ -1,9 +1,8 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_providers.g.dart';
 

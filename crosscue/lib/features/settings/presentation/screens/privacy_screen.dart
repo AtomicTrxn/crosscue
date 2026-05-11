@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:crosscue/features/stats/presentation/notifiers/stats_export_notifier.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class PrivacyScreen extends ConsumerWidget {
   const PrivacyScreen({super.key});
@@ -20,8 +19,10 @@ class PrivacyScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           SettingsSwitchRow(
-            value: asyncSettingValue(ref.watch(crashReportingProvider),
-                fallback: false),
+            value: asyncSettingValue(
+              ref.watch(crashReportingProvider),
+              fallback: false,
+            ),
             onChanged: (_) =>
                 ref.read(crashReportingProvider.notifier).toggle(),
             leading: Icons.bug_report_outlined,

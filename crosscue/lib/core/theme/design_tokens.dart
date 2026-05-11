@@ -62,6 +62,23 @@ abstract class CrosscueColors {
   static const Color revealedLight = Color(0xFFFFF9C4);
   static const Color revealedDark = Color(0xFFFFB74D);
 
+  // ── Completion state ───────────────────────────────────────────────────────
+  static const Color completedCellBg = Color(0xFFC8E6C9); // light green fill
+  static const Color completedCellFg = Color(0xFF2E7D32); // dark green letter
+
+  // ── Overlay & misc ─────────────────────────────────────────────────────────
+  static const Color barrierDeepNavy = Color(0xE10A2A6E); // 88% alpha deep navy
+  static const Color trackGrey =
+      Color(0xFFE0E0E0); // pie chart / progress track
+
+  // ── Confetti palette ───────────────────────────────────────────────────────
+  static const List<Color> confettiPalette = [
+    Color(0xFF1565C0), // primary blue
+    Color(0xFFFDD835), // accent yellow
+    Color(0xFF4CAF50), // green
+    Color(0xFFEF5350), // red
+  ];
+
   // ── Containers ─────────────────────────────────────────────────────────────
   static const Color primaryContLight = Color(0xFFE3F2FD);
   static const Color primaryContDark = Color(0x201565C0); // 12% opacity

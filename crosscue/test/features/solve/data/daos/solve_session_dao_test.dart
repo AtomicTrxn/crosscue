@@ -2,13 +2,12 @@
 //
 // C6 regression: clearing cells must remove their DB rows (no orphan rows).
 
-import 'package:drift/native.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late AppDatabase db;
@@ -209,7 +208,9 @@ void main() {
         }
         if (r == 1 && c == 1) {
           return const CellProgress(
-              letter: 'B', state: CellState.checkedCorrect);
+            letter: 'B',
+            state: CellState.checkedCorrect,
+          );
         }
         return CellProgress.blank;
       });
@@ -247,7 +248,9 @@ void main() {
       await db.solveSessionDao.saveCellProgress(sessionId, grid, 3, 3);
       final rows = await db.solveSessionDao.loadCellProgress(sessionId);
       expect(
-          rows.any((r) => r.row == 0 && r.col == 0 && r.guess == 'Z'), isTrue);
+        rows.any((r) => r.row == 0 && r.col == 0 && r.guess == 'Z'),
+        isTrue,
+      );
     });
 
     // ── C6 regression ──────────────────────────────────────────────────────
@@ -260,7 +263,9 @@ void main() {
       await db.solveSessionDao
           .saveCellProgress(sessionId, grid(letter: 'X'), 3, 3);
       expect(
-          await db.solveSessionDao.loadCellProgress(sessionId), hasLength(1));
+        await db.solveSessionDao.loadCellProgress(sessionId),
+        hasLength(1),
+      );
 
       // Clear (backspace) → save blank grid
       await db.solveSessionDao
@@ -274,18 +279,24 @@ void main() {
       final sessionId = await db.solveSessionDao.createSession('test:puzzle');
 
       // Fill several cells
-      final full = Grid<CellProgress>.generate(3, 3,
-          (r, c) => CellProgress(letter: String.fromCharCode(65 + r * 3 + c)));
+      final full = Grid<CellProgress>.generate(
+        3,
+        3,
+        (r, c) => CellProgress(letter: String.fromCharCode(65 + r * 3 + c)),
+      );
       await db.solveSessionDao.saveCellProgress(sessionId, full, 3, 3);
       expect(
-          await db.solveSessionDao.loadCellProgress(sessionId), hasLength(9));
+        await db.solveSessionDao.loadCellProgress(sessionId),
+        hasLength(9),
+      );
 
       // Reset to blank
       await db.solveSessionDao.saveCellProgress(
-          sessionId,
-          Grid<CellProgress>.generate(3, 3, (_, __) => CellProgress.blank),
-          3,
-          3);
+        sessionId,
+        Grid<CellProgress>.generate(3, 3, (_, __) => CellProgress.blank),
+        3,
+        3,
+      );
       expect(await db.solveSessionDao.loadCellProgress(sessionId), isEmpty);
     });
 

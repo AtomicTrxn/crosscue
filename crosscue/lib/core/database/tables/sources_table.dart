@@ -1,5 +1,5 @@
-import 'package:drift/drift.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:drift/drift.dart';
 
 /// TypeConverter: LicenseStatus (camelCase Dart enum) ↔ snake_case DB string.
 class LicenseStatusConverter extends TypeConverter<LicenseStatus, String> {
