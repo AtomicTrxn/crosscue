@@ -84,6 +84,10 @@ dev_dependencies:
   drift_dev: ^2.20.0
   riverpod_generator: ^4.0.3
 
+  # Direct sqlite3 access in migration tests (transitive via drift_dev but must
+  # be declared explicitly to satisfy depend_on_referenced_packages lint).
+  sqlite3: ^2.9.4
+
   # Splash screen generation is run on demand with:
   # dart run flutter_native_splash:create
   # Keep this package out of active dependencies so release APK builds do not

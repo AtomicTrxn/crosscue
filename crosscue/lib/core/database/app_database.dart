@@ -44,6 +44,17 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 2;
 
+  /// Migration strategy.
+  ///
+  /// ## Adding a new migration
+  /// 1. Increment [schemaVersion].
+  /// 2. Add a branch in [onUpgrade]: `if (from < N && to >= N) { ... }`
+  /// 3. Add a test in `test/core/database/app_database_test.dart`.
+  /// 4. Export a schema snapshot: `dart run drift_dev schema dump
+  ///    lib/core/database/app_database.dart drift_schemas/`
+  ///
+  /// ## Version history
+  /// v1 → v2: added `imported_solve_stats` table.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
@@ -51,7 +62,16 @@ class AppDatabase extends _$AppDatabase {
           await _seedLocalImportSource();
         },
         onUpgrade: (m, from, to) async {
+          // Safety: schema downgrades are not supported and indicate a bug.
+          if (from > to) {
+            throw StateError(
+              'Schema downgrade not supported: from=$from, to=$to. '
+              'The installed app has a newer DB schema than this build.',
+            );
+          }
+
           if (from < 2) {
+            // v1 → v2: add the imported_solve_stats table.
             await m.createTable(importedSolveStatsTable);
           }
         },
