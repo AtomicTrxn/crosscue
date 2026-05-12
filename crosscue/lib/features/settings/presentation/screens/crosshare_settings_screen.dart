@@ -1,8 +1,10 @@
+import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CrosshareSettingsScreen extends ConsumerWidget {
@@ -139,9 +141,26 @@ class CrosshareSettingsScreen extends ConsumerWidget {
                 horizontal: CrosscueSpacing.screenH,
                 vertical: 8,
               ),
-              child: Text(
-                "Today's puzzle is already in your library.",
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Today's puzzle is already in your library.",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => context.go(Routes.home),
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text('Open today'),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
