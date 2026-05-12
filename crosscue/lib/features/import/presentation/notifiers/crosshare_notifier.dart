@@ -6,6 +6,7 @@ import 'package:crosscue/features/import/domain/repositories/import_repository.d
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -56,9 +57,10 @@ class CrosshareNotifier extends _$CrosshareNotifier {
 
     try {
       await _runDownload();
-    } catch (_) {
+    } catch (e, st) {
       // Safety net: if anything unexpected escapes _runDownload, recover
       // rather than leaving the UI permanently stuck in the spinning state.
+      debugPrint('[CrosshareNotifier] unexpected error: $e\n$st');
       state = const CrosshareFailure(
         message: 'An unexpected error occurred. Please try again.',
       );
