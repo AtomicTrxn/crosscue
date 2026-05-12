@@ -401,22 +401,27 @@ class _ClueRow extends StatelessWidget {
   }
 }
 
+// Compiled once at first use; reused on every clue-selection change.
+final _directionNamesRe = RegExp(
+  r'\b(\d+)\s*[- ]?\s*(Across|Down)\b',
+  caseSensitive: false,
+);
+final _shortNamesRe = RegExp(
+  r'\b(\d+)\s*[- ]?([AD])\b',
+  caseSensitive: false,
+);
+
 Set<String> _referencedClueKeys(String? clueText, List<Clue> clues) {
   if (clueText == null || clueText.isEmpty) return const {};
 
   final validKeys = clues.map(_clueKey).toSet();
   final references = <String>{};
-  final directionNames = RegExp(
-    r'\b(\d+)\s*[- ]?\s*(Across|Down)\b',
-    caseSensitive: false,
-  );
-  final shortNames = RegExp(r'\b(\d+)\s*[- ]?([AD])\b', caseSensitive: false);
 
-  for (final match in directionNames.allMatches(clueText)) {
+  for (final match in _directionNamesRe.allMatches(clueText)) {
     final key = '${match.group(1)}:${match.group(2)![0].toLowerCase()}';
     if (validKeys.contains(key)) references.add(key);
   }
-  for (final match in shortNames.allMatches(clueText)) {
+  for (final match in _shortNamesRe.allMatches(clueText)) {
     final key = '${match.group(1)}:${match.group(2)!.toLowerCase()}';
     if (validKeys.contains(key)) references.add(key);
   }

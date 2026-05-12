@@ -19,6 +19,10 @@ part 'solve_notifier.g.dart';
 
 @riverpod
 class SolveNotifier extends _$SolveNotifier {
+  // Compiled once; reused on every keystroke / rebus entry.
+  static final _singleLetterRe = RegExp(r'^[A-Z]$');
+  static final _nonLetterRe = RegExp(r'[^A-Z]');
+
   StreamSubscription<int>? _timerSub;
   Timer? _saveDebounce;
   bool _refreshArchiveAfterSave = false;
@@ -193,7 +197,7 @@ class SolveNotifier extends _$SolveNotifier {
     if (s == null || s.isPaused) return false;
 
     final upper = letter.toUpperCase();
-    if (!RegExp(r'^[A-Z]$').hasMatch(upper)) return false;
+    if (!_singleLetterRe.hasMatch(upper)) return false;
 
     final r = s.focus.row;
     final c = s.focus.col;
@@ -227,7 +231,7 @@ class SolveNotifier extends _$SolveNotifier {
     final s = _s;
     if (s == null || s.isPaused) return false;
 
-    final upper = value.toUpperCase().replaceAll(RegExp(r'[^A-Z]'), '');
+    final upper = value.toUpperCase().replaceAll(_nonLetterRe, '');
     if (upper.length < 2) return false;
 
     final r = s.focus.row;

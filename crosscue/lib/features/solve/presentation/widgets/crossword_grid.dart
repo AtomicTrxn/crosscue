@@ -14,6 +14,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Compiled once; reused on every physical-keyboard event and rebus keystroke.
+final _letterRe = RegExp(r'^[A-Za-z]$');
+final _letterFilterRe = RegExp('[A-Za-z]');
+
 /// The interactive crossword grid.
 ///
 /// Handles:
@@ -214,7 +218,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[A-Za-z]')),
+              FilteringTextInputFormatter.allow(_letterFilterRe),
             ],
             decoration: const InputDecoration(
               labelText: 'Cell answer',
@@ -305,7 +309,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     }
 
     final char = event.character;
-    if (char != null && RegExp(r'^[A-Za-z]$').hasMatch(char)) {
+    if (char != null && _letterRe.hasMatch(char)) {
       _playFeedbackSound();
       _pulseIfWordComplete(notifier.inputLetter(char));
       return KeyEventResult.handled;

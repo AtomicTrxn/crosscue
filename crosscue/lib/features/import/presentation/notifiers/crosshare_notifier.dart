@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
+import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/telemetry/crash_reporter.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
@@ -44,12 +49,14 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   late final CrosshareDownloader _downloader;
   late final ImportRepository _importRepo;
   late final AppSettingsRepository _settings;
+  late final CrashReporter _crashReporter;
 
   @override
   CrosshareState build() {
     _downloader = ref.read(crosshareDownloaderProvider);
     _importRepo = ref.read(importRepositoryProvider);
     _settings = ref.read(appSettingsProvider);
+    _crashReporter = ref.read(crashReporterProvider);
     return const CrosshareIdle();
   }
 
@@ -61,8 +68,14 @@ class CrosshareNotifier extends _$CrosshareNotifier {
     } catch (e, st) {
       // Safety net: if anything unexpected escapes _runDownload, recover
       // rather than leaving the UI permanently stuck in the spinning state.
-      // ignore: avoid_print
-      print('[CrosshareNotifier] unexpected error: $e\n$st');
+      // Local log for dev visibility; crash report respects user opt-in.
+      developer.log(
+        'unexpected error',
+        name: 'CrosshareNotifier',
+        error: e,
+        stackTrace: st,
+      );
+      unawaited(_crashReporter.reportError(e, st));
       state = const CrosshareFailure(
         message: 'An unexpected error occurred. Please try again.',
       );
