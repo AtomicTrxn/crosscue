@@ -15,26 +15,20 @@ class AppShell extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  // Branch roots that should redirect to Today instead of exiting the app.
-  static const _nonTodayBranchRoots = {'/archive', '/stats', '/settings'};
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return BackButtonListener(
-      // Intercept back at the router-dispatcher level, before go_router acts.
-      //
-      // • Non-Today branch root (/archive, /stats, /settings): consume the
-      //   event and switch to Today — never exits the app from these screens.
-      // • Branch sub-pages (/settings/sources, etc.) or full-page overlays
-      //   (/solve/…, /import): return false so go_router pops normally.
-      // • Today (/): return false so the system handles it (app exits).
-      onBackButtonPressed: () async {
-        final location = GoRouterState.of(context).uri.path;
-        if (_nonTodayBranchRoots.contains(location)) {
+    return PopScope(
+      // Only allow the OS to exit when the user is already on the Today tab.
+      // From any other tab root, back navigates to Today instead of exiting.
+      // Branch-level pops (e.g. Settings > Sources → Settings) happen inside
+      // the branch navigator and never reach this PopScope.
+      canPop: navigationShell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          // Back was blocked — user is on a non-Today tab at its root.
+          // Switch to Today without resetting its scroll/state.
           navigationShell.goBranch(0);
-          return true;
         }
-        return false;
       },
       child: Scaffold(
         body: navigationShell,
