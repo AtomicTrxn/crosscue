@@ -4,6 +4,7 @@ import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/archive/presentation/widgets/archive_entry_status.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -335,7 +336,7 @@ class _ArchiveRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (iconData, iconColor) = _iconAndColor(context, entry);
+    final status = ArchiveEntryStatus.of(context, entry);
     final subtitle = _subtitleParts(entry).join(' · ');
     final (statusNote, statusColor) = _statusNote(context, entry);
     final onSurface3 = context.crosscueOnSurface3;
@@ -356,7 +357,7 @@ class _ArchiveRow extends StatelessWidget {
                 // Status icon — 22dp wide
                 SizedBox(
                   width: 22,
-                  child: Icon(iconData, size: 18, color: iconColor),
+                  child: Icon(status.icon, size: 18, color: status.color),
                 ),
                 const SizedBox(width: 10),
                 // Text block
@@ -417,19 +418,6 @@ class _ArchiveRow extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  (IconData, Color) _iconAndColor(BuildContext context, ArchiveEntry e) {
-    if (e.isCleanSolve) {
-      return (Icons.star_rounded, CrosscueColors.primary);
-    }
-    if (e.isCompleted || e.isRevealed) {
-      return (Icons.check_circle_outline_rounded, context.crosscueCorrect);
-    }
-    if (e.isInProgress) {
-      return (Icons.timelapse_rounded, CrosscueColors.primaryMid);
-    }
-    return (Icons.radio_button_unchecked_rounded, context.crosscueOnSurface3);
   }
 
   List<String> _subtitleParts(ArchiveEntry e) {

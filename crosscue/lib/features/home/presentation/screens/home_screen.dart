@@ -8,6 +8,7 @@ import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/archive/presentation/widgets/archive_entry_status.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
@@ -313,8 +314,7 @@ class _PuzzleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(context, entry);
-    final statusIcon = _statusIcon(entry);
+    final status = ArchiveEntryStatus.of(context, entry);
     final sub = _subtitle(entry, puzzle);
     final completionFraction = entry?.completionFraction ?? 0;
     final onSurface3 = context.crosscueOnSurface3;
@@ -333,7 +333,7 @@ class _PuzzleRow extends StatelessWidget {
                 // Status icon — 20dp wide
                 SizedBox(
                   width: 20,
-                  child: Icon(statusIcon, size: 16, color: statusColor),
+                  child: Icon(status.icon, size: 16, color: status.color),
                 ),
                 const SizedBox(width: 12),
                 // Title + subtitle
@@ -390,20 +390,6 @@ class _PuzzleRow extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Color _statusColor(BuildContext context, ArchiveEntry? e) {
-    if (e == null || e.isNotStarted) return context.crosscueOnSurface3;
-    if (e.isCleanSolve) return CrosscueColors.primary;
-    if (e.isCompleted || e.isRevealed) return context.crosscueCorrect;
-    return CrosscueColors.primaryMid; // in progress
-  }
-
-  IconData _statusIcon(ArchiveEntry? e) {
-    if (e == null || e.isNotStarted) return Icons.radio_button_unchecked;
-    if (e.isCleanSolve) return Icons.star_rounded;
-    if (e.isCompleted || e.isRevealed) return Icons.check_circle_outline;
-    return Icons.timelapse_rounded; // in progress
   }
 
   String? _subtitle(ArchiveEntry? e, PuzzleMetadata p) {
