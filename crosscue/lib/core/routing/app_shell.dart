@@ -17,33 +17,47 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: CrosscueNavIcon.home(selected: false),
-            selectedIcon: CrosscueNavIcon.home(selected: true),
-            label: 'Today',
-          ),
-          NavigationDestination(
-            icon: CrosscueNavIcon.archive(selected: false),
-            selectedIcon: CrosscueNavIcon.archive(selected: true),
-            label: 'Archive',
-          ),
-          NavigationDestination(
-            icon: CrosscueNavIcon.stats(selected: false),
-            selectedIcon: CrosscueNavIcon.stats(selected: true),
-            label: 'Stats',
-          ),
-          NavigationDestination(
-            icon: CrosscueNavIcon.settings(selected: false),
-            selectedIcon: CrosscueNavIcon.settings(selected: true),
-            label: 'Settings',
-          ),
-        ],
+    return PopScope(
+      // Only allow the OS to exit when the user is already on the Today tab.
+      // From any other tab root, back navigates to Today instead of exiting.
+      // Branch-level pops (e.g. Settings > Sources → Settings) happen inside
+      // the branch navigator and never reach this PopScope.
+      canPop: navigationShell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          // Back was blocked — user is on a non-Today tab at its root.
+          // Switch to Today without resetting its scroll/state.
+          navigationShell.goBranch(0);
+        }
+      },
+      child: Scaffold(
+        body: navigationShell,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: _onDestinationSelected,
+          destinations: const [
+            NavigationDestination(
+              icon: CrosscueNavIcon.home(selected: false),
+              selectedIcon: CrosscueNavIcon.home(selected: true),
+              label: 'Today',
+            ),
+            NavigationDestination(
+              icon: CrosscueNavIcon.archive(selected: false),
+              selectedIcon: CrosscueNavIcon.archive(selected: true),
+              label: 'Archive',
+            ),
+            NavigationDestination(
+              icon: CrosscueNavIcon.stats(selected: false),
+              selectedIcon: CrosscueNavIcon.stats(selected: true),
+              label: 'Stats',
+            ),
+            NavigationDestination(
+              icon: CrosscueNavIcon.settings(selected: false),
+              selectedIcon: CrosscueNavIcon.settings(selected: true),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
