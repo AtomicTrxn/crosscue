@@ -8,7 +8,7 @@ part 'puzzle.freezed.dart';
 
 /// Full in-memory puzzle: metadata + grid + clues.
 ///
-/// Grid<T> is a plain Dart class (generics are incompatible with Freezed
+/// `Grid<T>` is a plain Dart class (generics are incompatible with Freezed
 /// unions), so we wrap it with a custom equality/hashCode pair.
 @freezed
 abstract class Puzzle with _$Puzzle {

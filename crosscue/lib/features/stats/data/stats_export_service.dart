@@ -31,9 +31,11 @@ class StatsExportService {
     final file = File('${dir.path}/crosscue-stats-export.json');
     await file
         .writeAsString(const JsonEncoder.withIndent('  ').convert(payload));
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'application/json')],
-      subject: 'Crosscue stats export',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'application/json')],
+        subject: 'Crosscue stats export',
+      ),
     );
     return records.length;
   }

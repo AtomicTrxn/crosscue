@@ -139,11 +139,13 @@ class CompletionSheet extends ConsumerWidget {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
-                        Share.share(
-                          '${solveState.puzzle.metadata.title}\n'
-                          '$timeStr - $solveLabel\n'
-                          'Solved in Crosscue',
-                          subject: 'Crosscue result',
+                        SharePlus.instance.share(
+                          ShareParams(
+                            text: '${solveState.puzzle.metadata.title}\n'
+                                '$timeStr - $solveLabel\n'
+                                'Solved in Crosscue',
+                            subject: 'Crosscue result',
+                          ),
                         );
                       },
                       style: OutlinedButton.styleFrom(

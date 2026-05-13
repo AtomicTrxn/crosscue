@@ -1,7 +1,7 @@
 /// Lightweight Result type used at data/domain boundaries.
 ///
 /// Usage:
-///   Result<Puzzle, ParseError> result = parser.parse(bytes);
+///   `Result<Puzzle, ParseError>` result = parser.parse(bytes);
 ///   switch (result) {
 ///     case Ok(:final value): ...
 ///     case Err(:final error): ...

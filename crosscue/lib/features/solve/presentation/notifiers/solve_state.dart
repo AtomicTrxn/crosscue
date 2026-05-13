@@ -8,7 +8,7 @@ import 'package:crosscue/features/solve/domain/services/clue_progress_calculator
 
 /// Full state for the solve screen.
 ///
-/// Uses a plain immutable class (not Freezed) because Grid<T> generics
+/// Uses a plain immutable class (not Freezed) because `Grid<T>` generics
 /// are incompatible with Freezed's code generator.
 class SolveState {
   SolveState({

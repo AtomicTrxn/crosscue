@@ -67,9 +67,11 @@ class StatsExportNotifier extends _$StatsExportNotifier {
           '${now.year}${_pad(now.month)}${_pad(now.day)}_${_pad(now.hour)}${_pad(now.minute)}';
       final file = File('${dir.path}/crosscue-stats-$stamp.json');
       await file.writeAsBytes(bytesResult.value, flush: true);
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/json')],
-        subject: 'Crosscue stats export',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/json')],
+          subject: 'Crosscue stats export',
+        ),
       );
     } catch (e) {
       state = StatsExportFailure('Could not share file: $e');

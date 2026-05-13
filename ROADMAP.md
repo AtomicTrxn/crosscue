@@ -8,8 +8,6 @@ current cleanup pass.
 
 - Continue revamping `onboarding_screen.dart` when that flow gets broader
   product/design attention.
-- Consider moving parser tests fully under a mirrored `test/features/...`
-  structure if more import parser coverage is added.
 
 ## Recently closed from the review pass
 
@@ -23,3 +21,7 @@ current cleanup pass.
 - Made route usage guardable with a test instead of relying on convention only.
 - Split `crossword_grid.dart` into layout, input handling, and cell-effect
   animation parts.
+- Back navigation on branch-root screens — no longer needed; deferred
+  indefinitely.
+- Mirrored import test structure: moved `crosshare_downloader_test.dart` to
+  `data/downloaders/` and `source_registry_test.dart` to `data/sources/`.
