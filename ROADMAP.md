@@ -6,9 +6,8 @@ current cleanup pass.
 
 ## Backlog
 
-- Continue splitting large UI files when a change naturally touches them:
-  `onboarding_screen.dart` and `crossword_grid.dart` are the remaining largest
-  candidates.
+- Continue revamping `onboarding_screen.dart` when that flow gets broader
+  product/design attention.
 - Consider moving parser tests fully under a mirrored `test/features/...`
   structure if more import parser coverage is added.
 
@@ -22,3 +21,5 @@ current cleanup pass.
 - Finished the theme-token cleanup for the reviewed screens.
 - Replaced production `print` calls with app logging/reporting.
 - Made route usage guardable with a test instead of relying on convention only.
+- Split `crossword_grid.dart` into layout, input handling, and cell-effect
+  animation parts.
