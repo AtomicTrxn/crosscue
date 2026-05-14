@@ -13,8 +13,13 @@ abstract interface class PuzzleParser {
   ///
   /// [sourceId] identifies which source produced the bytes and is stored on
   /// the resulting [PuzzleMetadata]. Defaults to `'local_import'`.
+  ///
+  /// [sourcePuzzleId] is the source's own ID for this puzzle (e.g. Crosshare's
+  /// stable puzzle ID). Stored alongside [sourceId] so callers can later check
+  /// whether a given source entry has already been imported.
   Result<Puzzle, ParseError> parse(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   });
 }

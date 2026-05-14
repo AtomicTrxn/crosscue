@@ -146,9 +146,10 @@ void main() {
       expect(result.error, CrosshareDownloadError.notFound);
     });
 
-    test('returns networkError when page returns HTTP 404', () async {
-      // A 404 from the server causes Dio to throw DioException → networkError.
-      // notFound is reserved for HTTP-200 responses where today is absent from the list.
+    test('returns notFound when page returns HTTP 404', () async {
+      // HTTP 404 on the month page means the requested month is before the
+      // Crosshare archive start (April 2020). For downloadToday() this is
+      // surfaced as notFound; for fetchMonth() it is beforeArchiveStart.
       final downloader = _downloaderWith((options) {
         if (options.path.contains('dailyminis')) {
           return ResponseBody.fromString('Not Found', 404);
@@ -158,7 +159,7 @@ void main() {
 
       final result = await downloader.downloadToday();
       expect(result.isErr, isTrue);
-      expect(result.error, CrosshareDownloadError.networkError);
+      expect(result.error, CrosshareDownloadError.notFound);
     });
 
     // ── malformedPage ───────────────────────────────────────────────────────
@@ -298,6 +299,182 @@ void main() {
       expect(capturedConnectTimeout, isNotNull);
       expect(capturedConnectTimeout!.inSeconds, greaterThan(0));
       expect(capturedPersistentConnection, isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // fetchMonth — used by the Recently-missed listing
+  // ---------------------------------------------------------------------------
+
+  group('fetchMonth', () {
+    /// Builds a month-archive HTML body with [entries] of (day, id, title).
+    String monthHtml(List<(int day, String id, String title)> entries) {
+      final puzzles = entries
+          .map(
+            (e) => [
+              e.$1,
+              {
+                'id': e.$2,
+                'title': e.$3,
+                'authorName': 'A. Author',
+                'size': {'cols': 5, 'rows': 5},
+              },
+            ],
+          )
+          .toList();
+      final json = jsonEncode({
+        'props': {
+          'pageProps': {'puzzles': puzzles},
+        },
+      });
+      return '<html><script id="__NEXT_DATA__" type="application/json">$json</script></html>';
+    }
+
+    test('parses every entry in the month into CrosshareEntry rows', () async {
+      final downloader = _downloaderWith((options) {
+        return ResponseBody.fromString(
+          monthHtml(const [
+            (10, 'id10', 'Puzzle Ten'),
+            (5, 'id05', 'Puzzle Five'),
+            (1, 'id01', 'Puzzle One'),
+          ]),
+          200,
+        );
+      });
+
+      final result = await downloader.fetchMonth(2024, 3);
+      expect(result.isOk, isTrue);
+      final entries = result.value;
+      expect(entries.length, 3);
+      expect(entries.map((e) => e.id), ['id10', 'id05', 'id01']);
+      expect(entries[0].title, 'Puzzle Ten');
+      expect(entries[0].authorName, 'A. Author');
+      expect(entries[0].width, 5);
+      expect(entries[0].height, 5);
+      expect(entries[0].date, DateTime(2024, 3, 10));
+      expect(entries[1].date, DateTime(2024, 3, 5));
+      expect(entries[2].date, DateTime(2024, 3, 1));
+    });
+
+    test('returns beforeArchiveStart when the server returns HTTP 404',
+        () async {
+      final downloader = _downloaderWith((options) {
+        return ResponseBody.fromString('Not Found', 404);
+      });
+
+      final result = await downloader.fetchMonth(2019, 12);
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareFetchMonthError.beforeArchiveStart);
+    });
+
+    test('returns networkError when Dio throws', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _FakeAdapter((options) {
+          throw DioException(
+            requestOptions: options,
+            type: DioExceptionType.connectionTimeout,
+          );
+        });
+      final downloader = CrosshareDownloader(dio: dio);
+
+      final result = await downloader.fetchMonth(2024, 3);
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareFetchMonthError.networkError);
+    });
+
+    test('returns malformedPage when __NEXT_DATA__ is missing', () async {
+      final downloader = _downloaderWith((options) {
+        return ResponseBody.fromString('<html>no data here</html>', 200);
+      });
+
+      final result = await downloader.fetchMonth(2024, 3);
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareFetchMonthError.malformedPage);
+    });
+
+    test('skips entries with missing id or title', () async {
+      final downloader = _downloaderWith((options) {
+        final json = jsonEncode({
+          'props': {
+            'pageProps': {
+              'puzzles': [
+                [
+                  1,
+                  {'id': 'good', 'title': 'Good'},
+                ],
+                [
+                  2,
+                  {'title': 'No ID'},
+                ],
+                [
+                  3,
+                  {'id': 'no-title'},
+                ],
+              ],
+            },
+          },
+        });
+        return ResponseBody.fromString(
+          '<html><script id="__NEXT_DATA__" type="application/json">$json</script></html>',
+          200,
+        );
+      });
+
+      final result = await downloader.fetchMonth(2024, 3);
+      expect(result.isOk, isTrue);
+      expect(result.value.map((e) => e.id), ['good']);
+    });
+
+    test('hits /dailyminis/{year}/{month} URL', () async {
+      String? capturedPath;
+      final downloader = _downloaderWith((options) {
+        capturedPath = options.path;
+        return ResponseBody.fromString(monthHtml(const []), 200);
+      });
+
+      await downloader.fetchMonth(2023, 7);
+      expect(capturedPath, contains('/dailyminis/2023/7'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // downloadById — direct .puz fetch by Crosshare ID
+  // ---------------------------------------------------------------------------
+
+  group('downloadById', () {
+    test('returns the .puz bytes for the given id', () async {
+      final downloader = _downloaderWith((options) {
+        return ResponseBody.fromBytes(_fakePuzBytes, 200);
+      });
+
+      final result = await downloader.downloadById('abc123');
+      expect(result.isOk, isTrue);
+      expect(result.value, _fakePuzBytes);
+    });
+
+    test('returns networkError when the request fails', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _FakeAdapter((options) {
+          throw DioException(
+            requestOptions: options,
+            type: DioExceptionType.connectionTimeout,
+          );
+        });
+      final downloader = CrosshareDownloader(dio: dio);
+
+      final result = await downloader.downloadById('abc123');
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareDownloadError.networkError);
+    });
+
+    test('returns networkError when status is non-200', () async {
+      final downloader = _downloaderWith((options) {
+        return ResponseBody.fromString('Server Error', 500);
+      });
+
+      final result = await downloader.downloadById('abc123');
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareDownloadError.networkError);
     });
   });
 }
