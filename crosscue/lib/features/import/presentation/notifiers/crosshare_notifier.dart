@@ -76,9 +76,37 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   }
 
   Future<void> _runDownload() async {
-    // Step 1: fetch .puz bytes from Crosshare.
-    final dlResult = await _downloader.downloadToday();
+    // Step 1: enumerate the current month so we can stamp the puzzle's
+    // Crosshare ID onto the imported row (used by the Recently-missed feature
+    // to detect already-imported entries).
+    final today = DateTime.now();
+    final monthResult = await _downloader.fetchMonth(today.year, today.month);
+    if (monthResult.isErr) {
+      final dlError = _monthToDownloadError(monthResult.error);
+      final statusStr = switch (dlError) {
+        CrosshareDownloadError.notFound => CrosshareStatus.notFound,
+        CrosshareDownloadError.networkError => CrosshareStatus.networkError,
+        CrosshareDownloadError.malformedPage => CrosshareStatus.networkError,
+      };
+      await _persistStatus(statusStr);
+      state = CrosshareFailure(message: _downloadErrorMessage(dlError));
+      _invalidateStatusProviders();
+      return;
+    }
 
+    final entry =
+        monthResult.value.where((e) => e.date.day == today.day).firstOrNull;
+    if (entry == null) {
+      await _persistStatus(CrosshareStatus.notFound);
+      state = CrosshareFailure(
+        message: _downloadErrorMessage(CrosshareDownloadError.notFound),
+      );
+      _invalidateStatusProviders();
+      return;
+    }
+
+    // Step 2: fetch .puz bytes for today's entry.
+    final dlResult = await _downloader.downloadById(entry.id);
     if (dlResult.isErr) {
       final statusStr = switch (dlResult.error) {
         CrosshareDownloadError.notFound => CrosshareStatus.notFound,
@@ -91,20 +119,21 @@ class CrosshareNotifier extends _$CrosshareNotifier {
       return;
     }
 
-    // Step 2: parse + persist via ImportRepository.
+    // Step 3: parse + persist via ImportRepository.
     final importResult = await _importRepo.importBytes(
       dlResult.value,
       sourceId: 'crosshare_daily_mini',
+      sourcePuzzleId: entry.id,
     );
-    final today = _todayString();
+    final todayStr = _todayString();
 
     switch (importResult) {
       case JobSuccess(:final puzzle):
-        await _persistStatus(CrosshareStatus.success, date: today);
+        await _persistStatus(CrosshareStatus.success, date: todayStr);
         state =
             CrosshareSuccess(puzzleId: puzzle.id, title: puzzle.metadata.title);
       case JobDuplicate():
-        await _persistStatus(CrosshareStatus.duplicate, date: today);
+        await _persistStatus(CrosshareStatus.duplicate, date: todayStr);
         state = const CrosshareDuplicate();
       case JobFailure(:final error):
         await _persistStatus(CrosshareStatus.networkError);
@@ -112,6 +141,17 @@ class CrosshareNotifier extends _$CrosshareNotifier {
     }
 
     _invalidateStatusProviders();
+  }
+
+  CrosshareDownloadError _monthToDownloadError(CrosshareFetchMonthError e) {
+    return switch (e) {
+      CrosshareFetchMonthError.beforeArchiveStart =>
+        CrosshareDownloadError.notFound,
+      CrosshareFetchMonthError.networkError =>
+        CrosshareDownloadError.networkError,
+      CrosshareFetchMonthError.malformedPage =>
+        CrosshareDownloadError.malformedPage,
+    };
   }
 
   void reset() => state = const CrosshareIdle();

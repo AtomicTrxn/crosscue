@@ -26,7 +26,15 @@ class ImportRepositoryImpl implements ImportRepository {
   Future<ImportJobResult> importBytes(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   }) async {
+    // Fast pre-flight: if the source provided its own stable ID and we have
+    // already imported that entry, skip parsing entirely.
+    if (sourcePuzzleId != null &&
+        await _dao.existsBySourcePuzzleId(sourceId, sourcePuzzleId)) {
+      return const ImportJobResult.duplicate();
+    }
+
     // Find a capable parser
     PuzzleParser? parser;
     for (final p in _parsers) {
@@ -40,7 +48,11 @@ class ImportRepositoryImpl implements ImportRepository {
     }
 
     // Parse
-    final result = parser.parse(bytes, sourceId: sourceId);
+    final result = parser.parse(
+      bytes,
+      sourceId: sourceId,
+      sourcePuzzleId: sourcePuzzleId,
+    );
     if (result.isErr) return ImportJobResult.failure(result.error);
 
     final puzzle = result.value;

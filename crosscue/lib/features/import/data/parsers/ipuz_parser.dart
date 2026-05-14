@@ -69,9 +69,14 @@ class IpuzParser implements PuzzleParser {
   Result<Puzzle, ParseError> parse(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   }) {
     try {
-      return _doParse(bytes, sourceId: sourceId);
+      return _doParse(
+        bytes,
+        sourceId: sourceId,
+        sourcePuzzleId: sourcePuzzleId,
+      );
     } catch (e) {
       return const Err(ParseError.unknown);
     }
@@ -80,6 +85,7 @@ class IpuzParser implements PuzzleParser {
   Result<Puzzle, ParseError> _doParse(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   }) {
     if (bytes.length > _maxBytes) return const Err(ParseError.fileTooLarge);
 
@@ -267,6 +273,7 @@ class IpuzParser implements PuzzleParser {
     final metadata = PuzzleMetadata(
       id: id,
       sourceId: sourceId,
+      sourcePuzzleId: sourcePuzzleId,
       title: title.isEmpty ? 'Untitled' : title,
       author: author,
       copyright: copyright,

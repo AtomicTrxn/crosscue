@@ -11,9 +11,14 @@ abstract class ImportRepository {
   ///
   /// [sourceId] is stored on the puzzle's metadata so queries can filter by
   /// origin. Defaults to `'local_import'` for user-supplied files.
+  ///
+  /// [sourcePuzzleId] is the source's stable ID for this puzzle (e.g. a
+  /// Crosshare puzzle ID). When non-null, it is used for a fast pre-flight
+  /// duplicate check ahead of the more expensive checksum-based one.
   Future<ImportJobResult> importBytes(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   });
 
   /// Returns metadata for every puzzle currently stored in the database.

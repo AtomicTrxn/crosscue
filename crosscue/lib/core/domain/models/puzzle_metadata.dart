@@ -17,6 +17,7 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
     required int width,
     required int height,
     required DateTime importedAt,
+    String? sourcePuzzleId,
     DateTime? publishDate,
     String? notes,
     String? checksum,

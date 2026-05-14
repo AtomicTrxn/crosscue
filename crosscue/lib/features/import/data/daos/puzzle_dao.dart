@@ -56,6 +56,24 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
     return row != null;
   }
 
+  /// Checks whether a puzzle with the given source / sourcePuzzleId pair
+  /// already exists. Used to skip re-downloading remote puzzles whose source
+  /// records their stable ID (e.g. Crosshare).
+  Future<bool> existsBySourcePuzzleId(
+    String sourceId,
+    String sourcePuzzleId,
+  ) async {
+    final row = await (select(puzzlesTable)
+          ..where(
+            (t) =>
+                t.sourceId.equals(sourceId) &
+                t.sourcePuzzleId.equals(sourcePuzzleId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   /// Loads a full [Puzzle] (metadata + clues) from the DB.
   /// Returns null if not found.
   Future<Puzzle?> getPuzzle(String id) async {
@@ -97,6 +115,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
         PuzzlesTableCompanion.insert(
           id: puzzle.id,
           sourceId: puzzle.metadata.sourceId,
+          sourcePuzzleId: Value(puzzle.metadata.sourcePuzzleId),
           format: puzzle.metadata.format.name,
           title: puzzle.metadata.title,
           author: Value(puzzle.metadata.author),
@@ -143,6 +162,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
     return PuzzleMetadata(
       id: row.id,
       sourceId: row.sourceId,
+      sourcePuzzleId: row.sourcePuzzleId,
       title: row.title,
       author: row.author ?? '',
       copyright: row.copyright ?? '',

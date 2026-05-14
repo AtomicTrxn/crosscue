@@ -157,4 +157,63 @@ void main() {
       expect(await repo.getAllMetadata(), hasLength(2));
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // sourcePuzzleId — stable ID from remote sources (e.g. Crosshare)
+  // ---------------------------------------------------------------------------
+
+  group('sourcePuzzleId', () {
+    test('persists sourcePuzzleId from importBytes onto the puzzle row',
+        () async {
+      await seedSource('crosshare_daily_mini');
+      final result = await repo.importBytes(
+        PuzFixtureBuilder.minimal3x3(),
+        sourceId: 'crosshare_daily_mini',
+        sourcePuzzleId: 'cs-puzzle-abc',
+      );
+      expect(result, isA<JobSuccess>());
+      final meta = (result as JobSuccess).puzzle.metadata;
+      expect(meta.sourcePuzzleId, 'cs-puzzle-abc');
+
+      final fetched = await db.puzzleDao.getMetadata(meta.id);
+      expect(fetched?.sourcePuzzleId, 'cs-puzzle-abc');
+    });
+
+    test('importBytes returns JobDuplicate when sourcePuzzleId already exists',
+        () async {
+      await seedSource('crosshare_daily_mini');
+      final first = await repo.importBytes(
+        PuzFixtureBuilder.minimal3x3(),
+        sourceId: 'crosshare_daily_mini',
+        sourcePuzzleId: 'cs-puzzle-abc',
+      );
+      expect(first, isA<JobSuccess>());
+
+      // Different bytes, same (sourceId, sourcePuzzleId) → fast-path duplicate.
+      final second = await repo.importBytes(
+        IpuzFixture.minimal3x3(),
+        sourceId: 'crosshare_daily_mini',
+        sourcePuzzleId: 'cs-puzzle-abc',
+      );
+      expect(second, isA<JobDuplicate>());
+    });
+
+    test(
+        'existsBySourcePuzzleId is false for an unknown (sourceId, '
+        'sourcePuzzleId) pair', () async {
+      expect(
+        await db.puzzleDao.existsBySourcePuzzleId(
+          'crosshare_daily_mini',
+          'never-imported',
+        ),
+        isFalse,
+      );
+    });
+
+    test('local imports leave sourcePuzzleId null', () async {
+      final result = await repo.importBytes(PuzFixtureBuilder.minimal3x3());
+      final meta = (result as JobSuccess).puzzle.metadata;
+      expect(meta.sourcePuzzleId, isNull);
+    });
+  });
 }
