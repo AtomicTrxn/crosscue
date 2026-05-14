@@ -534,6 +534,7 @@ final class _FakeImportRepository implements ImportRepository {
   Future<ImportJobResult> importBytes(
     Uint8List bytes, {
     String sourceId = 'local_import',
+    String? sourcePuzzleId,
   }) async =>
       ImportJobResult.success(puzzle);
 }
