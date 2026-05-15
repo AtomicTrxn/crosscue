@@ -399,8 +399,6 @@ class _MockGrid extends StatelessWidget {
                     final isBlack = _grid[r][c] == null;
                     final isFocused = focusRow == r && focusCol == c;
                     final isWord = !isBlack && _inActiveWord(r, c);
-                    final isCross =
-                        !isBlack && !isFocused && !isWord && _inCrossWord(r, c);
 
                     Color bg;
                     if (isBlack) {
@@ -409,8 +407,6 @@ class _MockGrid extends StatelessWidget {
                       bg = xwTheme.cellActive;
                     } else if (isWord) {
                       bg = xwTheme.wordHighlight;
-                    } else if (isCross) {
-                      bg = xwTheme.crossHighlight;
                     } else {
                       bg = xwTheme.gridEmpty;
                     }
@@ -451,15 +447,6 @@ class _MockGrid extends StatelessWidget {
       return r == focusRow && _inAcrossWordBounds(focusRow!, focusCol!, c);
     } else {
       return c == focusCol && _inDownWordBounds(focusRow!, focusCol!, r);
-    }
-  }
-
-  bool _inCrossWord(int r, int c) {
-    if (focusRow == null || focusCol == null) return false;
-    if (focusIsAcross) {
-      return c == focusCol && _inDownWordBounds(focusRow!, focusCol!, r);
-    } else {
-      return r == focusRow && _inAcrossWordBounds(focusRow!, focusCol!, c);
     }
   }
 
