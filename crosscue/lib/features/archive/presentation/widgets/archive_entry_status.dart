@@ -64,9 +64,9 @@ class ArchiveEntryStatus {
     final elapsed = entry.elapsedMs == null ? '' : formatMs(entry.elapsedMs!);
     return ArchiveEntryStatus(
       icon: Icons.timelapse_rounded,
-      color: CrosscueColors.primaryMid,
+      color: CrosscueColors.primary,
       noteLabel: 'In progress${elapsed.isNotEmpty ? ' · $elapsed' : ''}',
-      noteColor: CrosscueColors.primaryMid,
+      noteColor: CrosscueColors.primary,
     );
   }
 }

@@ -8,11 +8,11 @@ import 'package:flutter/material.dart';
 /// All raw color values used across the app.
 abstract class CrosscueColors {
   // ── Primary palette ────────────────────────────────────────────────────────
+  // Brand blue. Use Color.lerp / withValues when a darker/lighter shade is
+  // needed; we don't keep separate "primaryMid"/"primaryDark" tokens.
   static const Color primary = Color(0xFF1565C0);
-  static const Color primaryMid = Color(0xFF1E88E5);
-  static const Color primaryDark = Color(0xFF0D47A1);
-  static const Color deepNavy = Color(0xFF0A2A6E);
-  static const Color primaryLight = Color(0xFF90CAF9); // dark mode primary
+  static const Color primaryLight = Color(0xFF90CAF9); // dark-mode primary
+  static const Color deepNavy = Color(0xFF0A2A6E); // navy used for onPrimary
 
   // ── Surfaces ───────────────────────────────────────────────────────────────
   static const Color surfaceLight = Color(0xFFFFFFFF);
@@ -20,17 +20,19 @@ abstract class CrosscueColors {
   static const Color bgLight = Color(0xFFFAFAFA);
   static const Color bgDark = Color(0xFF1A1A1A);
 
-  // ── On-surface text ────────────────────────────────────────────────────────
-  static const Color onSurface1Light = Color(0xFF1A1A1A);
-  static const Color onSurface2Light = Color(0xFF555555);
-  static const Color onSurface3Light = Color(0xFF999999);
+  // ── Neutral ramp ───────────────────────────────────────────────────────────
+  // Aligned to the Tailwind gray scale so on-surface text, dividers, and
+  // illustration neutrals all draw from one consistent ramp.
+  static const Color onSurface1Light = Color(0xFF1A1A1A); // gray-900 (≈)
+  static const Color onSurface2Light = Color(0xFF6B7280); // gray-500
+  static const Color onSurface3Light = Color(0xFF9CA3AF); // gray-400
 
   static const Color onSurface1Dark = Color(0xFFE0E0E0);
   static const Color onSurface2Dark = Color(0xFF9E9E9E);
   static const Color onSurface3Dark = Color(0xFF616161);
 
   // ── Dividers ───────────────────────────────────────────────────────────────
-  static const Color dividerLight = Color(0xFFE8E8E8);
+  static const Color dividerLight = Color(0xFFE5E7EB); // gray-200
   static const Color dividerDark = Color(0xFF2C2C2C);
 
   // ── Grid cell states ───────────────────────────────────────────────────────
@@ -53,11 +55,15 @@ abstract class CrosscueColors {
   static const Color gridEmptyDark = Color(0xFF1E1E1E);
 
   // ── State colors ───────────────────────────────────────────────────────────
+  // One success green, one warning red. Apply at 20% opacity for cell-level
+  // feedback overlays; at full opacity for destructive UI / labels.
   static const Color correctLight = Color(0xFF4CAF50);
   static const Color correctDark = Color(0xFF66BB6A);
 
-  static const Color incorrectLight = Color(0xFFEF5350);
-  static const Color incorrectDark = Color(0xFFEF9A9A);
+  // Muted brick red — paired with brand blue across all error / destructive
+  // surfaces (grid-incorrect overlays, "Delete" labels, confirmation buttons).
+  static const Color incorrectLight = Color(0xFFB85450);
+  static const Color incorrectDark = Color(0xFFE89691);
 
   static const Color revealedLight = Color(0xFFFFF9C4);
   static const Color revealedDark = Color(0xFFFFB74D);
@@ -72,11 +78,13 @@ abstract class CrosscueColors {
       Color(0xFFE0E0E0); // pie chart / progress track
 
   // ── Confetti palette ───────────────────────────────────────────────────────
+  // Mirrors the four semantic colors (brand, accent, success, warning) so the
+  // celebration animation uses the same vocabulary as the rest of the UI.
   static const List<Color> confettiPalette = [
-    Color(0xFF1565C0), // primary blue
-    Color(0xFFFDD835), // accent yellow
-    Color(0xFF4CAF50), // green
-    Color(0xFFEF5350), // red
+    primary,
+    cellActiveLight,
+    correctLight,
+    incorrectLight,
   ];
 
   // ── Containers ─────────────────────────────────────────────────────────────

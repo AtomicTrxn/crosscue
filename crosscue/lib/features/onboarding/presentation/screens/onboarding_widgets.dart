@@ -211,14 +211,14 @@ class _AddPuzzleIllustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
-    // Use the light surface explicitly — the surrounding screen is navy,
-    // and we want this to read as a miniature of the (light) Today screen
-    // regardless of the user's system theme. Slightly grayed so the FAB
-    // (the call to action) reads as the active element.
+    // Use the light-mode tokens explicitly — the surrounding screen is navy
+    // and we want this miniature to read as the (light) Today screen
+    // regardless of the user's system theme. Surface is a touch grayed so
+    // the FAB (the CTA) reads as the active element on top of dimmed chrome.
     const surface = Color(0xFFE8EAEE);
-    const onSurface1 = Color(0xFF6B7280);
-    const onSurface3 = Color(0xFFB0B6BF);
-    const divider = Color(0xFFD1D5DB);
+    const onSurface1 = CrosscueColors.onSurface2Light;
+    const onSurface3 = CrosscueColors.onSurface3Light;
+    const divider = CrosscueColors.dividerLight;
 
     return Center(
       child: ClipRRect(

@@ -1,15 +1,12 @@
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:crosscue/features/stats/presentation/notifiers/stats_export_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-// Muted brick red — paired with brand blue across destructive actions on
-// this screen so the warning reads as serious but not alarming.
-const _mutedRed = Color(0xFFB85450);
 
 class PrivacyScreen extends ConsumerWidget {
   const PrivacyScreen({super.key});
@@ -38,11 +35,11 @@ class PrivacyScreen extends ConsumerWidget {
             leading: Icons.delete_forever_outlined,
             title: 'Clear all data',
             subtitle: 'Delete all puzzles, progress and settings',
-            trailing: const Text(
+            trailing: Text(
               'Delete',
-              style: TextStyle(color: _mutedRed),
+              style: TextStyle(color: context.crosscueError),
             ),
-            color: _mutedRed,
+            color: context.crosscueError,
             onTap: () => _confirmClearAll(context, ref),
           ),
         ],
@@ -72,7 +69,7 @@ class PrivacyScreen extends ConsumerWidget {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: _mutedRed,
+                backgroundColor: ctx.crosscueError,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
