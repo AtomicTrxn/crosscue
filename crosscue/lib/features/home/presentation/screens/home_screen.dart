@@ -241,12 +241,22 @@ class _FeaturedPuzzle extends StatelessWidget {
     final elapsedStr = elapsed != null && elapsed > 0
         ? '⏱ ${formatMs(elapsed)} elapsed'
         : null;
+    final dateStr = _formatPublishDate(puzzle.publishDate);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: CrosscueSpacing.screenH),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (dateStr != null) ...[
+            Text(
+              dateStr,
+              style: _featuredSubtitleStyle.copyWith(
+                color: context.crosscueOnSurface2,
+              ),
+            ),
+            const SizedBox(height: 2),
+          ],
           Text(
             puzzle.title,
             style: _featuredTitleStyle.copyWith(
@@ -313,6 +323,27 @@ class _FeaturedPuzzle extends StatelessWidget {
     if (e == null || e.isNotStarted) return 'SOLVE';
     if (e.isCompleted || e.isRevealed) return 'REVIEW';
     return 'CONTINUE SOLVING';
+  }
+
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  String? _formatPublishDate(DateTime? d) {
+    if (d == null) return null;
+    return '${_weekdays[d.weekday - 1]} ${_months[d.month - 1]} ${d.day}';
   }
 }
 

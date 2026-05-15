@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
@@ -22,7 +24,7 @@ const _grid = <List<String?>>[
   [null, 'R', 'Y', 'E', null],
 ];
 
-const _focusStart = (1, 1);
+const _focusStart = (0, 0);
 const _step1MinLettersToAdvance = 2;
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -33,7 +35,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  int _step = 0; // 0,1,2 = tutorial steps; 3 = done card
+  int _step = 0; // 0,1,2,3 = tutorial steps (step 3 is the "add puzzles" copy)
   int? _focusRow = _focusStart.$1;
   int? _focusCol = _focusStart.$2;
   bool _focusIsAcross = true;
@@ -99,7 +101,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextStep() {
-    if (_step >= 3) return;
+    if (_step >= 3) {
+      // Final step ("Add your own puzzles") → home.
+      unawaited(_finishToHome());
+      return;
+    }
     setState(() {
       _step++;
       // Reset focus when entering step 2 (direction toggle) so the target
@@ -141,19 +147,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             const Positioned.fill(child: _GridWatermark()),
             SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   _TopBar(
-                    showDots: _step < 3,
+                    showDots: _step < 4,
                     step: _step,
                     onSkip: _finishToHome,
                   ),
                   // Mini "AppBar" mirroring the real solve screen — title,
                   // timer, and ⋮ menu. The menu is interactive in every step;
-                  // tapping it in step 3 marks the step complete.
-                  _MockTopBar(
-                    onMenuOpened: _markStep3Done,
-                  ),
+                  // tapping it in step 3 marks the step complete. Hidden on
+                  // step 4 (which is about the Today screen, not solving).
+                  if (_step < 3)
+                    _MockTopBar(onMenuOpened: _markStep3Done)
+                  else
+                    const SizedBox(height: 48),
+                  // Expanded keeps the visual area sized to the remaining
+                  // space above the (fixed-height) instruction card, so the
+                  // grid/illustration never shifts between steps.
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
@@ -162,13 +174,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         CrosscueSpacing.screenH,
                         12,
                       ),
-                      child: _MockGrid(
-                        focusRow: _focusRow,
-                        focusCol: _focusCol,
-                        focusIsAcross: _focusIsAcross,
-                        typed: _typed,
-                        onCellTap: _onCellTap,
-                      ),
+                      child: _step < 3
+                          ? _MockGrid(
+                              focusRow: _focusRow,
+                              focusCol: _focusCol,
+                              focusIsAcross: _focusIsAcross,
+                              typed: _typed,
+                              onCellTap: _onCellTap,
+                            )
+                          : const _AddPuzzleIllustration(),
                     ),
                   ),
                   _InstructionCard(

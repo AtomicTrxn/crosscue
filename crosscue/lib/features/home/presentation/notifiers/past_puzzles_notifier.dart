@@ -141,6 +141,7 @@ class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
       dl.value,
       sourceId: _crosshareSourceId,
       sourcePuzzleId: entry.id,
+      publishDate: entry.date,
     );
 
     switch (import) {

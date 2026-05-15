@@ -535,6 +535,7 @@ final class _FakeImportRepository implements ImportRepository {
     Uint8List bytes, {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
+    DateTime? publishDate,
   }) async =>
       ImportJobResult.success(puzzle);
 }

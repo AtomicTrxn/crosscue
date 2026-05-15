@@ -6,6 +6,7 @@ import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/home/domain/models/past_puzzle_item.dart';
 import 'package:crosscue/features/home/presentation/notifiers/past_puzzles_notifier.dart';
 import 'package:crosscue/features/home/presentation/notifiers/past_puzzles_state.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +35,13 @@ class PastPuzzlesSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final autoDownloadAsync = ref.watch(crosshareAutoDownloadProvider);
+    final autoDownloadEnabled = switch (autoDownloadAsync) {
+      AsyncData(:final value) => value,
+      _ => false,
+    };
+    if (!autoDownloadEnabled) return const SizedBox.shrink();
+
     final async = ref.watch(pastPuzzlesProvider);
 
     return async.when(

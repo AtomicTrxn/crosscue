@@ -72,7 +72,7 @@ class _TopBar extends StatelessWidget {
         children: [
           const SizedBox(width: 60),
           if (showDots)
-            _StepDots(current: step, total: 3)
+            _StepDots(current: step, total: 4)
           else
             const SizedBox(),
           TextButton(
@@ -195,6 +195,160 @@ class _MockMenuButton extends StatelessWidget {
         PopupMenuDivider(),
         PopupMenuItem(value: 'rs', child: Text('Reset puzzle')),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Step 4 illustration — an oversized version of the Today screen's + FAB,
+// pinned to the bottom-right of a faux "Today" card so users recognize where
+// the real button lives.
+// ---------------------------------------------------------------------------
+
+class _AddPuzzleIllustration extends StatelessWidget {
+  const _AddPuzzleIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    // Use the light surface explicitly — the surrounding screen is navy,
+    // and we want this to read as a miniature of the (light) Today screen
+    // regardless of the user's system theme. Slightly grayed so the FAB
+    // (the call to action) reads as the active element.
+    const surface = Color(0xFFE8EAEE);
+    const onSurface1 = Color(0xFF6B7280);
+    const onSurface3 = Color(0xFFB0B6BF);
+    const divider = Color(0xFFD1D5DB);
+
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: surface,
+          elevation: 4,
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Faux AppBar
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: divider),
+                        ),
+                      ),
+                      child: const Text(
+                        'Today',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: onSurface1,
+                        ),
+                      ),
+                    ),
+                    // Empty-state body — mirrors home_screen.dart _EmptyState
+                    const Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.grid_on_outlined,
+                                size: 48,
+                                color: onSurface3,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'No puzzles yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: onSurface1,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Tap + to import your own.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: onSurface3,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // FAB pinned to bottom-right with an attention halo.
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: SizedBox(
+                    width: 76,
+                    height: 76,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer pulse ring
+                        Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: primary.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        // Inner pulse ring
+                        Container(
+                          width: 62,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: primary.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        // The FAB itself
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: primary,
+                            borderRadius: BorderRadius.circular(
+                              CrosscueSpacing.fabRadius,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -357,6 +511,11 @@ class _InstructionCard extends StatelessWidget {
   final void Function(String) onLetter;
   final VoidCallback onStartSolving;
 
+  // Fixed inner height for the card content area. Sized to comfortably fit
+  // Step 1 (the tallest, with the mini keyboard). Holding this constant
+  // prevents the grid above from resizing between steps.
+  static const double _contentHeight = 320;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -379,34 +538,37 @@ class _InstructionCard extends StatelessWidget {
         CrosscueSpacing.screenH,
         16 + MediaQuery.of(context).viewPadding.bottom,
       ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.04),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey(step),
-          child: switch (step) {
-            0 => _Step1Card(
-                done: step1Done,
-                onLetter: onLetter,
-                onNext: onNext,
+      child: SizedBox(
+        height: _contentHeight,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.04),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
               ),
-            1 => _Step2Card(done: step2Done, onNext: onNext),
-            2 => _Step3Card(done: step3Done, onNext: onNext),
-            _ => _DoneCard(onStartSolving: onStartSolving),
+            );
           },
+          child: KeyedSubtree(
+            key: ValueKey(step),
+            child: switch (step) {
+              0 => _Step1Card(
+                  done: step1Done,
+                  onLetter: onLetter,
+                  onNext: onNext,
+                ),
+              1 => _Step2Card(done: step2Done, onNext: onNext),
+              2 => _Step3Card(done: step3Done, onNext: onNext),
+              _ => _Step4Card(onStartSolving: onStartSolving),
+            },
+          ),
         ),
       ),
     );
@@ -584,14 +746,14 @@ class _Step3Card extends StatelessWidget {
               : 'Try opening the menu in the top right to see Check, Reveal, and Reset options.',
         ),
         const SizedBox(height: 24),
-        _PrimaryCta(label: "I'm ready", onPressed: done ? onNext : null),
+        _PrimaryCta(label: 'Next', onPressed: done ? onNext : null),
       ],
     );
   }
 }
 
-class _DoneCard extends StatelessWidget {
-  const _DoneCard({required this.onStartSolving});
+class _Step4Card extends StatelessWidget {
+  const _Step4Card({required this.onStartSolving});
   final VoidCallback onStartSolving;
 
   @override
@@ -600,23 +762,11 @@ class _DoneCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          "You're ready to solve!",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: context.crosscueOnSurface1,
-            height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "We'll grab today's Crosshare mini, or you can import your own .puz / .ipuz file.",
-          style: TextStyle(
-            fontSize: 14,
-            color: context.crosscueOnSurface2,
-            height: 1.45,
-          ),
+        const _StepHeading(
+          stepLabel: 'STEP 4',
+          title: 'Add your own puzzles',
+          body:
+              'Tap the + on the Today screen to import .puz files from your device, or to enable online sources like Crosshare.',
         ),
         const SizedBox(height: 24),
         _PrimaryCta(label: 'Start solving', onPressed: onStartSolving),
