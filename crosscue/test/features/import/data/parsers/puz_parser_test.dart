@@ -281,28 +281,31 @@ void main() {
       expect((r as Err).error, equals(ParseError.unsupportedFormat));
     });
 
-    test('26×3 grid (width above maximum) → Err(unsupportedFormat)', () {
+    test('50×50 grid → Ok (oversized but within .puz byte limit)', () {
+      final row = 'A' * 50;
+      final grid = List.filled(50, row);
+      final clueTexts = <String>['1-Across'];
+      for (var d = 1; d <= 50; d++) {
+        clueTexts.add('$d-Down');
+      }
+      for (var a = 2; a <= 50; a++) {
+        clueTexts.add('$a-Across');
+      }
       final bytes = PuzFixtureBuilder.build(
-        width: 3,
-        height: 3,
-        grid: ['ABC', 'DEF', 'GHI'],
-        clueTexts: [
-          '1-Across',
-          '1-Down',
-          '2-Down',
-          '3-Down',
-          '4-Across',
-          '5-Across',
-        ],
+        width: 50,
+        height: 50,
+        grid: grid,
+        clueTexts: clueTexts,
       );
-      final copy = Uint8List.fromList(bytes);
-      copy[0x2C] = 26; // width = 26
-      final r = parser.parse(copy);
-      expect(r, isA<Err>());
-      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+      final r = parser.parse(bytes);
+      expect(r, isA<Ok>());
+      expect((r as Ok).value.metadata.width, equals(50));
+      expect(r.value.metadata.height, equals(50));
     });
 
-    test('3×26 grid (height above maximum) → Err(unsupportedFormat)', () {
+    // Width=0 / height=0 still rejected as missingData; bytes can't exceed
+    // the format's 255 ceiling so there's no "above maximum" case to test.
+    test('width=0 byte → Err(missingData)', () {
       final bytes = PuzFixtureBuilder.build(
         width: 3,
         height: 3,
@@ -317,10 +320,10 @@ void main() {
         ],
       );
       final copy = Uint8List.fromList(bytes);
-      copy[0x2D] = 26; // height = 26
+      copy[0x2D] = 0; // height = 0
       final r = parser.parse(copy);
       expect(r, isA<Err>());
-      expect((r as Err).error, equals(ParseError.unsupportedFormat));
+      expect((r as Err).error, equals(ParseError.missingData));
     });
 
     test('2×2 grid (minimum valid size) → Ok', () {
@@ -334,7 +337,7 @@ void main() {
       expect(r, isA<Ok>());
     });
 
-    test('25×25 grid (maximum valid size) → Ok', () {
+    test('25×25 grid → Ok (Sunday-sized common cap)', () {
       final row = 'A' * 25;
       final grid = List.filled(25, row);
       // 25×25 all-white: row 0 → 1 across + 25 downs; rows 1-24 → 1 across each
