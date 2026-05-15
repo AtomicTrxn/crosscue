@@ -327,16 +327,25 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Full-width grid — self-sizes its height
-                  CrosswordGrid(
-                    puzzleId: widget.puzzleId,
-                    solveState: solveState,
-                    onGridFocusSelected: (focus) =>
-                        _setSelectorsFromFocus(solveState, focus),
+                  // Grid — sizes to fit both dimensions. Flexible(flex: 4)
+                  // gives it up to 80% of the remaining space after the
+                  // keyboard takes its intrinsic height; tall puzzles
+                  // clamp to that bound instead of overflowing the keyboard
+                  // off-screen.
+                  Flexible(
+                    flex: 4,
+                    fit: FlexFit.loose,
+                    child: CrosswordGrid(
+                      puzzleId: widget.puzzleId,
+                      solveState: solveState,
+                      onGridFocusSelected: (focus) =>
+                          _setSelectorsFromFocus(solveState, focus),
+                    ),
                   ),
 
                   // Two-column clue panel — takes remaining vertical space
                   Expanded(
+                    flex: 1,
                     child: CluePanel(
                       solveState: solveState,
                       activeClue: selectedActiveClue,
