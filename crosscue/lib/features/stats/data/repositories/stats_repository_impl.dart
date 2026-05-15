@@ -103,9 +103,8 @@ class StatsRepositoryImpl implements StatsRepository {
     // be lower than totalCompleted. Use completions as the floor.
     final effectiveStarted =
         totalStarted < totalCompleted ? totalCompleted : totalStarted;
-    final completionRate = effectiveStarted == 0
-        ? 0.0
-        : totalCompleted / effectiveStarted;
+    final completionRate =
+        effectiveStarted == 0 ? 0.0 : totalCompleted / effectiveStarted;
 
     return StatsData(
       currentStreak: currentStreak,
