@@ -735,6 +735,7 @@ class SolveNotifier extends _$SolveNotifier {
       repo
           .markComplete(
         sessionId: s.sessionId!,
+        puzzleId: s.puzzle.id,
         puzzleWidth: s.puzzle.width,
         puzzleHeight: s.puzzle.height,
         progress: s.progress,

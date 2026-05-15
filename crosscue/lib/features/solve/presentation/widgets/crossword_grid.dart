@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -131,49 +132,63 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Full-width layout: cell size driven by screen width (Sprint 10).
-        // The widget sizes itself to exactly gridH tall so the parent Column
-        // never needs to know the grid dimensions.
-        final cellSize = constraints.maxWidth / puzzle.width;
+        // Size cells to fit both dimensions. Square puzzles end up full-width;
+        // tall puzzles (height > width, e.g. some Crosshare minis) end up
+        // bounded by height so they don't push the keyboard off-screen.
+        final cellByWidth = constraints.maxWidth / puzzle.width;
+        final cellByHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight / puzzle.height
+            : double.infinity;
+        final cellSize = math.min(cellByWidth, cellByHeight);
+        final gridW = cellSize * puzzle.width;
         final gridH = cellSize * puzzle.height;
+        // Center horizontally when the grid is narrower than the column.
+        final xOffset = (constraints.maxWidth - gridW) / 2;
 
         return SizedBox(
+          width: constraints.maxWidth,
           height: gridH,
           child: Stack(
             children: [
-              // Grid painter
-              GestureDetector(
-                onTapDown: (details) => _onTap(
-                  context,
-                  details.localPosition,
-                  cellSize,
-                  0, // no horizontal offset — full width
-                  0, // no vertical offset — exact height
-                ),
-                onLongPressStart: (details) => _onLongPress(
-                  context,
-                  details.localPosition,
-                  cellSize,
-                  0,
-                  0,
-                ),
-                child: AnimatedBuilder(
-                  animation: _effectController,
-                  builder: (context, _) => CustomPaint(
-                    size: Size(constraints.maxWidth, gridH),
-                    painter: CrosswordGridPainter(
-                      puzzle: puzzle,
-                      progress: widget.solveState.progress,
-                      solveState: widget.solveState,
-                      theme: xwTheme,
-                      colorblindMode: colorblindMode,
-                      previousSolveState: animationsDisabled
-                          ? null
-                          : _previousSolveStateForEffect,
-                      effects: animationsDisabled ? const {} : _effects,
-                      effectValue: animationsDisabled
-                          ? 1.0
-                          : Curves.easeOut.transform(_effectController.value),
+              // Grid painter — positioned and sized to the actual grid box.
+              Positioned(
+                left: xOffset,
+                top: 0,
+                width: gridW,
+                height: gridH,
+                child: GestureDetector(
+                  onTapDown: (details) => _onTap(
+                    context,
+                    details.localPosition,
+                    cellSize,
+                    0,
+                    0,
+                  ),
+                  onLongPressStart: (details) => _onLongPress(
+                    context,
+                    details.localPosition,
+                    cellSize,
+                    0,
+                    0,
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _effectController,
+                    builder: (context, _) => CustomPaint(
+                      size: Size(gridW, gridH),
+                      painter: CrosswordGridPainter(
+                        puzzle: puzzle,
+                        progress: widget.solveState.progress,
+                        solveState: widget.solveState,
+                        theme: xwTheme,
+                        colorblindMode: colorblindMode,
+                        previousSolveState: animationsDisabled
+                            ? null
+                            : _previousSolveStateForEffect,
+                        effects: animationsDisabled ? const {} : _effects,
+                        effectValue: animationsDisabled
+                            ? 1.0
+                            : Curves.easeOut.transform(_effectController.value),
+                      ),
                     ),
                   ),
                 ),

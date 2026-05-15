@@ -13,10 +13,9 @@ const _filterChipLabelStyle = TextStyle(
   fontSize: CrosscueTypography.bodySmall,
 );
 const _archiveMetaStyle = TextStyle(fontSize: CrosscueTypography.label);
-const _sortButtonStyle = TextStyle(
+const _sortButtonBaseStyle = TextStyle(
   fontSize: CrosscueTypography.label,
   fontWeight: FontWeight.w500,
-  color: CrosscueColors.primary,
 );
 
 // ---------------------------------------------------------------------------
@@ -260,7 +259,7 @@ class _FilterChip extends StatelessWidget {
           style: _filterChipLabelStyle.copyWith(
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color:
-                selected ? CrosscueColors.primary : context.crosscueOnSurface3,
+                selected ? context.crosscuePrimary : context.crosscueOnSurface3,
           ),
         ),
       ),
@@ -308,7 +307,9 @@ class _SortBar extends StatelessWidget {
               children: [
                 Text(
                   'Sort: ${_sortLabel(sort)} ↓',
-                  style: _sortButtonStyle,
+                  style: _sortButtonBaseStyle.copyWith(
+                    color: context.crosscuePrimary,
+                  ),
                 ),
               ],
             ),

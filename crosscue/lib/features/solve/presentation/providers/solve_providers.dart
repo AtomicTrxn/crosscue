@@ -8,5 +8,8 @@ part 'solve_providers.g.dart';
 @Riverpod(keepAlive: true)
 SolveRepository solveRepository(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
-  return SolveRepositoryImpl(dao: db.solveSessionDao);
+  return SolveRepositoryImpl(
+    dao: db.solveSessionDao,
+    completionDao: db.puzzleCompletionDao,
+  );
 }

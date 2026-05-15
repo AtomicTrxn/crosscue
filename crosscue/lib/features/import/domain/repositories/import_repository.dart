@@ -15,10 +15,15 @@ abstract class ImportRepository {
   /// [sourcePuzzleId] is the source's stable ID for this puzzle (e.g. a
   /// Crosshare puzzle ID). When non-null, it is used for a fast pre-flight
   /// duplicate check ahead of the more expensive checksum-based one.
+  ///
+  /// [publishDate] overrides the puzzle's publish date when the source knows
+  /// it (e.g. Crosshare daily-mini downloads always carry a date) but the
+  /// parsed file format does not (e.g. `.puz`, which has no date field).
   Future<ImportJobResult> importBytes(
     Uint8List bytes, {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
+    DateTime? publishDate,
   });
 
   /// Returns metadata for every puzzle currently stored in the database.

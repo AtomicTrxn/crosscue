@@ -132,6 +132,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             Navigator.of(ctx).pop();
             if (mounted) context.go(Routes.home);
           },
+          onResetPuzzle: () {
+            Navigator.of(ctx).pop();
+            if (!mounted) return;
+            _completionSheetShown = false;
+            ref.read(solveProvider(widget.puzzleId).notifier).resetPuzzle();
+          },
         ),
       );
     }
@@ -157,6 +163,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     AsyncValue<SolveState> next,
   ) {
     next.whenData((solveState) {
+      // If a reset returned the puzzle to in-progress, allow the completion
+      // sheet to fire again on the next solve.
+      if (_completionSheetShown &&
+          solveState.status == PuzzleStatus.inProgress) {
+        _completionSheetShown = false;
+      }
       _maybeShowCompletionSheet(solveState);
       _syncClueSelectors(solveState);
     });
@@ -315,16 +327,25 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Full-width grid — self-sizes its height
-                  CrosswordGrid(
-                    puzzleId: widget.puzzleId,
-                    solveState: solveState,
-                    onGridFocusSelected: (focus) =>
-                        _setSelectorsFromFocus(solveState, focus),
+                  // Grid — sizes to fit both dimensions. Flexible(flex: 4)
+                  // gives it up to 80% of the remaining space after the
+                  // keyboard takes its intrinsic height; tall puzzles
+                  // clamp to that bound instead of overflowing the keyboard
+                  // off-screen.
+                  Flexible(
+                    flex: 4,
+                    fit: FlexFit.loose,
+                    child: CrosswordGrid(
+                      puzzleId: widget.puzzleId,
+                      solveState: solveState,
+                      onGridFocusSelected: (focus) =>
+                          _setSelectorsFromFocus(solveState, focus),
+                    ),
                   ),
 
                   // Two-column clue panel — takes remaining vertical space
                   Expanded(
+                    flex: 1,
                     child: CluePanel(
                       solveState: solveState,
                       activeClue: selectedActiveClue,

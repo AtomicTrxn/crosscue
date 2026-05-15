@@ -1,5 +1,6 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
@@ -13,11 +14,13 @@ class CompletionSheet extends ConsumerWidget {
     required this.solveState,
     required this.onViewGrid,
     required this.onNextPuzzle,
+    required this.onResetPuzzle,
   });
 
   final SolveState solveState;
   final VoidCallback onViewGrid;
   final VoidCallback onNextPuzzle;
+  final VoidCallback onResetPuzzle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -167,16 +170,21 @@ class CompletionSheet extends ConsumerWidget {
                 ],
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton(
+                  child: OutlinedButton(
                     onPressed: onViewGrid,
-                    style: TextButton.styleFrom(
-                      foregroundColor: CrosscueColors.onSurface3Light,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: CrosscueColors.onSurface2Light,
+                      side: const BorderSide(
+                        color: CrosscueColors.dividerLight,
+                        width: 1,
+                      ),
                       textStyle: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
+                      minimumSize: const Size.fromHeight(46),
                     ),
-                    child: const Text('View filled grid'),
+                    child: const Text('View completed puzzle'),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -185,7 +193,7 @@ class CompletionSheet extends ConsumerWidget {
                   child: FilledButton(
                     onPressed: onNextPuzzle,
                     style: FilledButton.styleFrom(
-                      backgroundColor: CrosscueColors.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(46),
                       textStyle: const TextStyle(
@@ -196,11 +204,65 @@ class CompletionSheet extends ConsumerWidget {
                     child: const Text('Next puzzle'),
                   ),
                 ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => _confirmReset(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: context.crosscueError,
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      minimumSize: const Size.fromHeight(40),
+                    ),
+                    child: const Text('Reset puzzle'),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final primary = Theme.of(ctx).colorScheme.primary;
+        return AlertDialog(
+          title: const Text('Reset puzzle?'),
+          content: const Text(
+            'Your progress will be cleared and the timer will restart from '
+            'zero. Your original completion is preserved in your stats and '
+            'streak.',
+          ),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: ctx.crosscueError,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      onResetPuzzle();
+    }
   }
 }

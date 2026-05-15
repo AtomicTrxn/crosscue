@@ -17,7 +17,6 @@ const _sectionLabelStyle = TextStyle(
 const _primaryStatLabelStyle = TextStyle(
   fontSize: 11,
   fontWeight: FontWeight.w600,
-  color: CrosscueColors.primary,
   letterSpacing: 0.5,
 );
 const _largeStatValueStyle = TextStyle(

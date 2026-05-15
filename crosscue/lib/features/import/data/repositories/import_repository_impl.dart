@@ -27,6 +27,7 @@ class ImportRepositoryImpl implements ImportRepository {
     Uint8List bytes, {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
+    DateTime? publishDate,
   }) async {
     // Fast pre-flight: if the source provided its own stable ID and we have
     // already imported that entry, skip parsing entirely.
@@ -55,7 +56,15 @@ class ImportRepositoryImpl implements ImportRepository {
     );
     if (result.isErr) return ImportJobResult.failure(result.error);
 
-    final puzzle = result.value;
+    var puzzle = result.value;
+    // Honor caller-provided publishDate when the parsed format didn't include
+    // one (e.g. Crosshare downloads .puz files but the daily-mini API tells us
+    // the puzzle's date).
+    if (publishDate != null && puzzle.metadata.publishDate == null) {
+      puzzle = puzzle.copyWith(
+        metadata: puzzle.metadata.copyWith(publishDate: publishDate),
+      );
+    }
 
     // Duplicate detection
     final checksum = puzzle.metadata.checksum ?? '';

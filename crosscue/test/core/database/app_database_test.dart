@@ -272,6 +272,61 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // v3 → v4 migration
+  // ---------------------------------------------------------------------------
+
+  group('v3 → v4 migration', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('drift_v3_test_');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) await tempDir.delete(recursive: true);
+    });
+
+    test('creates puzzle_completions table', () async {
+      final file = File('${tempDir.path}/v3.db');
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        // Build a minimal v3 schema (sources + crosshare seed + imported stats).
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          CREATE TABLE imported_solve_stats (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            completion_type TEXT NOT NULL,
+            elapsed_ms INTEGER NOT NULL,
+            solved_date_local TEXT NOT NULL,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            puzzle_title TEXT NOT NULL,
+            imported_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('PRAGMA user_version = 3');
+      } finally {
+        rawDb.dispose();
+      }
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
+      // Table exists and is queryable after onUpgrade(m, 3, 4).
+      expect(await db.select(db.puzzleCompletionsTable).get(), isEmpty);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // clearAllUserData
   // ---------------------------------------------------------------------------
 

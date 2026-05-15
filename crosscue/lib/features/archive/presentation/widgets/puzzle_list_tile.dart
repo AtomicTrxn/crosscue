@@ -143,7 +143,7 @@ class PuzzleProgressPie extends StatelessWidget {
       child: CustomPaint(
         painter: _PuzzleProgressPiePainter(
           value: value.clamp(0.0, 1.0),
-          fill: CrosscueColors.primary,
+          fill: context.crosscuePrimary,
           track: CrosscueColors.trackGrey,
         ),
       ),

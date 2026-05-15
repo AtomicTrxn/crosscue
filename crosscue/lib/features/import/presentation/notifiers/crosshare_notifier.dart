@@ -124,6 +124,7 @@ class CrosshareNotifier extends _$CrosshareNotifier {
       dlResult.value,
       sourceId: 'crosshare_daily_mini',
       sourcePuzzleId: entry.id,
+      publishDate: entry.date,
     );
     final todayStr = _todayString();
 

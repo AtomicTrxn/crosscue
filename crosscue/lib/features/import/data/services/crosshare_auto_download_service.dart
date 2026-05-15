@@ -66,6 +66,7 @@ class CrosshareAutoDownloadService {
     final importResult = await _importRepo.importBytes(
       dlResult.value,
       sourceId: 'crosshare_daily_mini',
+      publishDate: DateTime.now(),
     );
     switch (importResult) {
       case JobSuccess():

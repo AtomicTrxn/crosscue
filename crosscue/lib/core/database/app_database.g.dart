@@ -4888,6 +4888,494 @@ class ImportedSolveStatsTableCompanion
   }
 }
 
+class $PuzzleCompletionsTableTable extends PuzzleCompletionsTable
+    with TableInfo<$PuzzleCompletionsTableTable, PuzzleCompletionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PuzzleCompletionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _puzzleIdMeta =
+      const VerificationMeta('puzzleId');
+  @override
+  late final GeneratedColumn<String> puzzleId = GeneratedColumn<String>(
+      'puzzle_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES puzzles (id) ON DELETE CASCADE'));
+  static const VerificationMeta _completionTypeMeta =
+      const VerificationMeta('completionType');
+  @override
+  late final GeneratedColumn<String> completionType = GeneratedColumn<String>(
+      'completion_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _completedAtMeta =
+      const VerificationMeta('completedAt');
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+      'completed_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _solvedDateLocalMeta =
+      const VerificationMeta('solvedDateLocal');
+  @override
+  late final GeneratedColumn<String> solvedDateLocal = GeneratedColumn<String>(
+      'solved_date_local', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _solvedTimezoneMeta =
+      const VerificationMeta('solvedTimezone');
+  @override
+  late final GeneratedColumn<String> solvedTimezone = GeneratedColumn<String>(
+      'solved_timezone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _elapsedMsMeta =
+      const VerificationMeta('elapsedMs');
+  @override
+  late final GeneratedColumn<int> elapsedMs = GeneratedColumn<int>(
+      'elapsed_ms', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _checkCountMeta =
+      const VerificationMeta('checkCount');
+  @override
+  late final GeneratedColumn<int> checkCount = GeneratedColumn<int>(
+      'check_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _revealCountMeta =
+      const VerificationMeta('revealCount');
+  @override
+  late final GeneratedColumn<int> revealCount = GeneratedColumn<int>(
+      'reveal_count', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        puzzleId,
+        completionType,
+        completedAt,
+        solvedDateLocal,
+        solvedTimezone,
+        elapsedMs,
+        checkCount,
+        revealCount
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'puzzle_completions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<PuzzleCompletionRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('puzzle_id')) {
+      context.handle(_puzzleIdMeta,
+          puzzleId.isAcceptableOrUnknown(data['puzzle_id']!, _puzzleIdMeta));
+    } else if (isInserting) {
+      context.missing(_puzzleIdMeta);
+    }
+    if (data.containsKey('completion_type')) {
+      context.handle(
+          _completionTypeMeta,
+          completionType.isAcceptableOrUnknown(
+              data['completion_type']!, _completionTypeMeta));
+    } else if (isInserting) {
+      context.missing(_completionTypeMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+          _completedAtMeta,
+          completedAt.isAcceptableOrUnknown(
+              data['completed_at']!, _completedAtMeta));
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    if (data.containsKey('solved_date_local')) {
+      context.handle(
+          _solvedDateLocalMeta,
+          solvedDateLocal.isAcceptableOrUnknown(
+              data['solved_date_local']!, _solvedDateLocalMeta));
+    } else if (isInserting) {
+      context.missing(_solvedDateLocalMeta);
+    }
+    if (data.containsKey('solved_timezone')) {
+      context.handle(
+          _solvedTimezoneMeta,
+          solvedTimezone.isAcceptableOrUnknown(
+              data['solved_timezone']!, _solvedTimezoneMeta));
+    }
+    if (data.containsKey('elapsed_ms')) {
+      context.handle(_elapsedMsMeta,
+          elapsedMs.isAcceptableOrUnknown(data['elapsed_ms']!, _elapsedMsMeta));
+    } else if (isInserting) {
+      context.missing(_elapsedMsMeta);
+    }
+    if (data.containsKey('check_count')) {
+      context.handle(
+          _checkCountMeta,
+          checkCount.isAcceptableOrUnknown(
+              data['check_count']!, _checkCountMeta));
+    }
+    if (data.containsKey('reveal_count')) {
+      context.handle(
+          _revealCountMeta,
+          revealCount.isAcceptableOrUnknown(
+              data['reveal_count']!, _revealCountMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PuzzleCompletionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PuzzleCompletionRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      puzzleId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}puzzle_id'])!,
+      completionType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}completion_type'])!,
+      completedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at'])!,
+      solvedDateLocal: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}solved_date_local'])!,
+      solvedTimezone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}solved_timezone']),
+      elapsedMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}elapsed_ms'])!,
+      checkCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}check_count'])!,
+      revealCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}reveal_count'])!,
+    );
+  }
+
+  @override
+  $PuzzleCompletionsTableTable createAlias(String alias) {
+    return $PuzzleCompletionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class PuzzleCompletionRow extends DataClass
+    implements Insertable<PuzzleCompletionRow> {
+  final int id;
+  final String puzzleId;
+
+  /// DB values: clean | checked | hinted | revealed
+  final String completionType;
+  final DateTime completedAt;
+
+  /// Calendar date string in device-local timezone: 'yyyy-MM-dd'.
+  final String solvedDateLocal;
+  final String? solvedTimezone;
+  final int elapsedMs;
+  final int checkCount;
+  final int revealCount;
+  const PuzzleCompletionRow(
+      {required this.id,
+      required this.puzzleId,
+      required this.completionType,
+      required this.completedAt,
+      required this.solvedDateLocal,
+      this.solvedTimezone,
+      required this.elapsedMs,
+      required this.checkCount,
+      required this.revealCount});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['puzzle_id'] = Variable<String>(puzzleId);
+    map['completion_type'] = Variable<String>(completionType);
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    map['solved_date_local'] = Variable<String>(solvedDateLocal);
+    if (!nullToAbsent || solvedTimezone != null) {
+      map['solved_timezone'] = Variable<String>(solvedTimezone);
+    }
+    map['elapsed_ms'] = Variable<int>(elapsedMs);
+    map['check_count'] = Variable<int>(checkCount);
+    map['reveal_count'] = Variable<int>(revealCount);
+    return map;
+  }
+
+  PuzzleCompletionsTableCompanion toCompanion(bool nullToAbsent) {
+    return PuzzleCompletionsTableCompanion(
+      id: Value(id),
+      puzzleId: Value(puzzleId),
+      completionType: Value(completionType),
+      completedAt: Value(completedAt),
+      solvedDateLocal: Value(solvedDateLocal),
+      solvedTimezone: solvedTimezone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(solvedTimezone),
+      elapsedMs: Value(elapsedMs),
+      checkCount: Value(checkCount),
+      revealCount: Value(revealCount),
+    );
+  }
+
+  factory PuzzleCompletionRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PuzzleCompletionRow(
+      id: serializer.fromJson<int>(json['id']),
+      puzzleId: serializer.fromJson<String>(json['puzzleId']),
+      completionType: serializer.fromJson<String>(json['completionType']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      solvedDateLocal: serializer.fromJson<String>(json['solvedDateLocal']),
+      solvedTimezone: serializer.fromJson<String?>(json['solvedTimezone']),
+      elapsedMs: serializer.fromJson<int>(json['elapsedMs']),
+      checkCount: serializer.fromJson<int>(json['checkCount']),
+      revealCount: serializer.fromJson<int>(json['revealCount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'puzzleId': serializer.toJson<String>(puzzleId),
+      'completionType': serializer.toJson<String>(completionType),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+      'solvedDateLocal': serializer.toJson<String>(solvedDateLocal),
+      'solvedTimezone': serializer.toJson<String?>(solvedTimezone),
+      'elapsedMs': serializer.toJson<int>(elapsedMs),
+      'checkCount': serializer.toJson<int>(checkCount),
+      'revealCount': serializer.toJson<int>(revealCount),
+    };
+  }
+
+  PuzzleCompletionRow copyWith(
+          {int? id,
+          String? puzzleId,
+          String? completionType,
+          DateTime? completedAt,
+          String? solvedDateLocal,
+          Value<String?> solvedTimezone = const Value.absent(),
+          int? elapsedMs,
+          int? checkCount,
+          int? revealCount}) =>
+      PuzzleCompletionRow(
+        id: id ?? this.id,
+        puzzleId: puzzleId ?? this.puzzleId,
+        completionType: completionType ?? this.completionType,
+        completedAt: completedAt ?? this.completedAt,
+        solvedDateLocal: solvedDateLocal ?? this.solvedDateLocal,
+        solvedTimezone:
+            solvedTimezone.present ? solvedTimezone.value : this.solvedTimezone,
+        elapsedMs: elapsedMs ?? this.elapsedMs,
+        checkCount: checkCount ?? this.checkCount,
+        revealCount: revealCount ?? this.revealCount,
+      );
+  PuzzleCompletionRow copyWithCompanion(PuzzleCompletionsTableCompanion data) {
+    return PuzzleCompletionRow(
+      id: data.id.present ? data.id.value : this.id,
+      puzzleId: data.puzzleId.present ? data.puzzleId.value : this.puzzleId,
+      completionType: data.completionType.present
+          ? data.completionType.value
+          : this.completionType,
+      completedAt:
+          data.completedAt.present ? data.completedAt.value : this.completedAt,
+      solvedDateLocal: data.solvedDateLocal.present
+          ? data.solvedDateLocal.value
+          : this.solvedDateLocal,
+      solvedTimezone: data.solvedTimezone.present
+          ? data.solvedTimezone.value
+          : this.solvedTimezone,
+      elapsedMs: data.elapsedMs.present ? data.elapsedMs.value : this.elapsedMs,
+      checkCount:
+          data.checkCount.present ? data.checkCount.value : this.checkCount,
+      revealCount:
+          data.revealCount.present ? data.revealCount.value : this.revealCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PuzzleCompletionRow(')
+          ..write('id: $id, ')
+          ..write('puzzleId: $puzzleId, ')
+          ..write('completionType: $completionType, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('solvedDateLocal: $solvedDateLocal, ')
+          ..write('solvedTimezone: $solvedTimezone, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('checkCount: $checkCount, ')
+          ..write('revealCount: $revealCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, puzzleId, completionType, completedAt,
+      solvedDateLocal, solvedTimezone, elapsedMs, checkCount, revealCount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PuzzleCompletionRow &&
+          other.id == this.id &&
+          other.puzzleId == this.puzzleId &&
+          other.completionType == this.completionType &&
+          other.completedAt == this.completedAt &&
+          other.solvedDateLocal == this.solvedDateLocal &&
+          other.solvedTimezone == this.solvedTimezone &&
+          other.elapsedMs == this.elapsedMs &&
+          other.checkCount == this.checkCount &&
+          other.revealCount == this.revealCount);
+}
+
+class PuzzleCompletionsTableCompanion
+    extends UpdateCompanion<PuzzleCompletionRow> {
+  final Value<int> id;
+  final Value<String> puzzleId;
+  final Value<String> completionType;
+  final Value<DateTime> completedAt;
+  final Value<String> solvedDateLocal;
+  final Value<String?> solvedTimezone;
+  final Value<int> elapsedMs;
+  final Value<int> checkCount;
+  final Value<int> revealCount;
+  const PuzzleCompletionsTableCompanion({
+    this.id = const Value.absent(),
+    this.puzzleId = const Value.absent(),
+    this.completionType = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.solvedDateLocal = const Value.absent(),
+    this.solvedTimezone = const Value.absent(),
+    this.elapsedMs = const Value.absent(),
+    this.checkCount = const Value.absent(),
+    this.revealCount = const Value.absent(),
+  });
+  PuzzleCompletionsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String puzzleId,
+    required String completionType,
+    required DateTime completedAt,
+    required String solvedDateLocal,
+    this.solvedTimezone = const Value.absent(),
+    required int elapsedMs,
+    this.checkCount = const Value.absent(),
+    this.revealCount = const Value.absent(),
+  })  : puzzleId = Value(puzzleId),
+        completionType = Value(completionType),
+        completedAt = Value(completedAt),
+        solvedDateLocal = Value(solvedDateLocal),
+        elapsedMs = Value(elapsedMs);
+  static Insertable<PuzzleCompletionRow> custom({
+    Expression<int>? id,
+    Expression<String>? puzzleId,
+    Expression<String>? completionType,
+    Expression<DateTime>? completedAt,
+    Expression<String>? solvedDateLocal,
+    Expression<String>? solvedTimezone,
+    Expression<int>? elapsedMs,
+    Expression<int>? checkCount,
+    Expression<int>? revealCount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (puzzleId != null) 'puzzle_id': puzzleId,
+      if (completionType != null) 'completion_type': completionType,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (solvedDateLocal != null) 'solved_date_local': solvedDateLocal,
+      if (solvedTimezone != null) 'solved_timezone': solvedTimezone,
+      if (elapsedMs != null) 'elapsed_ms': elapsedMs,
+      if (checkCount != null) 'check_count': checkCount,
+      if (revealCount != null) 'reveal_count': revealCount,
+    });
+  }
+
+  PuzzleCompletionsTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? puzzleId,
+      Value<String>? completionType,
+      Value<DateTime>? completedAt,
+      Value<String>? solvedDateLocal,
+      Value<String?>? solvedTimezone,
+      Value<int>? elapsedMs,
+      Value<int>? checkCount,
+      Value<int>? revealCount}) {
+    return PuzzleCompletionsTableCompanion(
+      id: id ?? this.id,
+      puzzleId: puzzleId ?? this.puzzleId,
+      completionType: completionType ?? this.completionType,
+      completedAt: completedAt ?? this.completedAt,
+      solvedDateLocal: solvedDateLocal ?? this.solvedDateLocal,
+      solvedTimezone: solvedTimezone ?? this.solvedTimezone,
+      elapsedMs: elapsedMs ?? this.elapsedMs,
+      checkCount: checkCount ?? this.checkCount,
+      revealCount: revealCount ?? this.revealCount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (puzzleId.present) {
+      map['puzzle_id'] = Variable<String>(puzzleId.value);
+    }
+    if (completionType.present) {
+      map['completion_type'] = Variable<String>(completionType.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (solvedDateLocal.present) {
+      map['solved_date_local'] = Variable<String>(solvedDateLocal.value);
+    }
+    if (solvedTimezone.present) {
+      map['solved_timezone'] = Variable<String>(solvedTimezone.value);
+    }
+    if (elapsedMs.present) {
+      map['elapsed_ms'] = Variable<int>(elapsedMs.value);
+    }
+    if (checkCount.present) {
+      map['check_count'] = Variable<int>(checkCount.value);
+    }
+    if (revealCount.present) {
+      map['reveal_count'] = Variable<int>(revealCount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PuzzleCompletionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('puzzleId: $puzzleId, ')
+          ..write('completionType: $completionType, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('solvedDateLocal: $solvedDateLocal, ')
+          ..write('solvedTimezone: $solvedTimezone, ')
+          ..write('elapsedMs: $elapsedMs, ')
+          ..write('checkCount: $checkCount, ')
+          ..write('revealCount: $revealCount')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4902,6 +5390,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AppSettingsTableTable(this);
   late final $ImportedSolveStatsTableTable importedSolveStatsTable =
       $ImportedSolveStatsTableTable(this);
+  late final $PuzzleCompletionsTableTable puzzleCompletionsTable =
+      $PuzzleCompletionsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4913,7 +5403,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         solveSessionsTable,
         cellProgressTable,
         appSettingsTable,
-        importedSolveStatsTable
+        importedSolveStatsTable,
+        puzzleCompletionsTable
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -4937,6 +5428,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('cell_progress', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('puzzles',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('puzzle_completions', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -5540,6 +6038,25 @@ final class $$PuzzlesTableTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$PuzzleCompletionsTableTable,
+      List<PuzzleCompletionRow>> _puzzleCompletionsTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.puzzleCompletionsTable,
+          aliasName: $_aliasNameGenerator(
+              db.puzzlesTable.id, db.puzzleCompletionsTable.puzzleId));
+
+  $$PuzzleCompletionsTableTableProcessedTableManager
+      get puzzleCompletionsTableRefs {
+    final manager = $$PuzzleCompletionsTableTableTableManager(
+            $_db, $_db.puzzleCompletionsTable)
+        .filter((f) => f.puzzleId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_puzzleCompletionsTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$PuzzlesTableTableFilterComposer
@@ -5671,6 +6188,29 @@ class $$PuzzlesTableTableFilterComposer
               $removeJoinBuilderFromRootComposer:
                   $removeJoinBuilderFromRootComposer,
             ));
+    return f(composer);
+  }
+
+  Expression<bool> puzzleCompletionsTableRefs(
+      Expression<bool> Function($$PuzzleCompletionsTableTableFilterComposer f)
+          f) {
+    final $$PuzzleCompletionsTableTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.puzzleCompletionsTable,
+            getReferencedColumn: (t) => t.puzzleId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$PuzzleCompletionsTableTableFilterComposer(
+                  $db: $db,
+                  $table: $db.puzzleCompletionsTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
     return f(composer);
   }
 }
@@ -5898,6 +6438,29 @@ class $$PuzzlesTableTableAnnotationComposer
                 ));
     return f(composer);
   }
+
+  Expression<T> puzzleCompletionsTableRefs<T extends Object>(
+      Expression<T> Function($$PuzzleCompletionsTableTableAnnotationComposer a)
+          f) {
+    final $$PuzzleCompletionsTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.puzzleCompletionsTable,
+            getReferencedColumn: (t) => t.puzzleId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$PuzzleCompletionsTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.puzzleCompletionsTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$PuzzlesTableTableTableManager extends RootTableManager<
@@ -5912,7 +6475,10 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
     (PuzzleRow, $$PuzzlesTableTableReferences),
     PuzzleRow,
     PrefetchHooks Function(
-        {bool sourceId, bool cluesTableRefs, bool solveSessionsTableRefs})> {
+        {bool sourceId,
+        bool cluesTableRefs,
+        bool solveSessionsTableRefs,
+        bool puzzleCompletionsTableRefs})> {
   $$PuzzlesTableTableTableManager(_$AppDatabase db, $PuzzlesTableTable table)
       : super(TableManagerState(
           db: db,
@@ -6028,12 +6594,14 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
           prefetchHooksCallback: (
               {sourceId = false,
               cluesTableRefs = false,
-              solveSessionsTableRefs = false}) {
+              solveSessionsTableRefs = false,
+              puzzleCompletionsTableRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (cluesTableRefs) db.cluesTable,
-                if (solveSessionsTableRefs) db.solveSessionsTable
+                if (solveSessionsTableRefs) db.solveSessionsTable,
+                if (puzzleCompletionsTableRefs) db.puzzleCompletionsTable
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -6088,6 +6656,19 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.puzzleId == item.id),
+                        typedResults: items),
+                  if (puzzleCompletionsTableRefs)
+                    await $_getPrefetchedData<PuzzleRow, $PuzzlesTableTable,
+                            PuzzleCompletionRow>(
+                        currentTable: table,
+                        referencedTable: $$PuzzlesTableTableReferences
+                            ._puzzleCompletionsTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$PuzzlesTableTableReferences(db, table, p0)
+                                .puzzleCompletionsTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.puzzleId == item.id),
                         typedResults: items)
                 ];
               },
@@ -6108,7 +6689,10 @@ typedef $$PuzzlesTableTableProcessedTableManager = ProcessedTableManager<
     (PuzzleRow, $$PuzzlesTableTableReferences),
     PuzzleRow,
     PrefetchHooks Function(
-        {bool sourceId, bool cluesTableRefs, bool solveSessionsTableRefs})>;
+        {bool sourceId,
+        bool cluesTableRefs,
+        bool solveSessionsTableRefs,
+        bool puzzleCompletionsTableRefs})>;
 typedef $$CluesTableTableCreateCompanionBuilder = CluesTableCompanion Function({
   Value<int> id,
   required String puzzleId,
@@ -7870,6 +8454,348 @@ typedef $$ImportedSolveStatsTableTableProcessedTableManager
         ),
         ImportedSolveStatRow,
         PrefetchHooks Function()>;
+typedef $$PuzzleCompletionsTableTableCreateCompanionBuilder
+    = PuzzleCompletionsTableCompanion Function({
+  Value<int> id,
+  required String puzzleId,
+  required String completionType,
+  required DateTime completedAt,
+  required String solvedDateLocal,
+  Value<String?> solvedTimezone,
+  required int elapsedMs,
+  Value<int> checkCount,
+  Value<int> revealCount,
+});
+typedef $$PuzzleCompletionsTableTableUpdateCompanionBuilder
+    = PuzzleCompletionsTableCompanion Function({
+  Value<int> id,
+  Value<String> puzzleId,
+  Value<String> completionType,
+  Value<DateTime> completedAt,
+  Value<String> solvedDateLocal,
+  Value<String?> solvedTimezone,
+  Value<int> elapsedMs,
+  Value<int> checkCount,
+  Value<int> revealCount,
+});
+
+final class $$PuzzleCompletionsTableTableReferences extends BaseReferences<
+    _$AppDatabase, $PuzzleCompletionsTableTable, PuzzleCompletionRow> {
+  $$PuzzleCompletionsTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $PuzzlesTableTable _puzzleIdTable(_$AppDatabase db) =>
+      db.puzzlesTable.createAlias($_aliasNameGenerator(
+          db.puzzleCompletionsTable.puzzleId, db.puzzlesTable.id));
+
+  $$PuzzlesTableTableProcessedTableManager get puzzleId {
+    final $_column = $_itemColumn<String>('puzzle_id')!;
+
+    final manager = $$PuzzlesTableTableTableManager($_db, $_db.puzzlesTable)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_puzzleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$PuzzleCompletionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PuzzleCompletionsTableTable> {
+  $$PuzzleCompletionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completionType => $composableBuilder(
+      column: $table.completionType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get elapsedMs => $composableBuilder(
+      column: $table.elapsedMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get checkCount => $composableBuilder(
+      column: $table.checkCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get revealCount => $composableBuilder(
+      column: $table.revealCount, builder: (column) => ColumnFilters(column));
+
+  $$PuzzlesTableTableFilterComposer get puzzleId {
+    final $$PuzzlesTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.puzzleId,
+        referencedTable: $db.puzzlesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PuzzlesTableTableFilterComposer(
+              $db: $db,
+              $table: $db.puzzlesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PuzzleCompletionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PuzzleCompletionsTableTable> {
+  $$PuzzleCompletionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get completionType => $composableBuilder(
+      column: $table.completionType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get elapsedMs => $composableBuilder(
+      column: $table.elapsedMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get checkCount => $composableBuilder(
+      column: $table.checkCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get revealCount => $composableBuilder(
+      column: $table.revealCount, builder: (column) => ColumnOrderings(column));
+
+  $$PuzzlesTableTableOrderingComposer get puzzleId {
+    final $$PuzzlesTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.puzzleId,
+        referencedTable: $db.puzzlesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PuzzlesTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.puzzlesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PuzzleCompletionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PuzzleCompletionsTableTable> {
+  $$PuzzleCompletionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get completionType => $composableBuilder(
+      column: $table.completionType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get solvedDateLocal => $composableBuilder(
+      column: $table.solvedDateLocal, builder: (column) => column);
+
+  GeneratedColumn<String> get solvedTimezone => $composableBuilder(
+      column: $table.solvedTimezone, builder: (column) => column);
+
+  GeneratedColumn<int> get elapsedMs =>
+      $composableBuilder(column: $table.elapsedMs, builder: (column) => column);
+
+  GeneratedColumn<int> get checkCount => $composableBuilder(
+      column: $table.checkCount, builder: (column) => column);
+
+  GeneratedColumn<int> get revealCount => $composableBuilder(
+      column: $table.revealCount, builder: (column) => column);
+
+  $$PuzzlesTableTableAnnotationComposer get puzzleId {
+    final $$PuzzlesTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.puzzleId,
+        referencedTable: $db.puzzlesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$PuzzlesTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.puzzlesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$PuzzleCompletionsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PuzzleCompletionsTableTable,
+    PuzzleCompletionRow,
+    $$PuzzleCompletionsTableTableFilterComposer,
+    $$PuzzleCompletionsTableTableOrderingComposer,
+    $$PuzzleCompletionsTableTableAnnotationComposer,
+    $$PuzzleCompletionsTableTableCreateCompanionBuilder,
+    $$PuzzleCompletionsTableTableUpdateCompanionBuilder,
+    (PuzzleCompletionRow, $$PuzzleCompletionsTableTableReferences),
+    PuzzleCompletionRow,
+    PrefetchHooks Function({bool puzzleId})> {
+  $$PuzzleCompletionsTableTableTableManager(
+      _$AppDatabase db, $PuzzleCompletionsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PuzzleCompletionsTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PuzzleCompletionsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PuzzleCompletionsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> puzzleId = const Value.absent(),
+            Value<String> completionType = const Value.absent(),
+            Value<DateTime> completedAt = const Value.absent(),
+            Value<String> solvedDateLocal = const Value.absent(),
+            Value<String?> solvedTimezone = const Value.absent(),
+            Value<int> elapsedMs = const Value.absent(),
+            Value<int> checkCount = const Value.absent(),
+            Value<int> revealCount = const Value.absent(),
+          }) =>
+              PuzzleCompletionsTableCompanion(
+            id: id,
+            puzzleId: puzzleId,
+            completionType: completionType,
+            completedAt: completedAt,
+            solvedDateLocal: solvedDateLocal,
+            solvedTimezone: solvedTimezone,
+            elapsedMs: elapsedMs,
+            checkCount: checkCount,
+            revealCount: revealCount,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String puzzleId,
+            required String completionType,
+            required DateTime completedAt,
+            required String solvedDateLocal,
+            Value<String?> solvedTimezone = const Value.absent(),
+            required int elapsedMs,
+            Value<int> checkCount = const Value.absent(),
+            Value<int> revealCount = const Value.absent(),
+          }) =>
+              PuzzleCompletionsTableCompanion.insert(
+            id: id,
+            puzzleId: puzzleId,
+            completionType: completionType,
+            completedAt: completedAt,
+            solvedDateLocal: solvedDateLocal,
+            solvedTimezone: solvedTimezone,
+            elapsedMs: elapsedMs,
+            checkCount: checkCount,
+            revealCount: revealCount,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$PuzzleCompletionsTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({puzzleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (puzzleId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.puzzleId,
+                    referencedTable: $$PuzzleCompletionsTableTableReferences
+                        ._puzzleIdTable(db),
+                    referencedColumn: $$PuzzleCompletionsTableTableReferences
+                        ._puzzleIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$PuzzleCompletionsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $PuzzleCompletionsTableTable,
+        PuzzleCompletionRow,
+        $$PuzzleCompletionsTableTableFilterComposer,
+        $$PuzzleCompletionsTableTableOrderingComposer,
+        $$PuzzleCompletionsTableTableAnnotationComposer,
+        $$PuzzleCompletionsTableTableCreateCompanionBuilder,
+        $$PuzzleCompletionsTableTableUpdateCompanionBuilder,
+        (PuzzleCompletionRow, $$PuzzleCompletionsTableTableReferences),
+        PuzzleCompletionRow,
+        PrefetchHooks Function({bool puzzleId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7889,4 +8815,7 @@ class $AppDatabaseManager {
   $$ImportedSolveStatsTableTableTableManager get importedSolveStatsTable =>
       $$ImportedSolveStatsTableTableTableManager(
           _db, _db.importedSolveStatsTable);
+  $$PuzzleCompletionsTableTableTableManager get puzzleCompletionsTable =>
+      $$PuzzleCompletionsTableTableTableManager(
+          _db, _db.puzzleCompletionsTable);
 }

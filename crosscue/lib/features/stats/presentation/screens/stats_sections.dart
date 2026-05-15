@@ -244,7 +244,8 @@ class _TimeCell extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           label,
-          style: _primaryStatLabelStyle,
+          style:
+              _primaryStatLabelStyle.copyWith(color: context.crosscuePrimary),
         ),
         Text(
           sub,

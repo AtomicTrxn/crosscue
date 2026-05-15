@@ -535,6 +535,7 @@ final class _FakeImportRepository implements ImportRepository {
     Uint8List bytes, {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
+    DateTime? publishDate,
   }) async =>
       ImportJobResult.success(puzzle);
 }
@@ -561,6 +562,7 @@ final class _FakeSolveRepository implements SolveRepository {
   @override
   Future<void> markComplete({
     required int sessionId,
+    required String puzzleId,
     required int puzzleWidth,
     required int puzzleHeight,
     required Grid<CellProgress> progress,

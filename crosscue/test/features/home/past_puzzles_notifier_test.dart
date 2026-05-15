@@ -88,6 +88,7 @@ class _FakeImportRepository implements ImportRepository {
     Uint8List bytes, {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
+    DateTime? publishDate,
   }) async {
     final result = (nextImportResult ?? _defaultImport)(sourcePuzzleId);
     if (result case JobSuccess(:final puzzle)) {

@@ -2,6 +2,7 @@ import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/features/solve/data/daos/puzzle_completion_dao.dart';
 import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
@@ -9,9 +10,10 @@ import 'package:crosscue/features/solve/domain/repositories/solve_repository.dar
 import 'package:intl/intl.dart';
 
 class SolveRepositoryImpl implements SolveRepository {
-  const SolveRepositoryImpl({required this.dao});
+  const SolveRepositoryImpl({required this.dao, required this.completionDao});
 
   final SolveSessionDao dao;
+  final PuzzleCompletionDao completionDao;
 
   // ---------------------------------------------------------------------------
   // Session lifecycle
@@ -122,10 +124,13 @@ class SolveRepositoryImpl implements SolveRepository {
     await dao.saveCellProgress(sessionId, progress, puzzleWidth, puzzleHeight);
   }
 
-  /// Saves the final completed/revealed state of a session.
+  /// Saves the final completed/revealed state of a session and appends an
+  /// immutable row to `puzzle_completions` (the source of truth for streak
+  /// history and future leaderboard features).
   @override
   Future<void> markComplete({
     required int sessionId,
+    required String puzzleId,
     required int puzzleWidth,
     required int puzzleHeight,
     required Grid<CellProgress> progress,
@@ -163,6 +168,17 @@ class SolveRepositoryImpl implements SolveRepository {
     );
 
     await dao.saveCellProgress(sessionId, progress, puzzleWidth, puzzleHeight);
+
+    await completionDao.recordCompletion(
+      puzzleId: puzzleId,
+      completionType: completionType.name,
+      completedAt: now.toUtc(),
+      solvedDateLocal: solvedDateLocal,
+      solvedTimezone: solvedTimezone,
+      elapsedMs: elapsedMs,
+      checkCount: checkCount,
+      revealCount: revealCount,
+    );
   }
 
   // ---------------------------------------------------------------------------

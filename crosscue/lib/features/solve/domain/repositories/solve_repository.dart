@@ -58,9 +58,12 @@ abstract class SolveRepository {
     required bool cleanSolveEligible,
   });
 
-  /// Saves the final completed/revealed state of a session.
+  /// Saves the final completed/revealed state of a session and appends an
+  /// immutable row to `puzzle_completions` (the source of truth for streak
+  /// history and future leaderboard features).
   Future<void> markComplete({
     required int sessionId,
+    required String puzzleId,
     required int puzzleWidth,
     required int puzzleHeight,
     required Grid<CellProgress> progress,

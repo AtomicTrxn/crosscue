@@ -25,7 +25,9 @@ import 'package:crypto/crypto.dart';
 ///   - Scramble: only bit 0x0004 indicates a locked solution; other bits are
 ///     non-scramble metadata and are tolerated.
 ///   - Hidden cells (byte 0x3A, ':') are not supported and cause rejection.
-///   - App-supported grid dimensions: 2×2 – 25×25.
+///   - App-supported grid dimensions: 2×2 up to the .puz format's hard
+///     byte limit of 255×255. Real crosswords top out at 21×21 (NYT
+///     Sunday) or 23×23; the cell-sizing engine clamps to whatever fits.
 ///   - Constructor notes are preserved verbatim (no boilerplate stripping).
 class PuzParser implements PuzzleParser {
   const PuzParser();
@@ -54,8 +56,12 @@ class PuzParser implements PuzzleParser {
   /// Minimum supported grid dimension (both width and height).
   static const _minDimension = 2;
 
-  /// Maximum supported grid dimension (both width and height).
-  static const _maxDimension = 25;
+  /// Maximum supported grid dimension. The .puz format stores width and
+  /// height as unsigned bytes, so 255 is the format's natural ceiling.
+  /// We accept anything within that range — the rendering engine fits
+  /// cells to available space, so oversized grids degrade gracefully
+  /// rather than failing import.
+  static const _maxDimension = 255;
 
   /// Solution byte for a hidden cell in some .puz writers (not supported).
   static const _hiddenCellByte = 0x3A; // ':'

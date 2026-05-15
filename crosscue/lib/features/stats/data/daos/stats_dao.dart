@@ -1,5 +1,6 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
+import 'package:crosscue/core/database/tables/puzzle_completions_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:drift/drift.dart';
@@ -33,7 +34,12 @@ typedef StatsExportRecord = ({
 /// personal-best comparisons) is done in [StatsRepositoryImpl] so it is
 /// easily unit-testable without a database.
 @DriftAccessor(
-  tables: [SolveSessionsTable, PuzzlesTable, ImportedSolveStatsTable],
+  tables: [
+    SolveSessionsTable,
+    PuzzlesTable,
+    ImportedSolveStatsTable,
+    PuzzleCompletionsTable,
+  ],
 )
 class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   StatsDao(super.db);
@@ -131,16 +137,19 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
   /// Distinct [solvedDateLocal] values for streak-eligible completions
   /// (clean / checked / hinted — excludes 'revealed').
   ///
+  /// Reads from [puzzleCompletionsTable] — the immutable per-completion
+  /// history — so that "Reset puzzle" wiping the live `solve_sessions` row
+  /// does not erase the original solve date from a user's streak.
+  ///
   /// Returns strings in 'yyyy-MM-dd' format; nulls are filtered out in the
   /// repository before running the streak algorithm.
   Future<List<String?>> getStreakDates() async {
-    final localDates = await (selectOnly(solveSessionsTable)
-          ..addColumns([solveSessionsTable.solvedDateLocal])
+    final localDates = await (selectOnly(puzzleCompletionsTable)
+          ..addColumns([puzzleCompletionsTable.solvedDateLocal])
           ..where(
-            solveSessionsTable.completionType.isNotNull() &
-                solveSessionsTable.completionType.isNotValue('revealed'),
+            puzzleCompletionsTable.completionType.isNotValue('revealed'),
           ))
-        .map((r) => r.read(solveSessionsTable.solvedDateLocal))
+        .map((r) => r.read(puzzleCompletionsTable.solvedDateLocal))
         .get();
     final importedDates = await (selectOnly(importedSolveStatsTable)
           ..addColumns([importedSolveStatsTable.solvedDateLocal])

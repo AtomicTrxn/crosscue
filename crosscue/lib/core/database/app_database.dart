@@ -4,12 +4,14 @@ import 'package:crosscue/core/database/tables/app_settings_table.dart';
 import 'package:crosscue/core/database/tables/cell_progress_table.dart';
 import 'package:crosscue/core/database/tables/clues_table.dart';
 import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
+import 'package:crosscue/core/database/tables/puzzle_completions_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:crosscue/core/database/tables/sources_table.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
+import 'package:crosscue/features/solve/data/daos/puzzle_completion_dao.dart';
 import 'package:crosscue/features/solve/data/daos/solve_session_dao.dart';
 import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 import 'package:drift/drift.dart';
@@ -28,6 +30,7 @@ part 'app_database.g.dart';
     CellProgressTable,
     AppSettingsTable,
     ImportedSolveStatsTable,
+    PuzzleCompletionsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -41,9 +44,10 @@ class AppDatabase extends _$AppDatabase {
   SolveSessionDao get solveSessionDao => SolveSessionDao(this);
   AppSettingsDao get appSettingsDao => AppSettingsDao(this);
   StatsDao get statsDao => StatsDao(this);
+  PuzzleCompletionDao get puzzleCompletionDao => PuzzleCompletionDao(this);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Migration strategy.
   ///
@@ -57,6 +61,10 @@ class AppDatabase extends _$AppDatabase {
   /// ## Version history
   /// v1 → v2: added `imported_solve_stats` table.
   /// v2 → v3: seeded `crosshare_daily_mini` source row (foreign-key fix).
+  /// v3 → v4: added `puzzle_completions` table — immutable per-completion
+  ///          history used by streak/leaderboard features so that the live
+  ///          `solve_sessions` row can be cleared by "Reset puzzle" without
+  ///          losing the record of the original solve.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
@@ -83,6 +91,11 @@ class AppDatabase extends _$AppDatabase {
             // constraint on puzzles.source_id.
             await _seedCrosshareSource();
           }
+
+          if (from < 4) {
+            // v3 → v4: add puzzle_completions table (immutable history).
+            await m.createTable(puzzleCompletionsTable);
+          }
         },
         beforeOpen: (details) async {
           // Enable foreign key enforcement.
@@ -104,7 +117,13 @@ class AppDatabase extends _$AppDatabase {
   /// `test/core/database/app_database_test.dart`.
   Future<void> clearAllUserData() async {
     await transaction(() async {
+      // Cascade from puzzlesTable already removes dependent rows in
+      // solve_sessions, cell_progress, clues, and puzzle_completions. We
+      // explicitly delete puzzle_completions afterward as a defensive sweep
+      // in case any row was ever orphaned by a future migration that loosens
+      // the FK constraint.
       await delete(puzzlesTable).go();
+      await delete(puzzleCompletionsTable).go();
       await delete(importedSolveStatsTable).go();
       await delete(appSettingsTable).go();
     });

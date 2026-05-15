@@ -369,7 +369,7 @@ final class CrosshareAutoDownloadNotifierProvider
 }
 
 String _$crosshareAutoDownloadNotifierHash() =>
-    r'dd742dc3bd8d9898b9ec61606f6842148ed9636a';
+    r'5d3102eb566ba4b56a979fcc0871b82a15b777cd';
 
 abstract class _$CrosshareAutoDownloadNotifier extends $AsyncNotifier<bool> {
   FutureOr<bool> build();

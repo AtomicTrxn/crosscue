@@ -1,4 +1,3 @@
-import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
@@ -41,9 +40,9 @@ class ArchiveEntryStatus {
       );
     }
     if (entry.isCleanSolve) {
-      return const ArchiveEntryStatus(
+      return ArchiveEntryStatus(
         icon: Icons.star_rounded,
-        color: CrosscueColors.primary,
+        color: context.crosscuePrimary,
       );
     }
     if (entry.isCompleted || entry.isRevealed) {
@@ -64,9 +63,9 @@ class ArchiveEntryStatus {
     final elapsed = entry.elapsedMs == null ? '' : formatMs(entry.elapsedMs!);
     return ArchiveEntryStatus(
       icon: Icons.timelapse_rounded,
-      color: CrosscueColors.primaryMid,
+      color: context.crosscuePrimary,
       noteLabel: 'In progress${elapsed.isNotEmpty ? ' · $elapsed' : ''}',
-      noteColor: CrosscueColors.primaryMid,
+      noteColor: context.crosscuePrimary,
     );
   }
 }

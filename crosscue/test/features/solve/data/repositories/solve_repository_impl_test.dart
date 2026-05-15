@@ -19,7 +19,10 @@ void main() {
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    repo = SolveRepositoryImpl(dao: db.solveSessionDao);
+    repo = SolveRepositoryImpl(
+      dao: db.solveSessionDao,
+      completionDao: db.puzzleCompletionDao,
+    );
   });
   tearDown(() => db.close());
 
@@ -136,6 +139,7 @@ void main() {
 
       await repo.markComplete(
         sessionId: session.sessionId,
+        puzzleId: puzzleId,
         puzzleWidth: 3,
         puzzleHeight: 3,
         progress: completedProgress,
@@ -248,6 +252,7 @@ void main() {
 
       await repo.markComplete(
         sessionId: session.sessionId,
+        puzzleId: puzzleId,
         puzzleWidth: 3,
         puzzleHeight: 3,
         progress: blankGrid(),

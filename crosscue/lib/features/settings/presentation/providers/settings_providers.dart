@@ -1,5 +1,6 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -130,6 +131,11 @@ class CrosshareAutoDownloadNotifier extends _$CrosshareAutoDownloadNotifier {
     final next = _nextBool(state);
     await ref.read(appSettingsProvider).setCrosshareAutoDownload(next);
     state = AsyncData(next);
+    if (next) {
+      // Trigger today's download immediately so the user sees the puzzle
+      // appear without waiting for the next app launch / resume.
+      await ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
+    }
   }
 }
 
