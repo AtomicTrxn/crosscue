@@ -63,7 +63,7 @@ const factory SolutionCell.black() = _BlackCell;
 
 ### Always run build_runner after changing Freezed models
 ```bash
-flutter pub run build_runner build
+dart run build_runner build
 ```
 
 ---
@@ -129,7 +129,7 @@ class SolveNotifier extends _$SolveNotifier {
 
 ### Always run build_runner after changing notifiers
 ```bash
-flutter pub run build_runner build
+dart run build_runner build
 ```
 
 ---
@@ -437,7 +437,7 @@ See `core/utils/result.dart` for the full definition and MODELS.md for usage exa
 # crosscue/
 
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
-flutter pub run build_runner build
+dart run build_runner build
 
 # 2. Lint — must be 0 issues
 flutter analyze

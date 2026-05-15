@@ -1,8 +1,7 @@
 # Crosscue Roadmap
 
-This keeps the durable follow-up trail from `CODE_REVIEW.md` outside the chat
-history. Move items here only when they are still worth tracking after the
-current cleanup pass.
+Durable follow-up trail for the project. Move items here only when they are
+still worth tracking after the current cleanup pass.
 
 ## Backlog
 

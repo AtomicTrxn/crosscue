@@ -59,6 +59,16 @@ android {
             val releaseCfg = signingConfigs.getByName("release")
             signingConfig = if (releaseCfg.storeFile != null) releaseCfg
                             else signingConfigs.getByName("debug")
+
+            // Shrink Dart + Kotlin/Java code and resources. Flutter and plugin
+            // ProGuard rules are picked up automatically; app-specific keep
+            // rules live in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
+import 'package:crosscue/core/telemetry/crash_reporter.dart';
 
 class SoundPlayer {
-  SoundPlayer() : _player = AudioPlayer();
+  SoundPlayer({required CrashReporter crashReporter})
+      : _player = AudioPlayer(),
+        _crashReporter = crashReporter;
 
   final AudioPlayer _player;
+  final CrashReporter _crashReporter;
   Uint8List? _beepBytes;
 
   Future<void> playFeedback() async {
@@ -16,7 +20,10 @@ class SoundPlayer {
       await _player.stop();
       await _player.play(BytesSource(_beepBytes!));
     } catch (error, stackTrace) {
-      debugPrint('[SoundPlayer] feedback playback failed: $error\n$stackTrace');
+      // Audio failures are non-fatal — the rest of the solve flow doesn't
+      // depend on the beep. Forward to the crash reporter so they can be
+      // diagnosed if the user has crash reporting enabled.
+      unawaited(_crashReporter.reportError(error, stackTrace));
     }
   }
 

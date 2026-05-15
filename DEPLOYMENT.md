@@ -292,8 +292,9 @@ Human review is required before publishing — this is not legal advice.
 ### Privacy policy (required before submission)
 - [x] Publish a privacy policy at a stable public URL:
       `https://atomictrxn.github.io/crosscue/privacy.html`
-- [ ] Add the privacy policy URL to Play Console → Store Presence → App Content → Privacy Policy
-- [ ] Add an "About / Privacy Policy" link in app Settings
+- [x] In-app `Settings → Privacy & Data → Privacy policy` opens the public
+      URL via `url_launcher` (see [privacy_screen.dart](crosscue/lib/features/settings/presentation/screens/privacy_screen.dart)).
+- [x] Privacy policy URL filed in Play Console → App Content → Privacy Policy.
 
 ### Play Console — Data Safety form
 Crosscue current-release answers:
@@ -308,14 +309,29 @@ Crosscue current-release answers:
 | Required for core function? | Not applicable |
 
 ### App content & targeting
-- [ ] Confirm app is **not** targeted at children under 13 in the store listing
-- [ ] Complete Play Console → App Content → Target Audience
-- [ ] Set `android:hasFragileUserData="true"` in `AndroidManifest.xml` if supporting data deletion on uninstall prompt (Android 10+)
+- [x] Confirmed app is **not** targeted at children under 13 in the store listing.
+- [x] Play Console → App Content → Target Audience completed.
+- [x] Data Safety form filed in Play Console (answers above).
+- [x] `android:hasFragileUserData="true"` set on the application in
+      [AndroidManifest.xml](crosscue/android/app/src/main/AndroidManifest.xml)
+      so Android 10+ offers the user a data-preservation prompt on uninstall.
 
-### Release
-- [ ] Add `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret (Google Cloud service account with Release Manager role)
-- [ ] Uncomment the Play Store upload step in `.github/workflows/release.yml`
-- [ ] Use `workflow_dispatch` with `play_store: true` to trigger the first AAB upload to the internal track
+### Release build hardening
+- [x] R8 / resource shrinking enabled for the release build type in
+      [build.gradle.kts](crosscue/android/app/build.gradle.kts); app-level
+      keep rules live in `android/app/proguard-rules.pro`. Always smoke-test
+      a release APK (`flutter build apk --release`) and install it on a
+      device before tagging a release — minification can break plugin
+      reflection in ways debug builds will not catch.
+
+### Release pipeline
+- [x] `.github/workflows/release.yml` builds a signed AAB and uploads to the
+      Play Store internal track when triggered with `play_store: true`.
+- [x] `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret added (Google Cloud service
+      account with the Release Manager role on the Play Console). Verify
+      with `gh secret list`.
+- [ ] Use `workflow_dispatch` with `play_store: true` to trigger the first
+      AAB upload to the internal track.
 
 ### Post-launch updates required if scope changes
 - Re-review and update privacy policy + Data Safety form before adding analytics,
@@ -386,6 +402,37 @@ final ext = file.extension?.toLowerCase() ?? '';
 if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) { ... }
 ```
 Always wrap `pickFiles` in try/catch for `PlatformException`.
+
+### Dark-mode QA checklist
+
+Toggle `Settings → Theme → Dark` (or set the system theme) and walk every
+screen before tagging a release. Direct `CrosscueColors.*Light` /
+`CrosscueColors.*Dark` references are forbidden outside the theme files
+(see [design_tokens.dart](crosscue/lib/core/theme/design_tokens.dart)); always
+read theme-aware tokens via `context.crosscue*` or `Theme.of(context).cw`
+(`CrosswordTheme`).
+
+Acceptable exceptions (intentional brand-fixed colors):
+
+| Location | Rationale |
+|----------|-----------|
+| Completion sheet barrier (`barrierDeepNavy`) | Brand celebration color, identical in both themes. |
+| Confetti palette (`confettiPalette`) | Fixed 4-color brand palette. |
+| Completed-cell green (`completedCellBg`, `completedCellFg`) | Celebration accent — green-on-green stays bright in both themes. |
+| Onboarding `_AddPuzzleIllustration` | Mock of the light Today screen; explicit light-mode tokens by design. |
+| Difficulty palette in stats (`primary`, hardcoded green/orange) | Fixed category palette, not theme-derived. |
+
+Screens to verify in both light + dark:
+
+| Screen | Things to confirm |
+|--------|-------------------|
+| Home / Today | Streak counter, "Past puzzles" rows, FAB contrast. |
+| Solve screen | Grid borders, keyboard letter contrast, clue panel rows (active/cross/referenced highlights), pause overlay. |
+| Completion sheet | Drag handle, time label, divider lines, PB row, share/view/reset buttons. |
+| Archive | Filter chips, progress-pie track, list-tile metadata text. |
+| Stats | Section headers, difficulty bars, completion-rate ring. |
+| Settings + Privacy | Row dividers, switches, destructive "Clear all data" tile. |
+| Onboarding | Step dots, mock app-bar text, instruction card on navy backdrop. |
 
 ### Solve lifecycle QA checklist
 

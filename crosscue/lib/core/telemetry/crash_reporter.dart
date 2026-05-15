@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-/// Crash reporting interface. Sentry integration added in post-MVP.
-/// All callers use this interface so the vendor can be swapped without
-/// touching feature code.
+/// Crash reporting interface. The shipping build wires [LocalCrashReporter];
+/// a remote vendor (e.g. Sentry) can be swapped in later without touching
+/// feature code.
 ///
 /// IMPORTANT: Never log puzzle content, clue text, solution, or user guesses.
 abstract class CrashReporter {
@@ -18,9 +18,9 @@ abstract class CrashReporter {
   Future<void> setEnabled(bool enabled);
 }
 
-/// Local-only crash reporter for Phase 1.
+/// Local-only crash reporter.
 ///
-/// It never transmits data. Entries are appended to the app documents directory
+/// Never transmits data. Entries are appended to the app documents directory
 /// and capped to a small rolling file for future diagnostics export.
 class LocalCrashReporter implements CrashReporter {
   LocalCrashReporter();

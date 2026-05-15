@@ -29,11 +29,8 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
 
-  # Networking (puzzle source downloaders — Phase 2, but wired now)
+  # HTTP client (Crosshare downloader)
   dio: ^5.4.0
-
-  # File formats
-  # xml: ^6.6.0          # .jpz XML parsing — re-enable in Phase 2 when .jpz import is wired
 
   # File I/O
   file_picker: ^8.0.0
@@ -48,31 +45,20 @@ dependencies:
   # Material You dynamic color
   dynamic_color: ^1.7.0
 
-  # Animations
-  # flutter_animate: ^4.5.0  # unused — re-enable when animation-heavy screens land
+  # Confetti on puzzle completion
   confetti: ^0.8.0
 
   # Haptics
   vibration: ^3.0.0
 
-  # Loading skeletons — unused until Phase 2 list views
-  # shimmer: ^3.0.0
-
-  # Crash reporting (Sprint 7 — add back when wiring Sentry)
-  # sentry_flutter: ^8.0.0
-
-  # flutter_keyboard_visibility: ^6.0.0  # unused — re-enable if soft-keyboard detection is needed
+  # In-app feedback beep (generated PCM)
   audioplayers: ^6.6.0
+
+  # Privacy policy / repo links opened in external browser
   url_launcher: ^6.3.2
+
+  # Runtime app version (Settings → About)
   package_info_plus: ^9.0.0
-
-  # Local notifications (Phase 2 — uncomment when reminders are scoped in)
-  # flutter_local_notifications: ^17.0.0
-  # flutter_timezone: ^3.0.0
-  # timezone: ^0.9.0
-
-  # IAP (Phase 2 — uncomment when support tiers are scoped in)
-  # in_app_purchase: ^3.2.0
 
 dev_dependencies:
   flutter_test:
@@ -87,12 +73,6 @@ dev_dependencies:
   # Direct sqlite3 access in migration tests (transitive via drift_dev but must
   # be declared explicitly to satisfy depend_on_referenced_packages lint).
   sqlite3: ^2.9.4
-
-  # Splash screen generation is run on demand with:
-  # dart run flutter_native_splash:create
-  # Keep this package out of active dependencies so release APK builds do not
-  # register its generator-only Android plugin.
-  # flutter_native_splash: ^2.4.0
 
   # Linting
   flutter_lints: ^6.0.0
@@ -111,12 +91,3 @@ flutter:
   assets:
     - assets/fonts/
     - assets/images/ic_launcher.png
-
-# flutter_native_splash — run: dart run flutter_native_splash:create
-flutter_native_splash:
-  color: '#1565C0'
-  image: assets/images/splash_icon.png
-  android_12:
-    color: '#1565C0'
-    image: assets/images/splash_icon.png
-  fullscreen: false

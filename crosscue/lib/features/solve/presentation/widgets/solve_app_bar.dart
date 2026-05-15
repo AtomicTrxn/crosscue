@@ -199,7 +199,7 @@ class _CheckRevealMenu extends ConsumerWidget {
             actions: [
               FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: CrosscueColors.primary,
+                  backgroundColor: Theme.of(ctx).colorScheme.primary,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(ctx, false),

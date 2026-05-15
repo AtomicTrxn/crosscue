@@ -3853,7 +3853,8 @@ class CellProgressRow extends DataClass implements Insertable<CellProgressRow> {
   /// Hash of the last wrong guess to avoid double-counting mistakes.
   final String? lastWrongGuessHash;
 
-  /// isPencil stored for post-MVP pencil mode without requiring a migration.
+  /// Reserved for a future pencil-mode feature — present in the schema now so
+  /// adding the feature later does not require a migration.
   final bool isPencil;
   final DateTime updatedAt;
   const CellProgressRow(

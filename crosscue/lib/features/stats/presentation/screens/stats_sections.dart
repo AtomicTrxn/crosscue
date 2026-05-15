@@ -411,15 +411,11 @@ class _DifficultySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const rows = [
-      _DifficultyRowData('Easy', 'easy', Color(0xFF4CAF50)),
-      _DifficultyRowData('Medium', 'medium', CrosscueColors.primary),
-      _DifficultyRowData('Hard', 'hard', Color(0xFFFF9800)),
-      _DifficultyRowData(
-        'Themeless',
-        'themeless',
-        CrosscueColors.onSurface3Light,
-      ),
+    final rows = [
+      const _DifficultyRowData('Easy', 'easy', Color(0xFF4CAF50)),
+      const _DifficultyRowData('Medium', 'medium', CrosscueColors.primary),
+      const _DifficultyRowData('Hard', 'hard', Color(0xFFFF9800)),
+      _DifficultyRowData('Themeless', 'themeless', context.crosscueOnSurface3),
     ];
     final total = stats.difficultyBreakdown.values
         .fold<int>(0, (sum, count) => sum + count);

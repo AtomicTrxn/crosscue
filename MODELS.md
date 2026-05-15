@@ -119,13 +119,13 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
     required String id,           // 'local:' + 16-char SHA-256 prefix
     required String sourceId,     // FK to sources table, e.g. 'local_import'
     required String title,
-    @Default('') String author,
-    @Default('') String copyright,
+    required String author,
+    required String copyright,
     required PuzzleFormat format, // .puz | .ipuz | .jpz
     required int width,
     required int height,
-    required int totalClues,
     required DateTime importedAt,
+    String? sourcePuzzleId,       // remote-source puzzle id (Crosshare slug, etc.)
     DateTime? publishDate,        // original publication date (from .ipuz date field or .puz notes)
     String? notes,
     String? checksum,             // full SHA-256 hex string for duplicate detection
@@ -136,6 +136,9 @@ abstract class PuzzleMetadata with _$PuzzleMetadata {
 
 `id` format: `'local:' + sha256(canonicalJson).substring(0, 16)`.
 `checksum` is the **full** SHA-256 — used for duplicate detection in the DAO.
+`sourcePuzzleId` lets `(sourceId, sourcePuzzleId)` link an imported row back to its remote
+identifier (e.g. a Crosshare slug) so the same daily mini can be matched on subsequent
+fetches.
 
 ---
 
@@ -178,12 +181,18 @@ class SolveState {
   final bool isPaused;
   final int? sessionId;           // DB row id for autosave; null before first save
 
-  // Check / reveal counters (topic-11)
+  // Check / reveal counters
   final int checkCount;           // times any check action was triggered
   final int revealCount;          // times any reveal action was triggered
   final bool usedCheck;           // true once any check is used
   final bool usedReveal;          // true once any reveal is used
   final bool cleanSolveEligible;  // false once reveal is used; disqualifies PB
+
+  // Personal-best context for the completion sheet
+  final int? previousPersonalBestMs;  // clean PB for this puzzle's size bucket, if any
+
+  // Memoised
+  late final List<Clue> sortedClues;  // across-then-down by number; built once per state
 
   // Derived (computed, not stored):
   Clue? get activeClue        // clue matching focus cell + direction
@@ -206,14 +215,16 @@ class SolveState {
 
 | Enum | Values | Used by |
 |------|--------|---------|
+| `AppThemeMode` | `light`, `dark`, `system` | AppSettingsRepository (translated to Flutter `ThemeMode` in `app.dart`) |
 | `Direction` | `across`, `down` | Clue, FocusPosition, SolveNotifier |
 | `CellState` | `empty`, `filled`, `checkedCorrect`, `checkedIncorrect`, `revealed` | CellProgress, painter |
+| `ColorblindMode` | `none`, `deuteranopia` | Settings, painter dot indicator |
 | `PuzzleStatus` | `unsolved`, `inProgress`, `solved`, `solvedWithHelp`, `solvedWithReveal`, `revealed` | SolveState, SolveNotifier |
 | `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata, parsers |
-| `EntryMode` | `normal`, `pencil`, `rebus` | Post-MVP |
+| `EntryMode` | `normal`, `pencil`, `rebus` | `pencil` reserved for a future pencil-mode feature |
 | `SourceType` | `free`, `subscription`, `local` | SourcesTable |
 | `LicenseStatus` | `userImport`, `explicitPermission`, `openLicense`, `needsReview`, `prohibited` | SourcesTable |
-| `CompletionType` | `clean`, `checked`, `hinted`, `revealed` | SolveSessionsTable |
+| `CompletionType` | `clean`, `checked`, `hinted`, `revealed` | SolveSessionsTable, PuzzleCompletionsTable |
 
 ---
 

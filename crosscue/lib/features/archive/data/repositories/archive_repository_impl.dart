@@ -15,7 +15,7 @@ import 'package:crosscue/features/solve/domain/services/clue_progress_calculator
 /// the latest [SolveSessionRow] for each puzzle.
 ///
 /// Uses an N+1 pattern (one latestSession query per puzzle) which is
-/// acceptable for Phase 1 (import-only, typically <100 puzzles).
+/// acceptable at the expected library size (typically <100 puzzles).
 class ArchiveRepositoryImpl implements ArchiveRepository {
   const ArchiveRepositoryImpl({
     required this.puzzleDao,

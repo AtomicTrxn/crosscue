@@ -10,16 +10,18 @@ lib/
 ├── main.dart                        # Entry point, ProviderScope
 ├── app.dart                         # MaterialApp + router wiring
 ├── core/
+│   ├── audio/                       # SoundPlayer (in-app feedback beep)
+│   ├── constants/                   # AppLinks (privacy/repo URLs), CrosscueRetention
 │   ├── database/                    # Drift DB definition + all tables
 │   ├── domain/models/               # ALL shared domain models: Puzzle, Clue, Grid, SolutionCell,
 │   │                                #   enums, PuzzleMetadata (solve-only models stay in features/solve)
+│   ├── entitlement/                 # License / paywall stubs (all features free)
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
-│   ├── theme/                       # Material 3 theme + CrosswordTheme extension
-│   ├── utils/                       # Result<T,E>, shared formatting helpers
-│   ├── entitlement/                 # License / paywall stubs (Phase 1: free only)
 │   ├── sync/                        # Sync adapter interface + NoOp impl
-│   └── telemetry/                   # Crash reporter stub
+│   ├── telemetry/                   # CrashReporter (local-only log)
+│   ├── theme/                       # Material 3 theme + CrosswordTheme extension
+│   └── utils/                       # Result<T,E>, shared formatting helpers
 └── features/
     ├── home/                        # Puzzle list screen
     ├── import/                      # File pick → parse → persist pipeline
@@ -275,14 +277,17 @@ Consumers outside `solve/`: import parsers, archive, stats, core database, setti
 
 ```
 core/database/
-├── app_database.dart           # @DriftDatabase declaration; PuzzleDao, SolveSessionDao, StatsDao accessors
+├── app_database.dart           # @DriftDatabase declaration; PuzzleDao, SolveSessionDao,
+│                               #   AppSettingsDao, StatsDao, PuzzleCompletionDao accessors
 └── tables/
-    ├── sources_table.dart      # Puzzle sources (e.g. 'local_import')
-    ├── puzzles_table.dart      # One row per imported puzzle
-    ├── clues_table.dart        # One row per clue (FK → puzzles)
-    ├── cell_progress_table.dart  # Per-cell user progress (FK → solve_sessions)
-    ├── solve_sessions_table.dart # One session per puzzle attempt
-    └── app_settings_table.dart   # Key/value app settings
+    ├── sources_table.dart            # Puzzle sources (e.g. 'local_import')
+    ├── puzzles_table.dart            # One row per imported puzzle
+    ├── clues_table.dart              # One row per clue (FK → puzzles)
+    ├── solve_sessions_table.dart     # One session per puzzle attempt
+    ├── cell_progress_table.dart      # Per-cell user progress (FK → solve_sessions)
+    ├── puzzle_completions_table.dart # Immutable per-completion history (streaks/PBs)
+    ├── imported_solve_stats_table.dart # Pre-imported solve stats from external sources
+    └── app_settings_table.dart       # Key/value app settings
 ```
 
 **Relationship diagram:**
@@ -291,7 +296,8 @@ sources (id PK)
   └─< puzzles (sourceId FK)
         └─< clues (puzzleId FK, cascade delete)
         └─< solve_sessions (puzzleId FK, cascade delete)
-              └─< cell_progress (sessionId FK, cascade delete)
+        │     └─< cell_progress (sessionId FK, cascade delete)
+        └─< puzzle_completions (puzzleId FK, cascade delete)
 ```
 
 The `puzzles.canonicalJson` column stores the full `Grid<SolutionCell>` as JSON
@@ -342,10 +348,11 @@ Provider categories:
   `archiveRepositoryProvider`, `statsRepositoryProvider`, `appSettingsProvider`
 - **HTTP / network** — `dioProvider`, `crosshareDownloaderProvider`
 - **Platform services** — `crashReporterProvider`, `soundPlayerProvider`, `appVersionProvider`
-- **Lifecycle** — `appLifecycleObserverProvider` (registers a `WidgetsBindingObserver` for auto-download on foreground)
+- **Lifecycle** — `CrosscueApp` itself registers a `WidgetsBindingObserver` that calls
+  `crosshareAutoDownloadServiceProvider` on `resumed`. See `app.dart`.
 - **Settings & user preferences** — `settings_providers.dart`: `hasSeenOnboardingProvider`,  
   `themeModeProvider`, `hapticsEnabledProvider`, `soundsEnabledProvider`, `skipFilledCellsProvider`,  
-  `colorblindModeProvider`
+  `colorblindModeProvider`, `crashReportingProvider`
 - **Source registry** — `sourceRegistryProvider` exposes all registered `PuzzleSource` definitions
 
 `keepAlive: true` on all repository and infrastructure providers — these must survive navigation.
@@ -384,10 +391,6 @@ not exhaustive, to avoid going stale.
 6. **Route** — add path constant to `routes.dart`, add `GoRoute` to `app_router.dart`
 
 7. **`flutter analyze`** — must be clean before committing
-
-8. **Update `SPRINTS.md`** — mark tasks ✅ as they land; update the sprint goal if scope changed
-
-9. **Update `research/INDEX.md`** — mark topics ✅ / 🔄 as their conclusions are implemented
 
 ---
 

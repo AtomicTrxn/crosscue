@@ -38,22 +38,22 @@ Dio dio(Ref ref) => Dio(
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref ref) => AppDatabase();
 
-/// Phase 1 sync adapter — no-op (local only).
+/// Sync adapter — no-op; all data stays on the device.
 @Riverpod(keepAlive: true)
 SyncAdapter syncAdapter(Ref ref) => const NoOpSyncAdapter();
 
-/// Phase 1 entitlement service — all features free.
+/// Entitlement service — all features free.
 @Riverpod(keepAlive: true)
 EntitlementService entitlementService(Ref ref) =>
     const FreeEntitlementService();
 
-/// Crash reporter — local-only in Phase 1; no data leaves the device.
+/// Crash reporter — local-only; no data leaves the device.
 @Riverpod(keepAlive: true)
 CrashReporter crashReporter(Ref ref) => LocalCrashReporter();
 
 @Riverpod(keepAlive: true)
 SoundPlayer soundPlayer(Ref ref) {
-  final player = SoundPlayer();
+  final player = SoundPlayer(crashReporter: ref.read(crashReporterProvider));
   ref.onDispose(player.dispose);
   return player;
 }

@@ -26,7 +26,7 @@ import 'package:crypto/crypto.dart';
 ///   - Publish date: parses `YYYY-MM-DD` and `MM/DD/YYYY`; invalid dates become null.
 ///   - Barred grids: rejected as unsupported (cell-side bar keys detected in
 ///     `style` map). Full barred support requires a future `SolutionCell` boundary
-///     model; see SPRINTS.md.
+///     model.
 ///   - Defensive shape validation: malformed JSON structures return structured
 ///     `ParseError` values rather than crashing to `ParseError.unknown`.
 class IpuzParser implements PuzzleParser {
@@ -452,7 +452,7 @@ class IpuzParser implements PuzzleParser {
   ///
   /// Known bar keys: `barred`, `bars`, any key starting with `barred` or
   /// ending with `bar`, or a value of `'barred'`. Full barred-grid support
-  /// requires a future `SolutionCell` boundary model (see SPRINTS.md).
+  /// requires a future `SolutionCell` boundary model.
   bool _containsBarredGridData(List<dynamic> rows) {
     for (final row in rows) {
       if (row is! List) continue;

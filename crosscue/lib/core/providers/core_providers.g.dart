@@ -146,17 +146,17 @@ final class AppDatabaseProvider
 
 String _$appDatabaseHash() => r'98a09c6cfd43966155dfbdb0787fa18c85438e13';
 
-/// Phase 1 sync adapter — no-op (local only).
+/// Sync adapter — no-op; all data stays on the device.
 
 @ProviderFor(syncAdapter)
 final syncAdapterProvider = SyncAdapterProvider._();
 
-/// Phase 1 sync adapter — no-op (local only).
+/// Sync adapter — no-op; all data stays on the device.
 
 final class SyncAdapterProvider
     extends $FunctionalProvider<SyncAdapter, SyncAdapter, SyncAdapter>
     with $Provider<SyncAdapter> {
-  /// Phase 1 sync adapter — no-op (local only).
+  /// Sync adapter — no-op; all data stays on the device.
   SyncAdapterProvider._()
       : super(
           from: null,
@@ -192,18 +192,18 @@ final class SyncAdapterProvider
 
 String _$syncAdapterHash() => r'a5c9e2e0cfa9f13076d953a7029eef2d423b81e5';
 
-/// Phase 1 entitlement service — all features free.
+/// Entitlement service — all features free.
 
 @ProviderFor(entitlementService)
 final entitlementServiceProvider = EntitlementServiceProvider._();
 
-/// Phase 1 entitlement service — all features free.
+/// Entitlement service — all features free.
 
 final class EntitlementServiceProvider extends $FunctionalProvider<
     EntitlementService,
     EntitlementService,
     EntitlementService> with $Provider<EntitlementService> {
-  /// Phase 1 entitlement service — all features free.
+  /// Entitlement service — all features free.
   EntitlementServiceProvider._()
       : super(
           from: null,
@@ -241,17 +241,17 @@ final class EntitlementServiceProvider extends $FunctionalProvider<
 String _$entitlementServiceHash() =>
     r'8b777f0857c0b0277e787bd83e737e8c2d1556d2';
 
-/// Crash reporter — local-only in Phase 1; no data leaves the device.
+/// Crash reporter — local-only; no data leaves the device.
 
 @ProviderFor(crashReporter)
 final crashReporterProvider = CrashReporterProvider._();
 
-/// Crash reporter — local-only in Phase 1; no data leaves the device.
+/// Crash reporter — local-only; no data leaves the device.
 
 final class CrashReporterProvider
     extends $FunctionalProvider<CrashReporter, CrashReporter, CrashReporter>
     with $Provider<CrashReporter> {
-  /// Crash reporter — local-only in Phase 1; no data leaves the device.
+  /// Crash reporter — local-only; no data leaves the device.
   CrashReporterProvider._()
       : super(
           from: null,
@@ -326,4 +326,4 @@ final class SoundPlayerProvider
   }
 }
 
-String _$soundPlayerHash() => r'e8a014932109bf01b02f58abdf475f9b2e7cc575';
+String _$soundPlayerHash() => r'1e95e0f94bea2129637316e22403fd134eabe3d8';

@@ -55,7 +55,7 @@ class SolveSessionsTable extends Table {
   IntColumn get focusCol => integer().withDefault(const Constant(0))();
   TextColumn get direction => text().withDefault(const Constant('across'))();
 
-  // Sync-readiness columns — NoOpSyncAdapter in Phase 1
+  // Sync-readiness columns — unused while NoOpSyncAdapter is wired.
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   IntColumn get syncVersion => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();

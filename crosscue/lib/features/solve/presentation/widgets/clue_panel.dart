@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
-import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -158,10 +158,10 @@ class _ClueColumnState extends State<_ClueColumn> {
 
   @override
   Widget build(BuildContext context) {
-    const headerStyle = TextStyle(
+    final headerStyle = TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w700,
-      color: CrosscueColors.onSurface3Light,
+      color: context.crosscueOnSurface3,
       letterSpacing: 1.0,
       height: 1.2,
     );
@@ -361,9 +361,8 @@ class _ClueRow extends StatelessWidget {
     final numStyle = TextStyle(
       fontSize: 10,
       fontWeight: FontWeight.w600,
-      color: highlighted
-          ? xwTheme.clueBarDirection
-          : CrosscueColors.onSurface3Light,
+      color:
+          highlighted ? xwTheme.clueBarDirection : context.crosscueOnSurface3,
       height: 1.3,
     );
     final textStyle = TextStyle(

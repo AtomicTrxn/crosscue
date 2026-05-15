@@ -46,8 +46,8 @@ enum PuzzleStatus {
   revealed,
 }
 
-/// Entry mode for the current cell. Pencil mode is deferred post-MVP but
-/// included here to avoid a future breaking change.
+/// Entry mode for the current cell. `pencil` is reserved for a future
+/// pencil-mode feature and is currently unused at runtime.
 enum EntryMode { normal, pencil, rebus }
 
 /// Puzzle file formats used in Puzzle.sourceFormat and PuzzleParser dispatch.

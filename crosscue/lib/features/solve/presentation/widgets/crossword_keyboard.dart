@@ -1,5 +1,5 @@
 import 'package:crosscue/core/theme/crossword_theme.dart';
-import 'package:crosscue/core/theme/design_tokens.dart';
+import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -248,7 +248,7 @@ class _LetterKey extends StatelessWidget {
           style: TextStyle(
             fontSize: metrics.letterFontSize,
             fontWeight: FontWeight.w500,
-            color: CrosscueColors.onSurface1Light,
+            color: context.crosscueOnSurface1,
             height: 1,
           ),
         ),

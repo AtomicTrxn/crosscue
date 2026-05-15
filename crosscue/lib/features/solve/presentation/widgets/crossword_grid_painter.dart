@@ -106,8 +106,7 @@ class CrosswordGridPainter extends CustomPainter {
           final pulse = math.sin(waveValue * math.pi).clamp(0.0, 1.0);
           final pulsePaint = Paint()
             ..style = PaintingStyle.fill
-            ..color =
-                CrosscueColors.correctLight.withValues(alpha: 0.22 * pulse);
+            ..color = theme.stateCorrect.withValues(alpha: 0.22 * pulse);
           canvas.drawRect(rect, pulsePaint);
         }
 
@@ -195,6 +194,8 @@ class CrosswordGridPainter extends CustomPainter {
       return theme.wordHighlight;
     }
     if (_isCompletedCell(state, row, col)) {
+      // Intentionally theme-fixed: completion is a celebration moment and
+      // the bright green pair reads the same in light and dark mode.
       return CrosscueColors.completedCellBg;
     }
     return _cellBg(grid.cell(row, col));
@@ -325,7 +326,7 @@ class CrosswordGridPainter extends CustomPainter {
         if (!isCorrect) return;
         final dotPaint = Paint()
           ..style = PaintingStyle.fill
-          ..color = CrosscueColors.primary;
+          ..color = theme.clueBarDirection;
         final radius = (cellSize * 0.09).clamp(2.0, 4.5);
         canvas.drawCircle(
           Offset(rect.right - radius - 2, rect.top + radius + 2),

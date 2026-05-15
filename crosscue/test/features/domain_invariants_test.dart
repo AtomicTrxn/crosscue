@@ -1,5 +1,5 @@
-// Regression tests for Sprint 1 critical fixes (Issue #18).
-// Each group is labelled with the item it guards against.
+// Regression tests guarding architectural invariants that have caused bugs
+// before. Each group is labelled with the invariant it protects.
 //
 // C1 — AppThemeMode: domain layer must not import Flutter ThemeMode.
 // C2 — No dynamic: typed interfaces enforced by Dart's type system (compile-time).

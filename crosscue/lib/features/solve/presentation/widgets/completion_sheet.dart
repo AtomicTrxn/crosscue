@@ -53,178 +53,178 @@ class CompletionSheet extends ConsumerWidget {
       minChildSize: 0.35,
       maxChildSize: 0.75,
       expand: false,
-      builder: (ctx, scrollController) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(CrosscueSpacing.sheetRadius),
-          ),
-        ),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              CrosscueSpacing.screenH,
-              12,
-              CrosscueSpacing.screenH,
-              24 + MediaQuery.of(ctx).viewInsets.bottom,
+      builder: (ctx, scrollController) {
+        final onSurface1 = ctx.crosscueOnSurface1;
+        final onSurface2 = ctx.crosscueOnSurface2;
+        final divider = ctx.crosscueDivider;
+        final correct = ctx.crosscueCorrect;
+        return Container(
+          decoration: BoxDecoration(
+            color: ctx.crosscueSurface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(CrosscueSpacing.sheetRadius),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: CrosscueSpacing.dragHandleW,
-                  height: CrosscueSpacing.dragHandleH,
-                  decoration: BoxDecoration(
-                    color: CrosscueColors.dividerLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  solveLabel,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: CrosscueColors.onSurface1Light,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  timeStr,
-                  style: const TextStyle(
-                    fontFamily: CrosscueTypography.robotoMono,
-                    fontSize: CrosscueTypography.timerLarge,
-                    fontWeight: FontWeight.w700,
-                    color: CrosscueColors.onSurface1Light,
-                    letterSpacing: -2,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: CrosscueColors.dividerLight),
-                const SizedBox(height: 12),
-                if (isNewPersonalBest) ...[
-                  Text(
-                    '↑ New personal best — prev. ${formatMs(previousBest)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: CrosscueColors.correctLight,
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                CrosscueSpacing.screenH,
+                12,
+                CrosscueSpacing.screenH,
+                24 + MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: CrosscueSpacing.dragHandleW,
+                    height: CrosscueSpacing.dragHandleH,
+                    decoration: BoxDecoration(
+                      color: divider,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, color: CrosscueColors.dividerLight),
-                  const SizedBox(height: 12),
-                ],
-                if (streak > 0) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🔥', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$streak-day streak',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: CrosscueColors.onSurface1Light,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+                  Text(
+                    solveLabel,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: onSurface1,
+                    ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    timeStr,
+                    style: TextStyle(
+                      fontFamily: CrosscueTypography.robotoMono,
+                      fontSize: CrosscueTypography.timerLarge,
+                      fontWeight: FontWeight.w700,
+                      color: onSurface1,
+                      letterSpacing: -2,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(height: 1, color: divider),
                   const SizedBox(height: 12),
-                  const Divider(height: 1, color: CrosscueColors.dividerLight),
-                ],
-                const SizedBox(height: 16),
-                if (!isRevealed) ...[
+                  if (isNewPersonalBest) ...[
+                    Text(
+                      '↑ New personal best — prev. ${formatMs(previousBest)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: correct,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: divider),
+                    const SizedBox(height: 12),
+                  ],
+                  if (streak > 0) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🔥', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$streak-day streak',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: onSurface1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: divider),
+                  ],
+                  const SizedBox(height: 16),
+                  if (!isRevealed) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          SharePlus.instance.share(
+                            ShareParams(
+                              text: '${solveState.puzzle.metadata.title}\n'
+                                  '$timeStr - $solveLabel\n'
+                                  'Solved in Crosscue',
+                              subject: 'Crosscue result',
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: onSurface2,
+                          side: BorderSide(color: divider, width: 1),
+                          textStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          minimumSize: const Size.fromHeight(46),
+                        ),
+                        child: const Text('Share result'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {
-                        SharePlus.instance.share(
-                          ShareParams(
-                            text: '${solveState.puzzle.metadata.title}\n'
-                                '$timeStr - $solveLabel\n'
-                                'Solved in Crosscue',
-                            subject: 'Crosscue result',
-                          ),
-                        );
-                      },
+                      onPressed: onViewGrid,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: CrosscueColors.onSurface2Light,
-                        side: const BorderSide(
-                          color: CrosscueColors.dividerLight,
-                          width: 1,
-                        ),
+                        foregroundColor: onSurface2,
+                        side: BorderSide(color: divider, width: 1),
                         textStyle: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
                         minimumSize: const Size.fromHeight(46),
                       ),
-                      child: const Text('Share result'),
+                      child: const Text('View completed puzzle'),
                     ),
                   ),
                   const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: onNextPuzzle,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(ctx).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(46),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: const Text('Next puzzle'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => _confirmReset(ctx),
+                      style: TextButton.styleFrom(
+                        foregroundColor: ctx.crosscueError,
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        minimumSize: const Size.fromHeight(40),
+                      ),
+                      child: const Text('Reset puzzle'),
+                    ),
+                  ),
                 ],
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: onViewGrid,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: CrosscueColors.onSurface2Light,
-                      side: const BorderSide(
-                        color: CrosscueColors.dividerLight,
-                        width: 1,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      minimumSize: const Size.fromHeight(46),
-                    ),
-                    child: const Text('View completed puzzle'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: onNextPuzzle,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(46),
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    child: const Text('Next puzzle'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => _confirmReset(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: context.crosscueError,
-                      textStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      minimumSize: const Size.fromHeight(40),
-                    ),
-                    child: const Text('Reset puzzle'),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

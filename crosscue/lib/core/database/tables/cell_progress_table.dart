@@ -20,7 +20,8 @@ class CellProgressTable extends Table {
   /// Hash of the last wrong guess to avoid double-counting mistakes.
   TextColumn get lastWrongGuessHash => text().nullable()();
 
-  /// isPencil stored for post-MVP pencil mode without requiring a migration.
+  /// Reserved for a future pencil-mode feature — present in the schema now so
+  /// adding the feature later does not require a migration.
   BoolColumn get isPencil => boolean().withDefault(const Constant(false))();
   DateTimeColumn get updatedAt => dateTime()();
 

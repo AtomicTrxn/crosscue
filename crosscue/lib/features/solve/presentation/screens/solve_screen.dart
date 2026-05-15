@@ -314,7 +314,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           // Keep layout stable when the soft keyboard appears.
           // The hidden TextField driving input is off-screen at (-200,-200);
           // the grid never reflects when the OS keyboard slides up.
-          // See ISSUES.md #4.
           resizeToAvoidBottomInset: false,
           appBar: SolveAppBar(
             puzzleId: widget.puzzleId,
