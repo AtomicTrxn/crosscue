@@ -10,27 +10,24 @@ part of 'source_registry_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// App-wide registry of puzzle sources that are known to Crosscue.
 ///
-/// Phase 1 exposes only the local user-import source. Future network sources
-/// must be registered here only after their license status is cleared by the
-///
+/// Sources are registered here only after their license status is cleared by
+/// the source-review process in [SourceRegistry].
 
 @ProviderFor(sourceRegistry)
 final sourceRegistryProvider = SourceRegistryProvider._();
 
 /// App-wide registry of puzzle sources that are known to Crosscue.
 ///
-/// Phase 1 exposes only the local user-import source. Future network sources
-/// must be registered here only after their license status is cleared by the
-///
+/// Sources are registered here only after their license status is cleared by
+/// the source-review process in [SourceRegistry].
 
 final class SourceRegistryProvider
     extends $FunctionalProvider<SourceRegistry, SourceRegistry, SourceRegistry>
     with $Provider<SourceRegistry> {
   /// App-wide registry of puzzle sources that are known to Crosscue.
   ///
-  /// Phase 1 exposes only the local user-import source. Future network sources
-  /// must be registered here only after their license status is cleared by the
-  ///
+  /// Sources are registered here only after their license status is cleared by
+  /// the source-review process in [SourceRegistry].
   SourceRegistryProvider._()
       : super(
           from: null,

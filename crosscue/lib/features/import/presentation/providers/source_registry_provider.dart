@@ -7,9 +7,8 @@ part 'source_registry_provider.g.dart';
 
 /// App-wide registry of puzzle sources that are known to Crosscue.
 ///
-/// Phase 1 exposes only the local user-import source. Future network sources
-/// must be registered here only after their license status is cleared by the
-///
+/// Sources are registered here only after their license status is cleared by
+/// the source-review process in [SourceRegistry].
 @Riverpod(keepAlive: true)
 SourceRegistry sourceRegistry(Ref ref) {
   return SourceRegistry()

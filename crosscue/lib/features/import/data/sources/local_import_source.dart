@@ -4,7 +4,7 @@ import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart'
 /// The built-in source representing user-supplied local files (.puz / .ipuz).
 ///
 /// This source wraps the existing [PuzParser] and [IpuzParser] via the import
-/// pipeline.  It is the only Phase 1 source and is always enabled.
+/// pipeline and is always enabled.
 ///
 /// License status: [LicenseStatus.userImport] — the user owns the file they
 /// import, so the app is not redistributing any publisher-owned content.

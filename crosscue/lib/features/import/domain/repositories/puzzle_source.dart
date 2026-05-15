@@ -4,12 +4,10 @@ import 'package:crosscue/core/domain/models/enums.dart';
 ///
 /// Every source that can provide puzzles to the app must be registered in
 /// [SourceRegistry].  The registry enforces that only sources with a safe
-/// [LicenseStatus] can be activated at runtime
+/// [LicenseStatus] can be activated at runtime.
 ///
-///
-/// Phase 1 only has [LocalImportSource].  Future network sources (e.g.
-/// licensed daily feeds) will implement this interface and be gated behind
-/// [LicenseStatus.explicitPermission] or [LicenseStatus.openLicense].
+/// Network sources are gated behind [LicenseStatus.explicitPermission] or
+/// [LicenseStatus.openLicense].
 abstract class PuzzleSource {
   /// Stable identifier that must match the `source_id` column in the DB.
   String get id;

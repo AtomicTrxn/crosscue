@@ -2,7 +2,7 @@
 
 **Your crossword puzzles. Your device. No strings attached.**
 
-Crosscue is an Android app for solving crossword puzzle files — built for people who already have puzzles and want a clean, capable solver that stays out of their way. No subscription. No built-in puzzle feed. No account. Everything lives on your device.
+Crosscue is an Android app for solving crossword puzzle files — built for people who want a clean, capable solver that stays out of their way. No subscription. No account. Your puzzles and progress live on your device.
 
 ---
 
@@ -23,9 +23,10 @@ Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving im
 
 ## Offline by Design
 
-Crosscue stores everything — puzzles, progress, history, stats — locally in a SQLite database on your device. Nothing is transmitted. No account, no sync, no ads.
-
-Future puzzle sources (daily downloads from licensed feeds) are planned but will only ship once each source is individually reviewed for legal clearance.
+Crosscue stores puzzles, progress, history, and stats locally in a SQLite
+database on your device. There is no account, sync, advertising, or analytics.
+When you choose to download a puzzle from an online source, the app makes the
+network request needed to fetch that puzzle.
 
 ---
 
@@ -53,8 +54,9 @@ flutter run
 
 | Doc | What's inside |
 |-----|---------------|
-| [CLAUDE.md](CLAUDE.md) | Commands, architecture summary, key gotchas (start here if you're an AI agent) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Commands, architecture summary, and contributor workflow |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, new-feature checklist |
 | [MODELS.md](MODELS.md) | Every domain model, field list, and DB mapping |
 | [CONVENTIONS.md](CONVENTIONS.md) | Hard coding rules — Freezed, Riverpod, Drift, routing, legal source guardrail |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, log capture, release pipeline, Play Store checklist |
+| [Privacy Policy](https://atomictrxn.github.io/crosscue/privacy.html) | Public privacy policy for Play Store submission |

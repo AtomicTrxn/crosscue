@@ -43,6 +43,7 @@ jobs:
 
       - name: Detect relevant changes
         id: changes
+        working-directory: .
         run: |
           if [ "${{ github.event_name }}" = "workflow_call" ]; then
             echo "app=true" >> "$GITHUB_OUTPUT"
@@ -101,6 +102,7 @@ jobs:
 
       - name: Detect relevant changes
         id: changes
+        working-directory: .
         run: |
           if [ "${{ github.event_name }}" = "workflow_call" ]; then
             echo "app=true" >> "$GITHUB_OUTPUT"

@@ -408,8 +408,6 @@ Short imperative summary (≤ 72 chars)
 
 Longer explanation of why, not what. Wrap at 72 chars.
 Reference sprint or ticket if relevant.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 ---

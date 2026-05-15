@@ -1,3 +1,4 @@
+import 'package:crosscue/core/constants/app_links.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
@@ -7,6 +8,7 @@ import 'package:crosscue/features/stats/presentation/notifiers/stats_export_noti
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PrivacyScreen extends ConsumerWidget {
   const PrivacyScreen({super.key});
@@ -29,6 +31,12 @@ class PrivacyScreen extends ConsumerWidget {
             title: 'Crash reporting',
             subtitle: 'Save a local crash log on this device',
           ),
+          SettingsNavRow(
+            leading: Icons.policy_outlined,
+            title: 'Privacy policy',
+            subtitle: 'View how Crosscue handles data',
+            onTap: () => _openPrivacyPolicy(context),
+          ),
           const _ExportRow(leading: Icons.upload_file_outlined),
           const _ImportRow(leading: Icons.download_outlined),
           SettingsNavRow(
@@ -45,6 +53,18 @@ class PrivacyScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final launched = await launchUrl(
+      Uri.parse(AppLinks.privacyPolicy),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open privacy policy')),
+      );
+    }
   }
 
   Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {

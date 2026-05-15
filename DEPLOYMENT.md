@@ -114,7 +114,10 @@ Run the full pipeline, not individual checks:
 make ci
 ```
 
-`make ci` runs format → analyze → test → generated-files check → build APK in the correct order, matching CI exactly. Running individual commands (e.g. `flutter analyze` alone) is only appropriate when iterating on a specific failure — **always finish with `make ci` before pushing**.
+`make ci` runs the same checks required by hosted PR CI: static checks plus the
+test suite. Running individual commands (e.g. `flutter analyze` alone) is only
+appropriate when iterating on a specific failure — **always finish with
+`make ci` before pushing**.
 
 ---
 
@@ -140,7 +143,8 @@ git checkout -b feature/short-description
 make ci
 ```
 
-This mirrors the full CI pipeline (format → analyze + test + generated → build APK). Individual targets exist for iterating on a specific failure, but `make ci` must be the final check before any push or PR:
+This mirrors hosted PR CI. Individual targets exist for iterating on a specific
+failure, but `make ci` must be the final check before any push or PR:
 
 ```bash
 make format      # formatting check only
@@ -167,8 +171,6 @@ Short imperative summary (≤ 72 chars)
 
 Longer explanation of why, not what.
 Reference sprint if relevant.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
 git push -u origin feature/short-description
@@ -181,30 +183,23 @@ Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ### CI coverage
 
-`.github/workflows/ci.yml` runs in three sequential stages. A stage only
-starts if all jobs in the previous stage passed.
+`.github/workflows/ci.yml` emits two required checks on ordinary pull requests
+and pushes to `main`:
 
 ```
-Stage 1   Format
-             │
-Stage 2   Analyze ── Test ── Generated files   (parallel)
-             │
-Stage 3   Build debug APK   (PR / push to main only — skipped when called from release pipeline)
+Static checks   format → analyze → generated files
+Test            flutter test
 ```
 
-| Stage | Job | Command |
-|-------|-----|---------|
-| 1 | **Format** | `flutter pub get` → `dart format --output=none --set-exit-if-changed .` |
-| 2 | **Analyze** | `flutter pub get` → `flutter analyze` |
-| 2 | **Test** | `flutter pub get` → `flutter test` |
-| 2 | **Generated files** | `flutter pub get` → `dart run build_runner build` → `git diff --exit-code` |
-| 3 | **Build debug APK** | Java 17 → `flutter pub get` → `flutter build apk --debug --no-pub` |
+| Check | App-affecting change | Documentation-only change |
+|-------|----------------------|---------------------------|
+| **Static checks** | `flutter pub get` → format → analyze → generated files | reports success without Flutter setup |
+| **Test** | `flutter pub get` → `flutter test` | reports success without Flutter setup |
 
-All jobs use Flutter `3.41.9`. Format runs `flutter pub get` first so the
-formatter can resolve the SDK constraint and apply the correct style. The debug
-APK build is skipped when CI runs as part of the release pipeline — the release
-job builds a signed release APK instead. The debug APK artifact is not uploaded
-or retained after the job finishes.
+All app checks use Flutter `3.41.9`. The debug APK job exists only for reusable
+workflow callers that explicitly request it; ordinary PR CI does not build an
+APK. Release workflows run the full app checks and build signed release
+artifacts instead.
 
 ---
 
@@ -268,7 +263,7 @@ git push origin v1.2.3
 ```
 
 This triggers `.github/workflows/release.yml`, which:
-1. Runs full CI (format → analyze → test → generated → debug APK)
+1. Runs full CI (static checks + tests)
 2. Builds a signed release APK with version name `1.2.3` and version code `10203`
 3. Publishes a GitHub Release at `v1.2.3` with the APK attached and auto-generated release notes
 
@@ -295,22 +290,22 @@ Complete these steps before submitting to Google Play for the first time.
 Human review is required before publishing — this is not legal advice.
 
 ### Privacy policy (required before submission)
-- [ ] Publish a privacy policy at a stable public URL (e.g. GitHub Pages)
-- [ ] Confirm crash reporter vendor (Sentry vs. Firebase Crashlytics) and insert correct name + privacy policy link
+- [x] Publish a privacy policy at a stable public URL:
+      `https://atomictrxn.github.io/crosscue/privacy.html`
 - [ ] Add the privacy policy URL to Play Console → Store Presence → App Content → Privacy Policy
 - [ ] Add an "About / Privacy Policy" link in app Settings
 
 ### Play Console — Data Safety form
-Crosscue Phase 1 answers:
+Crosscue current-release answers:
 
 | Question | Answer |
 |----------|--------|
-| Data collected? | Yes (crash reports + optional feedback) |
-| Data types | App activity (crash/error info), app info (version, device model) |
-| Shared with third parties? | Yes (crash reporter) |
-| Encrypted in transit? | Yes |
+| Data collected? | No |
+| Data types | None collected by Crosscue |
+| Shared with third parties? | No |
+| Encrypted in transit? | Not applicable |
 | Users can request deletion? | Yes |
-| Required for core function? | No (crash reporting is opt-in) |
+| Required for core function? | Not applicable |
 
 ### App content & targeting
 - [ ] Confirm app is **not** targeted at children under 13 in the store listing
@@ -323,8 +318,10 @@ Crosscue Phase 1 answers:
 - [ ] Use `workflow_dispatch` with `play_store: true` to trigger the first AAB upload to the internal track
 
 ### Post-launch updates required if scope changes
-- Re-review and update privacy policy + Data Safety form before adding analytics, notifications, or any new data collection
-- GDPR/UK GDPR review required before EU/UK distribution (crash reporter DPA may be needed)
+- Re-review and update privacy policy + Data Safety form before adding analytics,
+  notifications, remote crash reporting, or any new data collection
+- GDPR/UK GDPR review required before EU/UK distribution if remote data
+  collection is introduced
 
 ---
 
