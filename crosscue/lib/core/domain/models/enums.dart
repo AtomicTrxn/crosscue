@@ -11,6 +11,12 @@ enum AppThemeMode { light, dark, system }
 /// Clue direction.
 enum Direction { across, down }
 
+extension DirectionX on Direction {
+  /// Returns the perpendicular direction (across ↔ down).
+  Direction get other =>
+      this == Direction.across ? Direction.down : Direction.across;
+}
+
 /// Per-cell visual/semantic state driven by user check/reveal actions.
 /// State is only changed by explicit user actions, never during normal entry.
 enum CellState {
@@ -44,6 +50,15 @@ enum PuzzleStatus {
   solvedWithHelp,
   solvedWithReveal,
   revealed,
+}
+
+extension PuzzleStatusX on PuzzleStatus {
+  /// True when the puzzle is in a finished (non-mutable) state.
+  bool get isTerminal =>
+      this == PuzzleStatus.solved ||
+      this == PuzzleStatus.solvedWithHelp ||
+      this == PuzzleStatus.solvedWithReveal ||
+      this == PuzzleStatus.revealed;
 }
 
 /// Entry mode for the current cell. `pencil` is reserved for a future

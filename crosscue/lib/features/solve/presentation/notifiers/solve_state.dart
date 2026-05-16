@@ -164,3 +164,47 @@ class SolveState {
     }
   }
 }
+
+/// Pure read-only queries over [SolveState].
+///
+/// Extracted from [SolveNotifier] so navigation helpers and tests can use
+/// them without going through the notifier.
+extension SolveStateQueries on SolveState {
+  /// Returns the clue covering ([row], [col]) in [dir], or null if none.
+  Clue? clueFor(int row, int col, Direction dir) {
+    for (final clue in puzzle.clues) {
+      if (clue.direction == dir && SolveState.cellInClue(row, col, clue)) {
+        return clue;
+      }
+    }
+    return null;
+  }
+
+  /// True if any clue exists in [dir] covering ([row], [col]).
+  bool hasWord(int row, int col, Direction dir) {
+    for (final clue in puzzle.clues) {
+      if (clue.direction == dir && SolveState.cellInClue(row, col, clue)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// True if the clue's entry matches the solution.
+  bool isWordComplete(Clue clue) => ClueProgressCalculator.isClueCorrect(
+        puzzle: puzzle,
+        progress: progress,
+        clue: clue,
+      );
+
+  /// True when the cell is locked (checked correct or revealed).
+  bool isCellLocked(int row, int col) {
+    final cell = progress.cell(row, col);
+    return cell.state == CellState.checkedCorrect ||
+        cell.state == CellState.revealed;
+  }
+
+  /// True when the cell is editable and empty.
+  bool isOpenCell(int row, int col) =>
+      !isCellLocked(row, col) && progress.cell(row, col).letter.isEmpty;
+}
