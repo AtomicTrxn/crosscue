@@ -260,6 +260,35 @@ tbody tr:hover{background:rgba(255,255,255,.015)}
   <h2>Shared Colors</h2>
   <p>Same in both themes. Do not override with dynamic color. Do not remap under CB mode except as noted.</p>
   <div class="swatch-group" id="sharedSwatches" style="margin-top:20px"></div>
+
+  <h3>Palette economy — non-grid screens</h3>
+  <p>All non-grid screens (Today, Archive, Stats, Settings) draw from a subset of just 7 tokens. No additional colors are needed. The full token set below is intentional — resist adding new colors for one-off UI moments.</p>
+
+  <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)">
+      <div style="padding:10px 12px;background:var(--surface2);font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);grid-column:1/-1">7 tokens cover every non-grid screen</div>
+    </div>
+    <div id="economyRow" style="display:flex;gap:0"></div>
+  </div>
+
+  <div style="margin-top:20px;overflow-x:auto;border-radius:10px;border:1px solid var(--border)">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:var(--surface2)">
+        <tr>
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Screen</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Tokens used</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Warm accent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border2)"><td style="padding:9px 14px;color:var(--text);font-weight:500">Today</td><td style="padding:9px 14px;color:var(--text2)">bg, surface, primary, onSurface 1/2/3, divider</td><td style="padding:9px 14px;color:var(--text3)">streakAccent (#FF9800) for streak counter</td></tr>
+        <tr style="border-bottom:1px solid var(--border2)"><td style="padding:9px 14px;color:var(--text);font-weight:500">Archive</td><td style="padding:9px 14px;color:var(--text2)">bg, surface, primary, onSurface 1/2/3, divider</td><td style="padding:9px 14px;color:var(--text3)">difficultyEasy/Hard chips if shown</td></tr>
+        <tr style="border-bottom:1px solid var(--border2)"><td style="padding:9px 14px;color:var(--text);font-weight:500">Stats</td><td style="padding:9px 14px;color:var(--text2)">bg, surface, primary, onSurface 1/2/3, divider</td><td style="padding:9px 14px;color:var(--text3)">primary only for chart accent</td></tr>
+        <tr style="border-bottom:1px solid var(--border2)"><td style="padding:9px 14px;color:var(--text);font-weight:500">Settings</td><td style="padding:9px 14px;color:var(--text2)">bg, surface, onSurface 1/2/3, divider</td><td style="padding:9px 14px;color:var(--text3)">none</td></tr>
+        <tr><td style="padding:9px 14px;color:var(--text);font-weight:500">Solve (grid)</td><td style="padding:9px 14px;color:var(--text2)">bg, surface + all grid tokens</td><td style="padding:9px 14px;color:var(--text3)">focusedCell amber, correct/incorrect letters</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ═══ COLOR BLIND MODE ═══ -->
@@ -306,7 +335,7 @@ tbody tr:hover{background:rgba(255,255,255,.015)}
     <li><strong style="color:var(--text)">Correct symbol:</strong> ✓ (U+2713), 8–9px, top-right of cell, color matches gridCorrectLetter CB value</li>
     <li><strong style="color:var(--text)">Incorrect symbol:</strong> ✗ (U+2717), 8–9px, top-right of cell, color matches gridIncorrectLetter CB value</li>
     <li><strong style="color:var(--text)">Position:</strong> top: 2px, right: 3px — mirrors the clue number at top: 2px, left: 3px</li>
-    <li><strong style="color:var(--text)">Applies to:</strong> all verified cells in any position state (empty, active, cross, completed, focused)</li>
+    <li><strong style="color:var(--text)">Applies to:</strong> all verified cells in any position state (empty, active, completed, focused)</li>
     <li><strong style="color:var(--text)">Does not apply to:</strong> revealed cells — provenance is not a verification state</li>
     <li><strong style="color:var(--text)">Dynamic color:</strong> declare CB overrides as fixed resource values to prevent Android system dynamic color from remapping them</li>
   </ul>
@@ -380,7 +409,6 @@ const CB={cls:'badge b-cb',lbl:'CB'};
 
 buildSwatches('lightGridPos',[
   ['#FFFFFF','gridEmptyCell','fillable square'],
-  ['#E3F2FD','gridCrossWord','secondary highlight'],
   ['#BBDEFB','gridActiveWord','primary highlight'],
   ['#FDD835','gridFocusedCell','cursor position'],
   ['#FFF9C4','gridRevealedCell','system-assisted'],
@@ -398,11 +426,11 @@ buildSwatches('lightKbd',[['#ECEFF1','keyboardBg'],['#FFFFFF','keyDefault'],['#B
 buildSwatches('lightSemantic',[['#4CAF50','correct'],['#B85450','incorrect']]);
 
 buildSwatches('darkGridPos',[
-  ['#1E2535','gridEmptyCell','',UPD],['#0D2248','gridCrossWord','',UPD],['#1C3D78','gridActiveWord','',UPD],
+  ['#1E2535','gridEmptyCell','',UPD],['#1C3D78','gridActiveWord','',UPD],
   ['#F5B700','gridFocusedCell','',UPD],['#FFB74D','gridRevealedCell'],['#060810','gridBlockedCell','',UPD],
 ]);
 buildSwatches('darkGridVer',[['#E4EAF8','gridNormalLetter','',UPD],['#34D399','gridCorrectLetter','verified correct',NEW],['#F87171','gridIncorrectLetter','verified incorrect',NEW]]);
-buildSwatches('darkGridBrd',[['#2A3148','gridInnerBorder','',UPD],['#3A4464','gridOuterBorder','',UPD],['#5C6E96','gridClueNumber','',UPD],['#9AAFE0','gridCrossWordLetter','dimmed cross-word',NEW]]);
+buildSwatches('darkGridBrd',[['#2A3148','gridInnerBorder','',UPD],['#3A4464','gridOuterBorder','',UPD],['#5C6E96','gridClueNumber','',UPD]]);
 buildSwatches('darkSurface',[['#181B22','background','',UPD],['#111318','surface','',UPD],['#E4EAF8','onSurface1','',UPD],['#8892AC','onSurface2','',UPD],['#5C6E96','onSurface3','',UPD],['#232840','divider','',UPD]]);
 buildSwatches('darkBrand',[['#7EB8F7','primary','',UPD],['#1B3E82 @20%','primaryContainer','',UPD]]);
 buildSwatches('darkKbd',[['#161A28','keyboardBg','',UPD],['#232A3C','keyDefault','',UPD],['#4E5C7E','keyDelete','',UPD]]);
@@ -411,7 +439,7 @@ buildSwatches('sharedSwatches',[
   ['#0A2A6E','deepNavy'],['#0A2A6E @88%','completionOverlay'],
   ['#C8E6C9','completedCellBg','word + puzzle complete'],
   ['#2E7D32','completedCellFg','(CB overrides to blue)'],
-  ['#E0E0E0','progressTrack'],['#4CAF50','difficultyEasy'],['#FF9800','difficultyHard'],
+  ['#E0E0E0','progressTrack'],['#4CAF50','difficultyEasy'],['#FF9800','difficultyHard / streakAccent','shared warm accent — difficulty-hard chip AND streak counter. One color, two uses.'],
 ]);
 
 /* ─── CB SWATCHES ─── */
@@ -424,25 +452,25 @@ buildSwatches('cbSwatches',[
 ]);
 
 /* ─── GRIDS ─── */
-const MG={W:5,BLACKS:new Set([1,3,21,23]),ACTIVE:new Set([10,11,12,13,14]),CROSS:new Set([2,7,17,22]),CURSOR:12,CORRECT:new Set([11,2]),WRONG:new Set([13]),REVEALED:new Set([22]),COMPLETED:new Set([]),LETTERS:{2:'A',7:'R',10:'S',11:'T',13:'Z',14:'Y',17:'N',22:'E'},CNUMS:{0:1,2:2,4:3,5:4,10:5,15:6}};
+const MG={W:5,BLACKS:new Set([1,3,21,23]),ACTIVE:new Set([10,11,12,13,14]),CURSOR:12,CORRECT:new Set([11,2]),WRONG:new Set([13]),REVEALED:new Set([22]),COMPLETED:new Set([]),LETTERS:{2:'A',7:'R',10:'S',11:'T',13:'Z',14:'Y',17:'N',22:'E'},CNUMS:{0:1,2:2,4:3,5:4,10:5,15:6}};
 
 function makeGrid(pal,showSym){
   const CELL=36,GAP=1;
   const g=document.createElement('div');
   g.style.cssText=`display:grid;grid-template-columns:repeat(${MG.W},${CELL}px);gap:${GAP}px;background:${pal.inner};border:2px solid ${pal.outer};border-radius:2px;padding:${GAP}px`;
   for(let i=0;i<MG.W*MG.W;i++){
-    const isBlk=MG.BLACKS.has(i),isCur=i===MG.CURSOR,isAct=MG.ACTIVE.has(i),isCrs=MG.CROSS.has(i);
+    const isBlk=MG.BLACKS.has(i),isCur=i===MG.CURSOR,isAct=MG.ACTIVE.has(i);
     const isCorr=MG.CORRECT.has(i),isWrong=MG.WRONG.has(i),isRev=MG.REVEALED.has(i);
     const letter=MG.LETTERS[i],cnum=MG.CNUMS[i];
     let bg=pal.empty;
-    if(isBlk)bg=pal.blocked;else if(isCur)bg=pal.focused;else if(isAct)bg=pal.active;else if(isRev)bg=pal.revealed;else if(isCrs)bg=pal.cross;
+    if(isBlk)bg=pal.blocked;else if(isCur)bg=pal.focused;else if(isAct)bg=pal.active;else if(isRev)bg=pal.revealed;
     if(!isBlk&&!isCur){if(isCorr)bg=pal.correctBg(bg);else if(isWrong)bg=pal.wrongBg(bg);}
     const cell=document.createElement('div');
     cell.style.cssText=`width:${CELL}px;height:${CELL}px;background:${bg};position:relative;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.03)`;
     if(!isBlk&&letter){
       const s=document.createElement('span');s.textContent=letter;
       let lc=pal.letter;
-      if(isCorr)lc=pal.correctLetter;else if(isWrong)lc=pal.wrongLetter;else if(isCrs&&pal.crossLetter)lc=pal.crossLetter;
+      if(isCorr)lc=pal.correctLetter;else if(isWrong)lc=pal.wrongLetter;
       s.style.cssText=`font-family:'DM Mono',monospace;font-size:14px;font-weight:700;line-height:1;color:${lc}`;
       cell.appendChild(s);
       if(showSym&&(isCorr||isWrong)){
@@ -462,8 +490,8 @@ function makeGrid(pal,showSym){
   return g;
 }
 
-const LP={inner:'#BDBDBD',outer:'#B0B0B0',blocked:'#111111',empty:'#FFFFFF',active:'#BBDEFB',cross:'#E3F2FD',focused:'#FDD835',revealed:'#FFF9C4',letter:'#1A1A1A',correctLetter:'#166534',wrongLetter:'#9B1C1C',clue:'#6B7280',correctBg:b=>blend('#4CAF50',.2,b),wrongBg:b=>blend('#B85450',.2,b)};
-const DP={inner:'#2A3148',outer:'#3A4464',blocked:'#060810',empty:'#1E2535',active:'#1C3D78',cross:'#0D2248',focused:'#F5B700',revealed:'#FFB74D',letter:'#E4EAF8',correctLetter:'#34D399',wrongLetter:'#F87171',crossLetter:'#9AAFE0',clue:'#5C6E96',correctBg:b=>b,wrongBg:b=>b};
+const LP={inner:'#BDBDBD',outer:'#B0B0B0',blocked:'#111111',empty:'#FFFFFF',active:'#BBDEFB',focused:'#FDD835',revealed:'#FFF9C4',letter:'#1A1A1A',correctLetter:'#166534',wrongLetter:'#9B1C1C',clue:'#6B7280',correctBg:b=>blend('#4CAF50',.2,b),wrongBg:b=>blend('#B85450',.2,b)};
+const DP={inner:'#2A3148',outer:'#3A4464',blocked:'#060810',empty:'#1E2535',active:'#1C3D78',focused:'#F5B700',revealed:'#FFB74D',letter:'#E4EAF8',correctLetter:'#34D399',wrongLetter:'#F87171',clue:'#5C6E96',correctBg:b=>b,wrongBg:b=>b};
 const LCB={...LP,correctLetter:'#1D4ED8',wrongLetter:'#B45309',correctBg:b=>b,wrongBg:b=>b};
 const DCB={...DP,correctLetter:'#60A5FA',wrongLetter:'#FB923C'};
 
@@ -485,7 +513,7 @@ function buildCBModel(){
   const t=document.getElementById('cbModelTable');
   const rows=[
     {cells:['Layer','Communicates','Normal mode','CB mode'],hdr:true},
-    {cells:['Background','Position in puzzle','Blue family: empty/cross/active/focused','Same — unchanged']},
+    {cells:['Background','Position in puzzle','Blue family: empty/active/focused','Same — unchanged']},
     {cells:['Background','Word-level completion','Green #C8E6C9 (always)','Same — →gray under deuter']},
     {cells:['Background','Revealed cell (provenance)','Cream #FFF9C4 / amber #FFB74D','Same — unchanged']},
     {cells:['Letter + Symbol','Verification: correct','Green #166534 / #34D399','Blue #1D4ED8 / #60A5FA + ✓','cb'],},
@@ -510,9 +538,8 @@ function buildPriorityStrip(){
   const items=[
     {n:1,sw:'#FDD835',lbl:'Focused',note:'amber · always wins',hi:true},
     {n:2,sw:'#BBDEFB',lbl:'Active word',note:'blue bg'},
-    {n:3,sw:'#E3F2FD',lbl:'Cross-word',note:'dim blue bg'},
-    {n:4,sw:'#C8E6C9',lbl:'Word-completed',note:'green bg'},
-    {n:5,sw:'#FFFFFF',lbl:'Empty',note:'white/dark · lowest'},
+    {n:3,sw:'#C8E6C9',lbl:'Word-completed',note:'green bg'},
+    {n:4,sw:'#FFFFFF',lbl:'Empty',note:'white/dark · lowest'},
   ];
   items.forEach(it=>{
     t.innerHTML+=`<div class="pri-item"><div class="pri-num">${it.n}</div><div class="pri-swatch" style="background:${it.sw}"></div><div class="pri-label">${it.lbl}</div><div class="pri-note">${it.note}</div></div>`;
@@ -526,11 +553,9 @@ function buildMatrix(){
     {state:'Focused cursor',bg:'Amber — always wins',lc:'#111111 dark',sym:'✓ if correct, ✗ if incorrect'},
     {state:'Active word — correct',bg:'Active blue',lc:'Blue CB',sym:'✓'},
     {state:'Active word — incorrect',bg:'Active blue',lc:'Orange CB',sym:'✗'},
-    {state:'Cross-word — correct',bg:'Cross dim-blue',lc:'Blue CB',sym:'✓'},
     {state:'Word-completed (no pos. highlight)',bg:'Green #C8E6C9',lc:'Blue CB',sym:'✓'},
     {state:'Completed + focused',bg:'Amber wins',lc:'Dark #111',sym:'✓ (cell IS correct)'},
     {state:'Completed + active word',bg:'Active blue wins',lc:'Blue CB',sym:'✓'},
-    {state:'Completed + cross-word',bg:'Cross blue wins',lc:'Blue CB',sym:'✓'},
     {state:'Incorrect in completed word',bg:'Green #C8E6C9',lc:'Orange CB',sym:'✗'},
     {state:'Revealed (no other state)',bg:'Cream #FFF9C4',lc:'Normal letter',sym:'— (not a verification state)'},
   ];
@@ -550,7 +575,6 @@ const ENG=[
   {sec:'Grid — Position backgrounds'},
   {tok:'gridBlockedCell',    l:'#111111',        d:'#060810',       cbl:null,     cbd:null,     li:false,di:true},
   {tok:'gridEmptyCell',      l:'#FFFFFF',        d:'#1E2535',       cbl:null,     cbd:null,     li:false,di:true},
-  {tok:'gridCrossWord',      l:'#E3F2FD',        d:'#0D2248',       cbl:null,     cbd:null,     li:false,di:true},
   {tok:'gridActiveWord',     l:'#BBDEFB',        d:'#1C3D78',       cbl:null,     cbd:null,     li:false,di:true},
   {tok:'gridFocusedCell',    l:'#FDD835',        d:'#F5B700',       cbl:null,     cbd:null,     li:false,di:true},
   {tok:'gridRevealedCell',   l:'#FFF9C4',        d:'#FFB74D',       cbl:null,     cbd:null,     li:false,di:false,note:'Provenance — bg both themes, no CB override'},
@@ -559,7 +583,6 @@ const ENG=[
   {tok:'gridNormalLetter',   l:'#1A1A1A',        d:'#E4EAF8',       cbl:null,     cbd:null,     li:false,di:true},
   {tok:'gridCorrectLetter',  l:'#166534',        d:'#34D399',       cbl:'#1D4ED8',cbd:'#60A5FA',li:true, di:true, note:'CB: blue replaces green'},
   {tok:'gridIncorrectLetter',l:'#9B1C1C',        d:'#F87171',       cbl:'#B45309',cbd:'#FB923C',li:true, di:true, note:'CB: orange replaces red'},
-  {tok:'gridCrossWordLetter',l:'#1A1A1A',        d:'#9AAFE0',       cbl:null,     cbd:null,     li:false,di:true, note:'Dim in dark only; no CB override'},
   {tok:'completedCellFg',    l:'#2E7D32',        d:'#2E7D32',       cbl:'↑ inherits gridCorrectLetter CB', cbd:'↑ inherits',li:false,di:false,ti:true,note:'Apply CB letter override to completed cells too'},
   {sec:'Grid — Borders & numbers'},
   {tok:'gridInnerBorder',    l:'#BDBDBD',        d:'#2A3148',       cbl:null,cbd:null,li:false,di:true},
@@ -568,6 +591,8 @@ const ENG=[
   {sec:'Grid — Removed tokens'},
   {tok:'gridCorrectOverlay', l:'REMOVED',        d:'REMOVED',       cbl:null,cbd:null,note:'Replaced by gridCorrectLetter'},
   {tok:'gridIncorrectOverlay',l:'REMOVED',       d:'REMOVED',       cbl:null,cbd:null,note:'Replaced by gridIncorrectLetter'},
+  {tok:'gridCrossWord',      l:'REMOVED',        d:'REMOVED',       cbl:null,cbd:null,note:'Perpendicular path is no longer highlighted in the grid'},
+  {tok:'gridCrossWordLetter',l:'REMOVED',        d:'REMOVED',       cbl:null,cbd:null,note:'No longer needed after removing grid cross-word emphasis'},
   {sec:'Surface & Background'},
   {tok:'background',         l:'#FAFAFA',        d:'#181B22',       cbl:null,cbd:null,li:false,di:true},
   {tok:'surface',            l:'#FFFFFF',        d:'#111318',       cbl:null,cbd:null,li:false,di:true},
@@ -589,7 +614,8 @@ const ENG=[
   {tok:'deepNavy',           l:'#0A2A6E',        d:'#0A2A6E',       cbl:null,cbd:null,li:false,di:false,ti:true},
   {tok:'completionOverlay',  l:'#0A2A6E @88%',   d:'#0A2A6E @88%',  cbl:null,cbd:null,li:false,di:false,ti:true},
   {tok:'difficultyEasy',     l:'#4CAF50',        d:'#4CAF50',       cbl:null,cbd:null,li:false,di:false,ti:true},
-  {tok:'difficultyHard',     l:'#FF9800',        d:'#FF9800',       cbl:null,cbd:null,li:false,di:false,ti:true},
+  {tok:'difficultyHard',     l:'#FF9800',        d:'#FF9800',       cbl:null,cbd:null,li:false,di:false,ti:true,note:'Also used as streakAccent — share the value, no new token needed'},
+  {tok:'streakAccent',       l:'= difficultyHard',d:'= difficultyHard',cbl:null,cbd:null,li:false,di:false,ti:true,note:'#FF9800 — reuse difficultyHard value; do not define a separate color'},
 ];
 
 function hc(val,isNew,isCB){
@@ -622,6 +648,29 @@ function copyTable(){
   navigator.clipboard.writeText(tsv).then(()=>{const b=document.getElementById('copyBtn');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy as TSV',2000);});
 }
 
+/* ─── ECONOMY ROW ─── */
+function buildEconomyRow(){
+  const target=document.getElementById('economyRow');
+  if(!target)return;
+  const tokens=[
+    {hex:'#FAFAFA',lbl:'background'},
+    {hex:'#FFFFFF',lbl:'surface'},
+    {hex:'#1565C0',lbl:'primary'},
+    {hex:'#1A1A1A',lbl:'onSurface1'},
+    {hex:'#6B7280',lbl:'onSurface2'},
+    {hex:'#9CA3AF',lbl:'onSurface3'},
+    {hex:'#E5E7EB',lbl:'divider'},
+  ];
+  tokens.forEach(t=>{
+    const item=document.createElement('div');
+    item.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-right:1px solid var(--border)';
+    item.innerHTML=`<div style="width:32px;height:32px;border-radius:6px;background:${t.hex};border:1px solid rgba(0,0,0,.10)"></div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center;line-height:1.3">${t.lbl}</div>`;
+    item.lastElementChild.previousElementSibling.style.borderColor=t.hex==='#FAFAFA'||t.hex==='#FFFFFF'||t.hex==='#E5E7EB'?'rgba(0,0,0,.12)':'transparent';
+    target.appendChild(item);
+  });
+  if(target.lastChild) target.lastChild.style.borderRight='none';
+}
+
 /* ─── INIT ─── */
 buildModel();
 buildCBGrids();
@@ -629,6 +678,7 @@ buildCBModel();
 buildPriorityStrip();
 buildMatrix();
 buildEngTable();
+buildEconomyRow();
 
 /* ─── SCROLL SPY ─── */
 document.querySelectorAll('.section[id]').forEach(s=>{

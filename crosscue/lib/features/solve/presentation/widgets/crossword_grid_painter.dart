@@ -101,8 +101,10 @@ class CrosswordGridPainter extends CustomPainter {
           final waveDelay = effect?.type == GridCellEffectType.puzzleComplete
               ? ((r + c) / (puzzle.width + puzzle.height)).clamp(0.0, 0.35)
               : 0.0;
-          final waveValue =
-              ((effectValue - waveDelay) / (1 - waveDelay)).clamp(0.0, 1.0);
+          final waveValue = ((effectValue - waveDelay) / (1 - waveDelay)).clamp(
+            0.0,
+            1.0,
+          );
           final pulse = math.sin(waveValue * math.pi).clamp(0.0, 1.0);
           final pulsePaint = Paint()
             ..style = PaintingStyle.fill
@@ -115,12 +117,7 @@ class CrosswordGridPainter extends CustomPainter {
 
         // Clue number
         if (cell.number != null) {
-          _paintNumber(
-            canvas,
-            cell.number!,
-            rect,
-            cellSize,
-          );
+          _paintNumber(canvas, cell.number!, rect, cellSize);
         }
 
         // Circle annotation
@@ -129,11 +126,7 @@ class CrosswordGridPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..color = theme.gridBorder
             ..strokeWidth = 1.5;
-          canvas.drawCircle(
-            rect.center,
-            cellSize / 2 - 1,
-            circlePaint,
-          );
+          canvas.drawCircle(rect.center, cellSize / 2 - 1, circlePaint);
         }
 
         // User letter
@@ -153,7 +146,7 @@ class CrosswordGridPainter extends CustomPainter {
         } else if (effect
             case GridCellEffect(
               type: GridCellEffectType.backspace,
-              oldLetter: final oldLetter?
+              oldLetter: final oldLetter?,
             )) {
           _paintLetter(
             canvas,
@@ -193,9 +186,6 @@ class CrosswordGridPainter extends CustomPainter {
     if (state.isWordHighlighted(row, col)) {
       return theme.wordHighlight;
     }
-    if (state.isCrossHighlighted(row, col)) {
-      return theme.crossHighlight;
-    }
     if (_isCompletedCell(state, row, col)) {
       // Intentionally theme-fixed: completion is a celebration moment and
       // the bright green pair reads the same in light and dark mode.
@@ -213,14 +203,11 @@ class CrosswordGridPainter extends CustomPainter {
     };
   }
 
-  void _paintNumber(
-    Canvas canvas,
-    int number,
-    Rect cellRect,
-    double cellSize,
-  ) {
-    final fontSize =
-        (cellSize * CrosscueTypography.cellNumberFactor).clamp(7.0, 14.0);
+  void _paintNumber(Canvas canvas, int number, Rect cellRect, double cellSize) {
+    final fontSize = (cellSize * CrosscueTypography.cellNumberFactor).clamp(
+      7.0,
+      14.0,
+    );
     final tp = TextPainter(
       text: TextSpan(
         text: '$number',
@@ -234,10 +221,7 @@ class CrosswordGridPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    tp.paint(
-      canvas,
-      Offset(cellRect.left + 1.5, cellRect.top + 1.0),
-    );
+    tp.paint(canvas, Offset(cellRect.left + 1.5, cellRect.top + 1.0));
   }
 
   void _paintLetter(
@@ -249,12 +233,15 @@ class CrosswordGridPainter extends CustomPainter {
     double scale = 1.0,
     double opacity = 1.0,
   }) {
-    final fontSize =
-        (cellSize * CrosscueTypography.cellLetterFactor).clamp(10.0, 32.0);
+    final fontSize = (cellSize * CrosscueTypography.cellLetterFactor).clamp(
+      10.0,
+      32.0,
+    );
     // Revealed cells use standard cellText — the stateRevealed background
     // (pale yellow) communicates the revealed state visually.
-    final effectiveColor =
-        (color ?? theme.cellText).withValues(alpha: opacity.clamp(0.0, 1.0));
+    final effectiveColor = (color ?? theme.cellText).withValues(
+      alpha: opacity.clamp(0.0, 1.0),
+    );
 
     final tp = TextPainter(
       text: TextSpan(
@@ -306,10 +293,6 @@ class CrosswordGridPainter extends CustomPainter {
     }
     if (solveState.isFocused(row, col)) {
       return theme.focusedCellText;
-    }
-    if (solveState.isCrossHighlighted(row, col) &&
-        !solveState.isWordHighlighted(row, col)) {
-      return theme.crossWordCellText;
     }
     return theme.cellText;
   }
@@ -389,10 +372,7 @@ class CrosswordGridPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    tp.paint(
-      canvas,
-      Offset(rect.right - tp.width - 3, rect.top + 2),
-    );
+    tp.paint(canvas, Offset(rect.right - tp.width - 3, rect.top + 2));
   }
 
   void _paintStateGlyph(

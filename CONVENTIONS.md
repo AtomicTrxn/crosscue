@@ -313,7 +313,7 @@ The grid palette is semantic, not decorative:
 
 | Meaning | Visual channel |
 |---------|----------------|
-| Focus / active word / cross word | Background fill |
+| Focus / active word | Background fill |
 | Checked correct / checked incorrect | Letter color |
 | Revealed | Background fill |
 | Completed word | Fixed completion colors |

@@ -205,7 +205,6 @@ class SolveState {
 
   bool isFocused(int row, int col)
   bool isWordHighlighted(int row, int col)
-  bool isCrossHighlighted(int row, int col)
 
   static bool cellInClue(int row, int col, Clue clue)  // public static for cross-file use
 

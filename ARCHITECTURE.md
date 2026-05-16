@@ -260,7 +260,7 @@ through `CrosswordTheme`. The current palette reference lives in
 The solve grid uses a semantic visual model rather than letting every state
 change every token:
 
-- **position** uses background fills (focused cell, active word, cross word)
+- **position** uses background fills (focused cell, active word)
 - **verification** uses letter color (`checkedCorrect`, `checkedIncorrect`)
 - **reveal** uses a fixed reveal background
 - **completion** uses the fixed green celebration pair

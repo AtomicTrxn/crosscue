@@ -10,7 +10,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   const CrosswordTheme({
     required this.cellActive,
     required this.wordHighlight,
-    required this.crossHighlight,
     required this.gridBlack,
     required this.gridEmpty,
     required this.gridBorder,
@@ -18,7 +17,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     required this.cellText,
     required this.cellNumber,
     required this.focusedCellText,
-    required this.crossWordCellText,
     required this.correctCellText,
     required this.correctFocusedCellText,
     required this.incorrectCellText,
@@ -47,9 +45,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   /// Light blue — all cells in the active (across or down) word.
   final Color wordHighlight;
 
-  /// Pale blue — cells in the crossing (perpendicular) word.
-  final Color crossHighlight;
-
   /// Near-black — blocked/filled squares.
   final Color gridBlack;
 
@@ -72,9 +67,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
 
   /// Letter color for focused cells on amber.
   final Color focusedCellText;
-
-  /// Dimmed letter color for cross-word cells.
-  final Color crossWordCellText;
 
   /// Letter color for checked-correct cells when verification is text-based.
   final Color correctCellText;
@@ -151,8 +143,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
           : CrosscueColors.cellActiveDark,
       wordHighlight:
           isLight ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark,
-      crossHighlight:
-          isLight ? CrosscueColors.crossHLLight : CrosscueColors.crossHLDark,
       gridBlack: isLight
           ? CrosscueColors.gridBlackLight
           : CrosscueColors.gridBlackDark,
@@ -172,9 +162,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
           ? CrosscueColors.gridClueNumberLight
           : CrosscueColors.gridClueNumberDark,
       focusedCellText: CrosscueColors.gridBlackLight,
-      crossWordCellText: isLight
-          ? CrosscueColors.onSurface1Light
-          : CrosscueColors.gridCrossWordLetterDark,
       correctCellText: isLight
           ? CrosscueColors.gridCorrectLetterLight
           : CrosscueColors.gridCorrectLetterDark,
@@ -239,7 +226,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   CrosswordTheme copyWith({
     Color? cellActive,
     Color? wordHighlight,
-    Color? crossHighlight,
     Color? gridBlack,
     Color? gridEmpty,
     Color? gridBorder,
@@ -247,7 +233,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     Color? cellText,
     Color? cellNumber,
     Color? focusedCellText,
-    Color? crossWordCellText,
     Color? correctCellText,
     Color? correctFocusedCellText,
     Color? incorrectCellText,
@@ -271,7 +256,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     return CrosswordTheme(
       cellActive: cellActive ?? this.cellActive,
       wordHighlight: wordHighlight ?? this.wordHighlight,
-      crossHighlight: crossHighlight ?? this.crossHighlight,
       gridBlack: gridBlack ?? this.gridBlack,
       gridEmpty: gridEmpty ?? this.gridEmpty,
       gridBorder: gridBorder ?? this.gridBorder,
@@ -279,7 +263,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       cellText: cellText ?? this.cellText,
       cellNumber: cellNumber ?? this.cellNumber,
       focusedCellText: focusedCellText ?? this.focusedCellText,
-      crossWordCellText: crossWordCellText ?? this.crossWordCellText,
       correctCellText: correctCellText ?? this.correctCellText,
       correctFocusedCellText:
           correctFocusedCellText ?? this.correctFocusedCellText,
@@ -312,7 +295,6 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     return CrosswordTheme(
       cellActive: Color.lerp(cellActive, other.cellActive, t)!,
       wordHighlight: Color.lerp(wordHighlight, other.wordHighlight, t)!,
-      crossHighlight: Color.lerp(crossHighlight, other.crossHighlight, t)!,
       gridBlack: Color.lerp(gridBlack, other.gridBlack, t)!,
       gridEmpty: Color.lerp(gridEmpty, other.gridEmpty, t)!,
       gridBorder: Color.lerp(gridBorder, other.gridBorder, t)!,
@@ -320,16 +302,17 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       cellText: Color.lerp(cellText, other.cellText, t)!,
       cellNumber: Color.lerp(cellNumber, other.cellNumber, t)!,
       focusedCellText: Color.lerp(focusedCellText, other.focusedCellText, t)!,
-      crossWordCellText:
-          Color.lerp(crossWordCellText, other.crossWordCellText, t)!,
       correctCellText: Color.lerp(correctCellText, other.correctCellText, t)!,
       correctFocusedCellText: Color.lerp(
         correctFocusedCellText,
         other.correctFocusedCellText,
         t,
       )!,
-      incorrectCellText:
-          Color.lerp(incorrectCellText, other.incorrectCellText, t)!,
+      incorrectCellText: Color.lerp(
+        incorrectCellText,
+        other.incorrectCellText,
+        t,
+      )!,
       colorblindCorrectCellText: Color.lerp(
         colorblindCorrectCellText,
         other.colorblindCorrectCellText,
@@ -348,8 +331,11 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       stateRevealed: Color.lerp(stateRevealed, other.stateRevealed, t)!,
       clueBarBg: Color.lerp(clueBarBg, other.clueBarBg, t)!,
       clueBarBorder: Color.lerp(clueBarBorder, other.clueBarBorder, t)!,
-      clueBarDirection:
-          Color.lerp(clueBarDirection, other.clueBarDirection, t)!,
+      clueBarDirection: Color.lerp(
+        clueBarDirection,
+        other.clueBarDirection,
+        t,
+      )!,
       clueBarText: Color.lerp(clueBarText, other.clueBarText, t)!,
       activeClueBg: Color.lerp(activeClueBg, other.activeClueBg, t)!,
       crossClueBg: Color.lerp(crossClueBg, other.crossClueBg, t)!,

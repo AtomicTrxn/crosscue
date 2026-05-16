@@ -61,7 +61,6 @@ abstract class CrosscueColors {
   static const Color gridWrongLetterLight = Color(0xFF9B1C1C);
   static const Color gridCbCorrectLetterLight = Color(0xFF1D4ED8);
   static const Color gridCbWrongLetterLight = Color(0xFFB45309);
-  static const Color gridCrossWordLetterDark = Color(0xFF9AAFE0);
   static const Color gridCorrectLetterDark = Color(0xFF34D399);
   static const Color gridCorrectFocusedLetterDark = Color(0xFF1A6B3A);
   static const Color gridWrongLetterDark = Color(0xFFF87171);
@@ -88,8 +87,9 @@ abstract class CrosscueColors {
 
   // ── Overlay & misc ─────────────────────────────────────────────────────────
   static const Color barrierDeepNavy = Color(0xE10A2A6E); // 88% alpha deep navy
-  static const Color trackGrey =
-      Color(0xFFE0E0E0); // pie chart / progress track
+  static const Color trackGrey = Color(
+    0xFFE0E0E0,
+  ); // pie chart / progress track
 
   // ── Confetti palette ───────────────────────────────────────────────────────
   // Mirrors the four semantic colors (brand, accent, success, warning) so the

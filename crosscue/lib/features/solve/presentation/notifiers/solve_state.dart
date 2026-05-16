@@ -120,12 +120,6 @@ class SolveState {
     return false;
   }
 
-  bool isCrossHighlighted(int row, int col) {
-    final clue = crossClue;
-    if (clue == null) return false;
-    return cellInClue(row, col, clue);
-  }
-
   SolveState copyWith({
     Grid<CellProgress>? progress,
     FocusPosition? focus,
