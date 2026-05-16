@@ -267,7 +267,8 @@ This triggers `.github/workflows/release.yml`, which:
 2. Builds a signed release APK with version name `1.2.3` and version code `10203`
 3. Publishes a GitHub Release at `v1.2.3` with the APK attached and auto-generated release notes
 
-**Release title:** always the bare version number — `v1.2.3`. All context goes in the release body, not the title.
+**Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
+context in the generated release body rather than overloading the title.
 
 **Version code formula:** `major × 10000 + minor × 100 + patch`
 - `v1.0.0` → `10000`
@@ -280,7 +281,13 @@ When ready to ship to Google Play, use `workflow_dispatch` from the Actions tab:
 - Select **Release** workflow → **Run workflow**
 - Enter the tag (must already exist) and set `play_store: true`
 
-This builds both the APK and a signed AAB, attaches the APK to the GitHub Release, and uploads the AAB to the Play Store internal track. Requires an additional secret `PLAY_SERVICE_ACCOUNT_JSON` (a Google Cloud service account key with the **Release Manager** role on the Play Console) and the commented-out upload step in `release.yml` to be uncommented.
+This builds both the APK and a signed AAB, attaches the APK to the GitHub
+Release, and uploads the AAB to the Play Store internal track. It requires the
+`PLAY_SERVICE_ACCOUNT_JSON` secret for a Play Console service account that has
+the app-level permissions needed for the intended release path. For internal
+testing uploads, that means at least **Release apps to testing tracks**; add
+broader production permissions only when the workflow is meant to publish to
+production.
 
 ---
 
@@ -327,11 +334,12 @@ Crosscue current-release answers:
 ### Release pipeline
 - [x] `.github/workflows/release.yml` builds a signed AAB and uploads to the
       Play Store internal track when triggered with `play_store: true`.
-- [x] `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret added (Google Cloud service
-      account with the Release Manager role on the Play Console). Verify
+- [x] `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret added for the Play Console
+      service account. For the current internal-track workflow, grant app-level
+      **Release apps to testing tracks** permission. Verify the secret exists
       with `gh secret list`.
-- [ ] Use `workflow_dispatch` with `play_store: true` to trigger the first
-      AAB upload to the internal track.
+- [x] First AAB upload to the internal track completed via
+      `workflow_dispatch` with `play_store: true`.
 
 ### Post-launch updates required if scope changes
 - Re-review and update privacy policy + Data Safety form before adding analytics,
@@ -419,6 +427,7 @@ Acceptable exceptions (intentional brand-fixed colors):
 | Completion sheet barrier (`barrierDeepNavy`) | Brand celebration color, identical in both themes. |
 | Confetti palette (`confettiPalette`) | Fixed 4-color brand palette. |
 | Completed-cell green (`completedCellBg`, `completedCellFg`) | Celebration accent — green-on-green stays bright in both themes. |
+| Revealed-cell amber (`revealedCellBg`) | Provenance state, intentionally fixed across themes. |
 | Onboarding `_AddPuzzleIllustration` | Mock of the light Today screen; explicit light-mode tokens by design. |
 | Difficulty palette in stats (`primary`, hardcoded green/orange) | Fixed category palette, not theme-derived. |
 

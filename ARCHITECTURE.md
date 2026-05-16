@@ -188,8 +188,6 @@ SolveScreen (ref.watch solveProvider(puzzleId))
 
 ---
 
----
-
 ## Feature: `archive`
 
 Lists all imported puzzles with their latest solve session status.
@@ -250,6 +248,27 @@ settings/
         ├── crosshare_settings_screen.dart         # Crosshare Daily Mini on/off + schedule config
         └── privacy_screen.dart                    # Crash reporting, data export/import, clear all data
 ```
+
+---
+
+## Core: Theme System
+
+`lib/core/theme/` owns the app palette and exposes crossword-specific colors
+through `CrosswordTheme`. The current palette reference lives in
+[`design/Crosscue Color Guide.html`](design/Crosscue%20Color%20Guide.html).
+
+The solve grid uses a semantic visual model rather than letting every state
+change every token:
+
+- **position** uses background fills (focused cell, active word, cross word)
+- **verification** uses letter color (`checkedCorrect`, `checkedIncorrect`)
+- **reveal** uses a fixed reveal background
+- **completion** uses the fixed green celebration pair
+- **colorblind mode** remaps verification to blue/orange and adds `✓` / `✗`
+  symbols so correctness is never conveyed by color alone
+
+Grid semantics are intentionally kept outside Android dynamic-color overrides;
+they carry puzzle meaning, not just decoration.
 
 ---
 

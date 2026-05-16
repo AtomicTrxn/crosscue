@@ -307,6 +307,24 @@ All Drift I/O is async — always `await` it. Never call `.get()` synchronously.
 For a 15×15 grid (225 cells) a widget tree would cause severe jank.
 `CrosswordGridPainter` draws everything in one `paint()` call on the Canvas.
 
+### Keep grid-state semantics separated
+
+The grid palette is semantic, not decorative:
+
+| Meaning | Visual channel |
+|---------|----------------|
+| Focus / active word / cross word | Background fill |
+| Checked correct / checked incorrect | Letter color |
+| Revealed | Background fill |
+| Completed word | Fixed completion colors |
+| Deuteranopia mode | Blue/orange verification colors plus `✓` / `✗` symbols |
+
+Do not reintroduce “every state changes the whole cell background” behavior.
+That collapses position and verification into the same channel and makes the
+grid harder to parse, especially in dark mode. Use
+[`design/Crosscue Color Guide.html`](design/Crosscue%20Color%20Guide.html) as
+the current palette reference when changing theme tokens.
+
 ### Cell coordinate system
 ```
 offsetX = (canvasWidth - totalGridWidth) / 2   // centres the grid horizontally

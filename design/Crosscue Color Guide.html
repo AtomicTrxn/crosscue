@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crosscue — Color Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <filter id="deuter">
+      <feColorMatrix type="matrix"
+        values="0.56667 0.43333 0 0 0
+                0.55833 0.44167 0 0 0
+                0       0.24167 0.75833 0 0
+                0       0       0       1 0"/>
+    </filter>
+  </defs>
+</svg>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0C0F17;--surface:#141820;--surface2:#1A2030;--border:#252D42;--border2:#1C2234;
+  --text:#DDE2F0;--text2:#8892AC;--text3:#4E5C7E;
+  --accent:#4A7AFF;--warn:#FF6845;--good:#3ACC7A;--amber:#F5A623;
+  --mono:'DM Mono','Courier New',monospace;--sans:'DM Sans',system-ui,sans-serif;
+}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding-bottom:96px}
+
+.outer{max-width:1140px;margin:0 auto}
+.padded{padding:0 44px}
+header{padding:52px 44px 36px;border-bottom:1px solid var(--border2)}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+h1{font-size:28px;font-weight:600;letter-spacing:-.025em;margin-bottom:6px}
+.lead{font-size:15px;color:var(--text2);line-height:1.6;max-width:600px}
+.version{margin-top:10px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+nav{border-bottom:1px solid var(--border2);display:flex;overflow-x:auto;padding:0 44px;position:sticky;top:0;background:var(--bg);z-index:100}
+nav a{font-size:12px;font-weight:500;color:var(--text3);text-decoration:none;padding:13px 16px;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s}
+nav a:hover{color:var(--text)}
+nav a.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.section{padding:56px 44px;border-bottom:1px solid var(--border2)}
+.section:last-child{border-bottom:none}
+.sec-eyebrow{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+h2{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
+h3{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-top:36px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border2)}
+h3:first-of-type{margin-top:24px}
+p{font-size:14px;line-height:1.7;color:var(--text2);max-width:700px}
+
+.callout{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:8px;padding:16px 20px;margin:20px 0}
+.callout.good{border-left-color:var(--good)}
+.callout.info{border-left-color:var(--accent)}
+.callout-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--warn);margin-bottom:6px}
+.callout.good .callout-title{color:var(--good)} .callout.info .callout-title{color:var(--accent)}
+.callout p{max-width:none;margin:0}
+
+ul.bl{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:10px}
+ul.bl li{font-size:13px;color:var(--text2);line-height:1.6;padding-left:16px;position:relative;max-width:680px}
+ul.bl li::before{content:'→';position:absolute;left:0;color:var(--accent);font-size:11px;top:3px}
+
+/* MODEL */
+.model-wrap{display:flex;gap:32px;margin-top:24px;flex-wrap:wrap}
+.model-col{flex:1;min-width:240px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.model-col-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase}
+.model-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border2)}
+.model-row:last-child{border-bottom:none}
+.split-swatch{display:flex;border-radius:3px;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,255,255,.06)}
+.split-half{width:16px;height:24px}
+.model-label{font-size:12px;color:var(--text)}
+.model-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.model-hexes{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+
+/* SWATCHES */
+.swatch-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.swatch{border-radius:8px;overflow:hidden;border:1px solid var(--border);width:128px;flex-shrink:0}
+.swatch-color{height:60px}
+.swatch-info{background:var(--surface);padding:8px 10px}
+.swatch-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px;line-height:1.3}
+.swatch-hex{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.swatch-note{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.35}
+
+/* GRID */
+.grid-swatch-row{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+.grid-demo-col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.grid-demo-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.grid-bg-light{background:#ECEEF2;padding:18px;border-radius:10px;border:1px solid var(--border)}
+.grid-bg-dark{background:#181B22;padding:18px;border-radius:10px;border:1px solid var(--border)}
+.swatch-col{flex:1}
+
+/* CB SECTION STYLES */
+.sim-toggle{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:fit-content}
+.sim-toggle label{font-size:13px;color:var(--text);cursor:pointer;user-select:none}
+.toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:#2A3148;border-radius:11px;cursor:pointer;transition:background .2s}
+.toggle-track::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-switch input:checked+.toggle-track{background:var(--accent)}
+.toggle-switch input:checked+.toggle-track::after{transform:translateX(18px)}
+.sim-note{font-size:11px;color:var(--text3)}
+.deuter-active .sim-target{filter:url(#deuter)}
+
+.cb-grid-pair{display:flex;gap:32px;margin-top:16px;flex-wrap:wrap}
+.cb-grid-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cb-grid-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+
+.cb-model-table{border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-top:16px}
+.cmt-row{display:grid;grid-template-columns:140px 130px 1fr 1fr;gap:0;border-bottom:1px solid var(--border2)}
+.cmt-row:last-child{border-bottom:none}
+.cmt-row.header{background:var(--surface2)}
+.cmt-cell{padding:11px 14px;font-size:12px;color:var(--text2);border-right:1px solid var(--border2)}
+.cmt-cell:last-child{border-right:none}
+.cmt-cell.lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.cmt-cell strong{color:var(--text)}
+.cmt-cell .badge{margin-left:4px}
+
+.priority-strip{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-top:12px}
+.pri-item{flex:1;padding:12px 10px;background:var(--surface);border-right:1px solid var(--border);text-align:center;position:relative}
+.pri-item:last-child{border-right:none}
+.pri-num{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px}
+.pri-swatch{width:28px;height:28px;border-radius:3px;margin:0 auto 6px;border:1px solid rgba(0,0,0,.08)}
+.pri-label{font-size:10px;color:var(--text);font-weight:500;line-height:1.3}
+.pri-note{font-size:9px;color:var(--text3);margin-top:2px}
+
+.matrix-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-top:12px}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-top:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--surface2)}
+th{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);text-align:left;padding:11px 16px;border-bottom:1px solid var(--border)}
+td{padding:10px 16px;border-bottom:1px solid var(--border2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.015)}
+.sec-row td{background:var(--surface2)!important;font-size:10px!important;font-weight:600!important;letter-spacing:.10em!important;text-transform:uppercase!important;color:var(--text3)!important;padding:8px 16px!important}
+.token-td{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.hex-cell{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+.hex-dot{width:13px;height:13px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,.10)}
+.hex-v{font-family:var(--mono);font-size:12px;color:var(--text2);white-space:nowrap}
+.hex-v.changed{color:var(--text)}
+.spec-val{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;letter-spacing:.03em;margin-left:3px}
+.b-upd{background:rgba(74,122,255,.14);color:var(--accent)}
+.b-new{background:rgba(58,204,122,.12);color:var(--good)}
+.b-ti{background:var(--surface2);color:var(--text3)}
+.b-cb{background:rgba(245,166,35,.12);color:var(--amber)}
+.note-td{font-size:12px;color:var(--text3);line-height:1.4;max-width:200px}
+.copy-btn{font-size:11px;font-weight:500;padding:6px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-family:var(--sans)}
+.copy-btn:hover{background:var(--surface);color:var(--text)}
+.flex-row{display:flex;align-items:baseline;gap:14px;margin-bottom:10px}
+.dash-cell{color:var(--text3);font-size:12px}
+
+@media(max-width:860px){
+  .padded,.section,header,nav{padding-left:20px;padding-right:20px}
+  .grid-swatch-row,.cb-grid-pair{gap:20px}
+  .model-wrap{flex-direction:column}
+  .cmt-row{grid-template-columns:1fr 1fr}
+  .priority-strip{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="outer">
+
+<header>
+  <div class="eyebrow">Crosscue · Design System</div>
+  <h1>Color Guide</h1>
+  <p class="lead">Complete color token reference for Crosscue. Covers both themes, the grid interaction model, color blind mode (Option D), and shared colors. This document is the single source of truth.</p>
+  <div class="version">Version 3.0 · May 2026 · Includes Color Blind Mode</div>
+</header>
+
+<nav>
+  <a href="#model" class="active">Interaction Model</a>
+  <a href="#light">Light Mode</a>
+  <a href="#dark">Dark Mode</a>
+  <a href="#shared">Shared Colors</a>
+  <a href="#colorblind">Color Blind Mode</a>
+  <a href="#engineering">Engineering Table</a>
+</nav>
+
+<!-- ═══ MODEL ═══ -->
+<div class="section" id="model">
+  <div class="sec-eyebrow">The Semantic System</div>
+  <h2>Interaction Model</h2>
+  <p>All grid colors are organized along two independent axes. This model is identical in both light and dark mode, and in color blind mode — users who switch themes or toggle accessibility settings face no relearning cost.</p>
+  <div class="model-wrap" id="modelDiagram"></div>
+</div>
+
+<!-- ═══ LIGHT MODE ═══ -->
+<div class="section" id="light">
+  <div class="sec-eyebrow">Light Mode</div>
+  <h2>Light Mode Palette</h2>
+
+  <h3>Grid — Position backgrounds</h3>
+  <div class="grid-swatch-row">
+    <div class="swatch-col"><div class="swatch-group" id="lightGridPos"></div></div>
+    <div class="grid-demo-col">
+      <div class="grid-demo-label">Grid preview</div>
+      <div class="grid-bg-light" id="lightGrid"></div>
+    </div>
+  </div>
+
+  <h3>Grid — Verification (letter colors)</h3>
+  <div class="swatch-group" id="lightGridVer"></div>
+
+  <h3>Grid — Borders &amp; Numbers</h3>
+  <div class="swatch-group" id="lightGridBrd"></div>
+
+  <h3>Surface &amp; Text</h3>
+  <div class="swatch-group" id="lightSurface"></div>
+
+  <h3>Brand</h3>
+  <div class="swatch-group" id="lightBrand"></div>
+
+  <h3>Keyboard</h3>
+  <div class="swatch-group" id="lightKbd"></div>
+
+  <h3>Semantic</h3>
+  <div class="swatch-group" id="lightSemantic"></div>
+</div>
+
+<!-- ═══ DARK MODE ═══ -->
+<div class="section" id="dark">
+  <div class="sec-eyebrow">Dark Mode</div>
+  <h2>Dark Mode Palette</h2>
+
+  <h3>Grid — Position backgrounds</h3>
+  <div class="grid-swatch-row">
+    <div class="swatch-col"><div class="swatch-group" id="darkGridPos"></div></div>
+    <div class="grid-demo-col">
+      <div class="grid-demo-label">Grid preview</div>
+      <div class="grid-bg-dark" id="darkGrid"></div>
+    </div>
+  </div>
+
+  <h3>Grid — Verification (letter colors)</h3>
+  <div class="swatch-group" id="darkGridVer"></div>
+
+  <h3>Grid — Borders, Numbers &amp; Dim</h3>
+  <div class="swatch-group" id="darkGridBrd"></div>
+
+  <h3>Surface &amp; Text</h3>
+  <div class="swatch-group" id="darkSurface"></div>
+
+  <h3>Brand</h3>
+  <div class="swatch-group" id="darkBrand"></div>
+
+  <h3>Keyboard</h3>
+  <div class="swatch-group" id="darkKbd"></div>
+
+  <h3>Semantic</h3>
+  <div class="swatch-group" id="darkSemantic"></div>
+</div>
+
+<!-- ═══ SHARED ═══ -->
+<div class="section" id="shared">
+  <div class="sec-eyebrow">Theme-Independent</div>
+  <h2>Shared Colors</h2>
+  <p>Same in both themes. Do not override with dynamic color. Do not remap under CB mode except as noted.</p>
+  <div class="swatch-group" id="sharedSwatches" style="margin-top:20px"></div>
+</div>
+
+<!-- ═══ COLOR BLIND MODE ═══ -->
+<div class="section" id="colorblind">
+  <div class="sec-eyebrow">Accessibility</div>
+  <h2>Color Blind Mode — Option D</h2>
+  <p>Option D replaces the green/red verification pair with a blue/orange pair that survives deuteranopia and protanopia, and adds ✓/✗ symbols as a second independent signal covering achromatopsia. Only two letter-color tokens change; all position backgrounds, the word-completion background, and the revealed background are unchanged.</p>
+
+  <div class="callout info" style="margin-top:20px">
+    <div class="callout-title">Implementation rule</div>
+    <p>The CB letter-color override applies to <strong style="color:var(--text)">all verified cells</strong> — including cells inside completed words. The word-completion background (#C8E6C9) is unchanged; it simulates to neutral gray under deuteranopia and remains distinct from all position backgrounds. No token changes are needed for word-completion beyond the existing CB letter override.</p>
+  </div>
+
+  <h3>CB grid previews</h3>
+  <div id="cbArea">
+    <div class="sim-toggle">
+      <div class="toggle-switch"><input type="checkbox" id="cbSim" onchange="toggleSim('cbArea',this.checked)"><div class="toggle-track"></div></div>
+      <label for="cbSim">Simulate deuteranopia</label>
+      <span class="sim-note">Viénot/Brettel approximation</span>
+    </div>
+    <div class="cb-grid-pair sim-target" id="cbGridPair"></div>
+  </div>
+
+  <h3>CB verification swatches</h3>
+  <div class="swatch-group" id="cbSwatches"></div>
+
+  <h3>Five-layer semantic model</h3>
+  <p>Every visual layer carries exactly one semantic concern. Layers are fully independent — a cell's background and its letter color are set by different rules and never conflict.</p>
+  <div class="cb-model-table" id="cbModelTable"></div>
+
+  <h3>Background priority stack</h3>
+  <p>When a cell qualifies for multiple position states, the highest-priority background wins. Letter color and symbol are always determined by verification state regardless of which background wins.</p>
+  <div class="priority-strip" id="priorityStrip"></div>
+
+  <h3>Word-level completion</h3>
+  <div class="callout good">
+    <div class="callout-title">✓ No extra token changes needed</div>
+    <p>Word-completed cells keep the green background (#C8E6C9) in CB mode. Under deuteranopia this simulates to neutral gray (~#CBCBCB) — distinguishable from all position backgrounds. The CB letter override makes the letter blue + ✓, identical to any other verified-correct cell. The background difference is what distinguishes "this word is complete" from "this cell is individually checked."</p>
+  </div>
+  <p style="margin-top:12px">Puzzle-level completion (full-screen green overlay) is a terminal state and requires no CB override — it is never concurrent with active solving UI.</p>
+
+  <h3>Symbol specification</h3>
+  <ul class="bl">
+    <li><strong style="color:var(--text)">Correct symbol:</strong> ✓ (U+2713), 8–9px, top-right of cell, color matches gridCorrectLetter CB value</li>
+    <li><strong style="color:var(--text)">Incorrect symbol:</strong> ✗ (U+2717), 8–9px, top-right of cell, color matches gridIncorrectLetter CB value</li>
+    <li><strong style="color:var(--text)">Position:</strong> top: 2px, right: 3px — mirrors the clue number at top: 2px, left: 3px</li>
+    <li><strong style="color:var(--text)">Applies to:</strong> all verified cells in any position state (empty, active, cross, completed, focused)</li>
+    <li><strong style="color:var(--text)">Does not apply to:</strong> revealed cells — provenance is not a verification state</li>
+    <li><strong style="color:var(--text)">Dynamic color:</strong> declare CB overrides as fixed resource values to prevent Android system dynamic color from remapping them</li>
+  </ul>
+
+  <h3>Compound state rendering matrix</h3>
+  <div class="matrix-wrap" id="matrixWrap"></div>
+</div>
+
+<!-- ═══ ENGINEERING ═══ -->
+<div class="section" id="engineering">
+  <div class="flex-row">
+    <h2 style="margin-bottom:0">Engineering Reference</h2>
+    <button class="copy-btn" id="copyBtn" onclick="copyTable()">Copy as TSV</button>
+  </div>
+  <p>Full token reference. CB column shows overrides active when color blind mode is on — a dash means unchanged from normal mode.</p>
+  <div class="table-wrap" id="engTable"></div>
+</div>
+
+</div>
+
+<script>
+/* ─── UTILS ─── */
+function lin(c){return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)}
+function lum(hex){const h=hex.replace('#','');return .2126*lin(parseInt(h.slice(0,2),16)/255)+.7152*lin(parseInt(h.slice(2,4),16)/255)+.0722*lin(parseInt(h.slice(4,6),16)/255)}
+function blend(fg,a,bg){
+  const fh=fg.replace('#',''),bh=bg.replace('#','');
+  const f=[0,2,4].map(i=>parseInt(fh.slice(i,i+2),16));
+  const b=[0,2,4].map(i=>parseInt(bh.slice(i,i+2),16));
+  return '#'+f.map((v,i)=>Math.round(v*a+b[i]*(1-a)).toString(16).padStart(2,'0')).join('');
+}
+function toggleSim(id,on){const el=document.getElementById(id);on?el.classList.add('deuter-active'):el.classList.remove('deuter-active')}
+
+/* ─── MODEL ─── */
+function buildModel(){
+  const target=document.getElementById('modelDiagram');
+  [{title:'Background communicates position',subtitle:'Where is the cursor relative to this cell?',type:'bg',rows:[
+    {lbl:'Empty cell',sub:'fillable, no highlight',lhex:'#FFFFFF',dhex:'#1E2535'},
+    {lbl:'Cross-word',sub:'secondary highlight',lhex:'#E3F2FD',dhex:'#0D2248'},
+    {lbl:'Active word',sub:'primary active word',lhex:'#BBDEFB',dhex:'#1C3D78'},
+    {lbl:'Focused cursor',sub:'current cell',lhex:'#FDD835',dhex:'#F5B700'},
+    {lbl:'Revealed cell',sub:'system-assisted',lhex:'#FFF9C4',dhex:'#FFB74D'},
+  ]},{title:'Letter color communicates verification',subtitle:'Has the answer been checked?',type:'letter',rows:[
+    {lbl:'Normal',sub:'entered, not verified',lhex:'#1A1A1A',dhex:'#E4EAF8'},
+    {lbl:'Correct',sub:'verified right',lhex:'#166534',dhex:'#34D399'},
+    {lbl:'Incorrect',sub:'verified wrong',lhex:'#9B1C1C',dhex:'#F87171'},
+  ]}].forEach(ax=>{
+    const col=document.createElement('div');col.className='model-col';
+    col.innerHTML=`<div class="model-col-header">${ax.title}<br><span style="font-size:10px;font-weight:400;opacity:.7">${ax.subtitle}</span></div>`;
+    ax.rows.forEach(r=>{
+      const row=document.createElement('div');row.className='model-row';
+      let sw=ax.type==='bg'
+        ?`<div class="split-swatch"><div class="split-half" style="background:${r.lhex}"></div><div class="split-half" style="background:${r.dhex}"></div></div>`
+        :`<div style="display:flex;gap:4px"><div style="width:28px;height:28px;background:#FFFFFF;border:1px solid rgba(0,0,0,.08);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${r.lhex}">A</div><div style="width:28px;height:28px;background:#1E2535;border:1px solid rgba(255,255,255,.06);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:${r.dhex}">A</div></div>`;
+      row.innerHTML=`${sw}<div><div class="model-label">${r.lbl}</div><div class="model-sub">${r.sub}</div><div class="model-hexes">L:${r.lhex} · D:${r.dhex}</div></div>`;
+      col.appendChild(row);
+    });
+    target.appendChild(col);
+  });
+}
+
+/* ─── SWATCHES ─── */
+function makeSwatch(hex,name,note,tag){
+  const bp=hex.split(' ')[0];
+  const tagHtml=tag?`<span class="${tag.cls}">${tag.lbl}</span>`:'';
+  return`<div class="swatch"><div class="swatch-color" style="background:${bp}"></div><div class="swatch-info"><div class="swatch-name">${name} ${tagHtml}</div><div class="swatch-hex">${hex}</div>${note?`<div class="swatch-note">${note}</div>`:''}</div></div>`;
+}
+function buildSwatches(id,list){const t=document.getElementById(id);list.forEach(([h,n,nt,tg])=>{t.innerHTML+=makeSwatch(h,n,nt,tg);})}
+const UPD={cls:'badge b-upd',lbl:'UPDATED'};
+const NEW={cls:'badge b-new',lbl:'NEW'};
+const CB={cls:'badge b-cb',lbl:'CB'};
+
+buildSwatches('lightGridPos',[
+  ['#FFFFFF','gridEmptyCell','fillable square'],
+  ['#E3F2FD','gridCrossWord','secondary highlight'],
+  ['#BBDEFB','gridActiveWord','primary highlight'],
+  ['#FDD835','gridFocusedCell','cursor position'],
+  ['#FFF9C4','gridRevealedCell','system-assisted'],
+  ['#111111','gridBlockedCell','blocked square'],
+]);
+buildSwatches('lightGridVer',[
+  ['#1A1A1A','gridNormalLetter','on any bg'],
+  ['#166534','gridCorrectLetter','verified correct',NEW],
+  ['#9B1C1C','gridIncorrectLetter','verified incorrect',NEW],
+]);
+buildSwatches('lightGridBrd',[['#BDBDBD','gridInnerBorder'],['#B0B0B0','gridOuterBorder'],['#6B7280','gridClueNumber','cell numbers',UPD]]);
+buildSwatches('lightSurface',[['#FAFAFA','background'],['#FFFFFF','surface'],['#1A1A1A','onSurface1'],['#6B7280','onSurface2'],['#9CA3AF','onSurface3'],['#E5E7EB','divider']]);
+buildSwatches('lightBrand',[['#1565C0','primary'],['#E3F2FD','primaryContainer']]);
+buildSwatches('lightKbd',[['#ECEFF1','keyboardBg'],['#FFFFFF','keyDefault'],['#B0BEC5','keyDelete']]);
+buildSwatches('lightSemantic',[['#4CAF50','correct'],['#B85450','incorrect']]);
+
+buildSwatches('darkGridPos',[
+  ['#1E2535','gridEmptyCell','',UPD],['#0D2248','gridCrossWord','',UPD],['#1C3D78','gridActiveWord','',UPD],
+  ['#F5B700','gridFocusedCell','',UPD],['#FFB74D','gridRevealedCell'],['#060810','gridBlockedCell','',UPD],
+]);
+buildSwatches('darkGridVer',[['#E4EAF8','gridNormalLetter','',UPD],['#34D399','gridCorrectLetter','verified correct',NEW],['#F87171','gridIncorrectLetter','verified incorrect',NEW]]);
+buildSwatches('darkGridBrd',[['#2A3148','gridInnerBorder','',UPD],['#3A4464','gridOuterBorder','',UPD],['#5C6E96','gridClueNumber','',UPD],['#9AAFE0','gridCrossWordLetter','dimmed cross-word',NEW]]);
+buildSwatches('darkSurface',[['#181B22','background','',UPD],['#111318','surface','',UPD],['#E4EAF8','onSurface1','',UPD],['#8892AC','onSurface2','',UPD],['#5C6E96','onSurface3','',UPD],['#232840','divider','',UPD]]);
+buildSwatches('darkBrand',[['#7EB8F7','primary','',UPD],['#1B3E82 @20%','primaryContainer','',UPD]]);
+buildSwatches('darkKbd',[['#161A28','keyboardBg','',UPD],['#232A3C','keyDefault','',UPD],['#4E5C7E','keyDelete','',UPD]]);
+buildSwatches('darkSemantic',[['#66BB6A','correct'],['#E89691','incorrect']]);
+buildSwatches('sharedSwatches',[
+  ['#0A2A6E','deepNavy'],['#0A2A6E @88%','completionOverlay'],
+  ['#C8E6C9','completedCellBg','word + puzzle complete'],
+  ['#2E7D32','completedCellFg','(CB overrides to blue)'],
+  ['#E0E0E0','progressTrack'],['#4CAF50','difficultyEasy'],['#FF9800','difficultyHard'],
+]);
+
+/* ─── CB SWATCHES ─── */
+buildSwatches('cbSwatches',[
+  ['#1D4ED8','cb.gridCorrectLetter · Light','deep blue — replaces #166534',CB],
+  ['#60A5FA','cb.gridCorrectLetter · Dark','sky blue — replaces #34D399',CB],
+  ['#B45309','cb.gridIncorrectLetter · Light','dark amber — replaces #9B1C1C',CB],
+  ['#FB923C','cb.gridIncorrectLetter · Dark','orange — replaces #F87171',CB],
+  ['#C8E6C9','completedCellBg','unchanged — gray under deuter'],
+]);
+
+/* ─── GRIDS ─── */
+const MG={W:5,BLACKS:new Set([1,3,21,23]),ACTIVE:new Set([10,11,12,13,14]),CROSS:new Set([2,7,17,22]),CURSOR:12,CORRECT:new Set([11,2]),WRONG:new Set([13]),REVEALED:new Set([22]),COMPLETED:new Set([]),LETTERS:{2:'A',7:'R',10:'S',11:'T',13:'Z',14:'Y',17:'N',22:'E'},CNUMS:{0:1,2:2,4:3,5:4,10:5,15:6}};
+
+function makeGrid(pal,showSym){
+  const CELL=36,GAP=1;
+  const g=document.createElement('div');
+  g.style.cssText=`display:grid;grid-template-columns:repeat(${MG.W},${CELL}px);gap:${GAP}px;background:${pal.inner};border:2px solid ${pal.outer};border-radius:2px;padding:${GAP}px`;
+  for(let i=0;i<MG.W*MG.W;i++){
+    const isBlk=MG.BLACKS.has(i),isCur=i===MG.CURSOR,isAct=MG.ACTIVE.has(i),isCrs=MG.CROSS.has(i);
+    const isCorr=MG.CORRECT.has(i),isWrong=MG.WRONG.has(i),isRev=MG.REVEALED.has(i);
+    const letter=MG.LETTERS[i],cnum=MG.CNUMS[i];
+    let bg=pal.empty;
+    if(isBlk)bg=pal.blocked;else if(isCur)bg=pal.focused;else if(isAct)bg=pal.active;else if(isRev)bg=pal.revealed;else if(isCrs)bg=pal.cross;
+    if(!isBlk&&!isCur){if(isCorr)bg=pal.correctBg(bg);else if(isWrong)bg=pal.wrongBg(bg);}
+    const cell=document.createElement('div');
+    cell.style.cssText=`width:${CELL}px;height:${CELL}px;background:${bg};position:relative;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.03)`;
+    if(!isBlk&&letter){
+      const s=document.createElement('span');s.textContent=letter;
+      let lc=pal.letter;
+      if(isCorr)lc=pal.correctLetter;else if(isWrong)lc=pal.wrongLetter;else if(isCrs&&pal.crossLetter)lc=pal.crossLetter;
+      s.style.cssText=`font-family:'DM Mono',monospace;font-size:14px;font-weight:700;line-height:1;color:${lc}`;
+      cell.appendChild(s);
+      if(showSym&&(isCorr||isWrong)){
+        const sym=document.createElement('span');
+        sym.textContent=isCorr?'✓':'✗';
+        sym.style.cssText=`position:absolute;top:2px;right:2px;font-family:'DM Mono',monospace;font-size:7px;font-weight:700;color:${lc}`;
+        cell.appendChild(sym);
+      }
+    }
+    if(!isBlk&&cnum!=null){
+      const n=document.createElement('span');n.textContent=cnum;
+      n.style.cssText=`position:absolute;top:2px;left:2px;font-family:'DM Mono',monospace;font-size:6px;font-weight:600;line-height:1;color:${pal.clue}`;
+      cell.appendChild(n);
+    }
+    g.appendChild(cell);
+  }
+  return g;
+}
+
+const LP={inner:'#BDBDBD',outer:'#B0B0B0',blocked:'#111111',empty:'#FFFFFF',active:'#BBDEFB',cross:'#E3F2FD',focused:'#FDD835',revealed:'#FFF9C4',letter:'#1A1A1A',correctLetter:'#166534',wrongLetter:'#9B1C1C',clue:'#6B7280',correctBg:b=>blend('#4CAF50',.2,b),wrongBg:b=>blend('#B85450',.2,b)};
+const DP={inner:'#2A3148',outer:'#3A4464',blocked:'#060810',empty:'#1E2535',active:'#1C3D78',cross:'#0D2248',focused:'#F5B700',revealed:'#FFB74D',letter:'#E4EAF8',correctLetter:'#34D399',wrongLetter:'#F87171',crossLetter:'#9AAFE0',clue:'#5C6E96',correctBg:b=>b,wrongBg:b=>b};
+const LCB={...LP,correctLetter:'#1D4ED8',wrongLetter:'#B45309',correctBg:b=>b,wrongBg:b=>b};
+const DCB={...DP,correctLetter:'#60A5FA',wrongLetter:'#FB923C'};
+
+document.getElementById('lightGrid').appendChild(makeGrid(LP,false));
+document.getElementById('darkGrid').appendChild(makeGrid(DP,false));
+
+function buildCBGrids(){
+  const pair=document.getElementById('cbGridPair');
+  [{pal:LCB,bg:'grid-bg-light',lbl:'Light mode CB'},{pal:DCB,bg:'grid-bg-dark',lbl:'Dark mode CB'}].forEach(c=>{
+    const col=document.createElement('div');col.className='cb-grid-col';
+    const t=document.createElement('div');t.className='cb-grid-title';t.textContent=c.lbl;
+    const bg=document.createElement('div');bg.className=c.bg;bg.appendChild(makeGrid(c.pal,true));
+    col.appendChild(t);col.appendChild(bg);pair.appendChild(col);
+  });
+}
+
+/* ─── CB MODEL TABLE ─── */
+function buildCBModel(){
+  const t=document.getElementById('cbModelTable');
+  const rows=[
+    {cells:['Layer','Communicates','Normal mode','CB mode'],hdr:true},
+    {cells:['Background','Position in puzzle','Blue family: empty/cross/active/focused','Same — unchanged']},
+    {cells:['Background','Word-level completion','Green #C8E6C9 (always)','Same — →gray under deuter']},
+    {cells:['Background','Revealed cell (provenance)','Cream #FFF9C4 / amber #FFB74D','Same — unchanged']},
+    {cells:['Letter + Symbol','Verification: correct','Green #166534 / #34D399','Blue #1D4ED8 / #60A5FA + ✓','cb'],},
+    {cells:['Letter + Symbol','Verification: incorrect','Red #9B1C1C / #F87171','Orange #B45309 / #FB923C + ✗','cb'],},
+    {cells:['Full overlay','Puzzle-level completion','Green celebration (terminal)','Same — unchanged']},
+  ];
+  rows.forEach(r=>{
+    const row=document.createElement('div');row.className=`cmt-row${r.hdr?' header':''}`;
+    r.cells.forEach((c,i)=>{
+      const cell=document.createElement('div');cell.className=`cmt-cell${r.hdr?' lbl':''}`;
+      if(r.cb&&i===3)cell.innerHTML=c+`<span class="badge b-cb">CB override</span>`;
+      else cell.textContent=c;
+      row.appendChild(cell);
+    });
+    t.appendChild(row);
+  });
+}
+
+/* ─── PRIORITY STRIP ─── */
+function buildPriorityStrip(){
+  const t=document.getElementById('priorityStrip');
+  const items=[
+    {n:1,sw:'#FDD835',lbl:'Focused',note:'amber · always wins',hi:true},
+    {n:2,sw:'#BBDEFB',lbl:'Active word',note:'blue bg'},
+    {n:3,sw:'#E3F2FD',lbl:'Cross-word',note:'dim blue bg'},
+    {n:4,sw:'#C8E6C9',lbl:'Word-completed',note:'green bg'},
+    {n:5,sw:'#FFFFFF',lbl:'Empty',note:'white/dark · lowest'},
+  ];
+  items.forEach(it=>{
+    t.innerHTML+=`<div class="pri-item"><div class="pri-num">${it.n}</div><div class="pri-swatch" style="background:${it.sw}"></div><div class="pri-label">${it.lbl}</div><div class="pri-note">${it.note}</div></div>`;
+  });
+}
+
+/* ─── COMPOUND MATRIX ─── */
+function buildMatrix(){
+  const t=document.getElementById('matrixWrap');
+  const rows=[
+    {state:'Focused cursor',bg:'Amber — always wins',lc:'#111111 dark',sym:'✓ if correct, ✗ if incorrect'},
+    {state:'Active word — correct',bg:'Active blue',lc:'Blue CB',sym:'✓'},
+    {state:'Active word — incorrect',bg:'Active blue',lc:'Orange CB',sym:'✗'},
+    {state:'Cross-word — correct',bg:'Cross dim-blue',lc:'Blue CB',sym:'✓'},
+    {state:'Word-completed (no pos. highlight)',bg:'Green #C8E6C9',lc:'Blue CB',sym:'✓'},
+    {state:'Completed + focused',bg:'Amber wins',lc:'Dark #111',sym:'✓ (cell IS correct)'},
+    {state:'Completed + active word',bg:'Active blue wins',lc:'Blue CB',sym:'✓'},
+    {state:'Completed + cross-word',bg:'Cross blue wins',lc:'Blue CB',sym:'✓'},
+    {state:'Incorrect in completed word',bg:'Green #C8E6C9',lc:'Orange CB',sym:'✗'},
+    {state:'Revealed (no other state)',bg:'Cream #FFF9C4',lc:'Normal letter',sym:'— (not a verification state)'},
+  ];
+  const tbl=document.createElement('table');
+  tbl.innerHTML=`<thead><tr><th>State combination</th><th>Background</th><th>Letter (CB)</th><th>Symbol (CB)</th></tr></thead><tbody></tbody>`;
+  const tb=tbl.querySelector('tbody');
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-size:13px;color:var(--text);font-weight:500">${r.state}</td><td class="note-td">${r.bg}</td><td class="note-td" style="color:var(--accent)">${r.lc}</td><td class="note-td" style="color:var(--text3)">${r.sym}</td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tbl);
+}
+
+/* ─── ENGINEERING TABLE ─── */
+const ENG=[
+  {sec:'Grid — Position backgrounds'},
+  {tok:'gridBlockedCell',    l:'#111111',        d:'#060810',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridEmptyCell',      l:'#FFFFFF',        d:'#1E2535',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridCrossWord',      l:'#E3F2FD',        d:'#0D2248',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridActiveWord',     l:'#BBDEFB',        d:'#1C3D78',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridFocusedCell',    l:'#FDD835',        d:'#F5B700',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridRevealedCell',   l:'#FFF9C4',        d:'#FFB74D',       cbl:null,     cbd:null,     li:false,di:false,note:'Provenance — bg both themes, no CB override'},
+  {tok:'completedCellBg',    l:'#C8E6C9',        d:'#C8E6C9',       cbl:null,     cbd:null,     li:false,di:false,ti:true,note:'Unchanged in CB — simulates to gray under deuter'},
+  {sec:'Grid — Verification letter colors'},
+  {tok:'gridNormalLetter',   l:'#1A1A1A',        d:'#E4EAF8',       cbl:null,     cbd:null,     li:false,di:true},
+  {tok:'gridCorrectLetter',  l:'#166534',        d:'#34D399',       cbl:'#1D4ED8',cbd:'#60A5FA',li:true, di:true, note:'CB: blue replaces green'},
+  {tok:'gridIncorrectLetter',l:'#9B1C1C',        d:'#F87171',       cbl:'#B45309',cbd:'#FB923C',li:true, di:true, note:'CB: orange replaces red'},
+  {tok:'gridCrossWordLetter',l:'#1A1A1A',        d:'#9AAFE0',       cbl:null,     cbd:null,     li:false,di:true, note:'Dim in dark only; no CB override'},
+  {tok:'completedCellFg',    l:'#2E7D32',        d:'#2E7D32',       cbl:'↑ inherits gridCorrectLetter CB', cbd:'↑ inherits',li:false,di:false,ti:true,note:'Apply CB letter override to completed cells too'},
+  {sec:'Grid — Borders & numbers'},
+  {tok:'gridInnerBorder',    l:'#BDBDBD',        d:'#2A3148',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'gridOuterBorder',    l:'#B0B0B0',        d:'#3A4464',       cbl:null,cbd:null,li:true, di:true},
+  {tok:'gridClueNumber',     l:'#6B7280',        d:'#5C6E96',       cbl:null,cbd:null,li:true, di:true, note:'Light was #9CA3AF — AA fix'},
+  {sec:'Grid — Removed tokens'},
+  {tok:'gridCorrectOverlay', l:'REMOVED',        d:'REMOVED',       cbl:null,cbd:null,note:'Replaced by gridCorrectLetter'},
+  {tok:'gridIncorrectOverlay',l:'REMOVED',       d:'REMOVED',       cbl:null,cbd:null,note:'Replaced by gridIncorrectLetter'},
+  {sec:'Surface & Background'},
+  {tok:'background',         l:'#FAFAFA',        d:'#181B22',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'surface',            l:'#FFFFFF',        d:'#111318',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'divider',            l:'#E5E7EB',        d:'#232840',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'onSurface1',         l:'#1A1A1A',        d:'#E4EAF8',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'onSurface2',         l:'#6B7280',        d:'#8892AC',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'onSurface3',         l:'#9CA3AF',        d:'#5C6E96',       cbl:null,cbd:null,li:false,di:true},
+  {sec:'Brand'},
+  {tok:'primary',            l:'#1565C0',        d:'#7EB8F7',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'primaryContainer',   l:'#E3F2FD',        d:'#1B3E82 @20%',  cbl:null,cbd:null,li:false,di:true},
+  {sec:'Keyboard'},
+  {tok:'keyboardBg',         l:'#ECEFF1',        d:'#161A28',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'keyDefault',         l:'#FFFFFF',        d:'#232A3C',       cbl:null,cbd:null,li:false,di:true},
+  {tok:'keyDelete',          l:'#B0BEC5',        d:'#4E5C7E',       cbl:null,cbd:null,li:false,di:true},
+  {sec:'Semantic'},
+  {tok:'correct',            l:'#4CAF50',        d:'#66BB6A',       cbl:null,cbd:null,li:false,di:false},
+  {tok:'incorrect',          l:'#B85450',        d:'#E89691',       cbl:null,cbd:null,li:false,di:false},
+  {sec:'Shared / theme-independent'},
+  {tok:'deepNavy',           l:'#0A2A6E',        d:'#0A2A6E',       cbl:null,cbd:null,li:false,di:false,ti:true},
+  {tok:'completionOverlay',  l:'#0A2A6E @88%',   d:'#0A2A6E @88%',  cbl:null,cbd:null,li:false,di:false,ti:true},
+  {tok:'difficultyEasy',     l:'#4CAF50',        d:'#4CAF50',       cbl:null,cbd:null,li:false,di:false,ti:true},
+  {tok:'difficultyHard',     l:'#FF9800',        d:'#FF9800',       cbl:null,cbd:null,li:false,di:false,ti:true},
+];
+
+function hc(val,isNew,isCB){
+  if(!val)return`<td class="dash-cell">—</td>`;
+  if(val==='REMOVED')return`<td><span class="badge b-ti" style="background:rgba(255,104,69,.10);color:var(--warn)">REMOVED</span></td>`;
+  const spec=val.includes('@')||val.includes('%')||val.includes('↑');
+  if(spec)return`<td><span class="spec-val" style="color:${isCB?'var(--amber)':isNew?'var(--text)':'var(--text2)'}">${val}</span></td>`;
+  const badgeHtml=isCB?`<span class="badge b-cb">CB</span>`:isNew?`<span class="badge b-upd">UPDATED</span>`:'';
+  return`<td><div class="hex-cell"><div class="hex-dot" style="background:${val}${(isNew||isCB)?';border-color:'+(isCB?'var(--amber)':'var(--accent)'):''}"></div><span class="hex-v${(isNew||isCB)?' changed':''}">${val}</span>${badgeHtml}</div></td>`;
+}
+
+function buildEngTable(){
+  const tbl=document.createElement('table');
+  tbl.innerHTML=`<thead><tr><th>Token</th><th>Light Mode</th><th>Dark Mode</th><th>CB Light</th><th>CB Dark</th><th>Notes</th></tr></thead><tbody></tbody>`;
+  const tb=tbl.querySelector('tbody');
+  ENG.forEach(r=>{
+    if(r.sec){const sep=document.createElement('tr');sep.className='sec-row';sep.innerHTML=`<td colspan="6">${r.sec}</td>`;tb.appendChild(sep);return;}
+    const tiTag=r.ti?`<span class="badge b-ti">theme-indep</span>`:'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="token-td">${r.tok}${tiTag}</td>${hc(r.l,r.li,false)}${hc(r.d,r.di,false)}${hc(r.cbl,false,!!r.cbl)}${hc(r.cbd,false,!!r.cbd)}<td class="note-td">${r.note||''}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('engTable').appendChild(tbl);
+}
+
+/* ─── COPY ─── */
+function copyTable(){
+  const rows=ENG.filter(r=>r.tok).map(r=>[r.tok,r.l,r.d,r.cbl||'—',r.cbd||'—',r.note||'']);
+  const tsv=[['Token','Light','Dark','CB Light','CB Dark','Notes'],...rows].map(r=>r.join('\t')).join('\n');
+  navigator.clipboard.writeText(tsv).then(()=>{const b=document.getElementById('copyBtn');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy as TSV',2000);});
+}
+
+/* ─── INIT ─── */
+buildModel();
+buildCBGrids();
+buildCBModel();
+buildPriorityStrip();
+buildMatrix();
+buildEngTable();
+
+/* ─── SCROLL SPY ─── */
+document.querySelectorAll('.section[id]').forEach(s=>{
+  new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+        const l=document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if(l)l.classList.add('active');
+      }
+    });
+  },{rootMargin:'-20% 0px -70% 0px'}).observe(s);
+});
+</script>
+</body>
+</html>

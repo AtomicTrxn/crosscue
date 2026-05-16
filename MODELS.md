@@ -66,7 +66,11 @@ abstract class CellProgress with _$CellProgress {
 }
 ```
 
-`letter` is always uppercase. `state` drives cell background color in the painter.
+`letter` is always uppercase. `state` describes solve status; the painter maps that
+status to the current visual system. Revealed cells use a distinct background,
+while checked-correct and checked-incorrect cells keep the base grid background
+and communicate verification through letter color plus accessibility symbols
+when colorblind mode is enabled.
 `isPencil` is stored for future pencil-mode; currently always `false`.
 
 ---
@@ -218,9 +222,9 @@ class SolveState {
 | `AppThemeMode` | `light`, `dark`, `system` | AppSettingsRepository (translated to Flutter `ThemeMode` in `app.dart`) |
 | `Direction` | `across`, `down` | Clue, FocusPosition, SolveNotifier |
 | `CellState` | `empty`, `filled`, `checkedCorrect`, `checkedIncorrect`, `revealed` | CellProgress, painter |
-| `ColorblindMode` | `none`, `deuteranopia` | Settings, painter dot indicator |
+| `ColorblindMode` | `none`, `deuteranopia` | Settings, painter verification palette + `✓` / `✗` symbols |
 | `PuzzleStatus` | `unsolved`, `inProgress`, `solved`, `solvedWithHelp`, `solvedWithReveal`, `revealed` | SolveState, SolveNotifier |
-| `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata, parsers |
+| `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata; current import parsers handle `puz` and `ipuz` |
 | `EntryMode` | `normal`, `pencil`, `rebus` | `pencil` reserved for a future pencil-mode feature |
 | `SourceType` | `free`, `subscription`, `local` | SourcesTable |
 | `LicenseStatus` | `userImport`, `explicitPermission`, `openLicense`, `needsReview`, `prohibited` | SourcesTable |

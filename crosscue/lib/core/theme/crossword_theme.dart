@@ -17,6 +17,14 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     required this.gridOuterBorder,
     required this.cellText,
     required this.cellNumber,
+    required this.focusedCellText,
+    required this.crossWordCellText,
+    required this.correctCellText,
+    required this.correctFocusedCellText,
+    required this.incorrectCellText,
+    required this.colorblindCorrectCellText,
+    required this.colorblindIncorrectCellText,
+    required this.verificationUsesLetterColor,
     required this.stateCorrect,
     required this.stateIncorrect,
     required this.stateRevealed,
@@ -61,6 +69,31 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
 
   /// Clue number color (top-left of cell).
   final Color cellNumber;
+
+  /// Letter color for focused cells on amber.
+  final Color focusedCellText;
+
+  /// Dimmed letter color for cross-word cells.
+  final Color crossWordCellText;
+
+  /// Letter color for checked-correct cells when verification is text-based.
+  final Color correctCellText;
+
+  /// Letter color for checked-correct focused cells on amber.
+  final Color correctFocusedCellText;
+
+  /// Letter color for checked-incorrect cells when verification is text-based.
+  final Color incorrectCellText;
+
+  /// Color-blind-mode letter override for verified-correct cells.
+  final Color colorblindCorrectCellText;
+
+  /// Color-blind-mode letter override for verified-incorrect cells.
+  final Color colorblindIncorrectCellText;
+
+  /// Whether correct / incorrect verification is expressed by text color rather
+  /// than by replacing the cell background.
+  final bool verificationUsesLetterColor;
 
   // ── Check / reveal states ─────────────────────────────────────────────────
   /// Green tint — checked-correct cell background.
@@ -108,8 +141,8 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   // ── Factory constructors ──────────────────────────────────────────────────
 
   /// Build from a [ColorScheme]. Pass the scheme resolved by [AppTheme].
-  /// Crossword grid, clue bar, keyboard, and state colors are fixed for
-  /// readability — they do not adapt to Dynamic Color.
+  /// Crossword grid, clue bar, keyboard, and state colors are intentionally
+  /// fixed for readability and semantics; do not adapt them to Dynamic Color.
   factory CrosswordTheme.of(ColorScheme scheme) {
     final isLight = scheme.brightness == Brightness.light;
     return CrosswordTheme(
@@ -130,14 +163,34 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
           ? CrosscueColors.gridBorderLight
           : CrosscueColors.gridBorderDark,
       gridOuterBorder: isLight
-          ? CrosscueColors.onSurface1Light
-          : CrosscueColors.onSurface1Dark,
+          ? CrosscueColors.gridOuterBorderLight
+          : CrosscueColors.gridOuterBorderDark,
       cellText: isLight
           ? CrosscueColors.onSurface1Light
           : CrosscueColors.onSurface1Dark,
       cellNumber: isLight
-          ? CrosscueColors.onSurface2Light
-          : CrosscueColors.onSurface2Dark,
+          ? CrosscueColors.gridClueNumberLight
+          : CrosscueColors.gridClueNumberDark,
+      focusedCellText: CrosscueColors.gridBlackLight,
+      crossWordCellText: isLight
+          ? CrosscueColors.onSurface1Light
+          : CrosscueColors.gridCrossWordLetterDark,
+      correctCellText: isLight
+          ? CrosscueColors.gridCorrectLetterLight
+          : CrosscueColors.gridCorrectLetterDark,
+      correctFocusedCellText: isLight
+          ? CrosscueColors.gridCorrectLetterLight
+          : CrosscueColors.gridCorrectFocusedLetterDark,
+      incorrectCellText: isLight
+          ? CrosscueColors.gridWrongLetterLight
+          : CrosscueColors.gridWrongLetterDark,
+      colorblindCorrectCellText: isLight
+          ? CrosscueColors.gridCbCorrectLetterLight
+          : CrosscueColors.gridCbCorrectLetterDark,
+      colorblindIncorrectCellText: isLight
+          ? CrosscueColors.gridCbWrongLetterLight
+          : CrosscueColors.gridCbWrongLetterDark,
+      verificationUsesLetterColor: true,
       stateCorrect: isLight
           ? CrosscueColors.correctLight.withValues(alpha: 0.20)
           : CrosscueColors.correctDark.withValues(alpha: 0.20),
@@ -161,10 +214,12 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       crossClueBg: isLight
           ? CrosscueColors.crossHLLight.withValues(alpha: 0.55)
           : CrosscueColors.crossHLDark.withValues(alpha: 0.35),
-      keyboardBg: isLight ? CrosscueColors.keyboardBg : const Color(0xFF1E1E1E),
+      keyboardBg:
+          isLight ? CrosscueColors.keyboardBg : CrosscueColors.keyboardBgDark,
       keyDefault:
-          isLight ? CrosscueColors.surfaceLight : const Color(0xFF2C2C2C),
-      keySpecial: CrosscueColors.keyDelete,
+          isLight ? CrosscueColors.surfaceLight : CrosscueColors.keyDefaultDark,
+      keySpecial:
+          isLight ? CrosscueColors.keyDelete : CrosscueColors.keyDeleteDark,
       keyCheck: isLight ? CrosscueColors.primary : CrosscueColors.primaryLight,
     );
   }
@@ -191,6 +246,14 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     Color? gridOuterBorder,
     Color? cellText,
     Color? cellNumber,
+    Color? focusedCellText,
+    Color? crossWordCellText,
+    Color? correctCellText,
+    Color? correctFocusedCellText,
+    Color? incorrectCellText,
+    Color? colorblindCorrectCellText,
+    Color? colorblindIncorrectCellText,
+    bool? verificationUsesLetterColor,
     Color? stateCorrect,
     Color? stateIncorrect,
     Color? stateRevealed,
@@ -215,6 +278,18 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       gridOuterBorder: gridOuterBorder ?? this.gridOuterBorder,
       cellText: cellText ?? this.cellText,
       cellNumber: cellNumber ?? this.cellNumber,
+      focusedCellText: focusedCellText ?? this.focusedCellText,
+      crossWordCellText: crossWordCellText ?? this.crossWordCellText,
+      correctCellText: correctCellText ?? this.correctCellText,
+      correctFocusedCellText:
+          correctFocusedCellText ?? this.correctFocusedCellText,
+      incorrectCellText: incorrectCellText ?? this.incorrectCellText,
+      colorblindCorrectCellText:
+          colorblindCorrectCellText ?? this.colorblindCorrectCellText,
+      colorblindIncorrectCellText:
+          colorblindIncorrectCellText ?? this.colorblindIncorrectCellText,
+      verificationUsesLetterColor:
+          verificationUsesLetterColor ?? this.verificationUsesLetterColor,
       stateCorrect: stateCorrect ?? this.stateCorrect,
       stateIncorrect: stateIncorrect ?? this.stateIncorrect,
       stateRevealed: stateRevealed ?? this.stateRevealed,
@@ -244,6 +319,30 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       gridOuterBorder: Color.lerp(gridOuterBorder, other.gridOuterBorder, t)!,
       cellText: Color.lerp(cellText, other.cellText, t)!,
       cellNumber: Color.lerp(cellNumber, other.cellNumber, t)!,
+      focusedCellText: Color.lerp(focusedCellText, other.focusedCellText, t)!,
+      crossWordCellText:
+          Color.lerp(crossWordCellText, other.crossWordCellText, t)!,
+      correctCellText: Color.lerp(correctCellText, other.correctCellText, t)!,
+      correctFocusedCellText: Color.lerp(
+        correctFocusedCellText,
+        other.correctFocusedCellText,
+        t,
+      )!,
+      incorrectCellText:
+          Color.lerp(incorrectCellText, other.incorrectCellText, t)!,
+      colorblindCorrectCellText: Color.lerp(
+        colorblindCorrectCellText,
+        other.colorblindCorrectCellText,
+        t,
+      )!,
+      colorblindIncorrectCellText: Color.lerp(
+        colorblindIncorrectCellText,
+        other.colorblindIncorrectCellText,
+        t,
+      )!,
+      verificationUsesLetterColor: t < 0.5
+          ? verificationUsesLetterColor
+          : other.verificationUsesLetterColor,
       stateCorrect: Color.lerp(stateCorrect, other.stateCorrect, t)!,
       stateIncorrect: Color.lerp(stateIncorrect, other.stateIncorrect, t)!,
       stateRevealed: Color.lerp(stateRevealed, other.stateRevealed, t)!,

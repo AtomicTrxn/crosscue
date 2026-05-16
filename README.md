@@ -8,7 +8,7 @@ Crosscue is an Android app for solving crossword puzzle files — built for peop
 
 ## What It Does
 
-Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving immediately. Crosscue handles the rest:
+Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving immediately. Crosscue also lets you download supported daily minis directly in the app. Crosscue handles the rest:
 
 - **Full interactive grid** — tap a cell to start, tap again to flip direction, swipe or use arrow keys to move
 - **Physical and on-screen keyboard** — works with Bluetooth keyboards and the soft keyboard alike
@@ -16,7 +16,7 @@ Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving im
 - **Auto-save** — close the app mid-solve and pick up exactly where you left off, timer included
 - **Rebus support** — multi-letter entries parsed and displayed correctly
 - **Archive & stats** — every completed puzzle recorded with time, date, and solve method; streaks tracked per local calendar date
-- **Colorblind mode** — deuteranopia-friendly dot indicator instead of color-only error feedback
+- **Colorblind mode** — deuteranopia-friendly blue/orange verification colors with `✓` / `✗` symbols, not color alone
 - **Light, dark, and system theme**
 
 ---
@@ -59,4 +59,5 @@ flutter run
 | [MODELS.md](MODELS.md) | Every domain model, field list, and DB mapping |
 | [CONVENTIONS.md](CONVENTIONS.md) | Hard coding rules — Freezed, Riverpod, Drift, routing, legal source guardrail |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, log capture, release pipeline, Play Store checklist |
+| [Crosscue Color Guide](design/Crosscue%20Color%20Guide.html) | Current color system reference for light mode, dark mode, and accessibility palettes |
 | [Privacy Policy](https://atomictrxn.github.io/crosscue/privacy.html) | Public privacy policy for Play Store submission |

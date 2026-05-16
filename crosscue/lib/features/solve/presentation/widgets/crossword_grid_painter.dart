@@ -193,6 +193,9 @@ class CrosswordGridPainter extends CustomPainter {
     if (state.isWordHighlighted(row, col)) {
       return theme.wordHighlight;
     }
+    if (state.isCrossHighlighted(row, col)) {
+      return theme.crossHighlight;
+    }
     if (_isCompletedCell(state, row, col)) {
       // Intentionally theme-fixed: completion is a celebration moment and
       // the bright green pair reads the same in light and dark mode.
@@ -203,8 +206,8 @@ class CrosswordGridPainter extends CustomPainter {
 
   Color _cellBg(CellProgress prog) {
     return switch (prog.state) {
-      CellState.checkedCorrect => theme.stateCorrect,
-      CellState.checkedIncorrect => theme.stateIncorrect,
+      CellState.checkedCorrect => theme.gridEmpty,
+      CellState.checkedIncorrect => theme.gridEmpty,
       CellState.revealed => theme.stateRevealed,
       _ => theme.gridEmpty,
     };
@@ -278,8 +281,35 @@ class CrosswordGridPainter extends CustomPainter {
   }
 
   Color _letterColorFor(int row, int col) {
-    if (_isCompletedCell(solveState, row, col)) {
+    final isCompleted = _isCompletedCell(solveState, row, col);
+    final progress = solveState.progress.cell(row, col);
+    if (colorblindMode == ColorblindMode.deuteranopia) {
+      if (progress.state == CellState.checkedIncorrect) {
+        return theme.colorblindIncorrectCellText;
+      }
+      if (progress.state == CellState.checkedCorrect || isCompleted) {
+        return solveState.isFocused(row, col)
+            ? theme.focusedCellText
+            : theme.colorblindCorrectCellText;
+      }
+    }
+    if (isCompleted) {
       return CrosscueColors.completedCellFg;
+    }
+    if (progress.state == CellState.checkedCorrect) {
+      return solveState.isFocused(row, col)
+          ? theme.correctFocusedCellText
+          : theme.correctCellText;
+    }
+    if (progress.state == CellState.checkedIncorrect) {
+      return theme.incorrectCellText;
+    }
+    if (solveState.isFocused(row, col)) {
+      return theme.focusedCellText;
+    }
+    if (solveState.isCrossHighlighted(row, col) &&
+        !solveState.isWordHighlighted(row, col)) {
+      return theme.crossWordCellText;
     }
     return theme.cellText;
   }
@@ -321,19 +351,48 @@ class CrosswordGridPainter extends CustomPainter {
       case ColorblindMode.none:
         return;
       case ColorblindMode.deuteranopia:
-        final isCorrect = progress.state == CellState.checkedCorrect ||
-            _isCompletedCell(solveState, row, col);
-        if (!isCorrect) return;
-        final dotPaint = Paint()
-          ..style = PaintingStyle.fill
-          ..color = theme.clueBarDirection;
-        final radius = (cellSize * 0.09).clamp(2.0, 4.5);
-        canvas.drawCircle(
-          Offset(rect.right - radius - 2, rect.top + radius + 2),
-          radius,
-          dotPaint,
+        final isCompleted = _isCompletedCell(solveState, row, col);
+        final isCorrect =
+            progress.state == CellState.checkedCorrect || isCompleted;
+        final isIncorrect = progress.state == CellState.checkedIncorrect;
+        if (!isCorrect && !isIncorrect) return;
+        _paintVerificationSymbol(
+          canvas,
+          rect,
+          cellSize,
+          symbol: isIncorrect ? '✗' : '✓',
+          color: isIncorrect
+              ? theme.colorblindIncorrectCellText
+              : theme.colorblindCorrectCellText,
         );
     }
+  }
+
+  void _paintVerificationSymbol(
+    Canvas canvas,
+    Rect rect,
+    double cellSize, {
+    required String symbol,
+    required Color color,
+  }) {
+    final fontSize = (cellSize * 0.18).clamp(8.0, 9.0);
+    final tp = TextPainter(
+      text: TextSpan(
+        text: symbol,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: color,
+          fontWeight: FontWeight.w700,
+          height: 1.0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    tp.paint(
+      canvas,
+      Offset(rect.right - tp.width - 3, rect.top + 2),
+    );
   }
 
   void _paintStateGlyph(

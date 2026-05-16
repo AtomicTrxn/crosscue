@@ -46,7 +46,8 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor:
+          isLight ? CrosscueColors.bgLight : CrosscueColors.bgDark,
 
       // ── AppBar ──────────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
