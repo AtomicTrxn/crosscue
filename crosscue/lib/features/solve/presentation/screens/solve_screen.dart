@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/domain/models/puzzle_size_bucket.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
@@ -365,7 +366,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     // Custom QWERTY keyboard
                     if (!isComplete)
                       CrosswordKeyboard(
-                        isSmallPuzzle: puzzle.width <= 7 && puzzle.height <= 7,
+                        isSmallPuzzle:
+                            puzzle.sizeBucket == PuzzleSizeBucket.mini,
                         hapticsEnabled: hapticsEnabled,
                         soundsEnabled: soundsEnabled,
                         onFeedbackSound: () =>
