@@ -26,12 +26,13 @@ dependencies:
   go_router: ^17.0.0
 
   # Local persistence
-  # Deferred at 2.31.x: newer 2.33.x releases require Dart 3.10.
+  # Deferred at 2.31.x: 2.33.x requires the coordinated sqlite3 3.x migration
+  # and currently conflicts with the Riverpod generator / Flutter meta pin.
   drift: ^2.20.0
-  # Deferred at 0.2.x while drift stays on the Dart <3.10-compatible line.
+  # Deferred at 0.2.x while drift stays on the current generator-compatible line.
   drift_flutter: ^0.2.0
-  # Deferred at 0.5.x: 0.6.0+eol requires Dart 3.10 and is part of the future
-  # sqlite3 3.x migration, not a standalone patch bump.
+  # Deferred at 0.5.x: 0.6.0+eol belongs to the sqlite3 3.x migration and
+  # currently cannot be taken independently with the existing generator stack.
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.1.0
   path: ^1.9.0
@@ -79,7 +80,8 @@ dev_dependencies:
   # Code generation
   build_runner: ^2.4.0
   freezed: ^3.2.5
-  # Deferred with drift runtime: 2.33.x requires Dart 3.10.
+  # Deferred with the Drift runtime: 2.33.x currently collides with the
+  # Riverpod generator / Flutter meta constraint set.
   drift_dev: ^2.20.0
   riverpod_generator: ^4.0.3
 

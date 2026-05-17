@@ -14,10 +14,10 @@ Date: May 17, 2026
 | Package | Decision | Rationale |
 |---------|----------|-----------|
 | `file_picker` | Bump now to `^11.0.2` | Latest stable still supports the current Dart floor and includes an Android path-traversal fix; migrate the removed `FilePicker.platform` API to the static calls introduced by the newer major version. |
-| `drift` / `drift_dev` | Defer on the current `2.31.x` line | Latest `2.33.x` requires Dart 3.10; take with a deliberate SDK-floor update. |
-| `drift_flutter` | Defer on `0.2.x` | Keep aligned with the current Drift line until the Dart 3.10 upgrade pass. |
-| `sqlite3_flutter_libs` | Defer on `0.5.x` | `0.6.0+eol` requires Dart 3.10 and belongs with the future `sqlite3` 3.x migration. |
-| `sqlite3` | Defer on `2.x` | `3.x` is part of the same Dart 3.10 migration set as Drift and `sqlite3_flutter_libs`. |
+| `drift` / `drift_dev` | Defer on the current `2.31.x` line | `2.33.x` now requires a coordinated sqlite3 3.x migration and conflicts with the current Riverpod generator / Flutter `meta` constraint set. |
+| `drift_flutter` | Defer on `0.2.x` | `0.3.0` belongs to the same coordinated Drift/sqlite migration set and cannot be taken independently. |
+| `sqlite3_flutter_libs` | Defer on `0.5.x` | `0.6.0+eol` is the migration boundary for sqlite3 3.x and is blocked by the same generator stack conflict. |
+| `sqlite3` | Defer on `2.x` | `3.x` is part of the same blocked Drift/sqlite migration set. |
 | `package_info_plus` | Defer on `9.x` | `10.x` requires Dart 3.10 / Flutter 3.38.1 and currently conflicts with `file_picker` 11 through incompatible `win32` constraints. |
 | `share_plus` | Defer on `12.x` | `13.x` requires Dart 3.10 / Flutter 3.38.1 and currently conflicts with `file_picker` 11 through incompatible `win32` constraints. |
 
@@ -28,6 +28,18 @@ Date: May 17, 2026
   supported floor.
 - The next coordinated dependency pass should decide whether to raise the floor
   to Dart 3.10 and migrate the deferred set together rather than piecemeal.
+
+
+## Drift 2.33 review
+
+Issue #63 was reviewed separately after the audit:
+
+- `drift` `2.33.0` and `drift_dev` `2.33.0` are the current 2.33-line releases.
+- `drift_flutter` `0.3.0` requires `sqlite3_flutter_libs` `^0.6.0+eol`, which is the migration boundary for the sqlite3 3.x line.
+- A dry-run solve for the coordinated upgrade set (`drift:^2.33.0`, `drift_dev:^2.33.0`, `drift_flutter:^0.3.0`, `sqlite3_flutter_libs:^0.6.0+eol`, `sqlite3:^3.3.1`) fails with the current generator stack: `drift_dev >=2.32.1` requires `analyzer >=10.0.0`, while the app’s `riverpod_generator ^4.0.3` path remains constrained by Flutter’s pinned `meta 1.17.0`.
+- Migration coverage already exists in `test/core/database/app_database_test.dart`; the blocked work is dependency coordination, not missing migration tests.
+
+Decision: keep the current Drift/sqlite line for now and take the Drift 2.33 move together with the generator/toolchain update that resolves the analyzer/meta constraint boundary.
 
 ## `share_plus` 13 review
 
