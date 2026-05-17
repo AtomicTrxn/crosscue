@@ -395,9 +395,10 @@ TextField(focusNode: _focusNode, ...)
 ```
 
 ### File picker spins indefinitely (Android)
-`.puz`, `.ipuz`, and `.jpz` files have no registered MIME types on Android.
-Using `FileType.custom` with those extensions produces an empty MIME list and
-throws a `PlatformException` that leaves the UI stuck in the picking state.
+Supported local puzzle formats (`.puz` and `.ipuz`) have no registered MIME
+types on Android. Using `FileType.custom` with those extensions produces an
+empty MIME list and throws a `PlatformException` that leaves the UI stuck in
+the picking state.
 
 **Fix:** Use `FileType.any` and validate the extension client-side:
 ```dart
@@ -407,7 +408,7 @@ result = await FilePicker.platform.pickFiles(
 );
 // Then:
 final ext = file.extension?.toLowerCase() ?? '';
-if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) { ... }
+if (!{'puz', 'ipuz'}.contains(ext)) { ... }
 ```
 Always wrap `pickFiles` in try/catch for `PlatformException`.
 

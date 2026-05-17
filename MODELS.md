@@ -223,7 +223,7 @@ class SolveState {
 | `CellState` | `empty`, `filled`, `checkedCorrect`, `checkedIncorrect`, `revealed` | CellProgress, painter |
 | `ColorblindMode` | `none`, `deuteranopia` | Settings, painter verification palette + `✓` / `✗` symbols |
 | `PuzzleStatus` | `unsolved`, `inProgress`, `solved`, `solvedWithHelp`, `solvedWithReveal`, `revealed` | SolveState, SolveNotifier |
-| `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata; current import parsers handle `puz` and `ipuz` |
+| `PuzzleFormat` | `puz`, `ipuz`, `jpz` | PuzzleMetadata; local import currently accepts `puz` and `ipuz` only |
 | `EntryMode` | `normal`, `pencil`, `rebus` | `pencil` reserved for a future pencil-mode feature |
 | `SourceType` | `free`, `subscription`, `local` | SourcesTable |
 | `LicenseStatus` | `userImport`, `explicitPermission`, `openLicense`, `needsReview`, `prohibited` | SourcesTable |

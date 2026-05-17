@@ -42,9 +42,9 @@ class ImportNotifier extends _$ImportNotifier {
 
     FilePickerResult? result;
     try {
-      // FileType.any is required on Android because .puz/.ipuz/.jpz have no
-      // registered MIME types — FileType.custom with those extensions produces
-      // an empty MIME list and throws a PlatformException.
+      // FileType.any is required on Android because supported puzzle formats
+      // have no registered MIME types — FileType.custom with those extensions
+      // produces an empty MIME list and throws a PlatformException.
       result = await FilePicker.pickFiles(
         type: FileType.any,
         withData: true,
@@ -63,7 +63,7 @@ class ImportNotifier extends _$ImportNotifier {
 
     // Validate extension client-side since we can't filter server-side.
     final ext = file.extension?.toLowerCase() ?? '';
-    if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) {
+    if (!{'puz', 'ipuz'}.contains(ext)) {
       state = const ImportFailure(
         message: 'Unsupported file type. Please choose a .puz or .ipuz file.',
       );
