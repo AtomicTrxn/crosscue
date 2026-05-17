@@ -116,6 +116,21 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Unsupported formats
+  // ---------------------------------------------------------------------------
+
+  group('unsupported formats', () {
+    test('.jpz-like bytes return JobFailure until a parser exists', () async {
+      final result = await repo.importBytes(
+        Uint8List.fromList('{"kind":"jpz"}'.codeUnits),
+      );
+
+      expect(result, isA<JobFailure>());
+      expect((result as JobFailure).error, equals(ParseError.invalidFormat));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Metadata and retrieval
   // ---------------------------------------------------------------------------
 

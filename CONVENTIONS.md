@@ -214,9 +214,10 @@ Positioned(
 ## File Picker (Android)
 
 ### Use `FileType.any` — never `FileType.custom` for puzzle files
-`.puz`, `.ipuz`, and `.jpz` have **no registered MIME types** on Android.
-`FileType.custom` with those extensions produces an empty MIME list and throws
-a `PlatformException` at runtime, leaving the UI stuck in picking state.
+Supported local puzzle formats (`.puz` and `.ipuz`) have **no registered MIME
+types** on Android. `FileType.custom` with those extensions produces an empty
+MIME list and throws a `PlatformException` at runtime, leaving the UI stuck in
+picking state.
 
 ```dart
 // ✅ Correct
@@ -226,7 +227,7 @@ result = await FilePicker.platform.pickFiles(
 );
 // Then validate client-side:
 final ext = file.extension?.toLowerCase() ?? '';
-if (!{'puz', 'ipuz', 'jpz'}.contains(ext)) {
+if (!{'puz', 'ipuz'}.contains(ext)) {
   // reject
 }
 
