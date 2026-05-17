@@ -87,7 +87,8 @@ dev_dependencies:
 
   # Direct sqlite3 access in migration tests (transitive via drift_dev but must
   # be declared explicitly to satisfy depend_on_referenced_packages lint).
-  # Deferred at 2.x until the app adopts the sqlite3 3.x / Dart 3.10 line.
+  # Deferred at 2.x: drift_flutter 0.2.x requires sqlite3 2.x; moving to 3.x
+  # belongs with the coordinated Drift / generator-stack upgrade.
   sqlite3: ^2.9.4
 
   # Linting

@@ -41,6 +41,17 @@ Issue #63 was reviewed separately after the audit:
 
 Decision: keep the current Drift/sqlite line for now and take the Drift 2.33 move together with the generator/toolchain update that resolves the analyzer/meta constraint boundary.
 
+
+## sqlite3 3.x review
+
+Issue #64 was reviewed separately after the audit:
+
+- `sqlite3` `3.3.1` is the current 3.x release, and `sqlite3_flutter_libs` `0.6.0+eol` is the matching transition package for consumers moving off the old Flutter-specific native libraries.
+- A standalone dry-run solve for `sqlite3:^3.3.1` fails while the app remains on `drift_flutter:^0.2.0`: the current Drift Flutter line requires `sqlite3 ^2.x`.
+- Moving `sqlite3` to 3.x therefore requires the same coordinated move to `drift_flutter 0.3.0` described in the Drift review above, which is already blocked by the current generator / Flutter `meta` constraint set.
+
+Decision: keep `sqlite3` on `2.x` and `sqlite3_flutter_libs` on `0.5.x` until the coordinated Drift/generator upgrade can be taken together.
+
 ## `share_plus` 13 review
 
 Issue #61 was reviewed separately after the audit:
