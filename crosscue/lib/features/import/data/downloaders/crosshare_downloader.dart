@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crosscue/core/utils/result.dart';
@@ -50,7 +51,8 @@ class CrosshareDownloader {
 
   static const _dailyMinisBase = 'https://crosshare.org/dailyminis';
   static const _puzApiBase = 'https://crosshare.org/api/puz';
-  static const _userAgent = 'Crosscue/1.2 (Android; crosscue app)';
+  static final _userAgent =
+      'Crosscue/1.2 (${Platform.operatingSystem}; crosscue app)';
 
   // Per-request timeouts (connect + receive each).
   static const _connectTimeout = Duration(seconds: 10);

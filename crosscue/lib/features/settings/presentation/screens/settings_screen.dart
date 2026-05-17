@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:crosscue/core/constants/app_links.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
@@ -199,7 +201,9 @@ class _AboutDialog extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'A clean, offline-first crossword app for Android',
+            Platform.isIOS
+                ? 'A clean, offline-first crossword app for iOS'
+                : 'A clean, offline-first crossword app for Android',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
