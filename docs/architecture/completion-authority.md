@@ -1,6 +1,6 @@
 # Completion data authority
 
-> Closes [#59 (Sprint E5)](https://github.com/AtomicTrxn/crosscue/issues/59).
+> Closes [#59 (E5)](https://github.com/AtomicTrxn/crosscue/issues/59).
 > Companion doc to `ARCHITECTURE.md`. Updated when the rules below change.
 
 ## TL;DR
@@ -96,36 +96,26 @@ Each layer owns a specific slice of the truth. The rules from the TL;DR above ar
 
 ---
 
-## Required tightenings (after this doc lands)
+## Tightenings (implemented)
 
-These are the concrete code changes needed to make Option C robust:
+All six tightenings landed in [PR #82](https://github.com/AtomicTrxn/crosscue/pull/82) (E5 follow-up):
 
-1. **Await or document `markComplete`.** `_persistCompletion` fires it unawaited. Either await it (so the notifier's `_checkCompletion` returns only after persistence completes) or add a code comment justifying fire-and-forget and document the kill-window risk. Recommended: keep unawaited but invoke `flushPendingSave` on screen dispose if `status.isTerminal`.
+1. **`markComplete` kill-window backstop.** `_persistCompletion` still fires `markComplete` unawaited, but `SolveScreen.dispose` now invokes `flushPendingSave` when status is terminal — so a normal screen tear-down persists the completion to `solve_sessions` even if the in-flight `markComplete` doesn't return in time.
 
-2. **Tests for the round-trip.** Add a test that completes a puzzle in `SolveNotifier`, kills the notifier, recreates it for the same `puzzleId`, and asserts `SolveState.status` survives. Covers the inverse-mapping guarantee in rule 4.
+2. **Round-trip test.** `solve_completion_roundtrip_test.dart` drives `SolveNotifier` through every terminal status (`solved` / `solvedWithHelp` / `solvedWithReveal` / `revealed`) against a real `SolveRepositoryImpl`, disposes the container, resumes from the same in-memory DB. Locks the inverse-mapping invariant between `_deriveCompletionType` and `_statusFromDb`.
 
-3. **Tests for the reset race.** Trigger `resetPuzzle` while `markComplete` is still in flight (use a controllable test repository); assert `puzzle_completions` retains the original completion row and `solve_sessions` ends in the expected `in_progress` state.
+3. **Reset-race test.** A `_GatedMarkCompleteRepository` test spy lets `markComplete`'s inner DB writes complete but holds the outer `Future` open; the test then triggers `resetPuzzle` and asserts `puzzle_completions` retains the completion row (append-only) while `solve_sessions.status` ends in `in_progress`.
 
-4. **Document the `usedCheck` / `usedReveal` columns as session-state-only.** They're inputs to `CompletionType` derivation at save time. Anything else reading them is a bug. Add a comment to `solve_sessions_table.dart`.
+4. **`usedCheck` / `usedReveal` documented as session-state-only.** Doc comments added to `solve_sessions_table.dart` marking these columns as inputs to `CompletionType` derivation only — reading them post-completion to infer the type is a bug.
 
-5. **Decide on `solve_sessions.completion_type`.** It's redundant with `puzzle_completions.completion_type` for the latest completion. Either: (a) keep it for Archive's quick-read convenience and accept the duplication; (b) drop the column and have Archive join against `puzzle_completions` for the latest completion. Recommended: **(a)** — Archive's per-row reads are hot and the duplication is bounded (one row per puzzle, written together in `markComplete`).
+5. **`solve_sessions.completion_type` duplication accepted.** Option (a) adopted — the column stays as Archive's hot-read convenience, with an explicit schema comment noting `puzzle_completions` remains the history authority.
 
-6. **Add a one-paragraph entry to `ARCHITECTURE.md`'s "Recent Architectural Decisions" log** linking to this doc.
+6. **`ARCHITECTURE.md` decision-log entry added.** See "Completion data authority" in `ARCHITECTURE.md` → Recent Architectural Decisions.
 
 ---
 
-## Non-goals
+## Non-goals (still applicable)
 
-- Schema redesign (no column adds/drops in this work).
+- Schema redesign (no column adds/drops).
 - Replacing the autosave debounce with synchronous writes (would regress UX).
 - Migrating to a single-table completion model — `solve_sessions` and `puzzle_completions` serve different access patterns (latest-per-puzzle vs. all-time history) and the split is well-justified.
-
----
-
-## Implementation order
-
-If this recommendation is approved:
-
-1. Land this doc + the ARCHITECTURE.md link in a research-only PR (this branch).
-2. Open a follow-up PR for the tightenings: 1, 2, 3 above. Items 4–5 are doc-only tweaks that can ride along.
-3. Re-evaluate after the tightenings — if divergence-related bugs still show up, reopen the authority question.
