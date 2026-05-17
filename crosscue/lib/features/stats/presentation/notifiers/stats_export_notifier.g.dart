@@ -42,7 +42,7 @@ final class StatsExportNotifierProvider
 }
 
 String _$statsExportNotifierHash() =>
-    r'2fab130531d9bd022bd2676b64e99e497614fb43';
+    r'9d697e3bf6570b37fc5e7beac3164c1f83b0cbe7';
 
 abstract class _$StatsExportNotifier extends $Notifier<StatsExportState> {
   StatsExportState build();
