@@ -1,6 +1,7 @@
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/core/domain/models/puzzle_size_bucket.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -28,6 +29,12 @@ abstract class Puzzle with _$Puzzle {
   String get id => metadata.id;
   int get width => metadata.width;
   int get height => metadata.height;
+
+  /// Size classification used for personal-best tracking and the
+  /// small-keyboard layout. Delegates to [PuzzleSizeBucket.fromDimensions]
+  /// so the bucket boundaries live in one place.
+  PuzzleSizeBucket get sizeBucket =>
+      PuzzleSizeBucket.fromDimensions(width: width, height: height);
 
   List<Clue> get acrossClues =>
       clues.where((c) => c.direction.name == 'across').toList();

@@ -1,3 +1,4 @@
+import 'package:crosscue/core/domain/models/puzzle_size_bucket.dart';
 import 'package:crosscue/features/stats/data/daos/stats_dao.dart';
 import 'package:crosscue/features/stats/domain/models/stats_data.dart';
 import 'package:crosscue/features/stats/domain/repositories/stats_repository.dart';
@@ -69,18 +70,25 @@ class StatsRepositoryImpl implements StatsRepository {
 
         // Personal best — clean solves only
         if (ct == 'clean') {
-          if (row.width == 15 && row.height == 15) {
-            if (pb15x15 == null || row.elapsedMs < pb15x15) {
-              pb15x15 = row.elapsedMs;
-            }
-          } else if (row.width == 21 && row.height == 21) {
-            if (pb21x21 == null || row.elapsedMs < pb21x21) {
-              pb21x21 = row.elapsedMs;
-            }
-          } else if (row.width <= 7 && row.height <= 7) {
-            if (pbMini == null || row.elapsedMs < pbMini) {
-              pbMini = row.elapsedMs;
-            }
+          final bucket = PuzzleSizeBucket.fromDimensions(
+            width: row.width,
+            height: row.height,
+          );
+          switch (bucket) {
+            case PuzzleSizeBucket.mini:
+              if (pbMini == null || row.elapsedMs < pbMini) {
+                pbMini = row.elapsedMs;
+              }
+            case PuzzleSizeBucket.standard:
+              if (pb15x15 == null || row.elapsedMs < pb15x15) {
+                pb15x15 = row.elapsedMs;
+              }
+            case PuzzleSizeBucket.large:
+              if (pb21x21 == null || row.elapsedMs < pb21x21) {
+                pb21x21 = row.elapsedMs;
+              }
+            case PuzzleSizeBucket.other:
+              break;
           }
         }
       }

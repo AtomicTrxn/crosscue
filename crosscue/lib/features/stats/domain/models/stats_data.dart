@@ -1,3 +1,5 @@
+import 'package:crosscue/core/domain/models/puzzle_size_bucket.dart';
+
 /// Aggregated statistics derived from all solve sessions.
 ///
 /// Computed by [StatsRepositoryImpl.getStats()] and displayed on the Stats
@@ -64,6 +66,17 @@ class StatsData {
 
   /// Convenience: returns true when the user has solved at least one puzzle.
   bool get hasSolves => totalSolved > 0;
+
+  /// Personal best (in ms) for the given [bucket], or null if no clean
+  /// solve has been recorded at that size yet. Returns null for buckets
+  /// that don't participate in personal-best tracking (e.g.
+  /// [PuzzleSizeBucket.other]).
+  int? personalBestMsFor(PuzzleSizeBucket bucket) => switch (bucket) {
+        PuzzleSizeBucket.mini => personalBestMiniMs,
+        PuzzleSizeBucket.standard => personalBest15x15Ms,
+        PuzzleSizeBucket.large => personalBest21x21Ms,
+        PuzzleSizeBucket.other => null,
+      };
 
   static const empty = StatsData(
     currentStreak: 0,
