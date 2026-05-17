@@ -18,7 +18,7 @@ Date: May 17, 2026
 | `drift_flutter` | Defer on `0.2.x` | Keep aligned with the current Drift line until the Dart 3.10 upgrade pass. |
 | `sqlite3_flutter_libs` | Defer on `0.5.x` | `0.6.0+eol` requires Dart 3.10 and belongs with the future `sqlite3` 3.x migration. |
 | `sqlite3` | Defer on `2.x` | `3.x` is part of the same Dart 3.10 migration set as Drift and `sqlite3_flutter_libs`. |
-| `package_info_plus` | Defer on `9.x` | `10.x` requires Dart 3.10 / newer Flutter baselines. |
+| `package_info_plus` | Defer on `9.x` | `10.x` requires Dart 3.10 / Flutter 3.38.1 and currently conflicts with `file_picker` 11 through incompatible `win32` constraints. |
 | `share_plus` | Defer on `12.x` | `13.x` requires Dart 3.10 / Flutter 3.38.1 and currently conflicts with `file_picker` 11 through incompatible `win32` constraints. |
 
 ## Notes
@@ -45,3 +45,18 @@ Issue #61 was reviewed separately after the audit:
 
 Decision: keep `share_plus` on `12.x` until the next coordinated toolchain
 upgrade also resolves the `file_picker` / `win32` compatibility boundary.
+
+## `package_info_plus` 10 review
+
+Issue #62 was reviewed separately after the audit:
+
+- `package_info_plus` `10.1.0` requires Dart `>=3.10.0` and Flutter
+  `>=3.38.1`.
+- A dry-run solve for `package_info_plus:^10.1.0` fails while the app remains
+  on `file_picker:^11.0.2`: `package_info_plus` 10 pulls `win32` `^6.0.1`,
+  while `file_picker` 11 requires `win32` `^5.9.0`.
+- The Settings → About path already uses the current public API shape:
+  `PackageInfo.fromPlatform()` inside `appVersionProvider`.
+
+Decision: keep `package_info_plus` on `9.x` until the same coordinated
+toolchain / file-picker upgrade that unlocks the rest of the Dart 3.10 set.

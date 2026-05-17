@@ -68,7 +68,8 @@ dependencies:
   url_launcher: ^6.3.2
 
   # Runtime app version (Settings → About)
-  # Deferred at 9.x: 10.x requires Dart 3.10 / newer Flutter baselines.
+  # Deferred at 9.x: 10.x requires Dart 3.10 / Flutter 3.38.1 and conflicts
+  # with file_picker 11 through incompatible win32 constraints.
   package_info_plus: ^9.0.0
 
 dev_dependencies:
