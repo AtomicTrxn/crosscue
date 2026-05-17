@@ -61,12 +61,12 @@ Important local conventions:
 
 ## CI
 
-Regular pull requests and pushes to `main` emit two required checks:
+Pull requests targeting `main` emit two required checks:
 
 - `Static checks`: formatting, analysis, and generated-file verification for
   app-affecting changes
 - `Test`: Flutter tests for app-affecting changes
 
 Documentation-only changes still emit those checks, but they finish quickly
-without setting up Flutter. Release workflows run the full app checks and build
-signed release artifacts.
+without setting up Flutter. Release builds run separately via the dispatch-only
+`release.yml` workflow against an explicit tag.

@@ -1,11 +1,10 @@
 name: Release
 
-# Default: push a semver tag → signed APK + GitHub Release
-# Play Store: use workflow_dispatch with play_store: true → also builds AAB and uploads
+# Dispatch-only. Tag the commit you want to ship first
+# (`git tag vX.Y.Z && git push origin vX.Y.Z`), then run this workflow with
+# that tag. Each dispatch produces exactly one signed APK + GitHub Release,
+# plus an optional signed AAB upload to a Play Store track.
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
       tag:
@@ -30,19 +29,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── Stage 1: full CI gate ─────────────────────────────────────────────────
-  ci:
-    name: CI checks
-    uses: ./.github/workflows/ci.yml
-    with:
-      skip-debug-apk: true
-    permissions:
-      contents: read
-
-  # ── Stage 2: signed release build + GitHub Release ───────────────────────
   release:
     name: Build & publish
-    needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: write   # required to create a GitHub Release
@@ -52,13 +40,15 @@ jobs:
         working-directory: crosscue
 
     steps:
-      - name: Check out repository
+      - name: Check out tag
         uses: actions/checkout@v4.2.0
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Parse version
         id: version
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
+          TAG="${{ inputs.tag }}"
           VERSION="${TAG#v}"
           IFS='.' read -r major minor patch <<< "$VERSION"
           CODE=$(( major * 10000 + minor * 100 + patch ))
@@ -99,7 +89,6 @@ jobs:
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }}
 
-      # ── Play Store path: build AAB (only when play_store: true) ──────────
       - name: Build release AAB
         if: ${{ inputs.play_store == true }}
         env:
@@ -122,7 +111,6 @@ jobs:
           generate_release_notes: true
           files: crosscue/build/app/outputs/flutter-apk/app-release.apk
 
-      # ── Play Store upload (only when play_store: true) ────────────────────
       - name: Upload to Play Store
         if: ${{ inputs.play_store == true }}
         uses: r0adkll/upload-google-play@v1

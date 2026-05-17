@@ -177,14 +177,14 @@ git push -u origin feature/short-description
 ```
 
 Then open a pull request targeting `main`. GitHub Actions runs CI on every PR
-and on every push to `main`. Merge only after CI is green.
+targeting `main`. Merge only after CI is green.
 
 Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ### CI coverage
 
-`.github/workflows/ci.yml` emits two required checks on ordinary pull requests
-and pushes to `main`:
+`.github/workflows/ci.yml` emits two required checks on pull requests
+targeting `main`:
 
 ```
 Static checks   format → analyze → generated files
@@ -196,19 +196,22 @@ Test            flutter test
 | **Static checks** | `flutter pub get` → format → analyze → generated files | reports success without Flutter setup |
 | **Test** | `flutter pub get` → `flutter test` | reports success without Flutter setup |
 
-All app checks use Flutter `3.41.9`. The debug APK job exists only for reusable
-workflow callers that explicitly request it; ordinary PR CI does not build an
-APK. Release workflows run the full app checks and build signed release
-artifacts instead.
+All app checks use Flutter `3.41.9`. CI does not build an APK — release
+artifacts are produced by the release workflow against an explicit tag.
 
 ---
 
 ## Release Pipeline
 
-| Trigger | Builds | Publishes |
-|---------|--------|-----------|
-| Push a `v*.*.*` tag | Signed APK | GitHub Release with APK attached |
-| `workflow_dispatch` with `play_store: true` | Signed APK + AAB | GitHub Release + Play Store internal track |
+Releases are dispatch-only — pushing a tag does **not** publish anything.
+You tag the commit, then run the **Release** workflow against that tag.
+Each dispatch produces exactly one signed APK + GitHub Release, plus an
+optional signed AAB upload to a Play Store track.
+
+| Dispatch input | Builds | Publishes |
+|----------------|--------|-----------|
+| `play_store: false` (default) | Signed APK | GitHub Release with APK attached |
+| `play_store: true`, `track: <track>` | Signed APK + AAB | GitHub Release + AAB on the chosen Play Store track |
 
 ### One-time setup: create a keystore
 
@@ -255,17 +258,33 @@ cd crosscue && flutter build apk --release --no-pub
 
 ### Cutting a release
 
-```bash
-git checkout main && git pull
-# Bump pubspec.yaml version first, commit, push, then tag
-git tag v1.2.3
-git push origin v1.2.3
-```
+1. **Bump the version on main** via a PR. Edit `crosscue/pubspec.yaml`:
+   ```yaml
+   version: 1.2.3+10203   # name+code; code follows the formula below
+   ```
+   Open a PR, let CI pass, merge.
 
-This triggers `.github/workflows/release.yml`, which:
-1. Runs full CI (static checks + tests)
-2. Builds a signed release APK with version name `1.2.3` and version code `10203`
-3. Publishes a GitHub Release at `v1.2.3` with the APK attached and auto-generated release notes
+2. **Tag the merge commit on main** and push the tag:
+   ```bash
+   git checkout main && git pull
+   git tag v1.2.3
+   git push origin v1.2.3
+   ```
+   The tag is just a marker — pushing it does **not** trigger a build.
+
+3. **Dispatch the Release workflow** from the GitHub Actions UI (or via
+   `gh workflow run`):
+   ```bash
+   # GitHub-only release (APK to the GitHub Release page):
+   gh workflow run release.yml -f tag=v1.2.3
+
+   # GitHub + Play Store internal testing:
+   gh workflow run release.yml -f tag=v1.2.3 -f play_store=true -f track=internal
+   ```
+
+The workflow checks out the **tag** (not whatever branch you dispatched
+from), so main can move between tagging and dispatch without affecting the
+build.
 
 **Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
 context in the generated release body rather than overloading the title.
@@ -275,22 +294,16 @@ context in the generated release body rather than overloading the title.
 - `v1.1.0` → `10100`
 - `v1.0.3` → `10003`
 
-### Play Store upload
+### Play Store tracks
 
-When ready to ship to Google Play, use `workflow_dispatch` from the Actions tab:
-- Select **Release** workflow → **Run workflow**
-- Enter the tag (must already exist), set `play_store: true`, and pick a `track`
+Available tracks: `internal` (default — internal testing, no review),
+`alpha` (closed testing), `beta` (open testing), `production`.
 
-Available tracks: `internal` (default), `alpha` (closed testing), `beta` (open
-testing), `production`.
-
-This builds both the APK and a signed AAB, attaches the APK to the GitHub
-Release, and uploads the AAB to the selected Play Store track. It requires the
-`PLAY_SERVICE_ACCOUNT_JSON` secret for a Play Console service account that has
-the app-level permissions needed for the intended release path. For internal
-or closed-testing uploads, that means at least **Release apps to testing
-tracks**; add broader production permissions only when the workflow is meant
-to publish to production.
+The Play Store upload requires the `PLAY_SERVICE_ACCOUNT_JSON` secret for a
+Play Console service account that has the app-level permissions needed for
+the chosen track. For `internal` or `alpha`, that means at least **Release
+apps to testing tracks**; add broader production permissions only when the
+workflow is meant to publish to production.
 
 ---
 
@@ -336,13 +349,13 @@ Crosscue current-release answers:
 
 ### Release pipeline
 - [x] `.github/workflows/release.yml` builds a signed AAB and uploads to the
-      Play Store internal track when triggered with `play_store: true`.
+      selected Play Store track when dispatched with `play_store: true`.
 - [x] `PLAY_SERVICE_ACCOUNT_JSON` GitHub Secret added for the Play Console
-      service account. For the current internal-track workflow, grant app-level
+      service account. For `internal` or `alpha` tracks, grant app-level
       **Release apps to testing tracks** permission. Verify the secret exists
       with `gh secret list`.
-- [x] First AAB upload to the internal track completed via
-      `workflow_dispatch` with `play_store: true`.
+- [x] First AAB upload to a testing track completed via `workflow_dispatch`
+      with `play_store: true`.
 
 ### Post-launch updates required if scope changes
 - Re-review and update privacy policy + Data Safety form before adding analytics,
