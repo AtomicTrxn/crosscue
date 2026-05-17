@@ -91,7 +91,7 @@ class StatsExportNotifier extends _$StatsExportNotifier {
     // 1. Pick file (CONVENTIONS.md: always FileType.any, validate client-side)
     FilePickerResult? result;
     try {
-      result = await FilePicker.platform.pickFiles(
+      result = await FilePicker.pickFiles(
         type: FileType.any,
         withData: true,
       );

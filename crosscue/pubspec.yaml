@@ -5,7 +5,10 @@ publish_to: 'none'
 version: 1.2.5+7
 
 environment:
-  sdk: '>=3.4.0 <4.0.0'
+  # Drift 2.31+ already requires Dart 3.5, so this is the real supported floor.
+  # Keep the floor below Dart 3.10 until the deferred major upgrades below are
+  # intentionally taken together.
+  sdk: '>=3.5.0 <4.0.0'
   flutter: '>=3.22.0'
 
 dependencies:
@@ -23,8 +26,12 @@ dependencies:
   go_router: ^17.0.0
 
   # Local persistence
+  # Deferred at 2.31.x: newer 2.33.x releases require Dart 3.10.
   drift: ^2.20.0
+  # Deferred at 0.2.x while drift stays on the Dart <3.10-compatible line.
   drift_flutter: ^0.2.0
+  # Deferred at 0.5.x: 0.6.0+eol requires Dart 3.10 and is part of the future
+  # sqlite3 3.x migration, not a standalone patch bump.
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.1.0
   path: ^1.9.0
@@ -33,7 +40,9 @@ dependencies:
   dio: ^5.4.0
 
   # File I/O
-  file_picker: ^8.0.0
+  # 11.0.2 includes the Android path-traversal fix and remains Dart 3.4+.
+  file_picker: ^11.0.2
+  # Deferred at 12.x: 13.x requires Dart 3.10 / newer Flutter baselines.
   share_plus: ^12.0.0
 
   # Puzzle ID generation
@@ -58,6 +67,7 @@ dependencies:
   url_launcher: ^6.3.2
 
   # Runtime app version (Settings → About)
+  # Deferred at 9.x: 10.x requires Dart 3.10 / newer Flutter baselines.
   package_info_plus: ^9.0.0
 
 dev_dependencies:
@@ -67,11 +77,13 @@ dev_dependencies:
   # Code generation
   build_runner: ^2.4.0
   freezed: ^3.2.5
+  # Deferred with drift runtime: 2.33.x requires Dart 3.10.
   drift_dev: ^2.20.0
   riverpod_generator: ^4.0.3
 
   # Direct sqlite3 access in migration tests (transitive via drift_dev but must
   # be declared explicitly to satisfy depend_on_referenced_packages lint).
+  # Deferred at 2.x until the app adopts the sqlite3 3.x / Dart 3.10 line.
   sqlite3: ^2.9.4
 
   # Linting

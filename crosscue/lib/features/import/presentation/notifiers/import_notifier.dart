@@ -45,7 +45,7 @@ class ImportNotifier extends _$ImportNotifier {
       // FileType.any is required on Android because .puz/.ipuz/.jpz have no
       // registered MIME types — FileType.custom with those extensions produces
       // an empty MIME list and throws a PlatformException.
-      result = await FilePicker.platform.pickFiles(
+      result = await FilePicker.pickFiles(
         type: FileType.any,
         withData: true,
       );
