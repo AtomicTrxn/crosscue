@@ -65,13 +65,7 @@ class SolveNotifier extends _$SolveNotifier {
       usedCheck: session.usedCheck,
       usedReveal: session.usedReveal,
       cleanSolveEligible: session.cleanSolveEligible,
-      previousPersonalBestMs: _personalBestForSize(
-        width: puzzle.width,
-        height: puzzle.height,
-        personalBestMiniMs: stats.personalBestMiniMs,
-        personalBest15x15Ms: stats.personalBest15x15Ms,
-        personalBest21x21Ms: stats.personalBest21x21Ms,
-      ),
+      previousPersonalBestMs: stats.personalBestMsFor(puzzle.sizeBucket),
     );
   }
 
@@ -598,18 +592,5 @@ class SolveNotifier extends _$SolveNotifier {
     if (s.usedReveal) return CompletionType.hinted;
     if (s.usedCheck) return CompletionType.checked;
     return CompletionType.clean;
-  }
-
-  int? _personalBestForSize({
-    required int width,
-    required int height,
-    required int? personalBestMiniMs,
-    required int? personalBest15x15Ms,
-    required int? personalBest21x21Ms,
-  }) {
-    if (width <= 7 && height <= 7) return personalBestMiniMs;
-    if (width == 15 && height == 15) return personalBest15x15Ms;
-    if (width == 21 && height == 21) return personalBest21x21Ms;
-    return null;
   }
 }
