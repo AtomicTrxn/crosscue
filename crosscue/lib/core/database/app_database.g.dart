@@ -2896,7 +2896,14 @@ class SolveSessionRow extends DataClass implements Insertable<SolveSessionRow> {
   /// DB values: not_started | in_progress | completed | revealed
   final String status;
 
-  /// DB values: clean | checked | hinted | revealed (only set when completed)
+  /// DB values: clean | checked | hinted | revealed (only set when completed).
+  ///
+  /// Intentionally duplicates `puzzle_completions.completion_type` for the
+  /// latest completion so Archive can render per-row badges without joining
+  /// against the history table. `puzzle_completions` remains the authority
+  /// for completion history (stats, streaks); this column is a hot-read
+  /// convenience kept in sync inside `markComplete`. See
+  /// `docs/architecture/completion-authority.md` for the authority rules.
   final String? completionType;
   final DateTime startedAt;
   final DateTime lastPlayedAt;
@@ -2913,6 +2920,15 @@ class SolveSessionRow extends DataClass implements Insertable<SolveSessionRow> {
   final int mistakeCount;
   final int checkCount;
   final int revealCount;
+
+  /// Session-state-only inputs to `CompletionType` derivation at save time.
+  ///
+  /// These flags are consumed by `SolveNotifier._deriveCompletionType` when
+  /// a session transitions to a terminal state — that derivation is the only
+  /// supported reader. Reading `usedCheck` / `usedReveal` post-completion to
+  /// infer the completion type is a bug: read `completion_type` (this table)
+  /// or `puzzle_completions.completion_type` directly instead. See
+  /// `docs/architecture/completion-authority.md` (divergence window 5).
   final bool usedCheck;
   final bool usedReveal;
   final bool cleanSolveEligible;

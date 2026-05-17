@@ -67,6 +67,20 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 
   @override
   void dispose() {
+    // Backstop for the unawaited markComplete in SolveNotifier._persistCompletion:
+    // on a normal screen tear-down where the puzzle is already terminal, flush
+    // the autosave so solve_sessions reflects the completed status even if the
+    // markComplete write is still in flight or fails. See
+    // docs/architecture/completion-authority.md (divergence window 1).
+    final solveState = switch (ref.read(solveProvider(widget.puzzleId))) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (solveState != null && solveState.status.isTerminal) {
+      unawaited(
+        ref.read(solveProvider(widget.puzzleId).notifier).flushPendingSave(),
+      );
+    }
     _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
