@@ -162,7 +162,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: ctx.crosscueError,
+              backgroundColor: ctx.crosscueActionDestructive,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -240,17 +240,19 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // v3.5: unselected bg = surface, unselected border = toggleTrackOff.
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
         decoration: BoxDecoration(
-          color:
-              selected ? context.crosscuePrimaryContainer : Colors.transparent,
+          color: selected
+              ? context.crosscuePrimaryContainer
+              : context.crosscueSurface,
           border: Border.all(
             color: selected
                 ? context.crosscueWordHighlight
-                : context.crosscueDivider,
+                : context.crosscueToggleTrackOff,
           ),
           borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
         ),

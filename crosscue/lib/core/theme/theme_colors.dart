@@ -41,4 +41,17 @@ extension CrosscueThemeColors on BuildContext {
   Color get crosscueError => isCrosscueLight
       ? CrosscueColors.incorrectLight
       : CrosscueColors.incorrectDark;
+
+  /// Destructive-action color (Delete buttons, Clear all data, etc.).
+  /// Use this instead of [crosscueError] for buttons/labels that *perform* a
+  /// destructive operation. [crosscueError] remains for error semantics only.
+  Color get crosscueActionDestructive => isCrosscueLight
+      ? CrosscueColors.actionDestructiveLight
+      : CrosscueColors.actionDestructiveDark;
+
+  /// Off-state toggle/segmented-control track color. Also the v3.5 outlined-
+  /// button border color.
+  Color get crosscueToggleTrackOff => isCrosscueLight
+      ? CrosscueColors.toggleTrackOffLight
+      : CrosscueColors.toggleTrackOffDark;
 }

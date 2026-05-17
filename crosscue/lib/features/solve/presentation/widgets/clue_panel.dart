@@ -352,9 +352,9 @@ class _ClueRow extends StatelessWidget {
     if (isActive || isPreview) {
       rowBg = xwTheme.activeClueBg;
     } else if (isCross) {
-      rowBg = xwTheme.crossClueBg;
+      rowBg = xwTheme.cluePanelCrossRowBg;
     } else if (isReferenced) {
-      rowBg = xwTheme.crossClueBg.withValues(alpha: 0.42);
+      rowBg = xwTheme.cluePanelCrossRowBg.withValues(alpha: 0.42);
     }
 
     final highlighted = isActive || isCross || isPreview || isReferenced;

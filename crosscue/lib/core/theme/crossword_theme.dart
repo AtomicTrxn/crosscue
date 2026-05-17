@@ -31,7 +31,7 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     required this.clueBarDirection,
     required this.clueBarText,
     required this.activeClueBg,
-    required this.crossClueBg,
+    required this.cluePanelCrossRowBg,
     required this.keyboardBg,
     required this.keyDefault,
     required this.keySpecial,
@@ -115,7 +115,9 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   final Color activeClueBg;
 
   /// Active cross-clue row highlight in clue panel.
-  final Color crossClueBg;
+  /// v3.5: perpendicular highlighting was removed from the *grid*. This token
+  /// remains for the clue-panel row tint only and is NOT a grid-state token.
+  final Color cluePanelCrossRowBg;
 
   // ── Custom keyboard ────────────────────────────────────────────────────────
   /// Keyboard tray background.
@@ -198,9 +200,9 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
           : CrosscueColors.onSurface1Dark,
       activeClueBg:
           isLight ? CrosscueColors.wordHLLight : CrosscueColors.wordHLDark,
-      crossClueBg: isLight
-          ? CrosscueColors.crossHLLight.withValues(alpha: 0.55)
-          : CrosscueColors.crossHLDark.withValues(alpha: 0.35),
+      cluePanelCrossRowBg: isLight
+          ? CrosscueColors.cluePanelCrossRowLight.withValues(alpha: 0.55)
+          : CrosscueColors.cluePanelCrossRowDark.withValues(alpha: 0.35),
       keyboardBg:
           isLight ? CrosscueColors.keyboardBg : CrosscueColors.keyboardBgDark,
       keyDefault:
@@ -247,7 +249,7 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
     Color? clueBarDirection,
     Color? clueBarText,
     Color? activeClueBg,
-    Color? crossClueBg,
+    Color? cluePanelCrossRowBg,
     Color? keyboardBg,
     Color? keyDefault,
     Color? keySpecial,
@@ -281,7 +283,7 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       clueBarDirection: clueBarDirection ?? this.clueBarDirection,
       clueBarText: clueBarText ?? this.clueBarText,
       activeClueBg: activeClueBg ?? this.activeClueBg,
-      crossClueBg: crossClueBg ?? this.crossClueBg,
+      cluePanelCrossRowBg: cluePanelCrossRowBg ?? this.cluePanelCrossRowBg,
       keyboardBg: keyboardBg ?? this.keyboardBg,
       keyDefault: keyDefault ?? this.keyDefault,
       keySpecial: keySpecial ?? this.keySpecial,
@@ -338,7 +340,8 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
       )!,
       clueBarText: Color.lerp(clueBarText, other.clueBarText, t)!,
       activeClueBg: Color.lerp(activeClueBg, other.activeClueBg, t)!,
-      crossClueBg: Color.lerp(crossClueBg, other.crossClueBg, t)!,
+      cluePanelCrossRowBg:
+          Color.lerp(cluePanelCrossRowBg, other.cluePanelCrossRowBg, t)!,
       keyboardBg: Color.lerp(keyboardBg, other.keyboardBg, t)!,
       keyDefault: Color.lerp(keyDefault, other.keyDefault, t)!,
       keySpecial: Color.lerp(keySpecial, other.keySpecial, t)!,

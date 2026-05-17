@@ -42,8 +42,11 @@ abstract class CrosscueColors {
   static const Color wordHLLight = Color(0xFFBBDEFB); // active word
   static const Color wordHLDark = Color(0xFF1C3D78);
 
-  static const Color crossHLLight = Color(0xFFE3F2FD); // crossing word
-  static const Color crossHLDark = Color(0xFF0D2248);
+  // Clue-panel row highlight for the perpendicular ("cross") clue. v3.5 removed
+  // perpendicular highlighting from the *grid*; these values now exist solely
+  // to tint the cross-clue row in the clue panel and are NOT grid-state tokens.
+  static const Color cluePanelCrossRowLight = Color(0xFFE3F2FD);
+  static const Color cluePanelCrossRowDark = Color(0xFF0D2248);
 
   static const Color gridBlackLight = Color(0xFF111111); // blocked squares
   static const Color gridBlackDark = Color(0xFF060810);
@@ -73,10 +76,17 @@ abstract class CrosscueColors {
   static const Color correctLight = Color(0xFF4CAF50);
   static const Color correctDark = Color(0xFF66BB6A);
 
-  // Muted brick red — paired with brand blue across all error / destructive
-  // surfaces (grid-incorrect overlays, "Delete" labels, confirmation buttons).
+  // Muted brick red — semantic "error" only (grid-incorrect overlay/letter).
+  // For destructive *actions* (Delete buttons, clear-all confirmations) use
+  // [actionDestructiveLight]/[actionDestructiveDark] instead.
   static const Color incorrectLight = Color(0xFFB85450);
   static const Color incorrectDark = Color(0xFFE89691);
+
+  // ── Destructive actions ────────────────────────────────────────────────────
+  // Distinct from `incorrect`: this is the color for buttons and labels that
+  // *perform* a destructive operation (Delete, Clear all data, Reset puzzle).
+  static const Color actionDestructiveLight = Color(0xFFB85450);
+  static const Color actionDestructiveDark = Color(0xFFC62828);
 
   static const Color revealedLight = Color(0xFFFFF9C4);
   static const Color revealedDark = Color(0xFFFFB74D);
@@ -111,7 +121,37 @@ abstract class CrosscueColors {
   static const Color keyDefault = Color(0xFFFFFFFF);
   static const Color keyDefaultDark = Color(0xFF232A3C);
   static const Color keyDelete = Color(0xFFB0BEC5);
-  static const Color keyDeleteDark = Color(0xFF2E3448);
+  static const Color keyDeleteDark = Color(0xFF4E5C7E);
+
+  // ── Dialogs (v3.5) ─────────────────────────────────────────────────────────
+  // Centralised dialog surface + barrier scrim. Light reuses [surfaceLight];
+  // dark uses a dedicated near-navy surface that sits above [bgDark].
+  static const Color dialogSurfaceLight = surfaceLight;
+  static const Color dialogSurfaceDark = Color(0xFF1C2234);
+  static const Color dialogScrimLight = Color(0x85000000); // 52% black
+  static const Color dialogScrimDark = Color(0xA3000000); // 64% black
+
+  // ── Toggles & segmented controls (v3.5) ────────────────────────────────────
+  // Off-state track color, reused as the outlined-button border per the guide.
+  static const Color toggleTrackOffLight = Color(0xFFBDBDBD);
+  static const Color toggleTrackOffDark = Color(0xFF424242);
+
+  // Segmented-button container background.
+  static const Color segmentedControlBgLight = Color(0xFFE8E8E8);
+  static const Color segmentedControlBgDark = Color(0xFF1A2030);
+
+  // ── Onboarding (v3.5) ──────────────────────────────────────────────────────
+  // Fixed brand navy used for the onboarding background — theme-independent so
+  // the tour reads consistently regardless of system light/dark mode.
+  static const Color onboardingBackground = Color(0xFF3B5280);
+  // Inactive pagination-dot color (white at 40% alpha).
+  static const Color onboardingDotInactive = Color(0x66FFFFFF);
+
+  // ── Disabled buttons (v3.5) ────────────────────────────────────────────────
+  static const Color buttonDisabledBgLight = Color(0xFFE0E0E0);
+  static const Color buttonDisabledBgDark = Color(0xFF2A3148);
+  static const Color buttonDisabledTextLight = Color(0xFF9CA3AF);
+  static const Color buttonDisabledTextDark = Color(0xFF5C6E96);
 
   // ── Seed color for Material You ────────────────────────────────────────────
   static const Color seed = Color(0xFF2196F3);

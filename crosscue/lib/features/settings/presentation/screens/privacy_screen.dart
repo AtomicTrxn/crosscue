@@ -45,9 +45,9 @@ class PrivacyScreen extends ConsumerWidget {
             subtitle: 'Delete all puzzles, progress and settings',
             trailing: Text(
               'Delete',
-              style: TextStyle(color: context.crosscueError),
+              style: TextStyle(color: context.crosscueActionDestructive),
             ),
-            color: context.crosscueError,
+            color: context.crosscueActionDestructive,
             onTap: () => _confirmClearAll(context, ref),
           ),
         ],
@@ -89,7 +89,7 @@ class PrivacyScreen extends ConsumerWidget {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: ctx.crosscueError,
+                backgroundColor: ctx.crosscueActionDestructive,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),

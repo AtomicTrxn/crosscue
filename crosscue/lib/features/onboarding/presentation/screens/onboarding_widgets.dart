@@ -103,18 +103,17 @@ class _StepDots extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(total, (i) {
         final active = i == current;
-        final done = i < current;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.symmetric(horizontal: 3),
           width: active ? 20 : 8,
           height: 8,
           decoration: BoxDecoration(
+            // v3.5: active = amber accent, inactive = white @ 40% (single
+            // value for both done and upcoming dots).
             color: active
                 ? CrosscueColors.cellActiveLight
-                : done
-                    ? Colors.white.withValues(alpha: 0.55)
-                    : Colors.white.withValues(alpha: 0.30),
+                : CrosscueColors.onboardingDotInactive,
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -634,6 +633,8 @@ class _PrimaryCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // v3.5 disabled-button tokens. Onboarding always reads against the navy
+    // background regardless of system theme, so light-mode values apply here.
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
@@ -641,6 +642,8 @@ class _PrimaryCta extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(CrosscueSpacing.buttonRadiusLg),
         ),
+        disabledBackgroundColor: CrosscueColors.buttonDisabledBgLight,
+        disabledForegroundColor: CrosscueColors.buttonDisabledTextLight,
       ),
       child: Text(label),
     );

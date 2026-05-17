@@ -209,7 +209,7 @@ class CompletionSheet extends ConsumerWidget {
                     child: TextButton(
                       onPressed: () => _confirmReset(ctx),
                       style: TextButton.styleFrom(
-                        foregroundColor: ctx.crosscueError,
+                        foregroundColor: ctx.crosscueActionDestructive,
                         textStyle: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -251,7 +251,7 @@ class CompletionSheet extends ConsumerWidget {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: ctx.crosscueError,
+                backgroundColor: ctx.crosscueActionDestructive,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(ctx, true),

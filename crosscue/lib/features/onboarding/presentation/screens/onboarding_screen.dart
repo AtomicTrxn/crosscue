@@ -126,22 +126,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      // Subtle vertical gradient grounded in the themed brand blue (same shade
-      // as the home FAB, Continue Solving, and Get today's puzzle) — top is a
-      // touch darker for depth, bottom is the brand primary.
+      // v3.5: fixed onboardingBackground navy, theme-independent so the tour
+      // reads consistently regardless of system light/dark.
       body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.lerp(primary, Colors.black, 0.18) ?? primary,
-              primary,
-            ],
-            stops: const [0.0, 0.9],
-          ),
+        decoration: const BoxDecoration(
+          color: CrosscueColors.onboardingBackground,
         ),
         child: Stack(
           children: [

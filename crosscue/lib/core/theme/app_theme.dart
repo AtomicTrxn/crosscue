@@ -118,11 +118,34 @@ abstract final class AppTheme {
       dividerColor:
           isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
 
+      // ── Dialogs (v3.5) ──────────────────────────────────────────────────────
+      // Centralised scrim (barrier) and surface so every AlertDialog/showDialog
+      // call site picks up the guide values without per-call overrides.
+      dialogTheme: DialogThemeData(
+        backgroundColor: isLight
+            ? CrosscueColors.dialogSurfaceLight
+            : CrosscueColors.dialogSurfaceDark,
+        surfaceTintColor: Colors.transparent,
+        barrierColor: isLight
+            ? CrosscueColors.dialogScrimLight
+            : CrosscueColors.dialogScrimDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+
       // ── Filled buttons ──────────────────────────────────────────────────────
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: scheme.primary,
           foregroundColor: Colors.white,
+          disabledBackgroundColor: isLight
+              ? CrosscueColors.buttonDisabledBgLight
+              : CrosscueColors.buttonDisabledBgDark,
+          disabledForegroundColor: isLight
+              ? CrosscueColors.buttonDisabledTextLight
+              : CrosscueColors.buttonDisabledTextDark,
           textStyle: const TextStyle(
             fontFamily: CrosscueTypography.roboto,
             fontSize: CrosscueTypography.body,
@@ -137,13 +160,17 @@ abstract final class AppTheme {
       ),
 
       // ── Outlined buttons ────────────────────────────────────────────────────
+      // v3.5: border uses the toggleTrackOff token (not divider colors).
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.onSurface,
+          disabledForegroundColor: isLight
+              ? CrosscueColors.buttonDisabledTextLight
+              : CrosscueColors.buttonDisabledTextDark,
           side: BorderSide(
             color: isLight
-                ? CrosscueColors.dividerLight
-                : CrosscueColors.dividerDark,
+                ? CrosscueColors.toggleTrackOffLight
+                : CrosscueColors.toggleTrackOffDark,
             width: 1,
           ),
           shape: RoundedRectangleBorder(
@@ -159,11 +186,13 @@ abstract final class AppTheme {
       ),
 
       // ── Text buttons ────────────────────────────────────────────────────────
+      // v3.5 default is the "dismiss" semantic = onSurface2. Action/link buttons
+      // (primary) and destructive buttons override per-call.
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: isLight
-              ? CrosscueColors.onSurface3Light
-              : CrosscueColors.onSurface3Dark,
+              ? CrosscueColors.onSurface2Light
+              : CrosscueColors.onSurface2Dark,
           textStyle: const TextStyle(
             fontFamily: CrosscueTypography.roboto,
             fontSize: CrosscueTypography.bodySmall,
@@ -172,9 +201,61 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Filter chips ────────────────────────────────────────────────────────
+      // ── Switches (v3.5) ─────────────────────────────────────────────────────
+      // Off-state track uses the dedicated toggleTrackOff guide token. On-state
+      // track uses primary. Thumb is white in both states for legibility.
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return isLight
+                ? CrosscueColors.buttonDisabledTextLight
+                : CrosscueColors.buttonDisabledTextDark;
+          }
+          return Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return scheme.primary;
+          return isLight
+              ? CrosscueColors.toggleTrackOffLight
+              : CrosscueColors.toggleTrackOffDark;
+        }),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+
+      // ── Segmented buttons (v3.5) ────────────────────────────────────────────
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return isLight
+                  ? CrosscueColors.primaryContLight
+                  : CrosscueColors.primaryContDark;
+            }
+            return isLight
+                ? CrosscueColors.segmentedControlBgLight
+                : CrosscueColors.segmentedControlBgDark;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return scheme.primary;
+            return isLight
+                ? CrosscueColors.onSurface2Light
+                : CrosscueColors.onSurface2Dark;
+          }),
+          side: WidgetStatePropertyAll(
+            BorderSide(
+              color: isLight
+                  ? CrosscueColors.toggleTrackOffLight
+                  : CrosscueColors.toggleTrackOffDark,
+            ),
+          ),
+        ),
+      ),
+
+      // ── Filter chips (v3.5) ─────────────────────────────────────────────────
+      // Unselected: surface bg, toggleTrackOff border, onSurface3 label.
+      // Selected:   primaryContainer bg, wordHighlight border, primary label.
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: scheme.surface,
         selectedColor: isLight
             ? CrosscueColors.primaryContLight
             : CrosscueColors.primaryContDark,
@@ -186,12 +267,18 @@ abstract final class AppTheme {
               ? CrosscueColors.onSurface3Light
               : CrosscueColors.onSurface3Dark,
         ),
+        secondaryLabelStyle: TextStyle(
+          fontFamily: CrosscueTypography.roboto,
+          fontSize: CrosscueTypography.bodySmall,
+          fontWeight: FontWeight.w600,
+          color: scheme.primary,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(CrosscueSpacing.chipRadius),
           side: BorderSide(
             color: isLight
-                ? CrosscueColors.dividerLight
-                : CrosscueColors.dividerDark,
+                ? CrosscueColors.toggleTrackOffLight
+                : CrosscueColors.toggleTrackOffDark,
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),

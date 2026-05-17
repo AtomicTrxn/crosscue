@@ -235,7 +235,7 @@ class _CheckRevealMenu extends ConsumerWidget {
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: ctx.crosscueError,
+                    backgroundColor: ctx.crosscueActionDestructive,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () => Navigator.pop(ctx, true),
@@ -291,7 +291,7 @@ Future<void> _confirmResetFromAppBar(
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: ctx.crosscueError,
+              backgroundColor: ctx.crosscueActionDestructive,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),
