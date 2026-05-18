@@ -18,7 +18,8 @@ lib/
 │   ├── entitlement/                 # License / paywall stubs (all features free)
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
-│   ├── sync/                        # Sync adapter interface + NoOp impl
+│   ├── sync/                        # SyncOrchestrator + per-namespace adapters + transports
+│   │                                #   (see docs/architecture/sync-design.md)
 │   ├── telemetry/                   # CrashReporter (local-only log)
 │   ├── theme/                       # Material 3 theme + CrosswordTheme extension
 │   └── utils/                       # Result<T,E>, shared formatting helpers
@@ -450,3 +451,13 @@ not exhaustive, to avoid going stale.
   for the rules, the round-trip mapping between `PuzzleStatus` and
   `CompletionType`, the five named divergence windows, and the planned
   code tightenings.
+
+- **Sync foundation (G5, May 2026)**: Cross-device sync of puzzles,
+  solve sessions, completion history, and a settings allowlist. Local-only
+  build still default; schema v5 adds sync-readiness columns. Per-namespace
+  adapters own merge rules (content-addressable union for puzzles,
+  client-uuid union for completions, LWW + best-progress for sessions, LWW
+  for settings) behind a platform-pluggable `SyncTransport`. iCloud / Drive
+  transports and the settings UI are deferred — see
+  [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md)
+  and [`docs/architecture/sync-progress.md`](docs/architecture/sync-progress.md).

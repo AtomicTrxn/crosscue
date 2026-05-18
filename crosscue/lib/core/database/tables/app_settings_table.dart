@@ -19,6 +19,10 @@ class AppSettingsTable extends Table {
   TextColumn get valueJson => text()(); // JSON-encoded value
   DateTimeColumn get updatedAt => dateTime()();
 
+  /// Per-key sync version, incremented locally on every write. Compared
+  /// against the remote manifest to decide whether to push/pull.
+  IntColumn get syncVersion => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {key};
 }

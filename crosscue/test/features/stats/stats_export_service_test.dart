@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/utils/uuid.dart';
 import 'package:crosscue/features/stats/data/services/stats_export_service_impl.dart';
 import 'package:crosscue/features/stats/domain/services/stats_export_service.dart';
 import 'package:drift/drift.dart' show Value;
@@ -108,6 +109,7 @@ void main() {
               solvedDateLocal: '2025-01-02',
               solvedTimezone: const Value('America/New_York'),
               elapsedMs: 42000,
+              clientUuid: Uuid.v4(),
             ),
           );
 

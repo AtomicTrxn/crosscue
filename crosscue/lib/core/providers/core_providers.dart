@@ -2,8 +2,9 @@ import 'package:crosscue/core/audio/sound_player.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/entitlement/entitlement_service.dart';
 import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
-import 'package:crosscue/core/sync/no_op_sync_adapter.dart';
-import 'package:crosscue/core/sync/sync_adapter.dart';
+import 'package:crosscue/core/sync/sync_orchestrator.dart';
+import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/telemetry/crash_reporter.dart';
 import 'package:dio/dio.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -38,9 +39,23 @@ Dio dio(Ref ref) => Dio(
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref ref) => AppDatabase();
 
-/// Sync adapter — no-op; all data stays on the device.
+/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
+/// local-only build keeps working; the iCloud / Drive transports replace
+/// this provider once those land (see `docs/architecture/sync-progress.md`).
 @Riverpod(keepAlive: true)
-SyncAdapter syncAdapter(Ref ref) => const NoOpSyncAdapter();
+SyncTransport syncTransport(Ref ref) => const NoOpSyncTransport();
+
+/// Sync orchestrator. Reads the current [syncTransport] and wires up the
+/// per-namespace adapters against the shared [appDatabase].
+@Riverpod(keepAlive: true)
+SyncOrchestrator syncOrchestrator(Ref ref) {
+  final orchestrator = SyncOrchestrator(
+    transport: ref.watch(syncTransportProvider),
+    db: ref.watch(appDatabaseProvider),
+  );
+  ref.onDispose(orchestrator.dispose);
+  return orchestrator;
+}
 
 /// Entitlement service — all features free.
 @Riverpod(keepAlive: true)

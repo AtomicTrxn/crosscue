@@ -1,6 +1,7 @@
 import 'package:crosscue/core/constants/retention.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/database/tables/puzzle_completions_table.dart';
+import 'package:crosscue/core/utils/uuid.dart';
 import 'package:drift/drift.dart';
 
 part 'puzzle_completion_dao.g.dart';
@@ -27,6 +28,8 @@ class PuzzleCompletionDao extends DatabaseAccessor<AppDatabase>
     required int elapsedMs,
     int checkCount = 0,
     int revealCount = 0,
+    String? clientUuid,
+    String deviceId = 'local',
   }) async {
     return transaction(() async {
       final id = await into(puzzleCompletionsTable).insert(
@@ -39,6 +42,8 @@ class PuzzleCompletionDao extends DatabaseAccessor<AppDatabase>
           elapsedMs: elapsedMs,
           checkCount: Value(checkCount),
           revealCount: Value(revealCount),
+          clientUuid: clientUuid ?? Uuid.v4(),
+          deviceId: Value(deviceId),
         ),
       );
       await _pruneForPuzzle(puzzleId);

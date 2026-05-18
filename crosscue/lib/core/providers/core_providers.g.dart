@@ -146,51 +146,107 @@ final class AppDatabaseProvider
 
 String _$appDatabaseHash() => r'98a09c6cfd43966155dfbdb0787fa18c85438e13';
 
-/// Sync adapter — no-op; all data stays on the device.
+/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
+/// local-only build keeps working; the iCloud / Drive transports replace
+/// this provider once those land (see `docs/architecture/sync-progress.md`).
 
-@ProviderFor(syncAdapter)
-final syncAdapterProvider = SyncAdapterProvider._();
+@ProviderFor(syncTransport)
+final syncTransportProvider = SyncTransportProvider._();
 
-/// Sync adapter — no-op; all data stays on the device.
+/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
+/// local-only build keeps working; the iCloud / Drive transports replace
+/// this provider once those land (see `docs/architecture/sync-progress.md`).
 
-final class SyncAdapterProvider
-    extends $FunctionalProvider<SyncAdapter, SyncAdapter, SyncAdapter>
-    with $Provider<SyncAdapter> {
-  /// Sync adapter — no-op; all data stays on the device.
-  SyncAdapterProvider._()
+final class SyncTransportProvider
+    extends $FunctionalProvider<SyncTransport, SyncTransport, SyncTransport>
+    with $Provider<SyncTransport> {
+  /// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
+  /// local-only build keeps working; the iCloud / Drive transports replace
+  /// this provider once those land (see `docs/architecture/sync-progress.md`).
+  SyncTransportProvider._()
       : super(
           from: null,
           argument: null,
           retry: null,
-          name: r'syncAdapterProvider',
+          name: r'syncTransportProvider',
           isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
 
   @override
-  String debugGetCreateSourceHash() => _$syncAdapterHash();
+  String debugGetCreateSourceHash() => _$syncTransportHash();
 
   @$internal
   @override
-  $ProviderElement<SyncAdapter> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<SyncTransport> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  SyncAdapter create(Ref ref) {
-    return syncAdapter(ref);
+  SyncTransport create(Ref ref) {
+    return syncTransport(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SyncAdapter value) {
+  Override overrideWithValue(SyncTransport value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<SyncAdapter>(value),
+      providerOverride: $SyncValueProvider<SyncTransport>(value),
     );
   }
 }
 
-String _$syncAdapterHash() => r'a5c9e2e0cfa9f13076d953a7029eef2d423b81e5';
+String _$syncTransportHash() => r'eb8f239117bd3eb584be39c55249b011ce0f0752';
+
+/// Sync orchestrator. Reads the current [syncTransport] and wires up the
+/// per-namespace adapters against the shared [appDatabase].
+
+@ProviderFor(syncOrchestrator)
+final syncOrchestratorProvider = SyncOrchestratorProvider._();
+
+/// Sync orchestrator. Reads the current [syncTransport] and wires up the
+/// per-namespace adapters against the shared [appDatabase].
+
+final class SyncOrchestratorProvider extends $FunctionalProvider<
+    SyncOrchestrator,
+    SyncOrchestrator,
+    SyncOrchestrator> with $Provider<SyncOrchestrator> {
+  /// Sync orchestrator. Reads the current [syncTransport] and wires up the
+  /// per-namespace adapters against the shared [appDatabase].
+  SyncOrchestratorProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'syncOrchestratorProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$syncOrchestratorHash();
+
+  @$internal
+  @override
+  $ProviderElement<SyncOrchestrator> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SyncOrchestrator create(Ref ref) {
+    return syncOrchestrator(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SyncOrchestrator value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SyncOrchestrator>(value),
+    );
+  }
+}
+
+String _$syncOrchestratorHash() => r'2a33ae58d6e8985111a731a040986bedcc7c567b';
 
 /// Entitlement service — all features free.
 

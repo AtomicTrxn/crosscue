@@ -414,6 +414,154 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // v4 → v5 migration
+  // ---------------------------------------------------------------------------
+
+  group('v4 → v5 migration', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('drift_v4_test_');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) await tempDir.delete(recursive: true);
+    });
+
+    test(
+        'adds sync-readiness columns and backfills client_uuid for existing '
+        'completions', () async {
+      final file = File('${tempDir.path}/v4.db');
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        // Build a minimal v4 schema with two existing completion rows.
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO sources (id, display_name, type, enabled, created_at, updated_at)
+          VALUES ('local_import', 'Local Import', 'local', 1, 1, 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE puzzles (
+            id TEXT NOT NULL PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            source_puzzle_id TEXT,
+            format TEXT NOT NULL,
+            title TEXT NOT NULL,
+            author TEXT,
+            editor TEXT,
+            publisher TEXT,
+            copyright TEXT,
+            notes TEXT,
+            publish_date INTEGER,
+            difficulty TEXT,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            checksum TEXT NOT NULL,
+            canonical_json TEXT NOT NULL,
+            raw_payload TEXT,
+            fetched_at INTEGER,
+            expires_at INTEGER,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO puzzles (id, source_id, format, title, width, height,
+                               checksum, canonical_json, created_at, updated_at)
+          VALUES ('puzzle-1', 'local_import', 'ipuz', 'P1', 5, 5,
+                  'cksum', '{}', 1, 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE app_settings (
+            key TEXT NOT NULL PRIMARY KEY,
+            value_json TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO app_settings (key, value_json, updated_at)
+          VALUES ('theme_mode', '"light"', 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE puzzle_completions (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            puzzle_id TEXT NOT NULL,
+            completion_type TEXT NOT NULL,
+            completed_at INTEGER NOT NULL,
+            solved_date_local TEXT NOT NULL,
+            solved_timezone TEXT,
+            elapsed_ms INTEGER NOT NULL,
+            check_count INTEGER NOT NULL DEFAULT 0,
+            reveal_count INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO puzzle_completions
+            (puzzle_id, completion_type, completed_at, solved_date_local,
+             elapsed_ms)
+          VALUES ('puzzle-1', 'clean', 1000, '2026-01-01', 60000),
+                 ('puzzle-1', 'checked', 2000, '2026-01-02', 45000)
+        ''');
+        rawDb.execute('PRAGMA user_version = 4');
+      } finally {
+        rawDb.dispose();
+      }
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
+      // New sync-readiness columns are present and queryable.
+      final puzzles = await db.select(db.puzzlesTable).get();
+      expect(puzzles, hasLength(1));
+      expect(puzzles.single.isSynced, isFalse);
+      expect(puzzles.single.syncVersion, equals(0));
+
+      // app_settings.sync_version defaults to 0.
+      final settings = await db.select(db.appSettingsTable).get();
+      expect(settings, hasLength(1));
+      expect(settings.single.syncVersion, equals(0));
+
+      // Existing completion rows are backfilled with unique UUIDs.
+      final completions = await db.select(db.puzzleCompletionsTable).get();
+      expect(completions, hasLength(2));
+      final uuids = completions.map((c) => c.clientUuid).toSet();
+      expect(uuids, hasLength(2));
+      for (final uuid in uuids) {
+        // UUID v4 canonical form: 8-4-4-4-12 lowercase hex.
+        expect(
+          uuid,
+          matches(
+            RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-'
+              r'[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            ),
+          ),
+        );
+      }
+      expect(completions.map((c) => c.deviceId), everyElement(equals('local')));
+
+      // Unique index on client_uuid is in place.
+      final indexes = await db.customSelect(
+        "SELECT name FROM sqlite_master WHERE type = 'index' "
+        "AND tbl_name = 'puzzle_completions'",
+      ).get();
+      expect(
+        indexes.map((r) => r.read<String>('name')),
+        contains('idx_puzzle_completions_client_uuid'),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // clearAllUserData
   // ---------------------------------------------------------------------------
 

@@ -9,6 +9,7 @@ import 'package:crosscue/core/database/tables/puzzles_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:crosscue/core/database/tables/sources_table.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/utils/uuid.dart';
 import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
 import 'package:crosscue/features/solve/data/daos/puzzle_completion_dao.dart';
@@ -47,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   PuzzleCompletionDao get puzzleCompletionDao => PuzzleCompletionDao(this);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Migration strategy.
   ///
@@ -65,6 +66,8 @@ class AppDatabase extends _$AppDatabase {
   ///          history used by streak/leaderboard features so that the live
   ///          `solve_sessions` row can be cleared by "Reset puzzle" without
   ///          losing the record of the original solve.
+  /// v4 → v5: sync-readiness columns on `puzzles`, `puzzle_completions`,
+  ///          and `app_settings`. See `docs/architecture/sync-design.md`.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
@@ -94,7 +97,24 @@ class AppDatabase extends _$AppDatabase {
 
           if (from < 4) {
             // v3 → v4: add puzzle_completions table (immutable history).
-            await m.createTable(puzzleCompletionsTable);
+            //
+            // Uses raw CREATE TABLE pinned to the v4 schema rather than
+            // `m.createTable(puzzleCompletionsTable)` so this branch stays
+            // stable as the ORM definition grows. v4 → v5 adds the
+            // sync-readiness columns on top.
+            await customStatement('''
+              CREATE TABLE puzzle_completions (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                puzzle_id TEXT NOT NULL REFERENCES puzzles(id) ON DELETE CASCADE,
+                completion_type TEXT NOT NULL,
+                completed_at INTEGER NOT NULL,
+                solved_date_local TEXT NOT NULL,
+                solved_timezone TEXT,
+                elapsed_ms INTEGER NOT NULL,
+                check_count INTEGER NOT NULL DEFAULT 0,
+                reveal_count INTEGER NOT NULL DEFAULT 0
+              )
+            ''');
             final solveSessionsTableExists = await customSelect(
               '''
                 SELECT COUNT(*) AS cnt
@@ -127,6 +147,71 @@ class AppDatabase extends _$AppDatabase {
               WHERE completion_type IS NOT NULL
                 AND solved_date_local IS NOT NULL
             ''');
+            }
+          }
+
+          if (from < 5) {
+            // v4 → v5: sync-readiness columns. Additive only — no data loss.
+            // `client_uuid` is NOT NULL on the schema; we add it with a
+            // temporary default of '' so existing rows survive the ALTER,
+            // then backfill UUIDs in Dart, then promote the column to
+            // UNIQUE via an index. See `docs/architecture/sync-design.md`.
+            //
+            // Each ALTER is guarded by a table-existence check so that
+            // historical minimal-schema tests (which omit some tables) still
+            // pass — mirrors the v3 → v4 guard around `solve_sessions`.
+            Future<bool> tableExists(String name) async {
+              final row = await customSelect(
+                'SELECT COUNT(*) AS cnt FROM sqlite_master '
+                "WHERE type = 'table' AND name = ?",
+                variables: [Variable<String>(name)],
+              ).getSingle();
+              return row.read<int>('cnt') > 0;
+            }
+
+            if (await tableExists('puzzles')) {
+              await customStatement(
+                'ALTER TABLE puzzles ADD COLUMN is_synced INTEGER '
+                'NOT NULL DEFAULT 0',
+              );
+              await customStatement(
+                'ALTER TABLE puzzles ADD COLUMN sync_version INTEGER '
+                'NOT NULL DEFAULT 0',
+              );
+            }
+
+            if (await tableExists('puzzle_completions')) {
+              await customStatement(
+                "ALTER TABLE puzzle_completions ADD COLUMN client_uuid TEXT "
+                "NOT NULL DEFAULT ''",
+              );
+              await customStatement(
+                "ALTER TABLE puzzle_completions ADD COLUMN device_id TEXT "
+                "NOT NULL DEFAULT 'local'",
+              );
+
+              final rows = await customSelect(
+                'SELECT id FROM puzzle_completions',
+              ).get();
+              for (final row in rows) {
+                await customStatement(
+                  'UPDATE puzzle_completions SET client_uuid = ? WHERE id = ?',
+                  <Object?>[Uuid.v4(), row.read<int>('id')],
+                );
+              }
+
+              await customStatement(
+                'CREATE UNIQUE INDEX IF NOT EXISTS '
+                'idx_puzzle_completions_client_uuid '
+                'ON puzzle_completions(client_uuid)',
+              );
+            }
+
+            if (await tableExists('app_settings')) {
+              await customStatement(
+                'ALTER TABLE app_settings ADD COLUMN sync_version INTEGER '
+                'NOT NULL DEFAULT 0',
+              );
             }
           }
         },

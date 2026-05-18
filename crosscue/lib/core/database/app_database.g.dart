@@ -1110,6 +1110,24 @@ class $PuzzlesTableTable extends PuzzlesTable
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
       'updated_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _isSyncedMeta =
+      const VerificationMeta('isSynced');
+  @override
+  late final GeneratedColumn<bool> isSynced = GeneratedColumn<bool>(
+      'is_synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _syncVersionMeta =
+      const VerificationMeta('syncVersion');
+  @override
+  late final GeneratedColumn<int> syncVersion = GeneratedColumn<int>(
+      'sync_version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1132,7 +1150,9 @@ class $PuzzlesTableTable extends PuzzlesTable
         fetchedAt,
         expiresAt,
         createdAt,
-        updatedAt
+        updatedAt,
+        isSynced,
+        syncVersion
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1257,6 +1277,16 @@ class $PuzzlesTableTable extends PuzzlesTable
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('is_synced')) {
+      context.handle(_isSyncedMeta,
+          isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta));
+    }
+    if (data.containsKey('sync_version')) {
+      context.handle(
+          _syncVersionMeta,
+          syncVersion.isAcceptableOrUnknown(
+              data['sync_version']!, _syncVersionMeta));
+    }
     return context;
   }
 
@@ -1312,6 +1342,10 @@ class $PuzzlesTableTable extends PuzzlesTable
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      isSynced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_synced'])!,
+      syncVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_version'])!,
     );
   }
 
@@ -1343,6 +1377,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
   final DateTime? expiresAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isSynced;
+  final int syncVersion;
   const PuzzleRow(
       {required this.id,
       required this.sourceId,
@@ -1364,7 +1400,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
       this.fetchedAt,
       this.expiresAt,
       required this.createdAt,
-      required this.updatedAt});
+      required this.updatedAt,
+      required this.isSynced,
+      required this.syncVersion});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1411,6 +1449,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_synced'] = Variable<bool>(isSynced);
+    map['sync_version'] = Variable<int>(syncVersion);
     return map;
   }
 
@@ -1456,6 +1496,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
           : Value(expiresAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      isSynced: Value(isSynced),
+      syncVersion: Value(syncVersion),
     );
   }
 
@@ -1484,6 +1526,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
       expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isSynced: serializer.fromJson<bool>(json['isSynced']),
+      syncVersion: serializer.fromJson<int>(json['syncVersion']),
     );
   }
   @override
@@ -1511,6 +1555,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
       'expiresAt': serializer.toJson<DateTime?>(expiresAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isSynced': serializer.toJson<bool>(isSynced),
+      'syncVersion': serializer.toJson<int>(syncVersion),
     };
   }
 
@@ -1535,7 +1581,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
           Value<DateTime?> fetchedAt = const Value.absent(),
           Value<DateTime?> expiresAt = const Value.absent(),
           DateTime? createdAt,
-          DateTime? updatedAt}) =>
+          DateTime? updatedAt,
+          bool? isSynced,
+          int? syncVersion}) =>
       PuzzleRow(
         id: id ?? this.id,
         sourceId: sourceId ?? this.sourceId,
@@ -1559,6 +1607,8 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
         expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        isSynced: isSynced ?? this.isSynced,
+        syncVersion: syncVersion ?? this.syncVersion,
       );
   PuzzleRow copyWithCompanion(PuzzlesTableCompanion data) {
     return PuzzleRow(
@@ -1590,6 +1640,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
       expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+      syncVersion:
+          data.syncVersion.present ? data.syncVersion.value : this.syncVersion,
     );
   }
 
@@ -1616,7 +1669,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
           ..write('fetchedAt: $fetchedAt, ')
           ..write('expiresAt: $expiresAt, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isSynced: $isSynced, ')
+          ..write('syncVersion: $syncVersion')
           ..write(')'))
         .toString();
   }
@@ -1643,7 +1698,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
         fetchedAt,
         expiresAt,
         createdAt,
-        updatedAt
+        updatedAt,
+        isSynced,
+        syncVersion
       ]);
   @override
   bool operator ==(Object other) =>
@@ -1669,7 +1726,9 @@ class PuzzleRow extends DataClass implements Insertable<PuzzleRow> {
           other.fetchedAt == this.fetchedAt &&
           other.expiresAt == this.expiresAt &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.isSynced == this.isSynced &&
+          other.syncVersion == this.syncVersion);
 }
 
 class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
@@ -1694,6 +1753,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
   final Value<DateTime?> expiresAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<bool> isSynced;
+  final Value<int> syncVersion;
   final Value<int> rowid;
   const PuzzlesTableCompanion({
     this.id = const Value.absent(),
@@ -1717,6 +1778,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
     this.expiresAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.isSynced = const Value.absent(),
+    this.syncVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PuzzlesTableCompanion.insert({
@@ -1741,6 +1804,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
     this.expiresAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.isSynced = const Value.absent(),
+    this.syncVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         sourceId = Value(sourceId),
@@ -1774,6 +1839,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
     Expression<DateTime>? expiresAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<bool>? isSynced,
+    Expression<int>? syncVersion,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1798,6 +1865,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
       if (expiresAt != null) 'expires_at': expiresAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (isSynced != null) 'is_synced': isSynced,
+      if (syncVersion != null) 'sync_version': syncVersion,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1824,6 +1893,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
       Value<DateTime?>? expiresAt,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
+      Value<bool>? isSynced,
+      Value<int>? syncVersion,
       Value<int>? rowid}) {
     return PuzzlesTableCompanion(
       id: id ?? this.id,
@@ -1847,6 +1918,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
       expiresAt: expiresAt ?? this.expiresAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isSynced: isSynced ?? this.isSynced,
+      syncVersion: syncVersion ?? this.syncVersion,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1917,6 +1990,12 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (isSynced.present) {
+      map['is_synced'] = Variable<bool>(isSynced.value);
+    }
+    if (syncVersion.present) {
+      map['sync_version'] = Variable<int>(syncVersion.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1947,6 +2026,8 @@ class PuzzlesTableCompanion extends UpdateCompanion<PuzzleRow> {
           ..write('expiresAt: $expiresAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('isSynced: $isSynced, ')
+          ..write('syncVersion: $syncVersion, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4214,8 +4295,17 @@ class $AppSettingsTableTable extends AppSettingsTable
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
       'updated_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _syncVersionMeta =
+      const VerificationMeta('syncVersion');
   @override
-  List<GeneratedColumn> get $columns => [key, valueJson, updatedAt];
+  late final GeneratedColumn<int> syncVersion = GeneratedColumn<int>(
+      'sync_version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [key, valueJson, updatedAt, syncVersion];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4244,6 +4334,12 @@ class $AppSettingsTableTable extends AppSettingsTable
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('sync_version')) {
+      context.handle(
+          _syncVersionMeta,
+          syncVersion.isAcceptableOrUnknown(
+              data['sync_version']!, _syncVersionMeta));
+    }
     return context;
   }
 
@@ -4259,6 +4355,8 @@ class $AppSettingsTableTable extends AppSettingsTable
           .read(DriftSqlType.string, data['${effectivePrefix}value_json'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      syncVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_version'])!,
     );
   }
 
@@ -4272,14 +4370,22 @@ class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
   final String key;
   final String valueJson;
   final DateTime updatedAt;
+
+  /// Per-key sync version, incremented locally on every write. Compared
+  /// against the remote manifest to decide whether to push/pull.
+  final int syncVersion;
   const AppSettingRow(
-      {required this.key, required this.valueJson, required this.updatedAt});
+      {required this.key,
+      required this.valueJson,
+      required this.updatedAt,
+      required this.syncVersion});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['key'] = Variable<String>(key);
     map['value_json'] = Variable<String>(valueJson);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['sync_version'] = Variable<int>(syncVersion);
     return map;
   }
 
@@ -4288,6 +4394,7 @@ class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
       key: Value(key),
       valueJson: Value(valueJson),
       updatedAt: Value(updatedAt),
+      syncVersion: Value(syncVersion),
     );
   }
 
@@ -4298,6 +4405,7 @@ class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
       key: serializer.fromJson<String>(json['key']),
       valueJson: serializer.fromJson<String>(json['valueJson']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      syncVersion: serializer.fromJson<int>(json['syncVersion']),
     );
   }
   @override
@@ -4307,21 +4415,28 @@ class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
       'key': serializer.toJson<String>(key),
       'valueJson': serializer.toJson<String>(valueJson),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'syncVersion': serializer.toJson<int>(syncVersion),
     };
   }
 
   AppSettingRow copyWith(
-          {String? key, String? valueJson, DateTime? updatedAt}) =>
+          {String? key,
+          String? valueJson,
+          DateTime? updatedAt,
+          int? syncVersion}) =>
       AppSettingRow(
         key: key ?? this.key,
         valueJson: valueJson ?? this.valueJson,
         updatedAt: updatedAt ?? this.updatedAt,
+        syncVersion: syncVersion ?? this.syncVersion,
       );
   AppSettingRow copyWithCompanion(AppSettingsTableCompanion data) {
     return AppSettingRow(
       key: data.key.present ? data.key.value : this.key,
       valueJson: data.valueJson.present ? data.valueJson.value : this.valueJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      syncVersion:
+          data.syncVersion.present ? data.syncVersion.value : this.syncVersion,
     );
   }
 
@@ -4330,37 +4445,42 @@ class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
     return (StringBuffer('AppSettingRow(')
           ..write('key: $key, ')
           ..write('valueJson: $valueJson, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('syncVersion: $syncVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(key, valueJson, updatedAt);
+  int get hashCode => Object.hash(key, valueJson, updatedAt, syncVersion);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppSettingRow &&
           other.key == this.key &&
           other.valueJson == this.valueJson &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.syncVersion == this.syncVersion);
 }
 
 class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
   final Value<String> key;
   final Value<String> valueJson;
   final Value<DateTime> updatedAt;
+  final Value<int> syncVersion;
   final Value<int> rowid;
   const AppSettingsTableCompanion({
     this.key = const Value.absent(),
     this.valueJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.syncVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AppSettingsTableCompanion.insert({
     required String key,
     required String valueJson,
     required DateTime updatedAt,
+    this.syncVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : key = Value(key),
         valueJson = Value(valueJson),
@@ -4369,12 +4489,14 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
     Expression<String>? key,
     Expression<String>? valueJson,
     Expression<DateTime>? updatedAt,
+    Expression<int>? syncVersion,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (key != null) 'key': key,
       if (valueJson != null) 'value_json': valueJson,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (syncVersion != null) 'sync_version': syncVersion,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4383,11 +4505,13 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
       {Value<String>? key,
       Value<String>? valueJson,
       Value<DateTime>? updatedAt,
+      Value<int>? syncVersion,
       Value<int>? rowid}) {
     return AppSettingsTableCompanion(
       key: key ?? this.key,
       valueJson: valueJson ?? this.valueJson,
       updatedAt: updatedAt ?? this.updatedAt,
+      syncVersion: syncVersion ?? this.syncVersion,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4404,6 +4528,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (syncVersion.present) {
+      map['sync_version'] = Variable<int>(syncVersion.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4416,6 +4543,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingRow> {
           ..write('key: $key, ')
           ..write('valueJson: $valueJson, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('syncVersion: $syncVersion, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4975,6 +5103,20 @@ class $PuzzleCompletionsTableTable extends PuzzleCompletionsTable
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _clientUuidMeta =
+      const VerificationMeta('clientUuid');
+  @override
+  late final GeneratedColumn<String> clientUuid = GeneratedColumn<String>(
+      'client_uuid', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('local'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -4985,7 +5127,9 @@ class $PuzzleCompletionsTableTable extends PuzzleCompletionsTable
         solvedTimezone,
         elapsedMs,
         checkCount,
-        revealCount
+        revealCount,
+        clientUuid,
+        deviceId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5055,11 +5199,27 @@ class $PuzzleCompletionsTableTable extends PuzzleCompletionsTable
           revealCount.isAcceptableOrUnknown(
               data['reveal_count']!, _revealCountMeta));
     }
+    if (data.containsKey('client_uuid')) {
+      context.handle(
+          _clientUuidMeta,
+          clientUuid.isAcceptableOrUnknown(
+              data['client_uuid']!, _clientUuidMeta));
+    } else if (isInserting) {
+      context.missing(_clientUuidMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+        {clientUuid},
+      ];
   @override
   PuzzleCompletionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -5082,6 +5242,10 @@ class $PuzzleCompletionsTableTable extends PuzzleCompletionsTable
           .read(DriftSqlType.int, data['${effectivePrefix}check_count'])!,
       revealCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}reveal_count'])!,
+      clientUuid: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}client_uuid'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
     );
   }
 
@@ -5106,6 +5270,15 @@ class PuzzleCompletionRow extends DataClass
   final int elapsedMs;
   final int checkCount;
   final int revealCount;
+
+  /// UUID v4 generated at insert. Acts as the dedupe key when merging
+  /// completion history across devices — every row is content-stable and
+  /// append-only, so set-union by [clientUuid] is conflict-free.
+  final String clientUuid;
+
+  /// Originating device id (mirror of `app_settings.device_id` at insert
+  /// time). Provenance + LWW tiebreaks elsewhere.
+  final String deviceId;
   const PuzzleCompletionRow(
       {required this.id,
       required this.puzzleId,
@@ -5115,7 +5288,9 @@ class PuzzleCompletionRow extends DataClass
       this.solvedTimezone,
       required this.elapsedMs,
       required this.checkCount,
-      required this.revealCount});
+      required this.revealCount,
+      required this.clientUuid,
+      required this.deviceId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5130,6 +5305,8 @@ class PuzzleCompletionRow extends DataClass
     map['elapsed_ms'] = Variable<int>(elapsedMs);
     map['check_count'] = Variable<int>(checkCount);
     map['reveal_count'] = Variable<int>(revealCount);
+    map['client_uuid'] = Variable<String>(clientUuid);
+    map['device_id'] = Variable<String>(deviceId);
     return map;
   }
 
@@ -5146,6 +5323,8 @@ class PuzzleCompletionRow extends DataClass
       elapsedMs: Value(elapsedMs),
       checkCount: Value(checkCount),
       revealCount: Value(revealCount),
+      clientUuid: Value(clientUuid),
+      deviceId: Value(deviceId),
     );
   }
 
@@ -5162,6 +5341,8 @@ class PuzzleCompletionRow extends DataClass
       elapsedMs: serializer.fromJson<int>(json['elapsedMs']),
       checkCount: serializer.fromJson<int>(json['checkCount']),
       revealCount: serializer.fromJson<int>(json['revealCount']),
+      clientUuid: serializer.fromJson<String>(json['clientUuid']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
     );
   }
   @override
@@ -5177,6 +5358,8 @@ class PuzzleCompletionRow extends DataClass
       'elapsedMs': serializer.toJson<int>(elapsedMs),
       'checkCount': serializer.toJson<int>(checkCount),
       'revealCount': serializer.toJson<int>(revealCount),
+      'clientUuid': serializer.toJson<String>(clientUuid),
+      'deviceId': serializer.toJson<String>(deviceId),
     };
   }
 
@@ -5189,7 +5372,9 @@ class PuzzleCompletionRow extends DataClass
           Value<String?> solvedTimezone = const Value.absent(),
           int? elapsedMs,
           int? checkCount,
-          int? revealCount}) =>
+          int? revealCount,
+          String? clientUuid,
+          String? deviceId}) =>
       PuzzleCompletionRow(
         id: id ?? this.id,
         puzzleId: puzzleId ?? this.puzzleId,
@@ -5201,6 +5386,8 @@ class PuzzleCompletionRow extends DataClass
         elapsedMs: elapsedMs ?? this.elapsedMs,
         checkCount: checkCount ?? this.checkCount,
         revealCount: revealCount ?? this.revealCount,
+        clientUuid: clientUuid ?? this.clientUuid,
+        deviceId: deviceId ?? this.deviceId,
       );
   PuzzleCompletionRow copyWithCompanion(PuzzleCompletionsTableCompanion data) {
     return PuzzleCompletionRow(
@@ -5222,6 +5409,9 @@ class PuzzleCompletionRow extends DataClass
           data.checkCount.present ? data.checkCount.value : this.checkCount,
       revealCount:
           data.revealCount.present ? data.revealCount.value : this.revealCount,
+      clientUuid:
+          data.clientUuid.present ? data.clientUuid.value : this.clientUuid,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -5236,14 +5426,26 @@ class PuzzleCompletionRow extends DataClass
           ..write('solvedTimezone: $solvedTimezone, ')
           ..write('elapsedMs: $elapsedMs, ')
           ..write('checkCount: $checkCount, ')
-          ..write('revealCount: $revealCount')
+          ..write('revealCount: $revealCount, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, puzzleId, completionType, completedAt,
-      solvedDateLocal, solvedTimezone, elapsedMs, checkCount, revealCount);
+  int get hashCode => Object.hash(
+      id,
+      puzzleId,
+      completionType,
+      completedAt,
+      solvedDateLocal,
+      solvedTimezone,
+      elapsedMs,
+      checkCount,
+      revealCount,
+      clientUuid,
+      deviceId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5256,7 +5458,9 @@ class PuzzleCompletionRow extends DataClass
           other.solvedTimezone == this.solvedTimezone &&
           other.elapsedMs == this.elapsedMs &&
           other.checkCount == this.checkCount &&
-          other.revealCount == this.revealCount);
+          other.revealCount == this.revealCount &&
+          other.clientUuid == this.clientUuid &&
+          other.deviceId == this.deviceId);
 }
 
 class PuzzleCompletionsTableCompanion
@@ -5270,6 +5474,8 @@ class PuzzleCompletionsTableCompanion
   final Value<int> elapsedMs;
   final Value<int> checkCount;
   final Value<int> revealCount;
+  final Value<String> clientUuid;
+  final Value<String> deviceId;
   const PuzzleCompletionsTableCompanion({
     this.id = const Value.absent(),
     this.puzzleId = const Value.absent(),
@@ -5280,6 +5486,8 @@ class PuzzleCompletionsTableCompanion
     this.elapsedMs = const Value.absent(),
     this.checkCount = const Value.absent(),
     this.revealCount = const Value.absent(),
+    this.clientUuid = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   PuzzleCompletionsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -5291,11 +5499,14 @@ class PuzzleCompletionsTableCompanion
     required int elapsedMs,
     this.checkCount = const Value.absent(),
     this.revealCount = const Value.absent(),
+    required String clientUuid,
+    this.deviceId = const Value.absent(),
   })  : puzzleId = Value(puzzleId),
         completionType = Value(completionType),
         completedAt = Value(completedAt),
         solvedDateLocal = Value(solvedDateLocal),
-        elapsedMs = Value(elapsedMs);
+        elapsedMs = Value(elapsedMs),
+        clientUuid = Value(clientUuid);
   static Insertable<PuzzleCompletionRow> custom({
     Expression<int>? id,
     Expression<String>? puzzleId,
@@ -5306,6 +5517,8 @@ class PuzzleCompletionsTableCompanion
     Expression<int>? elapsedMs,
     Expression<int>? checkCount,
     Expression<int>? revealCount,
+    Expression<String>? clientUuid,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5317,6 +5530,8 @@ class PuzzleCompletionsTableCompanion
       if (elapsedMs != null) 'elapsed_ms': elapsedMs,
       if (checkCount != null) 'check_count': checkCount,
       if (revealCount != null) 'reveal_count': revealCount,
+      if (clientUuid != null) 'client_uuid': clientUuid,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -5329,7 +5544,9 @@ class PuzzleCompletionsTableCompanion
       Value<String?>? solvedTimezone,
       Value<int>? elapsedMs,
       Value<int>? checkCount,
-      Value<int>? revealCount}) {
+      Value<int>? revealCount,
+      Value<String>? clientUuid,
+      Value<String>? deviceId}) {
     return PuzzleCompletionsTableCompanion(
       id: id ?? this.id,
       puzzleId: puzzleId ?? this.puzzleId,
@@ -5340,6 +5557,8 @@ class PuzzleCompletionsTableCompanion
       elapsedMs: elapsedMs ?? this.elapsedMs,
       checkCount: checkCount ?? this.checkCount,
       revealCount: revealCount ?? this.revealCount,
+      clientUuid: clientUuid ?? this.clientUuid,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -5373,6 +5592,12 @@ class PuzzleCompletionsTableCompanion
     if (revealCount.present) {
       map['reveal_count'] = Variable<int>(revealCount.value);
     }
+    if (clientUuid.present) {
+      map['client_uuid'] = Variable<String>(clientUuid.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -5387,7 +5612,9 @@ class PuzzleCompletionsTableCompanion
           ..write('solvedTimezone: $solvedTimezone, ')
           ..write('elapsedMs: $elapsedMs, ')
           ..write('checkCount: $checkCount, ')
-          ..write('revealCount: $revealCount')
+          ..write('revealCount: $revealCount, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -5977,6 +6204,8 @@ typedef $$PuzzlesTableTableCreateCompanionBuilder = PuzzlesTableCompanion
   Value<DateTime?> expiresAt,
   required DateTime createdAt,
   required DateTime updatedAt,
+  Value<bool> isSynced,
+  Value<int> syncVersion,
   Value<int> rowid,
 });
 typedef $$PuzzlesTableTableUpdateCompanionBuilder = PuzzlesTableCompanion
@@ -6002,6 +6231,8 @@ typedef $$PuzzlesTableTableUpdateCompanionBuilder = PuzzlesTableCompanion
   Value<DateTime?> expiresAt,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<bool> isSynced,
+  Value<int> syncVersion,
   Value<int> rowid,
 });
 
@@ -6145,6 +6376,12 @@ class $$PuzzlesTableTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isSynced => $composableBuilder(
+      column: $table.isSynced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnFilters(column));
 
   $$SourcesTableTableFilterComposer get sourceId {
     final $$SourcesTableTableFilterComposer composer = $composerBuilder(
@@ -6303,6 +6540,12 @@ class $$PuzzlesTableTableOrderingComposer
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isSynced => $composableBuilder(
+      column: $table.isSynced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnOrderings(column));
+
   $$SourcesTableTableOrderingComposer get sourceId {
     final $$SourcesTableTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -6392,6 +6635,12 @@ class $$PuzzlesTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSynced =>
+      $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  GeneratedColumn<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => column);
 
   $$SourcesTableTableAnnotationComposer get sourceId {
     final $$SourcesTableTableAnnotationComposer composer = $composerBuilder(
@@ -6528,6 +6777,8 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
             Value<DateTime?> expiresAt = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<bool> isSynced = const Value.absent(),
+            Value<int> syncVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PuzzlesTableCompanion(
@@ -6552,6 +6803,8 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
             expiresAt: expiresAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            isSynced: isSynced,
+            syncVersion: syncVersion,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -6576,6 +6829,8 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
             Value<DateTime?> expiresAt = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
+            Value<bool> isSynced = const Value.absent(),
+            Value<int> syncVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PuzzlesTableCompanion.insert(
@@ -6600,6 +6855,8 @@ class $$PuzzlesTableTableTableManager extends RootTableManager<
             expiresAt: expiresAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            isSynced: isSynced,
+            syncVersion: syncVersion,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -8092,6 +8349,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder
   required String key,
   required String valueJson,
   required DateTime updatedAt,
+  Value<int> syncVersion,
   Value<int> rowid,
 });
 typedef $$AppSettingsTableTableUpdateCompanionBuilder
@@ -8099,6 +8357,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder
   Value<String> key,
   Value<String> valueJson,
   Value<DateTime> updatedAt,
+  Value<int> syncVersion,
   Value<int> rowid,
 });
 
@@ -8119,6 +8378,9 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnFilters(column));
 }
 
 class $$AppSettingsTableTableOrderingComposer
@@ -8138,6 +8400,9 @@ class $$AppSettingsTableTableOrderingComposer
 
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppSettingsTableTableAnnotationComposer
@@ -8157,6 +8422,9 @@ class $$AppSettingsTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableTableManager extends RootTableManager<
@@ -8189,24 +8457,28 @@ class $$AppSettingsTableTableTableManager extends RootTableManager<
             Value<String> key = const Value.absent(),
             Value<String> valueJson = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> syncVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AppSettingsTableCompanion(
             key: key,
             valueJson: valueJson,
             updatedAt: updatedAt,
+            syncVersion: syncVersion,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String key,
             required String valueJson,
             required DateTime updatedAt,
+            Value<int> syncVersion = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AppSettingsTableCompanion.insert(
             key: key,
             valueJson: valueJson,
             updatedAt: updatedAt,
+            syncVersion: syncVersion,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -8482,6 +8754,8 @@ typedef $$PuzzleCompletionsTableTableCreateCompanionBuilder
   required int elapsedMs,
   Value<int> checkCount,
   Value<int> revealCount,
+  required String clientUuid,
+  Value<String> deviceId,
 });
 typedef $$PuzzleCompletionsTableTableUpdateCompanionBuilder
     = PuzzleCompletionsTableCompanion Function({
@@ -8494,6 +8768,8 @@ typedef $$PuzzleCompletionsTableTableUpdateCompanionBuilder
   Value<int> elapsedMs,
   Value<int> checkCount,
   Value<int> revealCount,
+  Value<String> clientUuid,
+  Value<String> deviceId,
 });
 
 final class $$PuzzleCompletionsTableTableReferences extends BaseReferences<
@@ -8553,6 +8829,12 @@ class $$PuzzleCompletionsTableTableFilterComposer
   ColumnFilters<int> get revealCount => $composableBuilder(
       column: $table.revealCount, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get clientUuid => $composableBuilder(
+      column: $table.clientUuid, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
   $$PuzzlesTableTableFilterComposer get puzzleId {
     final $$PuzzlesTableTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -8610,6 +8892,12 @@ class $$PuzzleCompletionsTableTableOrderingComposer
   ColumnOrderings<int> get revealCount => $composableBuilder(
       column: $table.revealCount, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get clientUuid => $composableBuilder(
+      column: $table.clientUuid, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
   $$PuzzlesTableTableOrderingComposer get puzzleId {
     final $$PuzzlesTableTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -8663,6 +8951,12 @@ class $$PuzzleCompletionsTableTableAnnotationComposer
 
   GeneratedColumn<int> get revealCount => $composableBuilder(
       column: $table.revealCount, builder: (column) => column);
+
+  GeneratedColumn<String> get clientUuid => $composableBuilder(
+      column: $table.clientUuid, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
   $$PuzzlesTableTableAnnotationComposer get puzzleId {
     final $$PuzzlesTableTableAnnotationComposer composer = $composerBuilder(
@@ -8721,6 +9015,8 @@ class $$PuzzleCompletionsTableTableTableManager extends RootTableManager<
             Value<int> elapsedMs = const Value.absent(),
             Value<int> checkCount = const Value.absent(),
             Value<int> revealCount = const Value.absent(),
+            Value<String> clientUuid = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
           }) =>
               PuzzleCompletionsTableCompanion(
             id: id,
@@ -8732,6 +9028,8 @@ class $$PuzzleCompletionsTableTableTableManager extends RootTableManager<
             elapsedMs: elapsedMs,
             checkCount: checkCount,
             revealCount: revealCount,
+            clientUuid: clientUuid,
+            deviceId: deviceId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -8743,6 +9041,8 @@ class $$PuzzleCompletionsTableTableTableManager extends RootTableManager<
             required int elapsedMs,
             Value<int> checkCount = const Value.absent(),
             Value<int> revealCount = const Value.absent(),
+            required String clientUuid,
+            Value<String> deviceId = const Value.absent(),
           }) =>
               PuzzleCompletionsTableCompanion.insert(
             id: id,
@@ -8754,6 +9054,8 @@ class $$PuzzleCompletionsTableTableTableManager extends RootTableManager<
             elapsedMs: elapsedMs,
             checkCount: checkCount,
             revealCount: revealCount,
+            clientUuid: clientUuid,
+            deviceId: deviceId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (

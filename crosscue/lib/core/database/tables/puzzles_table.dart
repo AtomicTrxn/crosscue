@@ -31,6 +31,10 @@ class PuzzlesTable extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
+  // Sync-readiness columns — populated by SyncOrchestrator.
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+  IntColumn get syncVersion => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 

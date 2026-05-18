@@ -4,6 +4,7 @@
 // via getStats() with seeded imported_solve_stats rows (no puzzle FK needed).
 
 import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/utils/uuid.dart';
 import 'package:crosscue/features/stats/data/repositories/stats_repository_impl.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
@@ -82,6 +83,7 @@ void main() {
             solvedDateLocal: '2025-01-02',
             solvedTimezone: const Value('America/New_York'),
             elapsedMs: 42000,
+            clientUuid: Uuid.v4(),
           ),
         );
   }

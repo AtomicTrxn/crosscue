@@ -34,4 +34,18 @@ class PuzzleCompletionsTable extends Table {
   IntColumn get elapsedMs => integer()();
   IntColumn get checkCount => integer().withDefault(const Constant(0))();
   IntColumn get revealCount => integer().withDefault(const Constant(0))();
+
+  /// UUID v4 generated at insert. Acts as the dedupe key when merging
+  /// completion history across devices — every row is content-stable and
+  /// append-only, so set-union by [clientUuid] is conflict-free.
+  TextColumn get clientUuid => text()();
+
+  /// Originating device id (mirror of `app_settings.device_id` at insert
+  /// time). Provenance + LWW tiebreaks elsewhere.
+  TextColumn get deviceId => text().withDefault(const Constant('local'))();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {clientUuid},
+      ];
 }
