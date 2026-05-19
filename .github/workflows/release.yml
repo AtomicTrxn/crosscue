@@ -3,7 +3,9 @@ name: Release
 # Dispatch-only. Tag the commit you want to ship first
 # (`git tag vX.Y.Z && git push origin vX.Y.Z`), then run this workflow with
 # that tag. Each dispatch produces exactly one signed APK + GitHub Release,
-# plus an optional signed AAB upload to a Play Store track.
+# plus an optional signed AAB upload to a Play Store track, plus an iOS job
+# that builds a signed .ipa and uploads it to TestFlight (toggle off with
+# test_flight: false). The Android and iOS jobs run in parallel.
 on:
   workflow_dispatch:
     inputs:
@@ -23,6 +25,10 @@ on:
           - alpha
           - beta
           - production
+      test_flight:
+        description: 'Build signed IPA and upload to TestFlight'
+        type: boolean
+        default: true
 
 env:
   FLUTTER_VERSION: '3.41.9'
@@ -120,3 +126,111 @@ jobs:
           releaseFiles: crosscue/build/app/outputs/bundle/release/app-release.aab
           track: ${{ inputs.track }}
           status: completed
+
+  ios:
+    name: Build & upload iOS to TestFlight
+    if: ${{ inputs.test_flight == true }}
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: crosscue
+
+    steps:
+      - name: Check out tag
+        uses: actions/checkout@v4.2.0
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Parse version
+        id: version
+        run: |
+          TAG="${{ inputs.tag }}"
+          VERSION="${TAG#v}"
+          IFS='.' read -r major minor patch <<< "$VERSION"
+          CODE=$(( major * 10000 + minor * 100 + patch ))
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE"    >> "$GITHUB_OUTPUT"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Build a one-shot keychain that's discarded with the runner. Importing
+      # straight into the default login keychain would leak the cert if the
+      # runner image is ever reused.
+      - name: Import signing certificate
+        env:
+          CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+        working-directory: .
+        run: |
+          CERT_PATH="$RUNNER_TEMP/cert.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+
+          echo "$CERT_BASE64" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" \
+            -P "$CERT_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          # Avoids the "do you want to allow access" prompt during codesign.
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+        working-directory: .
+        run: |
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILE_DIR"
+          echo "$PROFILE_BASE64" | base64 --decode \
+            > "$PROFILE_DIR/release.mobileprovision"
+
+      - name: Build signed IPA
+        run: |
+          flutter build ipa \
+            --release \
+            --no-pub \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ steps.version.outputs.code }} \
+            --export-method=app-store
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crosscue-ios-${{ steps.version.outputs.name }}
+          path: crosscue/build/ios/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      # Apple ID + app-specific password is the simplest auth path for altool;
+      # an App Store Connect API key would also work but needs an additional
+      # secret (issuer ID) we haven't provisioned. --asc-provider disambiguates
+      # if the Apple ID has access to multiple teams.
+      - name: Upload to TestFlight
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_DEVELOPMENT_TEAM_ID: ${{ secrets.APPLE_DEVELOPMENT_TEAM_ID }}
+        run: |
+          IPA_PATH=$(ls build/ios/ipa/*.ipa | head -1)
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --username "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --asc-provider "$APPLE_DEVELOPMENT_TEAM_ID"
