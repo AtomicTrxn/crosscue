@@ -110,43 +110,15 @@ extension _CrosswordGridInput on _CrosswordGridState {
 
   Future<void> _showRebusDialog(BuildContext context, int row, int col) async {
     final current = widget.solveState.progress.cell(row, col).letter;
-    final controller =
-        TextEditingController(text: current.length > 1 ? current : '');
-    final value = await showDialog<String>(
+    final wordComplete = await showRebusDialogForFocus(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Enter rebus'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.characters,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(_letterFilterRe),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Cell answer',
-              hintText: 'Example: EST',
-            ),
-            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-              child: const Text('Enter'),
-            ),
-          ],
-        );
-      },
+      ref: ref,
+      puzzleId: widget.puzzleId,
+      currentLetter: current,
     );
-    controller.dispose();
-    if (value == null) return;
-    final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
-    _pulseIfWordComplete(notifier.inputRebus(value));
+    if (wordComplete != null) {
+      _pulseIfWordComplete(wordComplete);
+    }
     _requestFocus();
   }
 
@@ -161,6 +133,17 @@ extension _CrosswordGridInput on _CrosswordGridState {
         event.logicalKey == LogicalKeyboardKey.delete) {
       _playFeedbackSound();
       notifier.backspace();
+      return KeyEventResult.handled;
+    }
+
+    // Esc opens the rebus dialog on the focused cell — matches NYT web's
+    // shortcut. Repeats are ignored so holding Esc doesn't reopen on every
+    // tick. Esc inside the dialog falls through to Flutter's default
+    // AlertDialog "cancel" behavior.
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      if (event is KeyRepeatEvent) return KeyEventResult.handled;
+      final focus = widget.solveState.focus;
+      _showRebusDialog(context, focus.row, focus.col);
       return KeyEventResult.handled;
     }
 
@@ -281,4 +264,95 @@ enum _CellAction {
   checkWord,
   revealLetter,
   revealWord
+}
+
+/// Shared rebus dialog used by:
+///   1. The long-press popup menu (see `_CrosswordGridInput._onLongPress`)
+///   2. The "Rebus" key on the soft keyboard (see `solve_screen.dart`)
+///   3. The `Esc` shortcut on a physical keyboard (see `_onKeyEvent`)
+///
+/// All three surfaces share one implementation so the rules (pre-fill,
+/// formatter, max length, tap-outside-to-save, single-char round-trip)
+/// stay in lockstep. See `docs/architecture/rebus-entry.md` §4.4.
+///
+/// Returns:
+///   - `null` if the dialog was cancelled (Cancel button pressed).
+///   - The `wordComplete` flag from `SolveNotifier.inputRebus` otherwise.
+///     `false` includes the no-op case (empty input). Callers can use this
+///     for haptics / sound on word completion.
+Future<bool?> showRebusDialogForFocus({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String puzzleId,
+  required String currentLetter,
+}) async {
+  // Pre-fill any existing entry — single-char or multi-char — so the user
+  // can "promote" a single letter into a rebus by appending. (NYT Games
+  // pre-fills similarly; see docs/architecture/rebus-entry.md §4.4.)
+  final controller = TextEditingController(text: currentLetter);
+  // Captured by PopScope: when the user taps outside (barrier dismiss)
+  // we commit the current text rather than discarding it. The Cancel
+  // button explicitly nulls this out before popping.
+  String? barrierPending;
+  bool cancelled = false;
+  final value = await showDialog<String>(
+    context: context,
+    // Tap-outside-to-save (matches NYT's "tap anywhere inside the grid to
+    // close and save your rebus"). Cancel button overrides via the
+    // `cancelled` flag captured below.
+    barrierDismissible: true,
+    builder: (dialogContext) {
+      return PopScope<Object?>(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) return;
+          if (cancelled) return;
+          if (result == null) {
+            // Barrier tap (or system back) — save the current text.
+            barrierPending = controller.text;
+          }
+        },
+        child: AlertDialog(
+          title: const Text('Enter rebus'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            maxLength: SolveNotifier.rebusMaxLength,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(_rebusFilterRe),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Cell answer',
+              // Mention "/" so users discover bidirectional rebuses.
+              hintText: 'Example: EST  (or PB/AU for bidirectional)',
+            ),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                cancelled = true;
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('Enter'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+  controller.dispose();
+  if (cancelled) return null;
+  final effective = value ?? barrierPending;
+  if (effective == null) return null;
+  final notifier = ref.read(solveProvider(puzzleId).notifier);
+  // inputRebus normalizes (uppercases, strips non-`[A-Z/]`, caps at 6) and
+  // delegates back to inputLetter when the result is one character — so
+  // the dialog is never a dead end for users who change their mind.
+  return notifier.inputRebus(effective);
 }

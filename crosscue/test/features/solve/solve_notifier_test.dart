@@ -197,6 +197,188 @@ void main() {
       const FocusPosition(row: 1, col: 0, direction: Direction.across),
     );
   });
+
+  // ----------------------------------------------------------------------
+  // Rebus entry — see docs/architecture/rebus-entry.md
+  // ----------------------------------------------------------------------
+
+  test('inputRebus normalizes and ignores empty input', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    expect(notifier.inputRebus(''), isFalse);
+    expect(notifier.inputRebus('   '), isFalse);
+    expect(container.read(provider).value!.progress.cell(0, 0).letter, isEmpty);
+  });
+
+  test('inputRebus with a single character delegates to inputLetter', () async {
+    // Round-trip safety: a 1-char rebus submission should behave identically
+    // to typing that letter, so the rebus dialog is never a dead end for
+    // users who change their mind.
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.inputRebus('a');
+
+    final solveState = container.read(provider).value!;
+    expect(solveState.progress.cell(0, 0).letter, equals('A'));
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 1, direction: Direction.across),
+    );
+  });
+
+  test('inputRebus caps overlong input at 6 characters', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    container.read(provider.notifier).inputRebus('abcdefghij');
+
+    expect(
+      container.read(provider).value!.progress.cell(0, 0).letter,
+      equals('ABCDEF'),
+    );
+  });
+
+  test('inputRebus accepts "/" for bidirectional rebuses', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    container.read(provider.notifier).inputRebus('pb/au');
+
+    expect(
+      container.read(provider).value!.progress.cell(0, 0).letter,
+      equals('PB/AU'),
+    );
+  });
+
+  test('checkCell marks a first-letter rebus entry as correct', () async {
+    // checkCells must agree with the completion rule so users don't see a
+    // red ✗ on a "J" entry that completes a JACK rebus.
+    final puzzle = _rebusPuzzle();
+    final container = _containerFor(puzzle, _blankProgress2x1());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.inputLetter('J');
+    notifier.moveFocusTo(0, 0, Direction.across);
+    final result = notifier.checkCell();
+
+    expect(result, CheckResult.allCorrect);
+    expect(
+      container.read(provider).value!.progress.cell(0, 0).state,
+      CellState.checkedCorrect,
+    );
+  });
+
+  test('completion accepts the first letter of a rebus answer', () async {
+    // NYT-style forgiving rule (see solution_cell_test.dart for the
+    // acceptance table). A solver who never finds the Rebus key can still
+    // complete a JACK rebus by typing "J".
+    final puzzle = _rebusPuzzle();
+    final solveRepository = _FakeSolveRepository(_blankProgress2x1());
+    final container = ProviderContainer(
+      overrides: [
+        importRepositoryProvider
+            .overrideWithValue(_FakeImportRepository(puzzle)),
+        solveRepositoryProvider.overrideWithValue(solveRepository),
+        statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
+        appSettingsProvider
+            .overrideWithValue(const _FakeAppSettingsRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.inputLetter('J'); // rebus cell, accepts "J" alone for JACK
+    notifier.inputLetter('B'); // normal cell
+
+    final completed = await solveRepository.completed.future;
+    expect(completed.status, PuzzleStatus.solved);
+    expect(completed.completionType, CompletionType.clean);
+  });
+}
+
+Puzzle _rebusPuzzle() {
+  // 2x1 puzzle: rebus "JACK" in (0,0), plain "B" in (0,1).
+  return Puzzle(
+    metadata: PuzzleMetadata(
+      id: 'test:rebus',
+      sourceId: 'test',
+      title: 'Rebus',
+      author: 'Tester',
+      copyright: '',
+      format: PuzzleFormat.puz,
+      width: 2,
+      height: 1,
+      importedAt: DateTime.utc(2026),
+    ),
+    grid: Grid(
+      width: 2,
+      height: 1,
+      cells: const [
+        SolutionCell(solution: 'JACK', number: 1),
+        SolutionCell(solution: 'B', number: 2),
+      ],
+    ),
+    clues: const [
+      Clue(
+        number: 1,
+        direction: Direction.across,
+        text: 'Across',
+        startRow: 0,
+        startCol: 0,
+        length: 2,
+      ),
+      Clue(
+        number: 1,
+        direction: Direction.down,
+        text: 'A down',
+        startRow: 0,
+        startCol: 0,
+        length: 1,
+      ),
+      Clue(
+        number: 2,
+        direction: Direction.down,
+        text: 'B down',
+        startRow: 0,
+        startCol: 1,
+        length: 1,
+      ),
+    ],
+  );
+}
+
+Grid<CellProgress> _blankProgress2x1() {
+  return Grid(
+    width: 2,
+    height: 1,
+    cells: const [
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
 }
 
 ProviderContainer _containerFor(

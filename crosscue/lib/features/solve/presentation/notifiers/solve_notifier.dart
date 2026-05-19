@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
+import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -23,7 +24,14 @@ part 'solve_notifier.g.dart';
 class SolveNotifier extends _$SolveNotifier {
   // Compiled once; reused on every keystroke / rebus entry.
   static final _singleLetterRe = RegExp(r'^[A-Z]$');
-  static final _nonLetterRe = RegExp(r'[^A-Z]');
+  // Rebus entries accept A-Z plus "/" for bidirectional rebuses
+  // (e.g. "PB/AU" — see SolutionCellAccepts).
+  static final _nonRebusRe = RegExp(r'[^A-Z/]');
+
+  /// Maximum length of a rebus answer. Real-world rebuses top out at 5
+  /// characters; one buffer character covers exotic cases without
+  /// breaking the cell autoshrink budget in the painter.
+  static const int rebusMaxLength = 6;
 
   StreamSubscription<int>? _timerSub;
   Timer? _saveDebounce;
@@ -225,12 +233,29 @@ class SolveNotifier extends _$SolveNotifier {
     return clue != null && !wasWordComplete && updated.isWordComplete(clue);
   }
 
+  /// Writes a rebus answer to the currently focused cell.
+  ///
+  /// Normalization:
+  ///   - Upper-cased; non-`[A-Z/]` stripped (the "/" is permitted for
+  ///     bidirectional rebuses such as `"PB/AU"`).
+  ///   - Empty input → no-op (returns `false`).
+  ///   - Single-character input → delegates to [inputLetter] so the dialog
+  ///     can round-trip back to normal entry.
+  ///   - Anything longer than [rebusMaxLength] is truncated.
   bool inputRebus(String value) {
     final s = _s;
     if (s == null || s.isPaused || s.status.isTerminal) return false;
 
-    final upper = value.toUpperCase().replaceAll(_nonLetterRe, '');
-    if (upper.length < 2) return false;
+    var upper = value.toUpperCase().replaceAll(_nonRebusRe, '');
+    if (upper.isEmpty) return false;
+    if (upper.length == 1) {
+      // Round-trip safety: a 1-char rebus submission is identical to
+      // typing that letter on the keyboard.
+      return inputLetter(upper);
+    }
+    if (upper.length > rebusMaxLength) {
+      upper = upper.substring(0, rebusMaxLength);
+    }
 
     final r = s.focus.row;
     final c = s.focus.col;
@@ -536,8 +561,9 @@ class SolveNotifier extends _$SolveNotifier {
         final cell = s.puzzle.grid.cell(r, c);
         if (cell.isBlack) continue;
         final prog = s.progress.cell(r, c);
-        if (prog.letter.isEmpty ||
-            prog.letter.toUpperCase() != cell.solution.toUpperCase()) {
+        // Acceptance (incl. first-letter on rebus, bidirectional rebus)
+        // is centralized on SolutionCell — see SolutionCellAccepts.
+        if (!cell.accepts(prog.letter)) {
           return;
         }
       }

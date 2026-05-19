@@ -187,6 +187,23 @@ SolveScreen (ref.watch solveProvider(puzzleId))
   → CluePanel (reads solveState.activeClue + crossClue)
 ```
 
+**Rebus entry** (G6 — see `docs/architecture/rebus-entry.md`):
+Solvers reach the rebus dialog through three surfaces, all routed
+through one helper, `showRebusDialogForFocus`:
+
+  1. The always-visible **"Rebus"** key on the bottom-right of
+     `CrosswordKeyboard` (NYT-aligned position and label).
+  2. The **"Enter rebus"** item in the cell long-press menu inside
+     `CrosswordGrid`.
+  3. The **`Esc`** physical-keyboard shortcut.
+
+Acceptance is centralized on `SolutionCell.accepts(entered)` and used
+by `_checkCompletion` (in `SolveNotifier`), `GridProgressMutator.checkCells`,
+and `ClueProgressCalculator.isClueCorrect`. The rule accepts exact
+matches, the first letter of a rebus answer (so solvers who never
+discover rebus mode can still complete), and bidirectional rebuses
+delimited with "/" (e.g. `"PB/AU"`).
+
 ---
 
 ## Feature: `archive`

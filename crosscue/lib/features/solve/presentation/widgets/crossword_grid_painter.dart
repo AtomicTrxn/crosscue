@@ -4,6 +4,7 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -233,7 +234,7 @@ class CrosswordGridPainter extends CustomPainter {
     double scale = 1.0,
     double opacity = 1.0,
   }) {
-    final fontSize = (cellSize * CrosscueTypography.cellLetterFactor).clamp(
+    final baseFontSize = (cellSize * CrosscueTypography.cellLetterFactor).clamp(
       10.0,
       32.0,
     );
@@ -243,14 +244,25 @@ class CrosswordGridPainter extends CustomPainter {
       alpha: opacity.clamp(0.0, 1.0),
     );
 
+    // Rebus cells: shrink the font so multi-letter (or PB/AU) answers fit
+    // within the cell width minus a small padding. Lighter weight for
+    // 3+ chars relieves visual density. Single-letter cells fall through
+    // with no extra work.
+    final isRebus = letter.length > 1;
+    final fontWeight =
+        isRebus && letter.length >= 3 ? FontWeight.w600 : FontWeight.bold;
+    final autoshrunkFontSize = isRebus
+        ? _fitRebusFontSize(letter, baseFontSize, cellSize)
+        : baseFontSize;
+
     final tp = TextPainter(
       text: TextSpan(
         text: letter,
         style: TextStyle(
-          fontSize: fontSize * scale,
+          fontSize: autoshrunkFontSize * scale,
           color: effectiveColor,
           fontFamily: CrosscueTypography.roboto,
-          fontWeight: FontWeight.bold,
+          fontWeight: fontWeight,
           height: 1.0,
         ),
       ),
@@ -265,6 +277,40 @@ class CrosswordGridPainter extends CustomPainter {
         cellRect.top + (cellSize - tp.height) / 2,
       ),
     );
+  }
+
+  /// Returns a font size that lets a multi-character rebus answer fit
+  /// within a single cell on one line.
+  ///
+  /// Starts from [baseFontSize] and shrinks proportionally to fit
+  /// `cellSize - 2 * inset`. Floors at 7 pt to remain legible even for
+  /// 5–6 letter rebuses in a tiny mini-puzzle cell.
+  double _fitRebusFontSize(
+    String letter,
+    double baseFontSize,
+    double cellSize,
+  ) {
+    const minFontSize = 7.0;
+    final maxTextWidth = cellSize - 4.0; // 2pt padding each side
+    if (maxTextWidth <= 0) return minFontSize;
+
+    final tp = TextPainter(
+      text: TextSpan(
+        text: letter,
+        style: TextStyle(
+          fontSize: baseFontSize,
+          fontFamily: CrosscueTypography.roboto,
+          fontWeight: FontWeight.bold,
+          height: 1.0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout();
+
+    if (tp.width <= maxTextWidth) return baseFontSize;
+    final scaled = baseFontSize * (maxTextWidth / tp.width);
+    return scaled < minFontSize ? minFontSize : scaled;
   }
 
   Color _letterColorFor(int row, int col) {
@@ -313,9 +359,10 @@ class CrosswordGridPainter extends CustomPainter {
           ? (clue.startRow, clue.startCol + i)
           : (clue.startRow + i, clue.startCol);
       final progress = state.progress.cell(row, col);
-      final solution = state.puzzle.grid.cell(row, col).solution;
-      if (progress.letter.isEmpty ||
-          progress.letter.toUpperCase() != solution.toUpperCase()) {
+      final solutionCell = state.puzzle.grid.cell(row, col);
+      // Match the completion rule so a "J" entry on a JACK rebus cell
+      // still triggers the celebration green on the surrounding word.
+      if (!solutionCell.accepts(progress.letter)) {
         return false;
       }
     }

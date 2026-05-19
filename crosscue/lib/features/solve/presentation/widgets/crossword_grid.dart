@@ -21,7 +21,9 @@ part 'crossword_grid_input.dart';
 
 // Compiled once; reused on every physical-keyboard event and rebus keystroke.
 final _letterRe = RegExp(r'^[A-Za-z]$');
-final _letterFilterRe = RegExp('[A-Za-z]');
+// Rebus input allows A–Z plus "/" (bidirectional rebus delimiter — e.g.
+// PB/AU). See SolutionCellAccepts in core/domain/models/solution_cell.dart.
+final _rebusFilterRe = RegExp('[A-Za-z/]');
 
 /// The interactive crossword grid.
 ///

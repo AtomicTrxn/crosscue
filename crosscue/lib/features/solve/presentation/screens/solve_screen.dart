@@ -16,7 +16,8 @@ import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.da
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/completion_sheet.dart';
-import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart'
+    show CrosswordGrid, showRebusDialogForFocus;
 import 'package:crosscue/features/solve/presentation/widgets/crossword_keyboard.dart';
 import 'package:crosscue/features/solve/presentation/widgets/pause_overlay.dart';
 import 'package:crosscue/features/solve/presentation/widgets/solve_app_bar.dart';
@@ -424,6 +425,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                             _playFeedbackSound(soundsEnabled: soundsEnabled);
                           }
                         },
+                        onRebus: () => _openRebusDialog(
+                          context: context,
+                          solveState: solveState,
+                          hapticsEnabled: hapticsEnabled,
+                          soundsEnabled: soundsEnabled,
+                        ),
                       ),
 
                     // Bottom safe-area padding
@@ -456,6 +463,33 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Opens the rebus entry dialog for the currently focused cell.
+  /// Called from the soft keyboard's "Rebus" key. The long-press menu has
+  /// its own entry point inside [CrosswordGrid].
+  void _openRebusDialog({
+    required BuildContext context,
+    required SolveState solveState,
+    required bool hapticsEnabled,
+    required bool soundsEnabled,
+  }) {
+    if (hapticsEnabled) HapticFeedback.lightImpact();
+    final focus = solveState.focus;
+    final currentLetter = solveState.progress.cell(focus.row, focus.col).letter;
+    unawaited(
+      showRebusDialogForFocus(
+        context: context,
+        ref: ref,
+        puzzleId: widget.puzzleId,
+        currentLetter: currentLetter,
+      ).then((wordComplete) {
+        if (wordComplete == true) {
+          if (hapticsEnabled) HapticFeedback.mediumImpact();
+          _playFeedbackSound(soundsEnabled: soundsEnabled);
+        }
+      }),
     );
   }
 

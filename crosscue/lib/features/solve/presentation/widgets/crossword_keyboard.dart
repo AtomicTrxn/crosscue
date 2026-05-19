@@ -13,7 +13,11 @@ import 'package:flutter/services.dart';
 ///   5dp radius, 16px w500 #1A1A1A, shadow 0 1px 1px rgba(0,0,0,0.15)
 /// - Small puzzles: height 54dp, 17px text
 /// - ⌫ / ✓ keys: responsive width, #B0BEC5 / #1565C0 bg, white text
-/// - Three rows: QWERTYUIOP / ASDFGHJKL / ⌫ZXCVBNM✓
+/// - Rebus key: responsive width, neutral (keyDefault) bg, w600 label,
+///   bottom-right corner — matches the NYT Games convention so that the
+///   key is recognizable to solvers coming from other apps. See
+///   `docs/architecture/rebus-entry.md`.
+/// - Three rows: QWERTYUIOP / ASDFGHJKL / ⌫ZXCVBNM✓Rebus
 ///
 /// Physical keyboard input is still handled via the hidden [TextField] in
 /// [CrosswordGrid]; this widget handles soft-keyboard input only.
@@ -23,6 +27,7 @@ class CrosswordKeyboard extends StatelessWidget {
     required this.onLetter,
     required this.onBackspace,
     required this.onCheckWord,
+    required this.onRebus,
     required this.onFeedbackSound,
     this.isSmallPuzzle = false,
     this.hapticsEnabled = true,
@@ -32,6 +37,12 @@ class CrosswordKeyboard extends StatelessWidget {
   final void Function(String letter) onLetter;
   final VoidCallback onBackspace;
   final VoidCallback onCheckWord;
+
+  /// Opens the rebus entry dialog for the currently focused cell.
+  /// Always available (the key is on every puzzle so its presence
+  /// leaks no information about whether the puzzle contains a rebus).
+  final VoidCallback onRebus;
+
   final VoidCallback onFeedbackSound;
   final bool isSmallPuzzle;
   final bool hapticsEnabled;
@@ -80,6 +91,10 @@ class CrosswordKeyboard extends StatelessWidget {
             onCheckWord: () {
               if (hapticsEnabled) HapticFeedback.lightImpact();
               onCheckWord();
+            },
+            onRebus: () {
+              if (hapticsEnabled) HapticFeedback.lightImpact();
+              onRebus();
             },
             xwTheme: xwTheme,
             metrics: metrics,
@@ -149,6 +164,7 @@ class _BottomKeyRow extends StatelessWidget {
     required this.onLetter,
     required this.onBackspace,
     required this.onCheckWord,
+    required this.onRebus,
     required this.xwTheme,
     required this.metrics,
   });
@@ -157,6 +173,7 @@ class _BottomKeyRow extends StatelessWidget {
   final void Function(String) onLetter;
   final VoidCallback onBackspace;
   final VoidCallback onCheckWord;
+  final VoidCallback onRebus;
   final CrosswordTheme xwTheme;
   final _KeyMetrics metrics;
 
@@ -164,16 +181,28 @@ class _BottomKeyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final gapTotal = (keys.length + 1) * 3;
-        final unit = (constraints.maxWidth - gapTotal) / (keys.length + 2.6);
+        // Layout budget on the bottom row:
+        //   ⌫ (1.3u) + 7 letters (1u each) + ✓ (1.3u) + Rebus (1.7u)
+        // Rebus is wider than ⌫/✓ to fit the four-letter label without
+        // crowding. Three specials + N letters → unit math:
+        const backspaceUnits = 1.3;
+        const checkUnits = 1.3;
+        const rebusUnits = 1.7;
+        const specialUnitsTotal = backspaceUnits + checkUnits + rebusUnits;
+        const numSpecials = 3;
+        final gapTotal = (keys.length + numSpecials - 1) * 3;
+        final unit = (constraints.maxWidth - gapTotal) /
+            (keys.length + specialUnitsTotal);
         final keyWidth = unit;
-        final specialWidth = unit * 1.3;
+        final backspaceWidth = unit * backspaceUnits;
+        final checkWidth = unit * checkUnits;
+        final rebusWidth = unit * rebusUnits;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _SpecialKey(
               label: '⌫',
-              width: specialWidth,
+              width: backspaceWidth,
               color: xwTheme.keySpecial,
               textColor: Colors.white,
               metrics: metrics,
@@ -192,11 +221,21 @@ class _BottomKeyRow extends StatelessWidget {
             ],
             _SpecialKey(
               label: '✓',
-              width: specialWidth,
+              width: checkWidth,
               color: xwTheme.keyCheck,
               textColor: Colors.white,
               metrics: metrics,
               onTap: onCheckWord,
+            ),
+            const SizedBox(width: 3),
+            _SpecialKey(
+              label: 'Rebus',
+              width: rebusWidth,
+              color: xwTheme.keyDefault,
+              textColor: context.crosscueOnSurface1,
+              metrics: metrics,
+              onTap: onRebus,
+              fontSize: 12,
             ),
           ],
         );
@@ -269,6 +308,7 @@ class _SpecialKey extends StatelessWidget {
     required this.textColor,
     required this.metrics,
     required this.onTap,
+    this.fontSize = 14,
   });
 
   final String label;
@@ -277,6 +317,7 @@ class _SpecialKey extends StatelessWidget {
   final Color textColor;
   final _KeyMetrics metrics;
   final VoidCallback onTap;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +341,7 @@ class _SpecialKey extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: fontSize,
             fontWeight: FontWeight.w600,
             color: textColor,
             height: 1,

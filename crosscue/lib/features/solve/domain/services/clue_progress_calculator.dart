@@ -2,6 +2,7 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 
 /// Pure helpers for deriving clue-level solve progress from cell progress.
@@ -22,9 +23,10 @@ class ClueProgressCalculator {
   }) {
     for (final (row, col) in cellsFor(clue)) {
       final cellProgress = progress.cell(row, col);
-      final solution = puzzle.grid.cell(row, col).solution;
-      if (cellProgress.letter.isEmpty ||
-          cellProgress.letter.toUpperCase() != solution.toUpperCase()) {
+      final solutionCell = puzzle.grid.cell(row, col);
+      // Acceptance (incl. first-letter on rebus, bidirectional rebus) is
+      // centralized on SolutionCell — see SolutionCellAccepts.
+      if (!solutionCell.accepts(cellProgress.letter)) {
         return false;
       }
     }
@@ -38,12 +40,10 @@ class ClueProgressCalculator {
   }) {
     for (final (row, col) in cellsFor(clue)) {
       final cellProgress = progress.cell(row, col);
-      final solution = puzzle.grid.cell(row, col).solution;
+      final solutionCell = puzzle.grid.cell(row, col);
       final isLocked = cellProgress.state == CellState.checkedCorrect ||
           cellProgress.state == CellState.revealed;
-      if (!isLocked ||
-          cellProgress.letter.isEmpty ||
-          cellProgress.letter.toUpperCase() != solution.toUpperCase()) {
+      if (!isLocked || !solutionCell.accepts(cellProgress.letter)) {
         return false;
       }
     }

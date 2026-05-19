@@ -2,6 +2,7 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
+import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
@@ -29,12 +30,16 @@ class GridProgressMutator {
     var hasIncorrect = false;
 
     for (final (row, col) in cells) {
-      if (puzzle.grid.cell(row, col).isBlack) continue;
+      final solutionCell = puzzle.grid.cell(row, col);
+      if (solutionCell.isBlack) continue;
       final cell = updated.cell(row, col);
       if (cell.letter.isEmpty) continue;
 
-      final correct = cell.letter.toUpperCase() ==
-          puzzle.grid.cell(row, col).solution.toUpperCase();
+      // Acceptance (incl. first-letter on rebus, bidirectional rebus) is
+      // centralized on SolutionCell — see SolutionCellAccepts. Check-letter
+      // feedback must agree with the completion rule so users don't see a
+      // ✗ on a "J" that completes a JACK rebus.
+      final correct = solutionCell.accepts(cell.letter);
       checkedAny = true;
       hasIncorrect = hasIncorrect || !correct;
       updated = updated.withCell(
