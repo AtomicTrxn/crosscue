@@ -146,23 +146,44 @@ final class AppDatabaseProvider
 
 String _$appDatabaseHash() => r'98a09c6cfd43966155dfbdb0787fa18c85438e13';
 
-/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
-/// local-only build keeps working; the iCloud / Drive transports replace
-/// this provider once those land (see `docs/architecture/sync-progress.md`).
+/// Cloud transport for sync. Resolves to:
+/// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
+///   isn't configured yet (the native handler returns nil from `account()`,
+///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
+/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
+///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+///
+/// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
+/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
+/// but works fine in vm-based tests — those override the provider directly).
 
 @ProviderFor(syncTransport)
 final syncTransportProvider = SyncTransportProvider._();
 
-/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
-/// local-only build keeps working; the iCloud / Drive transports replace
-/// this provider once those land (see `docs/architecture/sync-progress.md`).
+/// Cloud transport for sync. Resolves to:
+/// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
+///   isn't configured yet (the native handler returns nil from `account()`,
+///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
+/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
+///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+///
+/// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
+/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
+/// but works fine in vm-based tests — those override the provider directly).
 
 final class SyncTransportProvider
     extends $FunctionalProvider<SyncTransport, SyncTransport, SyncTransport>
     with $Provider<SyncTransport> {
-  /// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
-  /// local-only build keeps working; the iCloud / Drive transports replace
-  /// this provider once those land (see `docs/architecture/sync-progress.md`).
+  /// Cloud transport for sync. Resolves to:
+  /// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
+  ///   isn't configured yet (the native handler returns nil from `account()`,
+  ///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
+  /// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
+  ///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+  ///
+  /// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
+  /// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
+  /// but works fine in vm-based tests — those override the provider directly).
   SyncTransportProvider._()
       : super(
           from: null,
@@ -196,7 +217,7 @@ final class SyncTransportProvider
   }
 }
 
-String _$syncTransportHash() => r'eb8f239117bd3eb584be39c55249b011ce0f0752';
+String _$syncTransportHash() => r'97b8dbb02800be63f339327995de880e8fd811e1';
 
 /// Sync orchestrator. Reads the current [syncTransport] and wires up the
 /// per-namespace adapters against the shared [appDatabase].

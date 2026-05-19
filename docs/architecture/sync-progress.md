@@ -24,13 +24,17 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | Convergence test | Two `AppDatabase.forTesting` instances + one `FakeSyncTransport` reach a stable state. |
 | ✅ | `flutter analyze` clean | |
 
-## Phase 2 — iCloud transport (deferred)
+## Phase 2 — iCloud transport
 
 | Status | Item | Notes |
 |---|---|---|
-| ⏳ | Add iCloud container entitlement to iOS Runner | Needs Apple Developer account / provisioning profile. |
-| ⏳ | `ICloudSyncTransport` impl | `path_provider`'s ubiquity container or a thin platform channel. |
-| ⏳ | Manual TestFlight soak | Two devices, same iCloud account, verify convergence + conflict behavior. |
+| ✅ | `ICloudSyncTransport` (Dart) | Method-channel client; safely no-ops when handler not registered (Android, tests). |
+| ✅ | `ICloudSyncHandler` (Swift) | `NSFileCoordinator` over the ubiquity container's `Documents/sync/` directory. |
+| ✅ | Channel registration in `AppDelegate` | Hooked into `didInitializeImplicitFlutterEngine`; safe before any entitlement is configured. |
+| ✅ | Conditional provider wiring | `syncTransportProvider` returns `ICloudSyncTransport` on iOS; `NoOpSyncTransport` elsewhere. |
+| ✅ | Tests for the Dart side | `MockMethodChannel` covers each method's argument marshaling + error swallowing. |
+| ⏳ | Apple Developer container + Xcode capability | One-time, manual; documented in [`sync-icloud-setup.md`](sync-icloud-setup.md). |
+| ⏳ | Manual two-device soak | After Step 5 above, on real devices on the same iCloud account. |
 
 ## Phase 3 — Google Drive transport (deferred)
 

@@ -12,5 +12,15 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Register sync transport handlers. Safe before any iCloud entitlement
+    // is configured — the handler returns nil from `account()` until
+    // ubiquityIdentityToken becomes non-nil. See
+    // `docs/architecture/sync-icloud-setup.md`.
+    if let registrar = engineBridge.pluginRegistry.registrar(
+      forPlugin: "ICloudSyncHandler"
+    ) {
+      ICloudSyncHandler.register(with: registrar.messenger())
+    }
   }
 }

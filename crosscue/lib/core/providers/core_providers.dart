@@ -1,12 +1,16 @@
+import 'dart:io' show Platform;
+
 import 'package:crosscue/core/audio/sound_player.dart';
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/entitlement/entitlement_service.dart';
 import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
 import 'package:crosscue/core/sync/sync_orchestrator.dart';
+import 'package:crosscue/core/sync/transport/icloud_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/telemetry/crash_reporter.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -39,11 +43,23 @@ Dio dio(Ref ref) => Dio(
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref ref) => AppDatabase();
 
-/// Cloud transport for sync. Defaults to [NoOpSyncTransport] so the
-/// local-only build keeps working; the iCloud / Drive transports replace
-/// this provider once those land (see `docs/architecture/sync-progress.md`).
+/// Cloud transport for sync. Resolves to:
+/// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
+///   isn't configured yet (the native handler returns nil from `account()`,
+///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
+/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
+///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+///
+/// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
+/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
+/// but works fine in vm-based tests — those override the provider directly).
 @Riverpod(keepAlive: true)
-SyncTransport syncTransport(Ref ref) => const NoOpSyncTransport();
+SyncTransport syncTransport(Ref ref) {
+  if (!kIsWeb && Platform.isIOS) {
+    return ICloudSyncTransport();
+  }
+  return const NoOpSyncTransport();
+}
 
 /// Sync orchestrator. Reads the current [syncTransport] and wires up the
 /// per-namespace adapters against the shared [appDatabase].
