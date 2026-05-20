@@ -77,6 +77,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # End-to-end integration testing on real simulators / devices.
+  # See integration_test/ for the test suite and docs/qa/ios-release-checklist.md
+  # for the manual QA checklist these tests gradually subsume.
+  integration_test:
+    sdk: flutter
+
   # Code generation
   build_runner: ^2.4.0
   freezed: ^3.2.5
