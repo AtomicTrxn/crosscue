@@ -92,6 +92,87 @@ adb -s <device-id> logcat -c
 
 ---
 
+## Running the App on iOS
+
+iOS development requires macOS with Xcode + CocoaPods. Android sections above
+use ADB and emulators; iOS uses `xcrun simctl` and the Simulator app.
+
+### Boot a simulator
+
+```bash
+xcrun simctl list devices available | grep -iE "iPhone 17 Pro Max|iPad Pro 13"
+xcrun simctl boot <udid>
+open -a Simulator
+```
+
+### Run with hot-reload
+
+Same as Android — just specify the iOS device UDID (or device name; `flutter
+devices` lists everything visible):
+
+```bash
+cd crosscue && flutter run --debug -d <udid>
+```
+
+`r` / `R` / `q` work the same as Android.
+
+### Build and install manually
+
+```bash
+cd crosscue
+flutter build ios --debug --no-pub --simulator    # Runner.app for simulators
+flutter build ipa --release                        # signed IPA for TestFlight
+
+xcrun simctl install booted build/ios/iphonesimulator/Runner.app
+xcrun simctl launch booted dev.tomhess.crosscue
+```
+
+Release IPAs are signed for App Store distribution and can only be installed
+via TestFlight or the App Store, not directly on a simulator.
+
+### Open in Xcode for breakpoints / signing
+
+```bash
+open crosscue/ios/Runner.xcworkspace
+```
+
+Always use `.xcworkspace`, not `.xcodeproj` — CocoaPods integration requires
+the workspace.
+
+### Capturing iOS logs
+
+Live stream from a simulator:
+```bash
+xcrun simctl spawn booted log stream --level debug \
+  --predicate 'subsystem == "dev.tomhess.crosscue"'
+```
+
+For physical devices, use Console.app (filter by device + process "Runner")
+or `idevicesyslog` from libimobiledevice.
+
+### Common iOS pitfalls
+
+- **`No Accounts` / `No profiles for ...` during archive** — the Release config
+  uses manual signing pinned to the `Crosscue App Store` provisioning profile.
+  Local Release builds require the profile installed at
+  `~/Library/MobileDevice/Provisioning Profiles/`. Debug and Profile use
+  automatic signing and just need your Apple ID in Xcode → Settings → Accounts.
+- **`Cannot find 'ICloudSyncHandler' in scope`** — `ICloudSyncHandler.swift`
+  must be registered in `Runner.xcodeproj` (`PBXBuildFile`, `PBXFileReference`,
+  Runner group, and Sources build phase). See commit `c4c1e39`.
+- **`NSProcessInfo.isiOSAppOnVision` not found** — `device_info_plus` 12.4.0
+  uses an iOS 17 SDK symbol. Make sure local Xcode is 15+; the release
+  workflow pins via `maxim-lobanov/setup-xcode@v1`.
+- **CocoaPods flapping `inputPaths`/`outputPaths` in `Runner.xcodeproj/project.pbxproj`**
+  — benign noise from CocoaPods regenerating build phase metadata. Don't
+  commit; revert or ignore.
+- **`Provisioning profile doesn't support the iCloud capability`** — the App ID
+  has iCloud capability enabled with "Xcode 6 / CloudKit-compatible" mode but
+  the profile was issued before that change. Re-issue the profile in the
+  Apple Developer portal and update `APPLE_PROVISIONING_PROFILE_BASE64`.
+
+---
+
 ## Code Generation
 
 Run after any change to `@freezed` models, `@riverpod` notifiers, or Drift tables:
@@ -204,14 +285,16 @@ artifacts are produced by the release workflow against an explicit tag.
 ## Release Pipeline
 
 Releases are dispatch-only — pushing a tag does **not** publish anything.
-You tag the commit, then run the **Release** workflow against that tag.
-Each dispatch produces exactly one signed APK + GitHub Release, plus an
-optional signed AAB upload to a Play Store track.
+You tag the commit, then run the **Release** workflow against that tag. A
+single dispatch builds both platforms in parallel and publishes one
+GitHub Release with both artifacts attached.
 
-| Dispatch input | Builds | Publishes |
-|----------------|--------|-----------|
-| `play_store: false` (default) | Signed APK | GitHub Release with APK attached |
-| `play_store: true`, `track: <track>` | Signed APK + AAB | GitHub Release + AAB on the chosen Play Store track |
+| `test_flight` | `play_store` | Builds | Publishes |
+|---------------|--------------|--------|-----------|
+| `true` (default) | `false` (default) | Signed APK + signed IPA | GitHub Release w/ both files + IPA to TestFlight |
+| `true` | `true` + `track` | + signed AAB | + AAB to the chosen Play Store track |
+| `false` | `false` | APK only | GitHub Release w/ APK; iOS job skipped |
+| `false` | `true` + `track` | APK + AAB | GitHub Release w/ APK; AAB to Play Store; no IPA |
 
 ### One-time setup: create a keystore
 
@@ -233,12 +316,50 @@ base64 -i ~/crosscue-release.jks | pbcopy   # macOS — copies to clipboard
 
 Go to **GitHub → repo → Settings → Secrets and variables → Actions** and add:
 
+**Android:**
+
 | Secret | Value |
 |--------|-------|
 | `KEYSTORE_BASE64` | Base64-encoded `.jks` file (from the command above) |
 | `KEY_ALIAS` | `crosscue` (or whatever alias you chose) |
 | `KEY_PASSWORD` | The key password you entered |
 | `STORE_PASSWORD` | The keystore password you entered |
+| `PLAY_SERVICE_ACCOUNT_JSON` | Play Console service account JSON (used only when dispatching with `play_store: true`) |
+
+**iOS:**
+
+| Secret | Value |
+|--------|-------|
+| `APPLE_DEVELOPER_CERTIFICATE_BASE64` | `base64 -i path/to/Distribution.p12 \| pbcopy` |
+| `APPLE_DEVELOPER_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` |
+| `APPLE_PROVISIONING_PROFILE_BASE64` | `base64 -i path/to/Crosscue_App_Store.mobileprovision \| pbcopy` |
+| `APPLE_DEVELOPMENT_TEAM_ID` | `ZS9BL7472D` |
+| `APPLE_ID` | Apple ID email with App Store Connect access |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password from appleid.apple.com (not your Apple ID password) |
+
+The iOS job will fail-fast if any of these are missing.
+
+### One-time setup: iOS (Apple Developer portal + App Store Connect)
+
+1. **Apple Developer Program enrollment** ($99/year) under team `ZS9BL7472D`.
+2. **App ID `dev.tomhess.crosscue`** registered in
+   https://developer.apple.com/account/resources/identifiers/list with iCloud
+   capability enabled in **Xcode 6 / CloudKit-compatible mode** (not "Xcode 5
+   Compatible" — the modern entitlement set is required because
+   `Runner.entitlements` declares `com.apple.developer.icloud-services`).
+3. **iCloud Container `iCloud.dev.tomhess.crosscue`** created and linked
+   to the App ID.
+4. **iOS Distribution certificate** generated and exported as `.p12` with a
+   strong password.
+5. **App Store provisioning profile** `Crosscue App Store` issued against the
+   App ID **after** the iCloud capability is enabled. Re-issue (and update
+   the `APPLE_PROVISIONING_PROFILE_BASE64` secret) any time the App ID's
+   capability set changes.
+6. **App-specific password** at
+   https://appleid.apple.com/account/manage → Sign-In and Security.
+7. **App Store Connect app record** for bundle `dev.tomhess.crosscue` at
+   https://appstoreconnect.apple.com/apps. TestFlight uploads will fail with
+   `Cannot determine the Apple ID from Bundle ID` until this exists.
 
 ### Local release signing (optional)
 
@@ -275,11 +396,14 @@ cd crosscue && flutter build apk --release --no-pub
 3. **Dispatch the Release workflow** from the GitHub Actions UI (or via
    `gh workflow run`):
    ```bash
-   # GitHub-only release (APK to the GitHub Release page):
+   # Default: APK + IPA + GitHub Release + TestFlight (Android-only on GH Release):
    gh workflow run release.yml -f tag=v1.2.3
 
-   # GitHub + Play Store internal testing:
+   # Default + Play Store internal testing:
    gh workflow run release.yml -f tag=v1.2.3 -f play_store=true -f track=internal
+
+   # Android-only emergency patch (skip iOS):
+   gh workflow run release.yml -f tag=v1.2.3 -f test_flight=false
    ```
 
 The workflow checks out the **tag** (not whatever branch you dispatched
@@ -362,6 +486,78 @@ Crosscue current-release answers:
   notifications, remote crash reporting, or any new data collection
 - GDPR/UK GDPR review required before EU/UK distribution if remote data
   collection is introduced
+
+---
+
+## App Store Submission Checklist
+
+Complete these steps before submitting to the App Store for the first time.
+Human review is required before publishing — this is not legal advice.
+
+### Privacy policy (required before submission)
+- [x] Published at `https://atomictrxn.github.io/crosscue/privacy.html`.
+- [x] In-app Settings → Privacy & Data → Privacy policy opens it via `url_launcher`.
+- [x] URL filed in App Store Connect → App Privacy.
+
+### App Store Connect — App Privacy form
+Crosscue current-release answers (mirrors Play Console):
+
+| Question | Answer |
+|----------|--------|
+| Do you or your third-party partners collect data from this app? | No |
+| Data Types | None |
+| Data Used to Track You | None |
+| Data Linked to User | None |
+| Data Not Linked to User | None |
+
+### Export Compliance
+- [x] `ITSAppUsesNonExemptEncryption = false` in `crosscue/ios/Runner/Info.plist`.
+      The only crypto in the app is SHA-256 hashing of imported puzzle bytes to
+      derive content-addressable IDs — exempt from EAR encryption export
+      controls. This flag bypasses the encryption questionnaire on every
+      TestFlight upload after it lands in the build.
+
+### Visual assets
+
+Source PNGs are versioned under `design/store/ios/` so they can be refreshed
+or diffed against future releases:
+
+| App Store Connect slot | Source folder | Dimensions |
+|------------------------|---------------|------------|
+| 6.9-Inch Display | `design/store/ios/iphone-6.9/` | 1320 × 2868 |
+| 13-Inch Display | `design/store/ios/ipad-13/` | 2064 × 2752 |
+
+Apple downscales the 6.9" set for all smaller iPhone classes and the 13" set
+for smaller iPad classes — no need to upload duplicate sets unless you want
+to override the auto-scale.
+
+Per-version release notes live as `design/store/ios/release-notes-X.Y.Z.txt`.
+
+App preview videos are optional. Skip for v1.0; reconsider for v1.1+.
+
+### Age rating
+Answer "None" to every question in the App Store Connect questionnaire →
+result is **4+**.
+
+### Release pipeline
+- [x] `.github/workflows/release.yml` `ios` job builds and uploads a signed
+      `.ipa` to TestFlight via `xcrun altool` on macos-latest with Xcode
+      pinned via `maxim-lobanov/setup-xcode@v1`.
+- [x] `APPLE_*` secrets configured (see Release Pipeline § One-time setup).
+- [x] First IPA upload to TestFlight completed via `workflow_dispatch` with
+      `test_flight: true` (the default).
+- [x] App Store Connect app record exists for bundle `dev.tomhess.crosscue`.
+
+### Post-launch updates required if scope changes
+- Re-review and update the privacy policy + App Privacy form before adding any
+  analytics, push notifications, or remote data collection.
+- Regenerate the App Store provisioning profile (and update
+  `APPLE_PROVISIONING_PROFILE_BASE64`) whenever the App ID's capability set
+  changes — e.g. enabling Push Notifications, adding a new iCloud container.
+- Consider migrating from `APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD` to an
+  App Store Connect API key (`APPLE_API_KEY + APPLE_API_KEY_ID +
+  APPLE_API_ISSUER_ID`) before opening repo access — API keys have scoped
+  roles and can be revoked individually.
 
 ---
 

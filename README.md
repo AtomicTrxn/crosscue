@@ -2,7 +2,7 @@
 
 **Your crossword puzzles. Your device. No strings attached.**
 
-Crosscue is an Android app for solving crossword puzzle files — built for people who want a clean, capable solver that stays out of their way. No subscription. No account. Your puzzles and progress live on your device.
+Crosscue is a crossword solver for iOS and Android — built for people who want a clean, capable solver that stays out of their way. No subscription. No account. Your puzzles and progress live on your device.
 
 ---
 
@@ -32,21 +32,33 @@ network request needed to fetch that puzzle.
 
 ## Status
 
-**Phase 1 — Android.** Core solving, importing, persistence, archive, stats, settings, and onboarding are feature-complete. Active development is tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
-
-iOS is Phase 2.
+**Available on iOS and Android.** Core solving, importing, persistence, archive, stats, settings, and onboarding are feature-complete on both platforms. Active development is tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
 
 ---
 
 ## Get Started
 
-Sideload the latest APK from [Releases](../../releases), or build from source:
+### iOS
+
+Install via TestFlight (beta) — invite available on request — or wait for the
+App Store release.
+
+### Android
+
+Sideload the latest APK from [Releases](../../releases) or install via Play
+Store (when published).
+
+### Build from source
 
 ```bash
 cd crosscue
 flutter pub get
-flutter run
+flutter run                    # uses whichever device/simulator is connected
+flutter run -d <device-id>     # explicit device — see `flutter devices`
 ```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for iOS-specific simulator + build + signing
+notes.
 
 ---
 
