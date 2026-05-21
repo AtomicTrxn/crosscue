@@ -82,10 +82,9 @@ void main() {
       //    is 'Test Puzzle' (see PuzFixtureBuilder.minimal3x3).
       //    Returns JobSuccess on a fresh DB, JobDuplicate when the test
       //    has already run against this sim — both count as "in DB".
-      final result =
-          await container.read(importRepositoryProvider).importBytes(
-                PuzFixtureBuilder.minimal3x3(),
-              );
+      final result = await container.read(importRepositoryProvider).importBytes(
+            PuzFixtureBuilder.minimal3x3(),
+          );
       expect(result, isA<ImportJobResult>());
 
       // Give the home screen's Drift stream a chance to deliver the row.
