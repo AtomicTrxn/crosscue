@@ -33,8 +33,8 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | Channel registration in `AppDelegate` | Hooked into `didInitializeImplicitFlutterEngine`; safe before any entitlement is configured. |
 | ✅ | Conditional provider wiring | `syncTransportProvider` returns `ICloudSyncTransport` on iOS; `NoOpSyncTransport` elsewhere. |
 | ✅ | Tests for the Dart side | `MockMethodChannel` covers each method's argument marshaling + error swallowing. |
-| ⏳ | Apple Developer container + Xcode capability | One-time, manual; documented in [`sync-icloud-setup.md`](sync-icloud-setup.md). |
-| ⏳ | Manual two-device soak | After Step 5 above, on real devices on the same iCloud account. |
+| ✅ | Apple Developer container + Xcode capability | Completed during the v1.2.7 iOS 1.0 release push. App ID has iCloud capability in Xcode 6 / CloudKit-compatible mode; container `iCloud.dev.tomhess.crosscue` exists; provisioning profile carries `icloud-services` + `icloud-container-identifiers` + `ubiquity-container-identifiers` entitlements. See [`sync-icloud-setup.md`](sync-icloud-setup.md). |
+| ⏳ | Manual two-device soak | Blocked on Phase 4 in-app UI — the transport stays in `SyncSignedOut` until users have a way to opt in. |
 
 ## Phase 3 — Google Drive transport (deferred)
 
