@@ -1,18 +1,38 @@
 # iCloud sync — one-time iOS setup
 
-> Reader: developer / release engineer activating Phase 2 of the sync
-> rollout (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9)).
-> Design: [`sync-design.md`](sync-design.md). Status:
+> Reader: developer / release engineer activating the sync feature
+> (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9), marked
+> deferred). Design: [`sync-design.md`](sync-design.md). Status:
 > [`sync-progress.md`](sync-progress.md).
 
-The Dart side and the Swift `ICloudSyncHandler` already ship — the build
-compiles and runs cleanly on iOS without doing anything below. Until the
-steps in this doc are completed, `ICloudSyncTransport.account()` returns
-null and the orchestrator stays in `SyncSignedOut`. Nothing is read from
-or written to iCloud.
+The Dart side and the Swift `ICloudSyncHandler` already ship. The build
+compiles and runs cleanly on iOS without sync activating —
+`ICloudSyncTransport.account()` returns null and the orchestrator stays
+in `SyncSignedOut` until both the Apple-side configuration AND an in-app
+opt-in are in place.
 
-This guide walks through the three things that *must* happen on the Apple
-side before sync can activate, plus how to verify it end-to-end.
+**Apple-side status as of iOS 1.0 (v1.2.7):** steps 1, 2, and 3 below
+were completed during the v1.2.7 release push — the App ID has iCloud
+capability enabled (Xcode 6 / CloudKit-compatible mode), the iCloud
+container `iCloud.dev.tomhess.crosscue` exists, and the App Store
+provisioning profile carries the modern `icloud-services` +
+`icloud-container-identifiers` + `ubiquity-container-identifiers`
+entitlements. The `APPLE_PROVISIONING_PROFILE_BASE64` GitHub Secret
+holds the regenerated profile. Verify with:
+
+```bash
+security cms -D -i /path/to/Crosscue_App_Store.mobileprovision \
+  | grep -A1 -E "icloud-container-identifiers|icloud-services|ubiquity-container-identifiers"
+```
+
+**What's still pending:** the in-app UI to actually let users sign in
+to iCloud sync. The transport is dormant by design — when issue #9
+moves from deferred to in-flight, the steps below stay as the
+on-ramp reference. The verification section at the bottom is what
+you'd run end-to-end when the in-app UI ships.
+
+This guide walks through the three things that *must* happen on the
+Apple side before sync can activate, plus how to verify it end-to-end.
 
 ## Prerequisites
 
