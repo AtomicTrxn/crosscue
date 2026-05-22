@@ -6,7 +6,9 @@ FLUTTER := flutter
 DART    := dart
 DIR     := crosscue
 
-.PHONY: ci check static format analyze test generated build install-hooks
+.PHONY: ci check static format analyze test generated build install-hooks \
+        _require-tag release-github release-testflight \
+        release-play-internal release-play-alpha release-play-beta release-play-production
 
 ## Match the hosted PR CI checks.
 ci: check
@@ -45,3 +47,43 @@ install-hooks:
 build:
 	@echo "▶ build debug APK"
 	cd $(DIR) && $(FLUTTER) build apk --debug --no-pub
+
+## ─── Release dispatch ─────────────────────────────────────────────────
+## All release targets require TAG=vX.Y.Z (must already exist as a git tag
+## on origin). Every release rebuilds from the tag and (re-)publishes the
+## GitHub Release. Store uploads are layered on top.
+
+TAG ?=
+
+_require-tag:
+	@if [ -z "$(TAG)" ]; then \
+		echo "✗ TAG=vX.Y.Z is required (e.g. make release-github TAG=v1.2.8)"; \
+		exit 1; \
+	fi
+
+## Mode 1 — GitHub release only (builds Android + iOS, publishes APK)
+release-github: _require-tag
+	@echo "▶ release-github $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG)
+
+## Mode 3 — TestFlight (also (re)publishes GitHub release with APK)
+release-testflight: _require-tag
+	@echo "▶ release-testflight $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f test_flight=true
+
+## Mode 2 — Play Store (also (re)publishes GitHub release with APK + AAB)
+release-play-internal: _require-tag
+	@echo "▶ release-play-internal $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=internal
+
+release-play-alpha: _require-tag
+	@echo "▶ release-play-alpha $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=alpha
+
+release-play-beta: _require-tag
+	@echo "▶ release-play-beta $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=beta
+
+release-play-production: _require-tag
+	@echo "▶ release-play-production $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=production
