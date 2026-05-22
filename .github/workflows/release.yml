@@ -5,10 +5,10 @@ name: Release
 # that tag.
 #
 # Per dispatch: `android` and `ios` build jobs run in parallel; once both
-# finish, `github_release` publishes a single GitHub Release with the APK
-# (and IPA, when test_flight is on) attached. Optional uploads on top:
-# AAB → Play Store (play_store: true) and IPA → TestFlight (test_flight: true,
-# the default).
+# finish, `github_release` publishes a GitHub Release with just the APK
+# attached. iOS always builds (verification only); set test_flight: true
+# to additionally upload the IPA to TestFlight. AAB → Play Store is gated
+# on play_store: true.
 on:
   workflow_dispatch:
     inputs:
@@ -29,9 +29,9 @@ on:
           - beta
           - production
       test_flight:
-        description: 'Build signed IPA and upload to TestFlight'
+        description: 'Upload built IPA to TestFlight (IPA is always built for verification)'
         type: boolean
-        default: true
+        default: false
 
 env:
   FLUTTER_VERSION: '3.41.9'
@@ -118,6 +118,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload AAB artifact
+        if: ${{ inputs.play_store == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: crosscue-android-aab-${{ steps.version.outputs.name }}
+          path: crosscue/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload to Play Store
         if: ${{ inputs.play_store == true }}
         uses: r0adkll/upload-google-play@v1
@@ -129,8 +138,7 @@ jobs:
           status: completed
 
   ios:
-    name: Build & upload iOS to TestFlight
-    if: ${{ inputs.test_flight == true }}
+    name: Build iOS (upload to TestFlight if requested)
     runs-on: macos-latest
 
     defaults:
@@ -252,19 +260,12 @@ jobs:
             --build-number=${{ steps.version.outputs.code }} \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
 
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: crosscue-ios-${{ steps.version.outputs.name }}
-          path: crosscue/build/ios/ipa/*.ipa
-          if-no-files-found: error
-          retention-days: 30
-
       # Apple ID + app-specific password is the simplest auth path for altool;
       # an App Store Connect API key would also work but needs an additional
       # secret (issuer ID) we haven't provisioned. --asc-provider disambiguates
       # if the Apple ID has access to multiple teams.
       - name: Upload to TestFlight
+        if: ${{ inputs.test_flight == true }}
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -281,18 +282,17 @@ jobs:
   github_release:
     name: Publish GitHub Release
     needs: [android, ios]
-    # Run when Android succeeds and iOS either succeeded or was skipped (e.g.
-    # test_flight: false). always() prevents auto-skip when ios is skipped.
-    if: ${{ always() && needs.android.result == 'success' && (needs.ios.result == 'success' || needs.ios.result == 'skipped') }}
+    # iOS is a verification gate: both jobs must succeed before we publish.
+    if: ${{ needs.android.result == 'success' && needs.ios.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write   # required to create a GitHub Release
 
     steps:
-      - name: Download build artifacts
+      - name: Download Android artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: crosscue-*
+          pattern: crosscue-android-*
           path: artifacts
           merge-multiple: true
 
@@ -302,8 +302,8 @@ jobs:
           tag_name: ${{ inputs.tag }}
           name: Crosscue ${{ inputs.tag }}
           generate_release_notes: true
-          # IPA glob is absent when test_flight: false — action skips missing
-          # files silently with fail_on_unmatched_files: false (the default).
+          # AAB glob matches nothing when play_store: false — softprops/action-gh-release
+          # skips missing files silently (fail_on_unmatched_files defaults to false).
           files: |
             artifacts/*.apk
-            artifacts/*.ipa
+            artifacts/*.aab
