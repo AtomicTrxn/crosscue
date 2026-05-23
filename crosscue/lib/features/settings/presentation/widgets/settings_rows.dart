@@ -1,20 +1,6 @@
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// ---------------------------------------------------------------------------
-// Top-level helper
-// ---------------------------------------------------------------------------
-
-/// Unwrap an [AsyncValue] to its data value, falling back to [fallback] while
-/// loading or on error.
-T asyncSettingValue<T>(AsyncValue<T> value, {required T fallback}) {
-  return switch (value) {
-    AsyncData(:final value) => value,
-    _ => fallback,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Shared row widgets

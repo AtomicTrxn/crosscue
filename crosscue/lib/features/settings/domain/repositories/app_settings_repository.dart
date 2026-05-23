@@ -1,4 +1,5 @@
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 
 /// Abstract interface for persisted user settings.
 ///
@@ -6,6 +7,11 @@ import 'package:crosscue/core/domain/models/enums.dart';
 /// Declared here (domain layer) so presentation providers depend only on the
 /// interface, keeping the data layer replaceable and settings mockable in tests.
 abstract interface class AppSettingsRepository {
+  /// Loads every sync-readable setting in a single pass so `main()` can
+  /// seed the in-memory cache before the first frame. See
+  /// `lib/features/settings/domain/models/boot_settings.dart`.
+  Future<BootSettings> loadBootSettings();
+
   Future<bool> getHasSeenOnboarding();
   Future<void> setHasSeenOnboarding(bool value);
 

@@ -21,10 +21,7 @@ class PrivacyScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           SettingsSwitchRow(
-            value: asyncSettingValue(
-              ref.watch(crashReportingProvider),
-              fallback: false,
-            ),
+            value: ref.watch(crashReportingProvider),
             onChanged: (_) =>
                 ref.read(crashReportingProvider.notifier).toggle(),
             leading: Icons.bug_report_outlined,
@@ -103,17 +100,7 @@ class PrivacyScreen extends ConsumerWidget {
 
     final db = ref.read(appDatabaseProvider);
     await db.clearAllUserData();
-
-    ref.invalidate(hasSeenOnboardingProvider);
-    ref.invalidate(themeModeProvider);
-    ref.invalidate(hapticsEnabledProvider);
-    ref.invalidate(colorblindModeProvider);
-    ref.invalidate(soundsEnabledProvider);
-    ref.invalidate(skipFilledCellsProvider);
-    ref.invalidate(crashReportingProvider);
-    ref.invalidate(crosshareAutoDownloadProvider);
-    ref.invalidate(crosshareLastDownloadedDateProvider);
-    ref.invalidate(crosshareLastAttemptStatusProvider);
+    await resetAllSettings(ref);
 
     if (context.mounted) context.go(Routes.home);
   }

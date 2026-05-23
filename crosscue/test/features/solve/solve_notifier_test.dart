@@ -10,6 +10,7 @@ import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
+import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -86,6 +87,7 @@ void main() {
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
         appSettingsProvider
             .overrideWithValue(const _FakeAppSettingsRepository()),
+        bootSettingsProvider.overrideWithValue(BootSettings.defaults),
       ],
     );
     addTearDown(container.dispose);
@@ -166,7 +168,8 @@ void main() {
 
     final provider = solveProvider(Uri.encodeComponent(puzzle.id));
     await container.read(provider.future);
-    await container.read(skipFilledCellsProvider.future);
+    // Sync sanity-check: settings load synchronously from bootSettingsProvider.
+    expect(container.read(skipFilledCellsProvider), isTrue);
 
     final notifier = container.read(provider.notifier);
     notifier.moveFocusTo(0, 2, Direction.across);
@@ -302,6 +305,7 @@ void main() {
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
         appSettingsProvider
             .overrideWithValue(const _FakeAppSettingsRepository()),
+        bootSettingsProvider.overrideWithValue(BootSettings.defaults),
       ],
     );
     addTearDown(container.dispose);
@@ -393,6 +397,18 @@ ProviderContainer _containerFor(
       statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
       appSettingsProvider.overrideWithValue(
         _FakeAppSettingsRepository(skipFilledCells: skipFilledCells),
+      ),
+      bootSettingsProvider.overrideWithValue(
+        BootSettings(
+          hasSeenOnboarding: true,
+          themeMode: BootSettings.defaults.themeMode,
+          hapticsEnabled: BootSettings.defaults.hapticsEnabled,
+          soundsEnabled: BootSettings.defaults.soundsEnabled,
+          colorblindMode: BootSettings.defaults.colorblindMode,
+          skipFilledCells: skipFilledCells,
+          crashReporting: BootSettings.defaults.crashReporting,
+          crosshareAutoDownload: BootSettings.defaults.crosshareAutoDownload,
+        ),
       ),
     ],
   );
@@ -793,6 +809,18 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
   const _FakeAppSettingsRepository({this.skipFilledCells = false});
 
   final bool skipFilledCells;
+
+  @override
+  Future<BootSettings> loadBootSettings() async => BootSettings(
+        hasSeenOnboarding: true,
+        themeMode: BootSettings.defaults.themeMode,
+        hapticsEnabled: true,
+        soundsEnabled: false,
+        colorblindMode: BootSettings.defaults.colorblindMode,
+        skipFilledCells: skipFilledCells,
+        crashReporting: false,
+        crosshareAutoDownload: true,
+      );
 
   @override
   Future<bool> getCrashReporting() async => false;

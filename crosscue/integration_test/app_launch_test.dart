@@ -28,7 +28,10 @@ void main() {
       'Crosscue reaches a stable first frame without throwing',
       (tester) async {
         // Spin up the real app — this is what runs on a user's device.
-        app.main();
+        // `app.main()` is async now: it loads BootSettings off the real DB
+        // before runApp. Awaiting here keeps the analyzer's unawaited_futures
+        // lint happy and ensures the boot-snapshot is resolved before we pump.
+        await app.main();
 
         // Don't use pumpAndSettle: Crosscue's home screen has Riverpod
         // listeners (stats/streak provider, optional solve timer) that

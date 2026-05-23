@@ -253,12 +253,7 @@ class _CheckRevealMenu extends ConsumerWidget {
   }
 
   void _vibrateIfIncorrect(WidgetRef ref, CheckResult result) {
-    final hapticsOn = ref.read(hapticsEnabledProvider).when(
-          data: (value) => value,
-          loading: () => true,
-          error: (_, __) => true,
-        );
-    if (result.shouldVibrate && hapticsOn) {
+    if (result.shouldVibrate && ref.read(hapticsEnabledProvider)) {
       HapticFeedback.vibrate();
     }
   }

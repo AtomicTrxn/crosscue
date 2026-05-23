@@ -540,13 +540,7 @@ class SolveNotifier extends _$SolveNotifier {
   // Settings reads
   // ---------------------------------------------------------------------------
 
-  bool _skipFilledCellsEnabled() {
-    return ref.read(skipFilledCellsProvider).when(
-          data: (value) => value,
-          loading: () => false,
-          error: (_, __) => false,
-        );
-  }
+  bool _skipFilledCellsEnabled() => ref.read(skipFilledCellsProvider);
 
   // ---------------------------------------------------------------------------
   // Completion check

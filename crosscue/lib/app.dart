@@ -36,10 +36,8 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
     _installCrashHandlers();
     ref.listenManual(
       crashReportingProvider,
-      (_, next) {
-        next.whenData((enabled) {
-          ref.read(crashReporterProvider).init(enabled: enabled);
-        });
+      (_, enabled) {
+        ref.read(crashReporterProvider).init(enabled: enabled);
       },
       fireImmediately: true,
     );
@@ -72,12 +70,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final themeModeAsync = ref.watch(themeModeProvider);
-    final themeMode = themeModeAsync.when(
-      data: (m) => _toFlutterThemeMode(m),
-      loading: () => ThemeMode.system,
-      error: (_, __) => ThemeMode.system,
-    );
+    final themeMode = _toFlutterThemeMode(ref.watch(themeModeProvider));
 
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {

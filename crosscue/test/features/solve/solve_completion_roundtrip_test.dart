@@ -17,6 +17,7 @@ import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/import/data/repositories/import_repository_impl.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
+import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/data/repositories/solve_repository_impl.dart';
@@ -153,6 +154,7 @@ void main() {
           solveRepositoryProvider.overrideWithValue(spy),
           statsRepositoryProvider.overrideWithValue(_EmptyStatsRepository()),
           appSettingsProvider.overrideWithValue(const _PermissiveAppSettings()),
+          bootSettingsProvider.overrideWithValue(BootSettings.defaults),
         ],
       );
       addTearDown(container.dispose);
@@ -292,6 +294,7 @@ Future<void> _runRoundTrip({
       solveRepositoryProvider.overrideWithValue(spy),
       statsRepositoryProvider.overrideWithValue(_EmptyStatsRepository()),
       appSettingsProvider.overrideWithValue(const _PermissiveAppSettings()),
+      bootSettingsProvider.overrideWithValue(BootSettings.defaults),
     ],
   );
 
@@ -322,6 +325,7 @@ Future<void> _runRoundTrip({
       ),
       statsRepositoryProvider.overrideWithValue(_EmptyStatsRepository()),
       appSettingsProvider.overrideWithValue(const _PermissiveAppSettings()),
+      bootSettingsProvider.overrideWithValue(BootSettings.defaults),
     ],
   );
   addTearDown(container2.dispose);
@@ -538,6 +542,9 @@ final class _EmptyStatsRepository implements StatsRepository {
 
 final class _PermissiveAppSettings implements AppSettingsRepository {
   const _PermissiveAppSettings();
+
+  @override
+  Future<BootSettings> loadBootSettings() async => BootSettings.defaults;
 
   @override
   Future<bool> getCrashReporting() async => false;

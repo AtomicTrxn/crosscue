@@ -68,12 +68,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     ref.listenManual(solveProvider(widget.puzzleId), _onSolveStateChanged);
     ref.listenManual(
       hapticsEnabledProvider,
-      (_, next) => _hapticsEnabled = _settingValue(next, fallback: true),
+      (_, next) => _hapticsEnabled = next,
       fireImmediately: true,
     );
     ref.listenManual(
       soundsEnabledProvider,
-      (_, next) => _soundsEnabled = _settingValue(next, fallback: false),
+      (_, next) => _soundsEnabled = next,
       fireImmediately: true,
     );
   }
@@ -126,14 +126,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         ref.read(solveProvider(widget.puzzleId).notifier).flushPendingSave(),
       );
     }
-  }
-
-  bool _settingValue(AsyncValue<bool> value, {required bool fallback}) {
-    return value.when(
-      data: (v) => v,
-      loading: () => fallback,
-      error: (_, __) => fallback,
-    );
   }
 
   void _playFeedbackSound({bool? soundsEnabled}) {
@@ -301,14 +293,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   @override
   Widget build(BuildContext context) {
     final solveAsync = ref.watch(solveProvider(widget.puzzleId));
-    final hapticsEnabled = _settingValue(
-      ref.watch(hapticsEnabledProvider),
-      fallback: true,
-    );
-    final soundsEnabled = _settingValue(
-      ref.watch(soundsEnabledProvider),
-      fallback: false,
-    );
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+    final soundsEnabled = ref.watch(soundsEnabledProvider);
 
     return solveAsync.when(
       loading: () => const Scaffold(

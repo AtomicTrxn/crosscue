@@ -71,12 +71,12 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     _focusNode.onKeyEvent = _onKeyEvent;
     ref.listenManual(
       hapticsEnabledProvider,
-      (_, next) => _hapticsEnabled = _settingValue(next, fallback: true),
+      (_, next) => _hapticsEnabled = next,
       fireImmediately: true,
     );
     ref.listenManual(
       soundsEnabledProvider,
-      (_, next) => _soundsEnabled = _settingValue(next, fallback: false),
+      (_, next) => _soundsEnabled = next,
       fireImmediately: true,
     );
   }
@@ -93,14 +93,6 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     _focusNode.dispose();
     _textController.dispose();
     super.dispose();
-  }
-
-  bool _settingValue(AsyncValue<bool> value, {required bool fallback}) {
-    return value.when(
-      data: (v) => v,
-      loading: () => fallback,
-      error: (_, __) => fallback,
-    );
   }
 
   void _setCellEffects(
@@ -125,11 +117,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
     final puzzle = widget.solveState.puzzle;
     final xwTheme =
         Theme.of(context).extension<CrosswordTheme>() ?? CrosswordTheme.light();
-    final colorblindMode = ref.watch(colorblindModeProvider).when(
-          data: (mode) => mode,
-          loading: () => ColorblindMode.none,
-          error: (_, __) => ColorblindMode.none,
-        );
+    final colorblindMode = ref.watch(colorblindModeProvider);
     final animationsDisabled = MediaQuery.of(context).disableAnimations;
 
     return LayoutBuilder(

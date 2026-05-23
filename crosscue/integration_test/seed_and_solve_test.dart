@@ -68,8 +68,9 @@ void main() {
   testWidgets(
     'seed a puzzle via the real repo, open it from home, render solve screen',
     (tester) async {
-      // 1. Boot the real app.
-      app.main();
+      // 1. Boot the real app. `app.main()` is async — it loads BootSettings
+      //    off the real DB before runApp.
+      await app.main();
       await pumpFor(tester, const Duration(seconds: 5));
 
       // 2. Reach into the live ProviderContainer via the MaterialApp
@@ -94,8 +95,7 @@ void main() {
       //    directly. Tapping "Skip" through the tutorial's mock keyboard
       //    crashed the test process on iOS — programmatic skip is the
       //    only reliable path.
-      await container.read(appSettingsProvider).setHasSeenOnboarding(true);
-      container.invalidate(hasSeenOnboardingProvider);
+      await container.read(hasSeenOnboardingProvider.notifier).markSeen();
       await pumpFor(tester, const Duration(seconds: 3));
 
       // 5. Home screen shows the seeded puzzle.

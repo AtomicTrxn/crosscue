@@ -1,5 +1,6 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
+import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 
 /// Typed wrapper around [AppSettingsDao].
@@ -26,6 +27,36 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const _keyCrosshareLastDownloadedDate =
       'crosshare_last_downloaded_date';
   static const _keyCrosshareLastAttemptStatus = 'crosshare_last_attempt_status';
+
+  // ---------------------------------------------------------------------------
+  // Boot snapshot
+  // ---------------------------------------------------------------------------
+
+  /// Loads every sync-readable setting in one pass. Called once from `main()`
+  /// to seed the in-memory cache before the first frame is built.
+  @override
+  Future<BootSettings> loadBootSettings() async {
+    final results = await Future.wait<dynamic>([
+      getHasSeenOnboarding(),
+      getThemeMode(),
+      getHapticsEnabled(),
+      getSoundsEnabled(),
+      getColorblindMode(),
+      getSkipFilledCells(),
+      getCrashReporting(),
+      getCrosshareAutoDownload(),
+    ]);
+    return BootSettings(
+      hasSeenOnboarding: results[0] as bool,
+      themeMode: results[1] as AppThemeMode,
+      hapticsEnabled: results[2] as bool,
+      soundsEnabled: results[3] as bool,
+      colorblindMode: results[4] as ColorblindMode,
+      skipFilledCells: results[5] as bool,
+      crashReporting: results[6] as bool,
+      crosshareAutoDownload: results[7] as bool,
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Onboarding

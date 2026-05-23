@@ -35,12 +35,9 @@ class PastPuzzlesSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final autoDownloadAsync = ref.watch(crosshareAutoDownloadProvider);
-    final autoDownloadEnabled = switch (autoDownloadAsync) {
-      AsyncData(:final value) => value,
-      _ => false,
-    };
-    if (!autoDownloadEnabled) return const SizedBox.shrink();
+    if (!ref.watch(crosshareAutoDownloadProvider)) {
+      return const SizedBox.shrink();
+    }
 
     final async = ref.watch(pastPuzzlesProvider);
 

@@ -51,8 +51,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _complete() async {
-    await ref.read(appSettingsProvider).setHasSeenOnboarding(true);
-    ref.invalidate(hasSeenOnboardingProvider);
+    await ref.read(hasSeenOnboardingProvider.notifier).markSeen();
   }
 
   void _onCellTap(int row, int col) {

@@ -17,20 +17,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'app_router.g.dart';
 
 // hasSeenOnboardingProvider lives in settings_providers.dart.
-// The router watches it; onboarding screen invalidates it after completion.
+// The router watches it; onboarding screen calls markSeen() after completion.
 
 @riverpod
 GoRouter appRouter(Ref ref) {
-  final hasSeenOnboardingAsync = ref.watch(hasSeenOnboardingProvider);
+  final hasOnboarded = ref.watch(hasSeenOnboardingProvider);
 
   return GoRouter(
     initialLocation: Routes.home,
     redirect: (context, state) {
-      final hasOnboarded = hasSeenOnboardingAsync.when(
-        data: (v) => v,
-        loading: () => false,
-        error: (_, __) => false,
-      );
       final onOnboarding = state.matchedLocation == Routes.onboarding;
       final replayOnboarding = state.uri.queryParameters['replay'] == '1';
 

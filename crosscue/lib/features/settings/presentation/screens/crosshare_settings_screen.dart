@@ -13,7 +13,7 @@ class CrosshareSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final autoDownload = ref.watch(crosshareAutoDownloadProvider);
+    final autoEnabled = ref.watch(crosshareAutoDownloadProvider);
     final dlState = ref.watch(crosshareProvider);
     final lastStatus = ref.watch(crosshareLastAttemptStatusProvider);
     final isDownloading = dlState is CrosshareDownloading;
@@ -26,11 +26,6 @@ class CrosshareSettingsScreen extends ConsumerWidget {
         );
       }
     });
-
-    final autoEnabled = switch (autoDownload) {
-      AsyncData(:final value) => value,
-      _ => false,
-    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Crosshare Daily Mini')),

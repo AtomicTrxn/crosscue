@@ -18,10 +18,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = asyncSettingValue(
-      ref.watch(themeModeProvider),
-      fallback: AppThemeMode.system,
-    );
+    final themeMode = ref.watch(themeModeProvider);
     final appVersion = ref.watch(appVersionProvider).when(
           data: (v) => v,
           loading: () => null,
@@ -77,11 +74,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SettingsRowDivider(),
           SettingsSwitchRow(
-            value: asyncSettingValue(
-                  ref.watch(colorblindModeProvider),
-                  fallback: ColorblindMode.none,
-                ) !=
-                ColorblindMode.none,
+            value: ref.watch(colorblindModeProvider) != ColorblindMode.none,
             onChanged: (_) =>
                 ref.read(colorblindModeProvider.notifier).toggle(),
             leading: Icons.contrast_outlined,
@@ -92,10 +85,7 @@ class SettingsScreen extends ConsumerWidget {
           // ── Touch & Sound ──────────────────────────────────────────────────
           const SettingsSectionHeader('Touch & Sound'),
           SettingsSwitchRow(
-            value: asyncSettingValue(
-              ref.watch(hapticsEnabledProvider),
-              fallback: true,
-            ),
+            value: ref.watch(hapticsEnabledProvider),
             onChanged: (_) =>
                 ref.read(hapticsEnabledProvider.notifier).toggle(),
             leading: Icons.vibration_outlined,
@@ -103,20 +93,14 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Vibrate on cell tap and puzzle events',
           ),
           SettingsSwitchRow(
-            value: asyncSettingValue(
-              ref.watch(soundsEnabledProvider),
-              fallback: false,
-            ),
+            value: ref.watch(soundsEnabledProvider),
             onChanged: (_) => ref.read(soundsEnabledProvider.notifier).toggle(),
             leading: Icons.volume_up_outlined,
             title: 'Sounds',
             subtitle: 'Play subtle feedback sounds',
           ),
           SettingsSwitchRow(
-            value: asyncSettingValue(
-              ref.watch(skipFilledCellsProvider),
-              fallback: false,
-            ),
+            value: ref.watch(skipFilledCellsProvider),
             onChanged: (_) =>
                 ref.read(skipFilledCellsProvider.notifier).toggle(),
             leading: Icons.skip_next_outlined,
