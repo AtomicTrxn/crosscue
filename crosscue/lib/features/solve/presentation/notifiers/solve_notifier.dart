@@ -69,9 +69,9 @@ class SolveNotifier extends _$SolveNotifier {
     final stats = await ref.read(statsRepositoryProvider).getStats();
 
     final elapsedSec = session.elapsedMs ~/ 1000;
-    final elapsedNotifier =
-        ref.read(solveElapsedSecondsProvider(puzzleId).notifier)
-          ..seed(elapsedSec);
+    final elapsedNotifier = ref
+        .read(solveElapsedSecondsProvider(puzzleId).notifier)
+      ..seed(elapsedSec);
     // Don't tick while paused or after a terminal completion is resumed.
     if (!session.isPaused && !session.status.isTerminal) {
       elapsedNotifier.start();
@@ -534,9 +534,8 @@ class SolveNotifier extends _$SolveNotifier {
     // row reflects the second the user actually saw, not the snapshot from
     // the last state mutation. Terminal paths (pause/completion/reveal/reset)
     // already snapshotted into state.elapsedSeconds — use whichever is fresher.
-    final elapsedSec = s.status.isTerminal || s.isPaused
-        ? s.elapsedSeconds
-        : _elapsedSeconds;
+    final elapsedSec =
+        s.status.isTerminal || s.isPaused ? s.elapsedSeconds : _elapsedSeconds;
     final repo = ref.read(solveRepositoryProvider);
     await repo.saveProgress(
       sessionId: s.sessionId!,
