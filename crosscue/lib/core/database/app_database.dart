@@ -255,8 +255,9 @@ class AppDatabase extends _$AppDatabase {
                 final count = _fillableCellCountFromCanonicalJson(
                   row.read<String>('canonical_json'),
                 );
-                if (count == null)
+                if (count == null) {
                   continue; // Leave default (0) on parse error.
+                }
                 await customStatement(
                   'UPDATE puzzles SET fillable_cell_count = ? WHERE id = ?',
                   <Object?>[count, row.read<String>('id')],
