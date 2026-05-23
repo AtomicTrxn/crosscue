@@ -92,7 +92,7 @@ final class SolveElapsedSecondsProvider
       : super(
           retry: null,
           name: r'solveElapsedSecondsProvider',
-          isAutoDispose: false,
+          isAutoDispose: true,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
@@ -131,7 +131,7 @@ final class SolveElapsedSecondsProvider
 }
 
 String _$solveElapsedSecondsHash() =>
-    r'fdd020696e683f0c88e53a9c4472f0121285e7a2';
+    r'ba984067afdbf814b4d05d339ee8f12c241ba23d';
 
 /// Live, per-second elapsed clock for the solve screen, scoped to one
 /// puzzle.
@@ -166,7 +166,7 @@ final class SolveElapsedSecondsFamily extends $Family
           name: r'solveElapsedSecondsProvider',
           dependencies: null,
           $allTransitiveDependencies: null,
-          isAutoDispose: false,
+          isAutoDispose: true,
         );
 
   /// Live, per-second elapsed clock for the solve screen, scoped to one
