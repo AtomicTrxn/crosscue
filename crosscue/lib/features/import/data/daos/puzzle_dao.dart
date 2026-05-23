@@ -109,6 +109,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
   Future<void> insertPuzzle(Puzzle puzzle) async {
     final now = DateTime.now().toUtc();
     final canonical = GridSerializer.encode(puzzle);
+    final fillableCells = _countFillableCells(puzzle);
 
     await transaction(() async {
       await into(puzzlesTable).insert(
@@ -127,6 +128,7 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
           difficulty: Value(puzzle.metadata.difficulty),
           publishDate: Value(puzzle.metadata.publishDate),
           canonicalJson: canonical,
+          fillableCellCount: Value(fillableCells),
           createdAt: now,
           updatedAt: now,
         ),
@@ -175,7 +177,22 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
       notes: row.notes,
       checksum: row.checksum,
       difficulty: row.difficulty,
+      fillableCellCount: row.fillableCellCount,
     );
+  }
+
+  /// Counts non-black cells in [puzzle]'s grid. Used at insert time to
+  /// populate `puzzles.fillable_cell_count` so list-view consumers don't
+  /// have to JSON-decode the full canonical grid just to know how many
+  /// cells a solver can fill in. See issue #122.
+  static int _countFillableCells(Puzzle puzzle) {
+    var count = 0;
+    for (var r = 0; r < puzzle.height; r++) {
+      for (var c = 0; c < puzzle.width; c++) {
+        if (!puzzle.grid.cell(r, c).isBlack) count++;
+      }
+    }
+    return count;
   }
 
   Clue _clueRowToClue(ClueRow row) {

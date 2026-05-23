@@ -171,6 +171,29 @@ void main() {
       await repo.importBytes(IpuzFixture.minimal3x3());
       expect(await repo.getAllMetadata(), hasLength(2));
     });
+
+    // ------------------------------------------------------------------
+    // fillable_cell_count denormalization (#122)
+    // ------------------------------------------------------------------
+
+    test('insertPuzzle denormalizes fillable_cell_count onto the row',
+        () async {
+      // PuzFixtureBuilder.minimal3x3 produces a 3×3 grid where every cell
+      // is fillable — see test/helpers/puz_fixture_builder.dart — so the
+      // denormalized count must be 9.
+      final result = await repo.importBytes(PuzFixtureBuilder.minimal3x3());
+      final meta = (result as JobSuccess).puzzle.metadata;
+
+      final stored = await db.puzzleDao.getMetadata(meta.id);
+      expect(stored, isNotNull);
+      expect(
+        stored!.fillableCellCount,
+        equals(9),
+        reason: 'a 3×3 grid with no black cells must denormalize to 9 '
+            'fillable cells at import time so Archive / Stats can read '
+            'progress without JSON-decoding canonical_json',
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------

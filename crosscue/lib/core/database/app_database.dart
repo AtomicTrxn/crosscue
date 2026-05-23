@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crosscue/core/database/tables/app_settings_table.dart';
@@ -48,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   PuzzleCompletionDao get puzzleCompletionDao => PuzzleCompletionDao(this);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Migration strategy.
   ///
@@ -68,6 +69,10 @@ class AppDatabase extends _$AppDatabase {
   ///          losing the record of the original solve.
   /// v4 → v5: sync-readiness columns on `puzzles`, `puzzle_completions`,
   ///          and `app_settings`. See `docs/architecture/sync-design.md`.
+  /// v5 → v6: `puzzles.fillable_cell_count` — denormalized cell-shape data
+  ///          backfilled from `canonical_json` on upgrade. Unblocks the
+  ///          archive-list completion fraction without a full grid decode.
+  ///          See issue #122.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
@@ -214,6 +219,51 @@ class AppDatabase extends _$AppDatabase {
               );
             }
           }
+
+          if (from < 6) {
+            // v5 → v6: denormalize `fillable_cell_count` onto puzzles.
+            //
+            // Adds the column with a sentinel default of 0, then walks
+            // every row and parses `canonical_json` to compute the real
+            // count. The default is intentionally 0 (not NULL) so that
+            // any row we fail to parse — or any future puzzle inserted
+            // before the upgrade completes — still satisfies the NOT NULL
+            // contract. `getAllMetadata` callers should treat 0 as
+            // "unknown" rather than "no fillable cells".
+            //
+            // Guarded by the same tableExists pattern as v5 so the
+            // historical minimal-schema tests in this file still pass.
+            Future<bool> tableExists(String name) async {
+              final row = await customSelect(
+                'SELECT COUNT(*) AS cnt FROM sqlite_master '
+                "WHERE type = 'table' AND name = ?",
+                variables: [Variable<String>(name)],
+              ).getSingle();
+              return row.read<int>('cnt') > 0;
+            }
+
+            if (await tableExists('puzzles')) {
+              await customStatement(
+                'ALTER TABLE puzzles ADD COLUMN fillable_cell_count INTEGER '
+                'NOT NULL DEFAULT 0',
+              );
+
+              final rows = await customSelect(
+                'SELECT id, canonical_json FROM puzzles',
+              ).get();
+              for (final row in rows) {
+                final count = _fillableCellCountFromCanonicalJson(
+                  row.read<String>('canonical_json'),
+                );
+                if (count == null)
+                  continue; // Leave default (0) on parse error.
+                await customStatement(
+                  'UPDATE puzzles SET fillable_cell_count = ? WHERE id = ?',
+                  <Object?>[count, row.read<String>('id')],
+                );
+              }
+            }
+          }
         },
         beforeOpen: (details) async {
           // Enable foreign key enforcement.
@@ -320,4 +370,34 @@ LazyDatabase _openConnection() {
     final file = File(p.join(dbFolder.path, 'crosscue.db'));
     return NativeDatabase.createInBackground(file);
   });
+}
+
+/// Migration helper: counts non-black cells in a puzzle's `canonical_json`
+/// blob without going through `GridSerializer` (that would pull the full
+/// `Puzzle` domain model into the migration path, which is intentionally
+/// kept dependency-light).
+///
+/// Returns `null` on any parse error so the v5 → v6 migration can leave
+/// the column at its 0 default for that row instead of aborting the entire
+/// upgrade for one malformed payload. The `PuzzleDao.insertPuzzle` write
+/// path computes the count from the in-memory grid and is authoritative
+/// for every future insert.
+int? _fillableCellCountFromCanonicalJson(String canonicalJson) {
+  try {
+    final decoded = jsonDecode(canonicalJson);
+    if (decoded is! Map) return null;
+    final rows = decoded['cells'];
+    if (rows is! List) return null;
+    var count = 0;
+    for (final row in rows) {
+      if (row is! List) return null;
+      for (final cell in row) {
+        if (cell is! Map) return null;
+        if (cell['black'] != true) count++;
+      }
+    }
+    return count;
+  } on Object {
+    return null;
+  }
 }

@@ -35,6 +35,13 @@ class PuzzlesTable extends Table {
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   IntColumn get syncVersion => integer().withDefault(const Constant(0))();
 
+  // Denormalized cell-shape data — see `docs/architecture/sync-design.md`
+  // and issue #122. Computed once at import time so callers that only
+  // need a fillable-cell count (Archive completion-fraction pie, Stats
+  // size buckets, future projections) don't have to JSON-decode the
+  // full grid stored in `canonical_json` on every read.
+  IntColumn get fillableCellCount => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 

@@ -29,6 +29,17 @@ mixin _$PuzzleMetadata {
   String? get checksum;
   String? get difficulty;
 
+  /// Number of non-black (fillable) cells in the grid. Denormalized from
+  /// the canonical JSON at import time so list-view consumers (Archive
+  /// completion-fraction pie, Stats, future projections) can compute
+  /// progress without paying the full JSON-decode cost. See issue #122.
+  ///
+  /// Defaults to 0 for rows migrated from schema versions ≤ 5 that
+  /// failed to parse during the v5 → v6 backfill — callers that treat
+  /// the value as an authoritative cell count must guard against the
+  /// 0 sentinel (in practice, freshly inserted rows are always > 0).
+  int get fillableCellCount;
+
   /// Create a copy of PuzzleMetadata
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -62,7 +73,9 @@ mixin _$PuzzleMetadata {
             (identical(other.checksum, checksum) ||
                 other.checksum == checksum) &&
             (identical(other.difficulty, difficulty) ||
-                other.difficulty == difficulty));
+                other.difficulty == difficulty) &&
+            (identical(other.fillableCellCount, fillableCellCount) ||
+                other.fillableCellCount == fillableCellCount));
   }
 
   @override
@@ -81,11 +94,12 @@ mixin _$PuzzleMetadata {
       publishDate,
       notes,
       checksum,
-      difficulty);
+      difficulty,
+      fillableCellCount);
 
   @override
   String toString() {
-    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, importedAt: $importedAt, sourcePuzzleId: $sourcePuzzleId, publishDate: $publishDate, notes: $notes, checksum: $checksum, difficulty: $difficulty)';
+    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, importedAt: $importedAt, sourcePuzzleId: $sourcePuzzleId, publishDate: $publishDate, notes: $notes, checksum: $checksum, difficulty: $difficulty, fillableCellCount: $fillableCellCount)';
   }
 }
 
@@ -109,7 +123,8 @@ abstract mixin class $PuzzleMetadataCopyWith<$Res> {
       DateTime? publishDate,
       String? notes,
       String? checksum,
-      String? difficulty});
+      String? difficulty,
+      int fillableCellCount});
 }
 
 /// @nodoc
@@ -139,6 +154,7 @@ class _$PuzzleMetadataCopyWithImpl<$Res>
     Object? notes = freezed,
     Object? checksum = freezed,
     Object? difficulty = freezed,
+    Object? fillableCellCount = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -197,6 +213,10 @@ class _$PuzzleMetadataCopyWithImpl<$Res>
           ? _self.difficulty
           : difficulty // ignore: cast_nullable_to_non_nullable
               as String?,
+      fillableCellCount: null == fillableCellCount
+          ? _self.fillableCellCount
+          : fillableCellCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -308,7 +328,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             DateTime? publishDate,
             String? notes,
             String? checksum,
-            String? difficulty)?
+            String? difficulty,
+            int fillableCellCount)?
         $default, {
     required TResult orElse(),
   }) {
@@ -329,7 +350,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.publishDate,
             _that.notes,
             _that.checksum,
-            _that.difficulty);
+            _that.difficulty,
+            _that.fillableCellCount);
       case _:
         return orElse();
     }
@@ -364,7 +386,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             DateTime? publishDate,
             String? notes,
             String? checksum,
-            String? difficulty)
+            String? difficulty,
+            int fillableCellCount)
         $default,
   ) {
     final _that = this;
@@ -384,7 +407,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.publishDate,
             _that.notes,
             _that.checksum,
-            _that.difficulty);
+            _that.difficulty,
+            _that.fillableCellCount);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -418,7 +442,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             DateTime? publishDate,
             String? notes,
             String? checksum,
-            String? difficulty)?
+            String? difficulty,
+            int fillableCellCount)?
         $default,
   ) {
     final _that = this;
@@ -438,7 +463,8 @@ extension PuzzleMetadataPatterns on PuzzleMetadata {
             _that.publishDate,
             _that.notes,
             _that.checksum,
-            _that.difficulty);
+            _that.difficulty,
+            _that.fillableCellCount);
       case _:
         return null;
     }
@@ -462,7 +488,8 @@ class _PuzzleMetadata implements PuzzleMetadata {
       this.publishDate,
       this.notes,
       this.checksum,
-      this.difficulty});
+      this.difficulty,
+      this.fillableCellCount = 0});
 
   @override
   final String id;
@@ -492,6 +519,19 @@ class _PuzzleMetadata implements PuzzleMetadata {
   final String? checksum;
   @override
   final String? difficulty;
+
+  /// Number of non-black (fillable) cells in the grid. Denormalized from
+  /// the canonical JSON at import time so list-view consumers (Archive
+  /// completion-fraction pie, Stats, future projections) can compute
+  /// progress without paying the full JSON-decode cost. See issue #122.
+  ///
+  /// Defaults to 0 for rows migrated from schema versions ≤ 5 that
+  /// failed to parse during the v5 → v6 backfill — callers that treat
+  /// the value as an authoritative cell count must guard against the
+  /// 0 sentinel (in practice, freshly inserted rows are always > 0).
+  @override
+  @JsonKey()
+  final int fillableCellCount;
 
   /// Create a copy of PuzzleMetadata
   /// with the given fields replaced by the non-null parameter values.
@@ -526,7 +566,9 @@ class _PuzzleMetadata implements PuzzleMetadata {
             (identical(other.checksum, checksum) ||
                 other.checksum == checksum) &&
             (identical(other.difficulty, difficulty) ||
-                other.difficulty == difficulty));
+                other.difficulty == difficulty) &&
+            (identical(other.fillableCellCount, fillableCellCount) ||
+                other.fillableCellCount == fillableCellCount));
   }
 
   @override
@@ -545,11 +587,12 @@ class _PuzzleMetadata implements PuzzleMetadata {
       publishDate,
       notes,
       checksum,
-      difficulty);
+      difficulty,
+      fillableCellCount);
 
   @override
   String toString() {
-    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, importedAt: $importedAt, sourcePuzzleId: $sourcePuzzleId, publishDate: $publishDate, notes: $notes, checksum: $checksum, difficulty: $difficulty)';
+    return 'PuzzleMetadata(id: $id, sourceId: $sourceId, title: $title, author: $author, copyright: $copyright, format: $format, width: $width, height: $height, importedAt: $importedAt, sourcePuzzleId: $sourcePuzzleId, publishDate: $publishDate, notes: $notes, checksum: $checksum, difficulty: $difficulty, fillableCellCount: $fillableCellCount)';
   }
 }
 
@@ -575,7 +618,8 @@ abstract mixin class _$PuzzleMetadataCopyWith<$Res>
       DateTime? publishDate,
       String? notes,
       String? checksum,
-      String? difficulty});
+      String? difficulty,
+      int fillableCellCount});
 }
 
 /// @nodoc
@@ -605,6 +649,7 @@ class __$PuzzleMetadataCopyWithImpl<$Res>
     Object? notes = freezed,
     Object? checksum = freezed,
     Object? difficulty = freezed,
+    Object? fillableCellCount = null,
   }) {
     return _then(_PuzzleMetadata(
       id: null == id
@@ -663,6 +708,10 @@ class __$PuzzleMetadataCopyWithImpl<$Res>
           ? _self.difficulty
           : difficulty // ignore: cast_nullable_to_non_nullable
               as String?,
+      fillableCellCount: null == fillableCellCount
+          ? _self.fillableCellCount
+          : fillableCellCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }

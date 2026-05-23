@@ -564,6 +564,122 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // v5 → v6 migration
+  // ---------------------------------------------------------------------------
+
+  group('v5 → v6 migration', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('drift_v5_test_');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) await tempDir.delete(recursive: true);
+    });
+
+    test(
+        'adds fillable_cell_count to puzzles and backfills from '
+        'canonical_json', () async {
+      final file = File('${tempDir.path}/v5.db');
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        // Minimal v5 schema for puzzles + a sources parent so the
+        // foreign key is satisfied. Two puzzle rows with hand-written
+        // canonical_json blobs so we can predict the backfilled count.
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('''
+          INSERT INTO sources (id, display_name, type, enabled, created_at, updated_at)
+          VALUES ('local_import', 'Local Import', 'local', 1, 1, 1)
+        ''');
+        rawDb.execute('''
+          CREATE TABLE puzzles (
+            id TEXT NOT NULL PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            source_puzzle_id TEXT,
+            format TEXT NOT NULL,
+            title TEXT NOT NULL,
+            author TEXT,
+            editor TEXT,
+            publisher TEXT,
+            copyright TEXT,
+            notes TEXT,
+            publish_date INTEGER,
+            difficulty TEXT,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            checksum TEXT NOT NULL,
+            canonical_json TEXT NOT NULL,
+            raw_payload TEXT,
+            fetched_at INTEGER,
+            expires_at INTEGER,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            is_synced INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
+        // 2×2 grid with one black cell → 3 fillable.
+        const grid2x2 = '''
+          {"width":2,"height":2,"cells":[
+            [{"black":false,"solution":"A"},{"black":true,"solution":""}],
+            [{"black":false,"solution":"B"},{"black":false,"solution":"C"}]
+          ]}
+        ''';
+        // 3×1 grid, no black cells → 3 fillable.
+        const grid3x1 = '''
+          {"width":3,"height":1,"cells":[
+            [{"black":false,"solution":"D"},
+             {"black":false,"solution":"E"},
+             {"black":false,"solution":"F"}]
+          ]}
+        ''';
+        rawDb.execute(
+          'INSERT INTO puzzles (id, source_id, format, title, width, height, '
+          'checksum, canonical_json, created_at, updated_at) VALUES '
+          "('p-2x2', 'local_import', 'ipuz', '2x2', 2, 2, 'cksum1', "
+          "?, 1, 1), "
+          "('p-3x1', 'local_import', 'ipuz', '3x1', 3, 1, 'cksum2', "
+          "?, 1, 1), "
+          // Intentionally malformed canonical_json — backfill should
+          // leave its fillable_cell_count at the default 0, not abort
+          // the migration.
+          "('p-bad', 'local_import', 'ipuz', 'bad', 1, 1, 'cksum3', "
+          "'not-json', 1, 1)",
+          <Object?>[grid2x2, grid3x1],
+        );
+        rawDb.execute('PRAGMA user_version = 5');
+      } finally {
+        rawDb.dispose();
+      }
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
+      final puzzles = await db.select(db.puzzlesTable).get();
+      expect(puzzles, hasLength(3));
+      final byId = {for (final p in puzzles) p.id: p};
+      expect(byId['p-2x2']!.fillableCellCount, equals(3));
+      expect(byId['p-3x1']!.fillableCellCount, equals(3));
+      expect(
+        byId['p-bad']!.fillableCellCount,
+        equals(0),
+        reason: 'malformed canonical_json must fall through to default(0), '
+            'not abort the migration',
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // clearAllUserData
   // ---------------------------------------------------------------------------
 
