@@ -79,10 +79,45 @@ class SolveState {
   }
 
   // ---------------------------------------------------------------------------
+  // Painter-hot memoized derivations (#120)
+  //
+  // The grid painter touches every non-black cell on every repaint and used
+  // to re-derive these by looping all clues per cell — O(cells × clues ×
+  // clueLen) for completed-cell shading and O(cells × clues) for word
+  // highlighting. SolveState is immutable (a fresh instance per change), so
+  // these are computed once per instance and read with O(1) set lookups.
+  // ---------------------------------------------------------------------------
+
+  /// All (row, col) cells that belong to a fully-correct clue. A cell shows
+  /// the "completed word" celebration shading iff it is in this set.
+  ///
+  /// Uses the same acceptance rule as the rest of the app
+  /// ([ClueProgressCalculator.isClueCorrect], which delegates to
+  /// `SolutionCell.accepts`) so a first-letter rebus entry still lights up
+  /// the surrounding word.
+  late final Set<(int, int)> completedCells = _buildCompletedCells();
+
+  Set<(int, int)> _buildCompletedCells() {
+    final completed = <(int, int)>{};
+    for (final clue in puzzle.clues) {
+      if (ClueProgressCalculator.isClueCorrect(
+        puzzle: puzzle,
+        progress: progress,
+        clue: clue,
+      )) {
+        completed.addAll(ClueProgressCalculator.cellsFor(clue));
+      }
+    }
+    return completed;
+  }
+
+  // ---------------------------------------------------------------------------
   // Derived helpers
   // ---------------------------------------------------------------------------
 
-  Clue? get activeClue {
+  late final Clue? activeClue = _findActiveClue();
+
+  Clue? _findActiveClue() {
     for (final clue in puzzle.clues) {
       if (clue.direction == focus.direction &&
           cellInClue(focus.row, focus.col, clue)) {
@@ -104,21 +139,18 @@ class SolveState {
     return null;
   }
 
-  /// All (row, col) pairs that belong to the active word.
-  List<(int, int)> get activeWordCells {
-    final clue = activeClue;
-    if (clue == null) return [];
-    return ClueProgressCalculator.cellsFor(clue);
-  }
+  /// All (row, col) pairs that belong to the active word. Memoized — the
+  /// painter reads it per cell via [isWordHighlighted].
+  late final List<(int, int)> activeWordCells = activeClue == null
+      ? const []
+      : ClueProgressCalculator.cellsFor(activeClue!);
+
+  late final Set<(int, int)> _activeWordCellSet = activeWordCells.toSet();
 
   bool isFocused(int row, int col) => row == focus.row && col == focus.col;
 
-  bool isWordHighlighted(int row, int col) {
-    for (final (r, c) in activeWordCells) {
-      if (r == row && c == col) return true;
-    }
-    return false;
-  }
+  bool isWordHighlighted(int row, int col) =>
+      _activeWordCellSet.contains((row, col));
 
   SolveState copyWith({
     Grid<CellProgress>? progress,

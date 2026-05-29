@@ -1,10 +1,8 @@
 import 'dart:math' as math;
 
-import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
-import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -187,7 +185,7 @@ class CrosswordGridPainter extends CustomPainter {
     if (state.isWordHighlighted(row, col)) {
       return theme.wordHighlight;
     }
-    if (_isCompletedCell(state, row, col)) {
+    if (state.completedCells.contains((row, col))) {
       // Intentionally theme-fixed: completion is a celebration moment and
       // the bright green pair reads the same in light and dark mode.
       return CrosscueColors.completedCellBg;
@@ -314,7 +312,7 @@ class CrosswordGridPainter extends CustomPainter {
   }
 
   Color _letterColorFor(int row, int col) {
-    final isCompleted = _isCompletedCell(solveState, row, col);
+    final isCompleted = solveState.completedCells.contains((row, col));
     final progress = solveState.progress.cell(row, col);
     if (colorblindMode == ColorblindMode.deuteranopia) {
       if (progress.state == CellState.checkedIncorrect) {
@@ -343,32 +341,6 @@ class CrosswordGridPainter extends CustomPainter {
     return theme.cellText;
   }
 
-  bool _isCompletedCell(SolveState state, int row, int col) {
-    final progress = state.progress.cell(row, col);
-    if (progress.letter.isEmpty) return false;
-    for (final clue in state.puzzle.clues) {
-      if (!SolveState.cellInClue(row, col, clue)) continue;
-      if (_isClueComplete(state, clue)) return true;
-    }
-    return false;
-  }
-
-  bool _isClueComplete(SolveState state, Clue clue) {
-    for (var i = 0; i < clue.length; i++) {
-      final (row, col) = clue.direction == Direction.across
-          ? (clue.startRow, clue.startCol + i)
-          : (clue.startRow + i, clue.startCol);
-      final progress = state.progress.cell(row, col);
-      final solutionCell = state.puzzle.grid.cell(row, col);
-      // Match the completion rule so a "J" entry on a JACK rebus cell
-      // still triggers the celebration green on the surrounding word.
-      if (!solutionCell.accepts(progress.letter)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   void _paintAccessibilityOverlay(
     Canvas canvas,
     CellProgress progress,
@@ -381,7 +353,7 @@ class CrosswordGridPainter extends CustomPainter {
       case ColorblindMode.none:
         return;
       case ColorblindMode.deuteranopia:
-        final isCompleted = _isCompletedCell(solveState, row, col);
+        final isCompleted = solveState.completedCells.contains((row, col));
         final isCorrect =
             progress.state == CellState.checkedCorrect || isCompleted;
         final isIncorrect = progress.state == CellState.checkedIncorrect;
