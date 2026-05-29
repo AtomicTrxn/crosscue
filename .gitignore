@@ -20,6 +20,12 @@ local.properties
 key.properties
 *.keystore
 *.jks
+# Apple signing / publishing credentials
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+AuthKey_*.p8
 
 # IDE
 .idea/
