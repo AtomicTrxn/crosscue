@@ -90,9 +90,12 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
+          # No --no-pub: a release build must regenerate
+          # GeneratedPluginRegistrant so dev-only plugins (integration_test)
+          # are excluded. The stale registrant from `flutter pub get` lists
+          # them and breaks compileReleaseJavaWithJavac.
           flutter build apk \
             --release \
-            --no-pub \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }}
 
@@ -104,9 +107,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
+          # No --no-pub: see the APK step above — the release build must
+          # regenerate GeneratedPluginRegistrant to drop dev-only plugins.
           flutter build appbundle \
             --release \
-            --no-pub \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }}
 
