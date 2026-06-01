@@ -5,8 +5,6 @@ still worth tracking after the current cleanup pass.
 
 ## Backlog
 
-- Continue revamping `onboarding_screen.dart` when that flow gets broader
-  product/design attention.
 - **Integration test suite expansion** — PRs 3-5 of
   [#106](https://github.com/AtomicTrxn/crosscue/issues/106). Cover grid-cell
   taps + letter input + rebus, app-lifecycle persistence and dark-mode
@@ -46,6 +44,8 @@ finished during the v1.2.7 release push:
 
 ## Recently closed from the review pass
 
+- Onboarding revamp ([#56](https://github.com/AtomicTrxn/crosscue/issues/56))
+  — v1.3.0 replaced the old tutorial with a 3-step sync-setup flow (PR #134).
 - Migrated the TestFlight upload off `APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD`
   to an App Store Connect API key (`APPLE_API_KEY` / `APPLE_API_KEY_ID` /
   `APPLE_API_ISSUER_ID`) — scoped role, individually revocable.
