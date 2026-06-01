@@ -1,0 +1,1 @@
+The home screen is now honest about today's puzzle: when the daily mini is still downloading you'll see a "fetching today's puzzle…" note instead of an empty screen, and a flaky connection quietly retries before giving up — with a tap-to-retry if it does. As always: fully offline once it lands, no accounts, no ads, no tracking.

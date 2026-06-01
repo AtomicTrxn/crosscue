@@ -59,6 +59,16 @@ class SolveNotifier extends _$SolveNotifier {
       _saveDebounce?.cancel();
     });
 
+    // Keep the per-second elapsed provider alive for the whole solve session.
+    // It's auto-dispose and only SolveAppBar *watches* it — but the AppBar
+    // doesn't mount until this build resolves, which is *after* we call
+    // `start()` below. Without this listener the timer started here would be
+    // torn down in that gap and the clock would freeze at 0 (the AppBar then
+    // re-creates the provider at its default, with no timer running). The
+    // callback is intentionally empty: SolveNotifier must stay off the
+    // per-tick rebuild path — that separation is the whole point of #130.
+    ref.listen(solveElapsedSecondsProvider(puzzleId), (_, __) {});
+
     final importRepo = ref.read(importRepositoryProvider);
     final solveRepo = ref.read(solveRepositoryProvider);
 
@@ -536,6 +546,10 @@ class SolveNotifier extends _$SolveNotifier {
     // already snapshotted into state.elapsedSeconds — use whichever is fresher.
     final elapsedSec =
         s.status.isTerminal || s.isPaused ? s.elapsedSeconds : _elapsedSeconds;
+    await _save(s, elapsedSec);
+  }
+
+  Future<void> _save(SolveState s, int elapsedSec) async {
     final repo = ref.read(solveRepositoryProvider);
     await repo.saveProgress(
       sessionId: s.sessionId!,
@@ -557,6 +571,25 @@ class SolveNotifier extends _$SolveNotifier {
   Future<void> flushPendingSave() async {
     _saveDebounce?.cancel();
     await _saveNow();
+  }
+
+  /// Persists the live elapsed clock when leaving an in-progress puzzle.
+  ///
+  /// The debounced autosave only fires on edits, and `pause()` only fires on
+  /// backgrounding — so a user who opens a puzzle, lets the clock run, and
+  /// leaves without typing would otherwise never persist the elapsed time,
+  /// and re-entry would reset the timer to 0. Called from
+  /// `SolveScreen.dispose()` with the last-seen elapsed value (read there via
+  /// a cached snapshot, since `ref` is unsafe during widget deactivation).
+  ///
+  /// No-op for terminal or paused sessions: those paths already snapshot the
+  /// elapsed value into state and persist it themselves.
+  Future<void> persistElapsedOnLeave(int seconds) async {
+    final s = _s;
+    if (s == null || s.sessionId == null) return;
+    if (s.status.isTerminal || s.isPaused) return;
+    _saveDebounce?.cancel();
+    await _save(s, seconds);
   }
 
   // ---------------------------------------------------------------------------
