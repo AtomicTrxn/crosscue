@@ -11,8 +11,7 @@ import 'package:crosscue/features/settings/presentation/providers/settings_provi
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
-import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
-import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
+import 'package:crosscue/features/solve/domain/services/solve_focus_navigator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
@@ -39,30 +38,12 @@ class SolveScreen extends ConsumerStatefulWidget {
 
 class _SolveScreenState extends ConsumerState<SolveScreen>
     with WidgetsBindingObserver {
-  bool _completionSheetShown = false;
   late final ConfettiController _confettiController;
   String? _selectorPuzzleId;
   Clue? _selectedActiveClue;
   Clue? _selectedCrossClue;
   bool _hapticsEnabled = true;
   bool _soundsEnabled = false;
-
-  // Latest snapshot of the solve provider's state, kept in sync via the
-  // listener installed in initState. Cached so dispose() can decide whether
-  // to flush the autosave without calling ref.read — Riverpod forbids `ref`
-  // use during element deactivation (the framework throws StateError).
-  SolveState? _lastSolveState;
-
-  // Cached notifier reference. Captured once in initState so dispose() can
-  // call flushPendingSave() without going through `ref`. The notifier itself
-  // outlives the widget (Riverpod owns its lifecycle).
-  SolveNotifier? _solveNotifier;
-
-  // Latest live elapsed-seconds value, mirrored from the elapsed provider via
-  // the listener in initState. Cached so dispose() can persist it without
-  // touching `ref` (unsafe during deactivation) — this is what lets the clock
-  // survive leaving an in-progress puzzle the user never typed into.
-  int _lastElapsedSeconds = 0;
 
   @override
   void initState() {
@@ -71,15 +52,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     _confettiController = ConfettiController(
       duration: const Duration(milliseconds: 800),
     );
-    _solveNotifier = ref.read(solveProvider(widget.puzzleId).notifier);
     ref.listenManual(solveProvider(widget.puzzleId), _onSolveStateChanged);
-    // Mirror the live elapsed clock into a field so dispose() can persist it
-    // without `ref`. fireImmediately seeds the initial (resumed) value.
-    ref.listenManual(
-      solveElapsedSecondsProvider(widget.puzzleId),
-      (_, next) => _lastElapsedSeconds = next,
-      fireImmediately: true,
-    );
     ref.listenManual(
       hapticsEnabledProvider,
       (_, next) => _hapticsEnabled = next,
@@ -94,27 +67,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 
   @override
   void dispose() {
-    // Backstop for the unawaited markComplete in SolveNotifier._persistCompletion:
-    // on a normal screen tear-down where the puzzle is already terminal, flush
-    // the autosave so solve_sessions reflects the completed status even if the
-    // markComplete write is still in flight or fails. See
-    // docs/architecture/completion-authority.md (divergence window 1).
-    //
-    // _lastSolveState + _solveNotifier are cached during initState/listen
-    // because Riverpod's `ref` is unsafe to use here (the widget is being
-    // deactivated). Caught by integration_test/seed_and_solve_test.dart.
-    final solveState = _lastSolveState;
-    final notifier = _solveNotifier;
-    if (solveState != null && notifier != null) {
-      if (solveState.status.isTerminal) {
-        unawaited(notifier.flushPendingSave());
-      } else {
-        // Persist the live clock so leaving an in-progress puzzle (even one
-        // the user never typed into) doesn't reset the timer on re-entry.
-        // No-op for paused sessions — pause() already saved them.
-        unawaited(notifier.persistElapsedOnLeave(_lastElapsedSeconds));
-      }
-    }
+    // The terminal-completion backstop and the in-progress elapsed flush now
+    // live in SolveNotifier.build's onDispose (see SolveNotifier.flushOnDispose),
+    // so the guarantee no longer depends on the widget teardown caching
+    // `ref`-derived state. Still caught by integration_test/seed_and_solve_test.dart.
     _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -158,9 +114,13 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         solveState.status == PuzzleStatus.solvedWithHelp ||
         solveState.status == PuzzleStatus.solvedWithReveal ||
         solveState.status == PuzzleStatus.revealed;
-    if (!isComplete || _completionSheetShown) return;
+    if (!isComplete || solveState.completionSheetShown) return;
 
-    _completionSheetShown = true;
+    // Canonical "sheet shown" flag lives in SolveState so it survives widget
+    // recreation (backgrounding, hot reload) and can't re-trigger the sheet.
+    ref
+        .read(solveProvider(widget.puzzleId).notifier)
+        .markCompletionSheetShown();
 
     if (_hapticsEnabled) {
       unawaited(_pulseCompletionHaptics());
@@ -189,7 +149,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           onResetPuzzle: () {
             Navigator.of(ctx).pop();
             if (!mounted) return;
-            _completionSheetShown = false;
+            // resetPuzzle clears completionSheetShown in SolveState.
             ref.read(solveProvider(widget.puzzleId).notifier).resetPuzzle();
           },
         ),
@@ -217,15 +177,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     AsyncValue<SolveState> next,
   ) {
     next.whenData((solveState) {
-      // Cache so dispose() can read the latest terminal status without
-      // calling ref.read on an unmounted ConsumerStatefulElement.
-      _lastSolveState = solveState;
-      // If a reset returned the puzzle to in-progress, allow the completion
-      // sheet to fire again on the next solve.
-      if (_completionSheetShown &&
-          solveState.status == PuzzleStatus.inProgress) {
-        _completionSheetShown = false;
-      }
+      // The "sheet shown" flag now lives in SolveState and is reset by
+      // resetPuzzle, so there's no widget-side flag to clear here.
       _maybeShowCompletionSheet(solveState);
       _syncClueSelectors(solveState);
     });
@@ -263,7 +216,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   }
 
   void _setSelectorsFromClue(SolveState solveState, Clue clue) {
-    final focus = _focusForClue(solveState, clue);
+    final focus = SolveFocusNavigator.focusForClue(solveState, clue);
     setState(() {
       _selectedActiveClue = clue;
       _selectedCrossClue = _clueForFocus(
@@ -272,23 +225,6 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         _oppositeDirection(clue.direction),
       );
     });
-  }
-
-  FocusPosition _focusForClue(SolveState solveState, Clue clue) {
-    var targetRow = clue.startRow;
-    var targetCol = clue.startCol;
-    for (final (row, col) in ClueProgressCalculator.cellsFor(clue)) {
-      if (solveState.progress.cell(row, col).letter.isEmpty) {
-        targetRow = row;
-        targetCol = col;
-        break;
-      }
-    }
-    return FocusPosition(
-      row: targetRow,
-      col: targetCol,
-      direction: clue.direction,
-    );
   }
 
   Clue? _clueForFocus(

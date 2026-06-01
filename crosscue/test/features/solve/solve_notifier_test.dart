@@ -434,9 +434,9 @@ void main() {
   // Regression for "leave without typing → timer resets". The debounced
   // autosave only fires on edits and pause() only fires on backgrounding, so
   // leaving an untouched in-progress puzzle must still persist the live clock
-  // (SolveScreen.dispose -> persistElapsedOnLeave) or re-entry seeds from 0.
-  test('persistElapsedOnLeave saves the live elapsed for an in-progress puzzle',
-      () {
+  // (SolveNotifier.flushOnDispose, run from build()'s onDispose) or re-entry
+  // seeds from 0.
+  test('flushOnDispose saves the live elapsed for an in-progress puzzle', () {
     fakeAsync((async) {
       final puzzle = _puzzle();
       final solveRepo = _FakeSolveRepository(_blankProgress());
@@ -472,10 +472,9 @@ void main() {
         reason: 'no edit happened — nothing should have autosaved',
       );
 
-      // SolveScreen.dispose() flushes the live clock on the way out.
-      container
-          .read(provider.notifier)
-          .persistElapsedOnLeave(container.read(elapsedProvider));
+      // Tearing down the screen flushes the live clock on the way out (this is
+      // what build()'s onDispose invokes).
+      container.read(provider.notifier).flushOnDispose();
       async.flushMicrotasks();
 
       expect(
@@ -486,7 +485,7 @@ void main() {
     });
   });
 
-  test('persistElapsedOnLeave is a no-op for a paused session', () {
+  test('flushOnDispose is a no-op for a paused session', () {
     fakeAsync((async) {
       final puzzle = _puzzle();
       final solveRepo = _FakeSolveRepository(_blankProgress());
@@ -515,7 +514,7 @@ void main() {
       async.flushMicrotasks();
       final callsAfterPause = solveRepo.saveProgressCalls;
 
-      container.read(provider.notifier).persistElapsedOnLeave(0);
+      container.read(provider.notifier).flushOnDispose();
       async.flushMicrotasks();
 
       expect(
@@ -524,6 +523,47 @@ void main() {
         reason: 'paused sessions are persisted by pause(); leave is a no-op',
       );
     });
+  });
+
+  // --------------------------------------------------------------------
+  // Completion-sheet flag ownership (#125)
+  // --------------------------------------------------------------------
+
+  test(
+      'completionSheetShown defaults false and markCompletionSheetShown sets it',
+      () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _blankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    expect(container.read(provider).value!.completionSheetShown, isFalse);
+
+    container.read(provider.notifier).markCompletionSheetShown();
+    expect(container.read(provider).value!.completionSheetShown, isTrue);
+
+    // Idempotent — a second call doesn't churn state identity.
+    final before = container.read(provider).value!;
+    container.read(provider.notifier).markCompletionSheetShown();
+    expect(identical(container.read(provider).value, before), isTrue);
+  });
+
+  test('resetPuzzle clears completionSheetShown', () async {
+    final puzzle = _puzzle();
+    final container = _containerFor(puzzle, _filledProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    container.read(provider.notifier)
+      ..markCompletionSheetShown()
+      ..resetPuzzle();
+
+    expect(container.read(provider).value!.completionSheetShown, isFalse);
+    expect(container.read(provider).value!.status, PuzzleStatus.inProgress);
   });
 }
 

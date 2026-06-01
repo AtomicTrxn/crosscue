@@ -10,7 +10,7 @@ import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
-import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
+import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
 import 'package:crosscue/features/solve/domain/services/grid_progress_mutator.dart';
 import 'package:crosscue/features/solve/domain/services/solve_focus_navigator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
@@ -36,11 +36,34 @@ class SolveNotifier extends _$SolveNotifier {
 
   Timer? _saveDebounce;
 
+  /// Captured once in [build] so the teardown flush can persist without
+  /// touching `ref` (unsafe inside `onDispose`). The repo provider is
+  /// keepAlive, so this reference stays valid for the notifier's lifetime.
+  late SolveRepository _solveRepo;
+
+  /// Mirror of the live [SolveElapsedSeconds] value, kept current by the
+  /// listener wired in [build]. Lets [flushOnDispose] read the clock without
+  /// `ref`, and serves as the canonical elapsed source elsewhere.
+  int _liveElapsedSeconds = 0;
+
   /// Safely read the current SolveState from AsyncValue.
   SolveState? get _s => switch (state) {
         AsyncData(:final value) => value,
         _ => null,
       };
+
+  /// Plain mirror of the latest data state, kept current by the [state] setter
+  /// and the initial [build] return. Read by [flushOnDispose], which runs
+  /// inside `onDispose` where touching `state`/`ref` throws.
+  SolveState? _latestState;
+
+  @override
+  set state(AsyncValue<SolveState> value) {
+    super.state = value;
+    if (value case AsyncData(value: final data)) {
+      _latestState = data;
+    }
+  }
 
   /// Live elapsed-second counter for this puzzle. Owned by
   /// [SolveElapsedSeconds] so that per-second ticks don't broadcast through
@@ -50,27 +73,38 @@ class SolveNotifier extends _$SolveNotifier {
   /// when it saves to the DB or persists a completion — the snapshot kept on
   /// [SolveState.elapsedSeconds] is refreshed from here at save/pause/
   /// completion boundaries so [CompletionSheet] (which reads from state) sees
-  /// the right value.
-  int get _elapsedSeconds => ref.read(solveElapsedSecondsProvider(puzzleId));
+  /// the right value. Backed by [_liveElapsedSeconds], which the [build]
+  /// listener keeps in lockstep with the provider.
+  int get _elapsedSeconds => _liveElapsedSeconds;
 
   @override
   Future<SolveState> build(String puzzleId) async {
     ref.onDispose(() {
       _saveDebounce?.cancel();
+      // Teardown backstop: persist the live clock for an in-progress puzzle on
+      // the way out so it isn't lost — see [flushOnDispose].
+      unawaited(flushOnDispose());
     });
 
-    // Keep the per-second elapsed provider alive for the whole solve session.
-    // It's auto-dispose and only SolveAppBar *watches* it — but the AppBar
-    // doesn't mount until this build resolves, which is *after* we call
-    // `start()` below. Without this listener the timer started here would be
-    // torn down in that gap and the clock would freeze at 0 (the AppBar then
-    // re-creates the provider at its default, with no timer running). The
-    // callback is intentionally empty: SolveNotifier must stay off the
-    // per-tick rebuild path — that separation is the whole point of #130.
-    ref.listen(solveElapsedSecondsProvider(puzzleId), (_, __) {});
+    // Mirror the per-second elapsed provider into [_liveElapsedSeconds] for the
+    // whole solve session. Two jobs:
+    //   1. Keep-alive — the provider is auto-dispose and only SolveAppBar
+    //      *watches* it, but the AppBar doesn't mount until this build resolves
+    //      (after `start()` below). Without a listener here the timer would be
+    //      torn down in that gap and the clock would freeze at 0.
+    //   2. Caching — `onDispose` (and `_elapsedSeconds`) can read the value
+    //      without `ref`, which is unsafe during disposal.
+    // The callback does not rebuild SolveNotifier, so per-tick broadcasts stay
+    // off the solve-screen rebuild path — the whole point of #130.
+    ref.listen(
+      solveElapsedSecondsProvider(puzzleId),
+      (_, next) => _liveElapsedSeconds = next,
+      fireImmediately: true,
+    );
 
     final importRepo = ref.read(importRepositoryProvider);
     final solveRepo = ref.read(solveRepositoryProvider);
+    _solveRepo = solveRepo;
 
     final puzzle = await importRepo.getPuzzle(Uri.decodeComponent(puzzleId));
     if (puzzle == null) throw PuzzleNotFoundError(puzzleId);
@@ -87,7 +121,7 @@ class SolveNotifier extends _$SolveNotifier {
       elapsedNotifier.start();
     }
 
-    return SolveState(
+    return _latestState = SolveState(
       puzzle: puzzle,
       progress: session.progress,
       focus: session.focus,
@@ -126,6 +160,15 @@ class SolveNotifier extends _$SolveNotifier {
     if (!s.status.isTerminal) {
       ref.read(solveElapsedSecondsProvider(puzzleId).notifier).start();
     }
+  }
+
+  /// Records that the completion celebration sheet has been shown for this
+  /// solve, so it isn't re-triggered on widget recreation (backgrounding,
+  /// hot reload). Idempotent. Cleared by [resetPuzzle].
+  void markCompletionSheetShown() {
+    final s = _s;
+    if (s == null || s.completionSheetShown) return;
+    state = AsyncData(s.copyWith(completionSheetShown: true));
   }
 
   // ---------------------------------------------------------------------------
@@ -178,22 +221,7 @@ class SolveNotifier extends _$SolveNotifier {
   FocusPosition? focusClue(Clue clue) {
     final s = _s;
     if (s == null) return null;
-
-    var targetRow = clue.startRow;
-    var targetCol = clue.startCol;
-    for (final (row, col) in ClueProgressCalculator.cellsFor(clue)) {
-      if (s.progress.cell(row, col).letter.isEmpty) {
-        targetRow = row;
-        targetCol = col;
-        break;
-      }
-    }
-
-    final focus = FocusPosition(
-      row: targetRow,
-      col: targetCol,
-      direction: clue.direction,
-    );
+    final focus = SolveFocusNavigator.focusForClue(s, clue);
     state = AsyncData(s.copyWith(focus: focus));
     return focus;
   }
@@ -489,6 +517,7 @@ class SolveNotifier extends _$SolveNotifier {
         usedCheck: false,
         usedReveal: false,
         cleanSolveEligible: true,
+        completionSheetShown: false,
       ),
     );
 
@@ -550,8 +579,7 @@ class SolveNotifier extends _$SolveNotifier {
   }
 
   Future<void> _save(SolveState s, int elapsedSec) async {
-    final repo = ref.read(solveRepositoryProvider);
-    await repo.saveProgress(
+    await _solveRepo.saveProgress(
       sessionId: s.sessionId!,
       puzzleWidth: s.puzzle.width,
       puzzleHeight: s.puzzle.height,
@@ -573,23 +601,27 @@ class SolveNotifier extends _$SolveNotifier {
     await _saveNow();
   }
 
-  /// Persists the live elapsed clock when leaving an in-progress puzzle.
+  /// Teardown backstop, invoked from [build]'s `onDispose`. Owning this on the
+  /// notifier (not the widget) means the guarantee survives any disposal path,
+  /// and it reads only captured fields (`_latestState`, `_solveRepo`,
+  /// `_liveElapsedSeconds`) — never `state` or `ref`, which throw inside
+  /// `onDispose`.
   ///
-  /// The debounced autosave only fires on edits, and `pause()` only fires on
-  /// backgrounding — so a user who opens a puzzle, lets the clock run, and
-  /// leaves without typing would otherwise never persist the elapsed time,
-  /// and re-entry would reset the timer to 0. Called from
-  /// `SolveScreen.dispose()` with the last-seen elapsed value (read there via
-  /// a cached snapshot, since `ref` is unsafe during widget deactivation).
+  /// Persists the live clock for an in-progress puzzle so leaving one you never
+  /// typed into doesn't reset the timer on re-entry (the debounced autosave
+  /// only fires on edits; `pause()` only on backgrounding).
   ///
-  /// No-op for terminal or paused sessions: those paths already snapshot the
-  /// elapsed value into state and persist it themselves.
-  Future<void> persistElapsedOnLeave(int seconds) async {
-    final s = _s;
+  /// No-op for paused sessions ([pause] already saved them) and for terminal
+  /// sessions: [_persistCompletion]'s `markComplete` already persisted those
+  /// authoritatively across both tables, and re-saving via `saveProgress` here
+  /// would null the cached `completionType` (locked by
+  /// `solve_completion_roundtrip_test`). Force-quit of a terminal session is
+  /// covered by the `detached` lifecycle handler in SolveScreen.
+  Future<void> flushOnDispose() async {
+    final s = _latestState;
     if (s == null || s.sessionId == null) return;
     if (s.status.isTerminal || s.isPaused) return;
-    _saveDebounce?.cancel();
-    await _save(s, seconds);
+    await _save(s, _liveElapsedSeconds);
   }
 
   // ---------------------------------------------------------------------------
