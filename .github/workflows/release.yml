@@ -311,8 +311,8 @@ jobs:
           tag_name: ${{ inputs.tag }}
           name: Crosscue ${{ inputs.tag }}
           generate_release_notes: true
-          # AAB glob matches nothing when play_store: false — softprops/action-gh-release
-          # skips missing files silently (fail_on_unmatched_files defaults to false).
+          # Only the APK is user-installable; an AAB is a Play Store publishing
+          # format that can't be sideloaded. The AAB still ships to Play and is
+          # retained as a CI build artifact — no need to attach it here.
           files: |
             artifacts/*.apk
-            artifacts/*.aab
