@@ -118,7 +118,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
 
     // Canonical "sheet shown" flag lives in SolveState so it survives widget
     // recreation (backgrounding, hot reload) and can't re-trigger the sheet.
-    ref.read(solveProvider(widget.puzzleId).notifier).markCompletionSheetShown();
+    ref
+        .read(solveProvider(widget.puzzleId).notifier)
+        .markCompletionSheetShown();
 
     if (_hapticsEnabled) {
       unawaited(_pulseCompletionHaptics());

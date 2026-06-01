@@ -529,7 +529,8 @@ void main() {
   // Completion-sheet flag ownership (#125)
   // --------------------------------------------------------------------
 
-  test('completionSheetShown defaults false and markCompletionSheetShown sets it',
+  test(
+      'completionSheetShown defaults false and markCompletionSheetShown sets it',
       () async {
     final puzzle = _puzzle();
     final container = _containerFor(puzzle, _blankProgress());
