@@ -12,6 +12,7 @@ import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
+import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
@@ -57,6 +58,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   // outlives the widget (Riverpod owns its lifecycle).
   SolveNotifier? _solveNotifier;
 
+  // Latest live elapsed-seconds value, mirrored from the elapsed provider via
+  // the listener in initState. Cached so dispose() can persist it without
+  // touching `ref` (unsafe during deactivation) — this is what lets the clock
+  // survive leaving an in-progress puzzle the user never typed into.
+  int _lastElapsedSeconds = 0;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +73,13 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     );
     _solveNotifier = ref.read(solveProvider(widget.puzzleId).notifier);
     ref.listenManual(solveProvider(widget.puzzleId), _onSolveStateChanged);
+    // Mirror the live elapsed clock into a field so dispose() can persist it
+    // without `ref`. fireImmediately seeds the initial (resumed) value.
+    ref.listenManual(
+      solveElapsedSecondsProvider(widget.puzzleId),
+      (_, next) => _lastElapsedSeconds = next,
+      fireImmediately: true,
+    );
     ref.listenManual(
       hapticsEnabledProvider,
       (_, next) => _hapticsEnabled = next,
@@ -91,10 +105,15 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     // deactivated). Caught by integration_test/seed_and_solve_test.dart.
     final solveState = _lastSolveState;
     final notifier = _solveNotifier;
-    if (solveState != null &&
-        solveState.status.isTerminal &&
-        notifier != null) {
-      unawaited(notifier.flushPendingSave());
+    if (solveState != null && notifier != null) {
+      if (solveState.status.isTerminal) {
+        unawaited(notifier.flushPendingSave());
+      } else {
+        // Persist the live clock so leaving an in-progress puzzle (even one
+        // the user never typed into) doesn't reset the timer on re-entry.
+        // No-op for paused sessions — pause() already saved them.
+        unawaited(notifier.persistElapsedOnLeave(_lastElapsedSeconds));
+      }
     }
     _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);

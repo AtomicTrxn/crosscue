@@ -390,6 +390,141 @@ void main() {
       );
     });
   });
+
+  // Regression for the frozen-clock bug: in production, SolveAppBar (the
+  // only watcher of the elapsed provider) doesn't mount until AFTER
+  // solveProvider resolves — i.e. after build() has already called
+  // `start()`. If build() doesn't itself keep the auto-dispose elapsed
+  // provider alive, it's torn down in that gap and the clock freezes at 0.
+  // This test reproduces that exact ordering: it does NOT pre-listen to the
+  // elapsed provider; the "AppBar" listener is attached only after the gap.
+  test('timer survives until SolveAppBar subscribes after build', () {
+    fakeAsync((async) {
+      final puzzle = _puzzle();
+      final container = _containerFor(puzzle, _blankProgress());
+      addTearDown(container.dispose);
+
+      final encodedId = Uri.encodeComponent(puzzle.id);
+      final provider = solveProvider(encodedId);
+      final elapsedProvider = solveElapsedSecondsProvider(encodedId);
+
+      // SolveScreen watches solveProvider; the elapsed provider is left
+      // unobserved, exactly as in production while the screen is loading.
+      container.listen(provider, (_, __) {});
+      container.read(provider.future);
+      async.flushMicrotasks();
+
+      // A gap during which nothing watches the elapsed provider — long
+      // enough for auto-dispose to fire if build() didn't keep it alive.
+      async.elapse(const Duration(seconds: 2));
+
+      // Now SolveAppBar mounts and starts watching the elapsed provider.
+      container.listen(elapsedProvider, (_, __) {});
+      async.elapse(const Duration(seconds: 3));
+
+      expect(
+        container.read(elapsedProvider),
+        greaterThan(0),
+        reason: 'elapsed clock must keep ticking after the AppBar subscribes '
+            '— build() must hold the auto-dispose provider alive',
+      );
+    });
+  });
+
+  // Regression for "leave without typing → timer resets". The debounced
+  // autosave only fires on edits and pause() only fires on backgrounding, so
+  // leaving an untouched in-progress puzzle must still persist the live clock
+  // (SolveScreen.dispose -> persistElapsedOnLeave) or re-entry seeds from 0.
+  test('persistElapsedOnLeave saves the live elapsed for an in-progress puzzle',
+      () {
+    fakeAsync((async) {
+      final puzzle = _puzzle();
+      final solveRepo = _FakeSolveRepository(_blankProgress());
+      final container = ProviderContainer(
+        overrides: [
+          importRepositoryProvider
+              .overrideWithValue(_FakeImportRepository(puzzle)),
+          solveRepositoryProvider.overrideWithValue(solveRepo),
+          statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
+          appSettingsProvider
+              .overrideWithValue(const _FakeAppSettingsRepository()),
+          bootSettingsProvider.overrideWithValue(BootSettings.defaults),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final encodedId = Uri.encodeComponent(puzzle.id);
+      final provider = solveProvider(encodedId);
+      final elapsedProvider = solveElapsedSecondsProvider(encodedId);
+      container
+        ..listen(provider, (_, __) {})
+        ..listen(elapsedProvider, (_, __) {});
+
+      container.read(provider.future);
+      async.flushMicrotasks();
+
+      // Clock runs for 7s without any typing (no autosave fired yet).
+      async.elapse(const Duration(seconds: 7));
+      expect(container.read(elapsedProvider), 7);
+      expect(
+        solveRepo.saveProgressCalls,
+        0,
+        reason: 'no edit happened — nothing should have autosaved',
+      );
+
+      // SolveScreen.dispose() flushes the live clock on the way out.
+      container
+          .read(provider.notifier)
+          .persistElapsedOnLeave(container.read(elapsedProvider));
+      async.flushMicrotasks();
+
+      expect(
+        solveRepo.lastSavedElapsedMs,
+        7000,
+        reason: 'leaving must persist the live elapsed seconds',
+      );
+    });
+  });
+
+  test('persistElapsedOnLeave is a no-op for a paused session', () {
+    fakeAsync((async) {
+      final puzzle = _puzzle();
+      final solveRepo = _FakeSolveRepository(_blankProgress());
+      final container = ProviderContainer(
+        overrides: [
+          importRepositoryProvider
+              .overrideWithValue(_FakeImportRepository(puzzle)),
+          solveRepositoryProvider.overrideWithValue(solveRepo),
+          statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
+          appSettingsProvider
+              .overrideWithValue(const _FakeAppSettingsRepository()),
+          bootSettingsProvider.overrideWithValue(BootSettings.defaults),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final encodedId = Uri.encodeComponent(puzzle.id);
+      final provider = solveProvider(encodedId);
+      container.listen(provider, (_, __) {});
+      container.read(provider.future);
+      async.flushMicrotasks();
+
+      // pause() already persisted the session; the leave-flush must not
+      // double-write a stale/zero value over it.
+      container.read(provider.notifier).pause();
+      async.flushMicrotasks();
+      final callsAfterPause = solveRepo.saveProgressCalls;
+
+      container.read(provider.notifier).persistElapsedOnLeave(0);
+      async.flushMicrotasks();
+
+      expect(
+        solveRepo.saveProgressCalls,
+        callsAfterPause,
+        reason: 'paused sessions are persisted by pause(); leave is a no-op',
+      );
+    });
+  });
 }
 
 Puzzle _rebusPuzzle() {
@@ -813,6 +948,10 @@ final class _FakeSolveRepository implements SolveRepository {
   final Grid<CellProgress> progress;
   final completed = _CompleterCompletion();
 
+  /// elapsedMs from the most recent saveProgress call, for assertions.
+  int? lastSavedElapsedMs;
+  int saveProgressCalls = 0;
+
   @override
   Future<SessionLoadResult> createOrResumeSession(Puzzle puzzle) async {
     return SessionLoadResult(
@@ -866,7 +1005,10 @@ final class _FakeSolveRepository implements SolveRepository {
     required bool usedCheck,
     required bool usedReveal,
     required bool cleanSolveEligible,
-  }) async {}
+  }) async {
+    saveProgressCalls++;
+    lastSavedElapsedMs = elapsedMs;
+  }
 }
 
 final class _FakeStatsRepository implements StatsRepository {
