@@ -122,9 +122,27 @@ class SolveFocusNavigator {
     return null;
   }
 
+  /// Returns a focus on the first empty cell in [clue], or the clue's start
+  /// cell if every cell is already filled.
+  ///
+  /// Single source of truth for "focus this clue's first open answer cell" —
+  /// used by both the grid's tap-a-clue path and the clue-list selectors.
+  static FocusPosition focusForClue(SolveState s, Clue clue) {
+    for (final (row, col) in ClueProgressCalculator.cellsFor(clue)) {
+      if (s.progress.cell(row, col).letter.isEmpty) {
+        return FocusPosition(row: row, col: col, direction: clue.direction);
+      }
+    }
+    return FocusPosition(
+      row: clue.startRow,
+      col: clue.startCol,
+      direction: clue.direction,
+    );
+  }
+
   /// Returns a focus inside [clue] that prefers the first open cell at or
   /// after ([row], [col]). Falls back to scanning from the start of the clue.
-  static FocusPosition focusForClue(
+  static FocusPosition focusWithinClueFrom(
     SolveState s,
     Clue clue,
     int row,
@@ -160,6 +178,6 @@ class SolveFocusNavigator {
     if (!s.isCellLocked(row, col)) {
       return FocusPosition(row: row, col: col, direction: clue.direction);
     }
-    return focusForClue(s, clue, row, col);
+    return focusWithinClueFrom(s, clue, row, col);
   }
 }

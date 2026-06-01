@@ -25,6 +25,7 @@ class SolveState {
     this.usedReveal = false,
     this.cleanSolveEligible = true,
     this.previousPersonalBestMs,
+    this.completionSheetShown = false,
   });
 
   final Puzzle puzzle;
@@ -59,6 +60,12 @@ class SolveState {
 
   /// Previous clean personal best for this puzzle's size bucket, if one exists.
   final int? previousPersonalBestMs;
+
+  /// True once the completion celebration sheet has been shown for this solve.
+  /// Owned here (not in widget state) so it survives widget recreation —
+  /// backgrounding mid-celebration or a hot reload won't re-trigger the sheet.
+  /// Reset to false by [SolveNotifier.resetPuzzle].
+  final bool completionSheetShown;
 
   // ---------------------------------------------------------------------------
   // Sorted clue cache
@@ -165,6 +172,7 @@ class SolveState {
     bool? usedReveal,
     bool? cleanSolveEligible,
     int? previousPersonalBestMs,
+    bool? completionSheetShown,
   }) {
     return SolveState(
       puzzle: puzzle,
@@ -181,6 +189,7 @@ class SolveState {
       cleanSolveEligible: cleanSolveEligible ?? this.cleanSolveEligible,
       previousPersonalBestMs:
           previousPersonalBestMs ?? this.previousPersonalBestMs,
+      completionSheetShown: completionSheetShown ?? this.completionSheetShown,
     );
   }
 

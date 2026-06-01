@@ -51,11 +51,9 @@ extension _CrosswordGridInput on _CrosswordGridState {
 
     if (_hapticsEnabled) HapticFeedback.mediumImpact();
 
-    final focus =
-        ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
-    if (focus != null) widget.onGridFocusSelected?.call(focus);
-    _requestFocus();
-
+    // Focus is NOT moved here — only if the user actually picks an action
+    // below. Moving it up-front meant dismissing the menu still jumped the
+    // cursor and fired a full SolveState cascade for nothing (#126).
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
     final RenderBox box = context.findRenderObject()! as RenderBox;
@@ -93,6 +91,12 @@ extension _CrosswordGridInput on _CrosswordGridState {
       if (!mounted) return;
       if (!context.mounted) return;
       final notifier = ref.read(solveProvider(widget.puzzleId).notifier);
+      // Now that an action is chosen, move focus to the long-pressed cell so
+      // the check/reveal/rebus action applies there (same behavior as before,
+      // just deferred past the dismiss case).
+      final focus = notifier.tapCell(row, col);
+      if (focus != null) widget.onGridFocusSelected?.call(focus);
+      _requestFocus();
       switch (action) {
         case _CellAction.enterRebus:
           _showRebusDialog(context, row, col);
