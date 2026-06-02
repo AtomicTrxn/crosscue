@@ -233,6 +233,36 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     });
   }
 
+  /// Shared handler for selecting a clue from the active-clue bar or the list:
+  /// updates the selectors and moves grid focus to the clue.
+  void _onClueSelected(SolveState solveState, Clue clue, bool hapticsEnabled) {
+    if (hapticsEnabled) HapticFeedback.selectionClick();
+    _setSelectorsFromClue(solveState, clue);
+    ref.read(solveProvider(widget.puzzleId).notifier).focusClue(clue);
+  }
+
+  /// Steps to the previous (-1) / next (+1) clue in the active direction,
+  /// wrapping. Backs the active-clue bar's ‹ › arrows.
+  void _stepClue(
+    SolveState solveState,
+    Clue? active,
+    int delta,
+    bool hapticsEnabled,
+  ) {
+    if (active == null) return;
+    final clues = solveState.puzzle.clues
+        .where((c) => c.direction == active.direction)
+        .toList()
+      ..sort((a, b) => a.number.compareTo(b.number));
+    if (clues.isEmpty) return;
+    final i = clues.indexWhere(
+      (c) => c.number == active.number && c.direction == active.direction,
+    );
+    if (i < 0) return;
+    final next = clues[(i + delta + clues.length) % clues.length];
+    _onClueSelected(solveState, next, hapticsEnabled);
+  }
+
   Clue? _clueForFocus(
     SolveState solveState,
     FocusPosition focus,
@@ -336,22 +366,30 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                       ),
                     ),
 
-                    // Clue panel — Expanded with no flex competitors so it
-                    // takes exactly the space between grid and keyboard,
-                    // leaving zero free space that could float the keyboard up.
+                    // Clue display — Across (top) + Down (bottom) at the
+                    // focused cell, both full. Active is highlighted with ‹ ›
+                    // arrows; tap the other to switch. Expanded with no flex
+                    // competitors so it takes exactly the space between grid and
+                    // keyboard, leaving zero free space that could float the
+                    // keyboard up.
                     Expanded(
                       child: CluePanel(
-                        solveState: solveState,
                         activeClue: selectedActiveClue,
                         crossClue: selectedCrossClue,
-                        hapticsEnabled: hapticsEnabled,
-                        onClueTap: (clue) {
-                          if (hapticsEnabled) HapticFeedback.selectionClick();
-                          _setSelectorsFromClue(solveState, clue);
-                          ref
-                              .read(solveProvider(widget.puzzleId).notifier)
-                              .focusClue(clue);
-                        },
+                        onSelectClue: (clue) =>
+                            _onClueSelected(solveState, clue, hapticsEnabled),
+                        onPrev: () => _stepClue(
+                          solveState,
+                          selectedActiveClue,
+                          -1,
+                          hapticsEnabled,
+                        ),
+                        onNext: () => _stepClue(
+                          solveState,
+                          selectedActiveClue,
+                          1,
+                          hapticsEnabled,
+                        ),
                       ),
                     ),
 
