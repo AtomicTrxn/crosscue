@@ -1,10 +1,10 @@
 # Privacy Policy for Crosscue
 
-**Effective date:** May 15, 2026
+**Effective date:** June 2, 2026
 
-Crosscue is an offline-first crossword app for Android. This Privacy Policy
-explains what information Crosscue stores, what information it does not collect,
-and the choices available to you.
+Crosscue is an offline-first crossword app for iOS and Android. This Privacy
+Policy explains what information Crosscue stores, what information it does not
+collect, and the choices available to you.
 
 ## Summary
 
@@ -15,6 +15,9 @@ and the choices available to you.
   locally on your device.
 - If you choose to download puzzles from an online puzzle source, your device
   connects directly to that third-party source to fetch the requested puzzle.
+- If you choose to turn on iCloud sync (iOS), your puzzles, progress, and
+  settings are stored in your own private iCloud account so they follow you
+  across your devices. This data is never sent to the developer.
 
 ## Information stored on your device
 
@@ -55,6 +58,25 @@ your browser when you choose to follow them.
 Crosscue does not currently use third-party analytics, advertising SDKs, or
 remote crash-reporting services.
 
+## Optional iCloud sync (iOS)
+
+On iOS, Crosscue offers an optional iCloud sync feature so your puzzles, solve
+progress, and settings stay in sync across your Apple devices. It is **off by
+default** — you opt in during onboarding or from `Settings -> iCloud Sync`,
+and only when you are signed in to iCloud on the device.
+
+When iCloud sync is on:
+
+- Your puzzle library, solve progress, completion history, and synced settings
+  are stored in **your own private iCloud account** (Apple's iCloud Drive).
+- This data is handled by Apple under
+  [Apple's Privacy Policy](https://www.apple.com/legal/privacy/). Crosscue does
+  not operate a server and never receives, stores, or processes this data — it
+  moves directly between your devices and your iCloud account.
+- You can turn sync off at any time in `Settings -> iCloud Sync`. Turning it
+  off keeps the copy on your device; you can also choose **"Turn off and remove
+  iCloud copy"** to delete Crosscue's data from your iCloud account.
+
 ## Exporting and importing data
 
 Crosscue lets you export solve statistics as a local backup file and import a
@@ -66,14 +88,15 @@ policy.
 ## Data retention and deletion
 
 Data stored by Crosscue remains on your device until you delete it, uninstall
-the app, or clear app data through Android.
+the app, or clear the app's data through your device's system settings.
 
 You can delete Crosscue data from within the app by using:
 
 `Settings -> Privacy & Data -> Clear all data`
 
 This removes puzzles, progress, statistics, and settings stored by Crosscue on
-the device.
+the device. If you have used iCloud sync, see "Optional iCloud sync" above for
+removing the copy stored in your iCloud account.
 
 ## Children's privacy
 
