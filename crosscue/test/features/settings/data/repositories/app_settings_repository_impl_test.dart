@@ -195,4 +195,17 @@ void main() {
       expect(await repo.getCrosshareLastAttemptStatus(), equals('success'));
     });
   });
+
+  group('syncEnabled', () {
+    test('defaults to false (opt-in)', () async {
+      expect(await repo.getSyncEnabled(), isFalse);
+    });
+
+    test('round-trips true and false', () async {
+      await repo.setSyncEnabled(true);
+      expect(await repo.getSyncEnabled(), isTrue);
+      await repo.setSyncEnabled(false);
+      expect(await repo.getSyncEnabled(), isFalse);
+    });
+  });
 }

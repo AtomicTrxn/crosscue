@@ -10,6 +10,7 @@ import 'package:crosscue/features/settings/presentation/screens/crosshare_settin
 import 'package:crosscue/features/settings/presentation/screens/privacy_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/settings_screen.dart';
 import 'package:crosscue/features/settings/presentation/screens/source_management_screen.dart';
+import 'package:crosscue/features/settings/presentation/screens/sync_settings_screen.dart';
 import 'package:crosscue/features/solve/presentation/screens/solve_screen.dart';
 import 'package:crosscue/features/stats/presentation/screens/stats_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -100,6 +101,10 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'privacy',
                     builder: (context, state) => const PrivacyScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sync',
+                    builder: (context, state) => const SyncSettingsScreen(),
                   ),
                   GoRoute(
                     path: 'howto',

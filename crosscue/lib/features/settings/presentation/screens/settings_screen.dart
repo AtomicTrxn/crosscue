@@ -117,6 +117,15 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(Routes.sourceManagement),
           ),
 
+          // ── Sync ───────────────────────────────────────────────────────────
+          const SettingsSectionHeader('Sync'),
+          SettingsNavRow(
+            leading: Icons.cloud_outlined,
+            title: 'iCloud Sync',
+            subtitle: 'Sync puzzles and progress across your devices',
+            onTap: () => context.push(Routes.syncSettings),
+          ),
+
           // ── Privacy & Data ─────────────────────────────────────────────────
           const SettingsSectionHeader('Privacy & Data'),
           SettingsNavRow(

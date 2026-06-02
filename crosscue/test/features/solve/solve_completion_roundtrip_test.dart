@@ -607,6 +607,12 @@ final class _PermissiveAppSettings implements AppSettingsRepository {
   Future<void> setCrosshareAutoDownload(bool value) async {}
 
   @override
+  Future<bool> getSyncEnabled() async => false;
+
+  @override
+  Future<void> setSyncEnabled(bool value) async {}
+
+  @override
   Future<String> getCrosshareLastDownloadedDate() async => '';
 
   @override

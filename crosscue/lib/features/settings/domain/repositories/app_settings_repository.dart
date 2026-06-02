@@ -53,4 +53,10 @@ abstract interface class AppSettingsRepository {
   /// One of: '', 'success', 'duplicate', 'not_found', 'network_error'.
   Future<String> getCrosshareLastAttemptStatus();
   Future<void> setCrosshareLastAttemptStatus(String status);
+
+  /// Whether cross-device sync (iCloud) is enabled. Defaults to false — the
+  /// user must explicitly opt in. The orchestrator is in-memory and resets to
+  /// disabled on each launch, so this persisted flag is what re-enables it.
+  Future<bool> getSyncEnabled();
+  Future<void> setSyncEnabled(bool value);
 }
