@@ -30,7 +30,7 @@ lib/
     ├── archive/                     # Solved puzzles history with sort/filter/delete
     ├── stats/                       # Solve statistics (streaks, times, personal bests)
     ├── settings/                    # App settings screen (theme, haptics, clear data)
-    └── onboarding/                  # 3-step interactive first-launch onboarding
+    └── onboarding/                  # 4-step first-launch flow (welcome, source, iCloud, fetch)
 ```
 
 ---
@@ -264,8 +264,12 @@ settings/
         ├── settings_screen.dart                   # Root settings (theme, haptics, sounds, skip cells)
         ├── source_management_screen.dart          # Puzzle source list (local + Crosshare)
         ├── crosshare_settings_screen.dart         # Crosshare Daily Mini on/off + schedule config
+        ├── sync_settings_screen.dart              # iCloud sync opt-in + status (SyncController)
         └── privacy_screen.dart                    # Crash reporting, data export/import, clear all data
 ```
+
+The `providers/` folder also holds `sync_providers.dart` (`SyncController`),
+which bridges the `core/sync` orchestrator to the settings + onboarding UI.
 
 ---
 
@@ -363,6 +367,7 @@ core/routing/
 | `/settings/sources` | Nested under `/settings` | `SourceManagementScreen` |
 | `/settings/sources/crosshare` | Nested under `/settings/sources` | `CrosshareSettingsScreen` |
 | `/settings/privacy` | Nested under `/settings` | `PrivacyScreen` |
+| `/settings/sync` | Nested under `/settings` | `SyncSettingsScreen` |
 | `/onboarding` | Full-page (no shell) | `OnboardingScreen` |
 | `/import` | Full-page (no shell) | `ImportScreen` |
 | `/solve/:puzzleId` | Full-page (no shell) | `SolveScreen` |

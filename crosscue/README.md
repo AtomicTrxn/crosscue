@@ -1,6 +1,6 @@
 # Crosscue — Flutter App
 
-Android crossword puzzle app built with Flutter. See the [project root](../) for full documentation.
+Crossword puzzle app for iOS and Android, built with Flutter. See the [project root](../) for full documentation.
 
 ## Quick Start
 

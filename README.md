@@ -18,15 +18,20 @@ Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving im
 - **Archive & stats** — every completed puzzle recorded with time, date, and solve method; streaks tracked per local calendar date
 - **Colorblind mode** — deuteranopia-friendly blue/orange verification colors with `✓` / `✗` symbols, not color alone
 - **Light, dark, and system theme**
+- **Optional iCloud sync (iOS)** — opt in to keep puzzles, progress, and stats in sync across your devices through your own private iCloud account
 
 ---
 
 ## Offline by Design
 
 Crosscue stores puzzles, progress, history, and stats locally in a SQLite
-database on your device. There is no account, sync, advertising, or analytics.
-When you choose to download a puzzle from an online source, the app makes the
+database on your device. There is no account, advertising, or analytics. When
+you choose to download a puzzle from an online source, the app makes the
 network request needed to fetch that puzzle.
+
+Sync is **off by default and account-free**: if you turn on iCloud sync (iOS),
+your data moves directly between your devices and your own private iCloud
+account — it never passes through a Crosscue server (there isn't one).
 
 ---
 

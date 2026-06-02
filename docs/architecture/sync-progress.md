@@ -1,6 +1,10 @@
 # Sync Adapter — Implementation Progress
 
-> Tracks [#9 (G5)](https://github.com/AtomicTrxn/crosscue/issues/9).
+> Engine + iCloud transport originally tracked under #9 (G5, closed). The
+> in-app UI and triggers shipped under
+> [#142](https://github.com/AtomicTrxn/crosscue/issues/142) (closed); the
+> remaining Android (Google Drive) transport is tracked in
+> [#145](https://github.com/AtomicTrxn/crosscue/issues/145).
 > Design lives in [`sync-design.md`](sync-design.md). Update the status
 > column as each phase merges.
 
@@ -34,24 +38,25 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | Conditional provider wiring | `syncTransportProvider` returns `ICloudSyncTransport` on iOS; `NoOpSyncTransport` elsewhere. |
 | ✅ | Tests for the Dart side | `MockMethodChannel` covers each method's argument marshaling + error swallowing. |
 | ✅ | Apple Developer container + Xcode capability | Completed during the v1.2.7 iOS 1.0 release push. App ID has iCloud capability in Xcode 6 / CloudKit-compatible mode; container `iCloud.dev.tomhess.crosscue` exists; provisioning profile carries `icloud-services` + `icloud-container-identifiers` + `ubiquity-container-identifiers` entitlements. See [`sync-icloud-setup.md`](sync-icloud-setup.md). |
-| ⏳ | Manual two-device soak | Blocked on Phase 4 in-app UI — the transport stays in `SyncSignedOut` until users have a way to opt in. |
+| ⏳ | Manual two-device soak | Unblocked (UI shipped). Needs two devices signed in to the same iCloud account with the entitlement-carrying build. |
 
-## Phase 3 — Google Drive transport (deferred)
+## Phase 3 — Google Drive transport (deferred — [#145](https://github.com/AtomicTrxn/crosscue/issues/145))
 
 | Status | Item | Notes |
 |---|---|---|
 | ⏳ | Google Cloud project + OAuth client | `drive.appdata` scope. |
 | ⏳ | `google_sign_in` + `googleapis` integration | Refresh token via `flutter_secure_storage`. |
-| ⏳ | `GoogleDriveSyncTransport` impl | |
+| ⏳ | `GoogleDriveSyncTransport` impl | Android is still `NoOpSyncTransport` until this lands. |
 | ⏳ | Internal-track soak | Two Android devices, same Google account. |
 
-## Phase 4 — Settings UX + triggers (deferred)
+## Phase 4 — Settings UX + triggers ([#142](https://github.com/AtomicTrxn/crosscue/issues/142))
 
 | Status | Item | Notes |
 |---|---|---|
-| ⏳ | `/settings/sync` route + screen | Mirror `source_management_screen.dart` style. |
-| ⏳ | App-resume trigger in `app.dart` | Mirror the Crosshare auto-download pattern. |
-| ⏳ | Post-write debounce trigger | 5s debounce after `SolveRepositoryImpl.saveProgress` / `markComplete`. |
+| ✅ | `/settings/sync` route + screen | `SyncSettingsScreen` + `SyncController`; enable/disable, live status, "Sync now", "Turn off and remove iCloud copy". Persisted via `AppSettingsRepository.get/setSyncEnabled` + boot re-enable (#150). |
+| ✅ | App-resume trigger in `app.dart` | In the existing app-level lifecycle observer; self-guards via the orchestrator (#151). |
+| ✅ | Post-solve trigger | Fires once per completion from `SolveScreen` (not the notifier, to keep its unit tests DB-free). `syncNow()` coalesces overlapping passes (#151). |
+| ✅ | Onboarding opt-in step | Skippable step; disabled with a sign-in hint when no iCloud account is reachable (#152). |
 | ⏳ | "Clear all data" wired to `disable()` | Privacy screen — keep cloud data by default; second confirm for cloud wipe. |
 | ⏳ | Default-on flip | Only after both platforms have soaked. |
 

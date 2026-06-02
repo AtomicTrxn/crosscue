@@ -213,20 +213,35 @@ package.
 |------|----------------|
 | `integration_test/app_launch_test.dart` | Launch smoke test — boots the app, asserts MaterialApp renders, no error-screen text leaks. ~6 s on warm cache. |
 | `integration_test/seed_and_solve_test.dart` | Seeds a 3×3 puzzle via the production `ImportRepository`, bypasses onboarding through `appSettingsProvider`, navigates home → solve, asserts the solve screen renders (clues, keyboard, timer). ~20 s on warm cache. |
+| `integration_test/rebus_and_navigation_test.dart` | Rebus entry via the cell long-press menu, then router-driven navigation to Stats and Settings (QA checklist §4/§6/§7). |
+| `integration_test/lifecycle_and_theme_test.dart` | Background/resume persistence and a live dark-mode toggle from Settings (QA checklist §5/§8). |
 
-### Running on iOS
+### Running
+
+`scripts/run-ios-integration-tests.sh` boots a simulator, runs **every**
+`integration_test/*_test.dart`, and drops a screenshot per test into
+`design/qa/ios-<git-sha>/`:
+
+```bash
+scripts/run-ios-integration-tests.sh             # auto-picks/boots a simulator
+scripts/run-ios-integration-tests.sh "iPhone 16" # or a name / UDID
+```
+
+The same suite runs on demand in CI via the **Integration tests (iOS)**
+workflow (`.github/workflows/integration-test-ios.yml`, `workflow_dispatch`
+only — it's costly, so it's not part of the per-PR gate).
+
+To run a single test by hand:
 
 ```bash
 cd crosscue
-xcrun simctl list devices available | grep -i "iPad Pro 13"   # or iPhone Pro Max
+xcrun simctl list devices available | grep -i "iPhone"
 xcrun simctl boot <udid>
 open -a Simulator
-
-flutter test integration_test/app_launch_test.dart -d <udid>
 flutter test integration_test/seed_and_solve_test.dart -d <udid>
 ```
 
-### Running on Android
+### Running on Android (single test)
 
 ```bash
 emulator -avd <avd-name> &
@@ -256,15 +271,30 @@ flutter test integration_test/<file>.dart -d <android-device-id>
   generic `_pendingExceptionDetails != null` failure hides underlying
   exceptions; TAG checkpoints let you locate exactly which step bumped
   the framework's error queue.
+- **Restore the test binding's `FlutterError.onError` after `app.main()`.**
+  The app installs its own crash handler, which otherwise swallows the real
+  failure and surfaces only the opaque `_pendingExceptionDetails` assertion.
+  Save `FlutterError.onError` before `app.main()` and reassign it after.
+- **Never `pump()` while the app is `paused`.** In the live integration
+  binding the paused engine stops servicing frames, so the pump hangs forever.
+  Drive lifecycle states (`inactive → hidden → paused` and back) without a
+  pump between them — observers fire synchronously, so state is assertable
+  without a frame.
+- **Navigate by route, not by tapping "featured" UI.** The featured puzzle is
+  non-deterministic across sim reruns. Push by id via
+  `ref.read(appRouterProvider).push(Routes.solveFor(...))`, and read the live
+  `solveProvider` family key off the open `SolveScreen` widget (go_router
+  decodes the path param, so it differs from the encoded value you pushed).
 
-### Deferred coverage
+### Coverage
 
-[Issue #106](https://github.com/AtomicTrxn/crosscue/issues/106) tracks PRs 3-5
-to extend the suite: grid-cell taps + letter input, rebus modal, app-lifecycle
-persistence, dark-mode toggle, and a runner script that wires the tests into
-CI. Until those land, the manual checklist at
-[`docs/qa/ios-release-checklist.md`](docs/qa/ios-release-checklist.md) is the
-required pre-release pass.
+The four integration tests above cover QA-checklist sections 1, 3, 4, 5, 6,
+and 7 (partially). Sections requiring a human on a real device — share-sheet
+import (§2), Dynamic Type (§8), iPad multitasking (§9), edge cases (§10), and
+true force-quit — remain a manual pass via
+[`docs/qa/ios-release-checklist.md`](docs/qa/ios-release-checklist.md). See
+[#106](https://github.com/AtomicTrxn/crosscue/issues/106) (closed) for the
+build-out history.
 
 ---
 
