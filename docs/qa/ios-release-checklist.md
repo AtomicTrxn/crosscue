@@ -20,6 +20,36 @@ installed.
 
 ---
 
+## Automated coverage (run this first)
+
+Much of sections 1, 3, 4, 5, 6, 7 is now covered by the Flutter
+`integration_test` suite. Run it on a simulator before the manual pass:
+
+```sh
+scripts/run-ios-integration-tests.sh             # auto-picks/boots a simulator
+scripts/run-ios-integration-tests.sh "iPhone 16" # or a name / UDID
+```
+
+It boots a simulator, runs every `crosscue/integration_test/*_test.dart`, and
+drops a final-frame screenshot per test into `design/qa/ios-<git-sha>/`. The
+same suite runs on demand in CI via the **Integration tests (iOS)** workflow
+(`workflow_dispatch` only — it's costly, so it's not part of the per-PR gate).
+
+What the suite exercises today:
+- `app_launch_test` — boots to the first frame (§1, partial)
+- `seed_and_solve_test` — seed a puzzle, open it, render the solve screen (§3)
+- `rebus_and_navigation_test` — rebus entry via the long-press menu; Stats &
+  Settings render (§4, §6, §7)
+- `lifecycle_and_theme_test` — background/resume persistence; live dark-mode
+  toggle (§5 partial, §8 partial)
+
+**Still requires a human on a real device** (OS-level, not automatable here):
+§2 import via the share sheet, §8 Dynamic Type, §9 iPad multitasking /
+rotation, §10 edge cases (Airplane Mode, calls), and true force-quit. A green
+suite means the manual pass below can focus on these.
+
+---
+
 ## 1. Install & first launch
 
 - [ ] App installs from TestFlight without errors
