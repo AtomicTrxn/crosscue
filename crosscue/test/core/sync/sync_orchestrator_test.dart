@@ -2,10 +2,14 @@
 // instances share a single FakeSyncTransport store; the orchestrator is
 // driven end-to-end against an in-memory cloud.
 
+import 'dart:async';
+
 import 'package:crosscue/core/database/app_database.dart';
+import 'package:crosscue/core/sync/models/sync_account.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
 import 'package:crosscue/core/sync/sync_orchestrator.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/utils/uuid.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -198,4 +202,58 @@ void main() {
     await orchestratorA.disable(wipeRemote: true);
     expect(cloud, isEmpty);
   });
+
+  test('syncNow coalesces overlapping passes while one is running', () async {
+    final gate = Completer<void>();
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final orchestrator = SyncOrchestrator(
+      transport: _GatedListTransport(gate),
+      db: db,
+    );
+    addTearDown(orchestrator.dispose);
+    await orchestrator.enable();
+
+    // Start a pass; it parks inside the first adapter's gated list() call.
+    final first = orchestrator.syncNow();
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(orchestrator.currentState, isA<SyncRunning>());
+
+    // A second trigger while running is a no-op (returns zero immediately).
+    final second = await orchestrator.syncNow();
+    expect(second.pushed, equals(0));
+    expect(second.pulled, equals(0));
+
+    gate.complete();
+    await first;
+    expect(orchestrator.currentState, isA<SyncIdle>());
+  });
+}
+
+/// A transport whose `list()` blocks until [gate] completes — lets a test park
+/// a sync pass in [SyncRunning] to exercise the overlap guard.
+class _GatedListTransport implements SyncTransport {
+  _GatedListTransport(this._gate);
+
+  final Completer<void> _gate;
+
+  @override
+  Future<SyncAccount?> account() async =>
+      const SyncAccount(provider: SyncProvider.fake, displayName: 'fake');
+
+  @override
+  Future<List<String>> list(String prefix) async {
+    await _gate.future;
+    return const [];
+  }
+
+  @override
+  Future<String?> read(String key) async => null;
+
+  @override
+  Future<String?> write(String key, String bytes, {String? ifMatch}) async =>
+      null;
+
+  @override
+  Future<void> delete(String key) async {}
 }
