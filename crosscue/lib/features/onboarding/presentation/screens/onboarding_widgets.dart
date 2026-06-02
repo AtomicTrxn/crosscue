@@ -291,7 +291,101 @@ class _SourceCard extends StatelessWidget {
 }
 
 // ===========================================================================
-// Step 2 — Fetch / result
+// Step 2 — iCloud opt-in (skippable)
+// ===========================================================================
+
+class _ICloudView extends StatelessWidget {
+  const _ICloudView({
+    super.key,
+    required this.available,
+    required this.onEnable,
+    required this.onSkip,
+  });
+
+  /// null while the availability check is in flight; false = not signed in to
+  /// iCloud (enabling is blocked); true = can turn on.
+  final bool? available;
+  final VoidCallback onEnable;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          CrosscueSpacing.screenH,
+          16,
+          CrosscueSpacing.screenH,
+          20,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _PageDots(current: 2, onDark: false),
+            const SizedBox(height: 28),
+            Icon(
+              Icons.cloud_outlined,
+              size: 56,
+              color: context.crosscuePrimary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Sync across\nyour devices',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+                color: context.crosscueOnSurface1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Keep your puzzles, progress, and stats in sync through your '
+              'private iCloud Drive. Nothing is sent to Crosscue — your data '
+              'stays in your own iCloud account. You can change this anytime '
+              'in Settings.',
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                color: context.crosscueOnSurface2,
+              ),
+            ),
+            const Spacer(),
+            // Only allow turning on when an iCloud account is reachable.
+            if (available == false)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  "You're not signed in to iCloud on this device. Sign in (the "
+                  'Settings app → your name → iCloud) and you can turn this on '
+                  'later in Settings.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: context.crosscueOnSurface3,
+                  ),
+                ),
+              ),
+            _PrimaryCta(
+              label: 'Turn on iCloud Sync',
+              onPressed: available == true ? onEnable : null,
+            ),
+            TextButton(
+              onPressed: onSkip,
+              child: Text(
+                available == true ? 'Not now' : 'Continue',
+                style: TextStyle(color: context.crosscueOnSurface2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Step 3 — Fetch / result
 // ===========================================================================
 
 class _FetchView extends StatelessWidget {
@@ -329,7 +423,7 @@ class _FetchView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _PageDots(current: 2, onDark: false),
+            const _PageDots(current: 3, onDark: false),
             Expanded(child: Center(child: _body(context))),
           ],
         ),
@@ -544,9 +638,11 @@ class _HowToPlayLink extends StatelessWidget {
   }
 }
 
-/// 3-dot progress indicator. [onDark] tunes the palette for the navy hero.
+/// 4-step progress indicator. [onDark] tunes the palette for the navy hero.
 class _PageDots extends StatelessWidget {
   const _PageDots({required this.current, required this.onDark});
+
+  static const _stepCount = 4;
 
   final int current;
   final bool onDark;
@@ -560,7 +656,7 @@ class _PageDots extends StatelessWidget {
         : context.crosscueOnSurface3.withValues(alpha: 0.4);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
+      children: List.generate(_stepCount, (i) {
         final isActive = i == current;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),

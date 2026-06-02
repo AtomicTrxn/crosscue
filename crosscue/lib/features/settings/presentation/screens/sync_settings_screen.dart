@@ -44,12 +44,32 @@ class SyncSettingsScreen extends ConsumerWidget {
             const Divider(height: 32),
             SwitchListTile(
               value: vm.enabled,
-              onChanged: (on) =>
-                  on ? controller.enable() : controller.disable(),
+              // Allow turning off any time, but only turning on when an iCloud
+              // account is reachable on this device.
+              onChanged: (vm.available || vm.enabled)
+                  ? (on) => on ? controller.enable() : controller.disable()
+                  : null,
               secondary: const Icon(Icons.cloud_outlined),
               title: const Text('Sync with iCloud'),
               subtitle: const Text('Sync this device with your other devices'),
             ),
+            // Not signed in to iCloud → can't enable; tell the user how.
+            if (!vm.available && !vm.enabled)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  CrosscueSpacing.screenH,
+                  4,
+                  CrosscueSpacing.screenH,
+                  16,
+                ),
+                child: Text(
+                  'Sign in to iCloud on this device (the Settings app → your '
+                  'name → iCloud, with iCloud Drive on) to turn on sync.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.crosscueOnSurface3,
+                      ),
+                ),
+              ),
             if (vm.enabled) ...[
               const Divider(height: 1),
               _StatusSection(vm: vm),

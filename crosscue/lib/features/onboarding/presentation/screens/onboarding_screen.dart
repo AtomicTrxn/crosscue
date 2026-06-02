@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
@@ -12,18 +13,19 @@ import 'package:go_router/go_router.dart';
 part 'onboarding_widgets.dart';
 
 // ---------------------------------------------------------------------------
-// First-run onboarding (v3.6) — a 3-step sync-setup flow whose only job is to
-// get the player a puzzle and into solving as fast as possible:
+// First-run onboarding — a short setup flow whose job is to get the player a
+// puzzle and into solving as fast as possible:
 //
 //   0. Welcome      — brand + value prop.
 //   1. Source       — pick Crosshare daily sync and/or local import.
-//   2. Fetch/result — download today's mini and drop straight into solving.
+//   2. iCloud        — optional opt-in to cross-device sync (skippable).
+//   3. Fetch/result — download today's mini and drop straight into solving.
 //
 // The crossword *tutorial* ("how to play") now lives in Settings → Help, not
 // here. Completion is gated by hasSeenOnboarding, identical to before.
 // ---------------------------------------------------------------------------
 
-enum _OnbStep { welcome, source, fetch }
+enum _OnbStep { welcome, source, icloud, fetch }
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -37,6 +39,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _wantCrosshare = false;
   bool _wantImport = false;
 
+  /// Whether an iCloud account is reachable on this device. null while the
+  /// check is in flight; gates the "Turn on iCloud Sync" action.
+  bool? _iCloudAvailable;
+
   bool get _canContinue => _wantCrosshare || _wantImport;
 
   void _goToSource() => setState(() => _step = _OnbStep.source);
@@ -49,6 +55,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref.read(crosshareAutoDownloadProvider.notifier).enable();
     }
     if (!mounted) return;
+    setState(() => _step = _OnbStep.icloud);
+    unawaited(_checkICloudAvailability());
+  }
+
+  Future<void> _checkICloudAvailability() async {
+    final account = await ref.read(syncOrchestratorProvider).currentAccount();
+    if (!mounted) return;
+    setState(() => _iCloudAvailable = account != null);
+  }
+
+  /// iCloud step → opt in, then continue to the fetch step.
+  Future<void> _enableICloud() async {
+    await ref.read(appSettingsProvider).setSyncEnabled(true);
+    final orchestrator = ref.read(syncOrchestratorProvider);
+    await orchestrator.enable();
+    unawaited(orchestrator.syncNow());
+    if (!mounted) return;
+    _goToFetch();
+  }
+
+  /// iCloud step → skip (sync stays off; can be enabled later in Settings).
+  void _skipICloud() => _goToFetch();
+
+  void _goToFetch() {
     setState(() => _step = _OnbStep.fetch);
     if (_wantCrosshare) {
       unawaited(ref.read(crosshareProvider.notifier).download());
@@ -112,6 +142,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           onContinue: _onContinue,
           onLater: _finishToHome,
           onHowToPlay: _openHowToPlay,
+        ),
+      _OnbStep.icloud => _ICloudView(
+          key: const ValueKey('icloud'),
+          available: _iCloudAvailable,
+          onEnable: _enableICloud,
+          onSkip: _skipICloud,
         ),
       _OnbStep.fetch => _FetchView(
           key: const ValueKey('fetch'),

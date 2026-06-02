@@ -42,7 +42,7 @@ final class SyncControllerProvider
   SyncController create() => SyncController();
 }
 
-String _$syncControllerHash() => r'a0e4531024eed8567c4044bdfcfd12eac173be0a';
+String _$syncControllerHash() => r'f51e7a7b1a73e0c62550d2e77321a8f50a509a56';
 
 /// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
 /// enable / disable / sync-now actions, bridging the in-memory
