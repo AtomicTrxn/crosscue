@@ -49,3 +49,6 @@ crash_log.txt
 
 # Opencode config (IMPORTANT - contains API keys)
 opencode.json
+
+# iOS integration-test run artifacts (screenshots)
+design/qa/ios-*/

@@ -1,0 +1,48 @@
+name: Integration tests (iOS)
+
+# Costly (macOS runner + simulator boot), so this is opt-in: run it manually
+# from the Actions tab before a release, or after large solve/UI changes.
+# Not part of the per-PR CI gate.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.41.9'
+
+jobs:
+  integration-test:
+    name: iOS integration tests
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: crosscue
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4.2.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run integration suite
+        working-directory: .
+        run: bash scripts/run-ios-integration-tests.sh
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-integration-screenshots
+          path: design/qa/ios-*/
+          if-no-files-found: ignore
