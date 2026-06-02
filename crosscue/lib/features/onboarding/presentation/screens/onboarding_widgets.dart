@@ -297,10 +297,14 @@ class _SourceCard extends StatelessWidget {
 class _ICloudView extends StatelessWidget {
   const _ICloudView({
     super.key,
+    required this.available,
     required this.onEnable,
     required this.onSkip,
   });
 
+  /// null while the availability check is in flight; false = not signed in to
+  /// iCloud (enabling is blocked); true = can turn on.
+  final bool? available;
   final VoidCallback onEnable;
   final VoidCallback onSkip;
 
@@ -347,11 +351,29 @@ class _ICloudView extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            _PrimaryCta(label: 'Turn on iCloud Sync', onPressed: onEnable),
+            // Only allow turning on when an iCloud account is reachable.
+            if (available == false)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  "You're not signed in to iCloud on this device. Sign in (the "
+                  'Settings app → your name → iCloud) and you can turn this on '
+                  'later in Settings.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: context.crosscueOnSurface3,
+                  ),
+                ),
+              ),
+            _PrimaryCta(
+              label: 'Turn on iCloud Sync',
+              onPressed: available == true ? onEnable : null,
+            ),
             TextButton(
               onPressed: onSkip,
               child: Text(
-                'Not now',
+                available == true ? 'Not now' : 'Continue',
                 style: TextStyle(color: context.crosscueOnSurface2),
               ),
             ),

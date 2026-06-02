@@ -39,6 +39,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _wantCrosshare = false;
   bool _wantImport = false;
 
+  /// Whether an iCloud account is reachable on this device. null while the
+  /// check is in flight; gates the "Turn on iCloud Sync" action.
+  bool? _iCloudAvailable;
+
   bool get _canContinue => _wantCrosshare || _wantImport;
 
   void _goToSource() => setState(() => _step = _OnbStep.source);
@@ -52,6 +56,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     if (!mounted) return;
     setState(() => _step = _OnbStep.icloud);
+    unawaited(_checkICloudAvailability());
+  }
+
+  Future<void> _checkICloudAvailability() async {
+    final account = await ref.read(syncOrchestratorProvider).currentAccount();
+    if (!mounted) return;
+    setState(() => _iCloudAvailable = account != null);
   }
 
   /// iCloud step → opt in, then continue to the fetch step.
@@ -134,6 +145,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       _OnbStep.icloud => _ICloudView(
           key: const ValueKey('icloud'),
+          available: _iCloudAvailable,
           onEnable: _enableICloud,
           onSkip: _skipICloud,
         ),

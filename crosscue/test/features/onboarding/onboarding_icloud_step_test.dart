@@ -6,6 +6,8 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -20,14 +22,18 @@ void main() {
   setUp(() => db = AppDatabase.forTesting(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  Future<ProviderContainer> pumpToICloudStep(WidgetTester tester) async {
+  Future<ProviderContainer> pumpToICloudStep(
+    WidgetTester tester, {
+    SyncTransport? transport,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
           bootSettingsProvider.overrideWithValue(BootSettings.defaults),
-          syncTransportProvider
-              .overrideWithValue(FakeSyncTransport(store: <String, String>{})),
+          syncTransportProvider.overrideWithValue(
+            transport ?? FakeSyncTransport(store: <String, String>{}),
+          ),
         ],
         child: const MaterialApp(home: OnboardingScreen()),
       ),
@@ -72,5 +78,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(await container.read(appSettingsProvider).getSyncEnabled(), isFalse);
+  });
+
+  testWidgets('not signed in: Turn on is disabled, Continue proceeds',
+      (tester) async {
+    // NoOpSyncTransport reports no account → enabling is blocked.
+    await pumpToICloudStep(tester, transport: const NoOpSyncTransport());
+
+    final turnOn = tester.widget<FilledButton>(
+      find.ancestor(
+        of: find.text('Turn on iCloud Sync'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(
+      turnOn.onPressed,
+      isNull,
+      reason: 'cannot enable without an account',
+    );
+    expect(find.textContaining("not signed in to iCloud"), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 }

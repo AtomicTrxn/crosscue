@@ -7,6 +7,7 @@ import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/sync_providers.dart';
 import 'package:drift/native.dart';
@@ -37,7 +38,26 @@ void main() {
 
     expect(vm.enabled, isFalse);
     expect(vm.syncState, isA<SyncDisabled>());
+    expect(
+      vm.available,
+      isTrue,
+      reason: 'FakeSyncTransport reports an account',
+    );
     expect(await container.read(appSettingsProvider).getSyncEnabled(), isFalse);
+  });
+
+  test('available is false when no cloud account is reachable', () async {
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        // NoOpSyncTransport.account() returns null → signed out.
+        syncTransportProvider.overrideWithValue(const NoOpSyncTransport()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final vm = await container.read(syncControllerProvider.future);
+    expect(vm.available, isFalse);
   });
 
   test('enable persists the flag, links the account, and runs a pass',

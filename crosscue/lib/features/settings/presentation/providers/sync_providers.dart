@@ -11,6 +11,7 @@ part 'sync_providers.g.dart';
 class SyncViewState {
   const SyncViewState({
     required this.enabled,
+    required this.available,
     required this.syncState,
     this.account,
     this.lastResult,
@@ -18,6 +19,11 @@ class SyncViewState {
 
   /// The persisted opt-in flag (survives launches).
   final bool enabled;
+
+  /// Whether a cloud account is reachable on this device (signed in to iCloud
+  /// + entitlement present). When false, enabling is blocked — the user must
+  /// sign in first. Independent of [enabled].
+  final bool available;
 
   /// Live orchestrator lifecycle state (disabled / signed-out / idle /
   /// running / error).
@@ -31,12 +37,14 @@ class SyncViewState {
 
   SyncViewState copyWith({
     bool? enabled,
+    bool? available,
     SyncState? syncState,
     SyncAccount? account,
     SyncResult? lastResult,
   }) {
     return SyncViewState(
       enabled: enabled ?? this.enabled,
+      available: available ?? this.available,
       syncState: syncState ?? this.syncState,
       account: account ?? this.account,
       lastResult: lastResult ?? this.lastResult,
@@ -67,6 +75,7 @@ class SyncController extends _$SyncController {
     final account = await orchestrator.currentAccount();
     return SyncViewState(
       enabled: enabled,
+      available: account != null,
       syncState: orchestrator.currentState,
       account: account,
     );
@@ -85,6 +94,7 @@ class SyncController extends _$SyncController {
       state = AsyncData(
         current.copyWith(
           enabled: true,
+          available: account != null,
           account: account,
           syncState: orchestrator.currentState,
         ),
@@ -98,12 +108,16 @@ class SyncController extends _$SyncController {
     final orchestrator = ref.read(syncOrchestratorProvider);
     await ref.read(appSettingsProvider).setSyncEnabled(false);
     await orchestrator.disable(wipeRemote: wipeRemote);
+    // Re-query availability so the toggle can be turned back on if the device
+    // is still signed in to iCloud.
+    final available = (await orchestrator.currentAccount()) != null;
     final current = state.asData?.value;
     if (current != null) {
       // Rebuild without an account (copyWith can't null it out).
       state = AsyncData(
         SyncViewState(
           enabled: false,
+          available: available,
           syncState: orchestrator.currentState,
           lastResult: current.lastResult,
         ),
