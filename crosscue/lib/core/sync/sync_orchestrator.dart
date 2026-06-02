@@ -75,6 +75,10 @@ class SyncOrchestrator {
     if (_state is SyncDisabled || _state is SyncSignedOut) {
       return SyncResult.zero;
     }
+    // Coalesce overlapping triggers (e.g. app-resume and a just-completed
+    // solve firing back-to-back): if a pass is already in flight, skip rather
+    // than run a second concurrent push/pull.
+    if (_state is SyncRunning) return SyncResult.zero;
     // NoOp transports report no account but are wired in the local-only
     // build. Short-circuit to avoid spurious writes/reads.
     if (transport is NoOpSyncTransport) return SyncResult.zero;

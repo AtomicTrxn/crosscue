@@ -122,6 +122,12 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         .read(solveProvider(widget.puzzleId).notifier)
         .markCompletionSheetShown();
 
+    // Push the freshly-completed solve to other devices. Fired here (once per
+    // completion, gated by the flag above) rather than in SolveNotifier so the
+    // notifier's unit tests don't force orchestrator/DB construction. No-op
+    // unless sync is enabled and signed in (the orchestrator self-guards).
+    unawaited(ref.read(syncOrchestratorProvider).syncNow());
+
     if (_hapticsEnabled) {
       unawaited(_pulseCompletionHaptics());
     }

@@ -102,7 +102,8 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
 ///
 /// Responsibility split:
 ///   - This observer handles [AppLifecycleState.resumed] only, to retrigger
-///     the Crosshare auto-download when the app returns to the foreground.
+///     the Crosshare auto-download and a sync pass when the app returns to
+///     the foreground.
 ///   - The solve screen's [WidgetsBindingObserver] mixin handles
 ///     `paused` / `hidden` (auto-pause timer) and `detached` (flush save).
 ///
@@ -118,7 +119,12 @@ class _CrosshareLifecycleObserver extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
+      unawaited(
+        _ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded(),
+      );
+      // Pull in changes made on other devices while we were backgrounded.
+      // No-op unless sync is enabled and signed in (orchestrator self-guards).
+      unawaited(_ref.read(syncOrchestratorProvider).syncNow());
     }
   }
 }
