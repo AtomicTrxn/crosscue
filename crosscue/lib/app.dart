@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:crosscue/core/domain/models/enums.dart';
@@ -42,8 +43,18 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       fireImmediately: true,
     );
     // Trigger auto-download on first launch (post-frame so providers are ready).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      unawaited(
+        ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded(),
+      );
+      // Re-enable sync if the user previously opted in (the orchestrator is
+      // in-memory and starts disabled each launch). Best-effort: a missing
+      // iCloud account leaves it SyncSignedOut and writes nothing.
+      if (await ref.read(appSettingsProvider).getSyncEnabled()) {
+        final orchestrator = ref.read(syncOrchestratorProvider);
+        await orchestrator.enable();
+        await orchestrator.syncNow();
+      }
     });
   }
 

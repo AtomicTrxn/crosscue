@@ -27,6 +27,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const _keyCrosshareLastDownloadedDate =
       'crosshare_last_downloaded_date';
   static const _keyCrosshareLastAttemptStatus = 'crosshare_last_attempt_status';
+  static const _keySyncEnabled = 'sync_enabled';
 
   // ---------------------------------------------------------------------------
   // Boot snapshot
@@ -184,6 +185,17 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   @override
   Future<void> setCrosshareLastAttemptStatus(String status) =>
       dao.setValue(_keyCrosshareLastAttemptStatus, status);
+
+  @override
+  Future<bool> getSyncEnabled() async {
+    final v = await dao.getValue(_keySyncEnabled);
+    if (v == null) return false; // Default: disabled (opt-in)
+    return v == 'true';
+  }
+
+  @override
+  Future<void> setSyncEnabled(bool value) =>
+      dao.setValue(_keySyncEnabled, value.toString());
 
   Future<bool> _getBool(String key) async {
     final v = await dao.getValue(key);
