@@ -129,6 +129,27 @@ on the host Mac (for simulator) or in the cloud on a real device.
    it on B, sync B → A. A's session should be replaced via the
    best-progress override (see `sync-design.md` → Conflict resolution).
 
+## Error contract (Dart ↔ native)
+
+The handler is `async throws` (iOS 16+; #113). A **missing** blob is reported as
+nil/empty — the normal "we don't have it yet" signal. An **access failure** is
+thrown back to Dart as a `FlutterError` with a structured code, so the
+orchestrator never mistakes a locked file for a missing one (which would
+trigger a spurious re-upload):
+
+| Native `FlutterError.code` | When | Dart `SyncTransportErrorKind` | Retried automatically? |
+|---|---|---|---|
+| `ICLOUD_LOCKED` | `NSFileCoordinator` couldn't acquire access (another device holds a claim) | `locked` | yes (transient) |
+| `ICLOUD_QUOTA` | `NSFileWriteOutOfSpaceError` | `quotaExceeded` | no — user frees space |
+| `ICLOUD_PERMISSION` | `NSFileReadNoPermissionError` / `NSFileWriteNoPermissionError` | `permissionDenied` | no |
+| `ICLOUD_IO` | any other I/O error | `io` | yes (transient) |
+
+`ICloudSyncTransport` maps these codes to a `SyncTransportException`; the
+orchestrator turns that into a `SyncError(transient:)` published on its state
+stream (it does **not** rethrow, so the app-resume / post-solve triggers can't
+raise an uncaught error). Unknown codes (e.g. `INVALID_ARGS`) keep the previous
+graceful-null degradation.
+
 ## Rollback
 
 If anything goes wrong, the sync feature is off-by-default at the

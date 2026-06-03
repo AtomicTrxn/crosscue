@@ -228,6 +228,83 @@ void main() {
     await first;
     expect(orchestrator.currentState, isA<SyncIdle>());
   });
+
+  group('typed transport errors surface as SyncError (#113)', () {
+    Future<SyncOrchestrator> enabledOrchestrator(
+      SyncTransportErrorKind kind,
+    ) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final orchestrator = SyncOrchestrator(
+        transport: _ThrowingTransport(kind),
+        db: db,
+      );
+      addTearDown(orchestrator.dispose);
+      await orchestrator.enable();
+      return orchestrator;
+    }
+
+    test('a locked error → SyncError(transient: true), syncNow does not throw',
+        () async {
+      final orchestrator = await enabledOrchestrator(
+        SyncTransportErrorKind.locked,
+      );
+
+      // Must NOT throw — the fire-and-forget triggers rely on this.
+      final result = await orchestrator.syncNow();
+      expect(result.pushed, 0);
+      expect(result.pulled, 0);
+
+      final state = orchestrator.currentState;
+      expect(state, isA<SyncError>());
+      expect((state as SyncError).transient, isTrue);
+    });
+
+    test('a permission error → SyncError(transient: false)', () async {
+      final orchestrator = await enabledOrchestrator(
+        SyncTransportErrorKind.permissionDenied,
+      );
+
+      await orchestrator.syncNow();
+
+      final state = orchestrator.currentState;
+      expect(state, isA<SyncError>());
+      expect((state as SyncError).transient, isFalse);
+    });
+  });
+}
+
+/// A transport that signals an account (so `enable()` reaches `SyncIdle`) but
+/// throws a typed [SyncTransportException] from `list()` — the first call a
+/// pull makes — to exercise the orchestrator's error handling.
+class _ThrowingTransport implements SyncTransport {
+  _ThrowingTransport(this._kind);
+
+  final SyncTransportErrorKind _kind;
+
+  @override
+  Future<SyncAccount?> account() async =>
+      const SyncAccount(provider: SyncProvider.fake, displayName: 'fake');
+
+  @override
+  Future<SyncAccount?> signIn() => account();
+
+  @override
+  bool get supportsInteractiveSignIn => false;
+
+  @override
+  Future<List<String>> list(String prefix) async =>
+      throw SyncTransportException(_kind, message: 'boom');
+
+  @override
+  Future<String?> read(String key) async => null;
+
+  @override
+  Future<String?> write(String key, String bytes, {String? ifMatch}) async =>
+      null;
+
+  @override
+  Future<void> delete(String key) async {}
 }
 
 /// A transport whose `list()` blocks until [gate] completes — lets a test park

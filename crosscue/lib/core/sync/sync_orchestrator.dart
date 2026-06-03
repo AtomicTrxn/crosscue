@@ -62,9 +62,16 @@ class SyncOrchestrator {
   Future<void> disable({bool wipeRemote = false}) async {
     if (wipeRemote) {
       for (final adapter in adapters) {
-        final keys = await transport.list(adapter.namespace.prefix);
-        for (final key in keys) {
-          await transport.delete(key);
+        try {
+          final keys = await transport.list(adapter.namespace.prefix);
+          for (final key in keys) {
+            await transport.delete(key);
+          }
+        } on SyncTransportException {
+          // Best-effort wipe: a transient lock / I/O error on one namespace
+          // must not abort turning sync off. The local copy is what matters
+          // here; any leftover remote blobs are harmless and get cleaned on a
+          // later disable.
         }
       }
     }
@@ -103,9 +110,16 @@ class SyncOrchestrator {
       for (final adapter in adapters) {
         total += await adapter.push(transport, deviceId);
       }
+    } on SyncTransportException catch (e) {
+      // Typed transport failure → a SyncError with the right retry semantics.
+      // We do NOT rethrow: the error is already on the state stream, and the
+      // fire-and-forget triggers (app-resume, post-solve) must not see an
+      // uncaught exception. Callers read the live state for the outcome.
+      _setState(SyncError(_messageForTransport(e), transient: e.isTransient));
+      return SyncResult.zero;
     } on Object catch (e) {
       _setState(SyncError(e.toString(), transient: true));
-      rethrow;
+      return SyncResult.zero;
     }
 
     final result = SyncResult(
@@ -135,6 +149,20 @@ class SyncOrchestrator {
     final fresh = Uuid.v4();
     await db.appSettingsDao.setValue('device_id', jsonEncode(fresh));
     return fresh;
+  }
+
+  /// User-facing copy for a typed transport failure surfaced in the status UI.
+  String _messageForTransport(SyncTransportException e) {
+    switch (e.kind) {
+      case SyncTransportErrorKind.locked:
+        return 'Another device is syncing right now — will retry shortly.';
+      case SyncTransportErrorKind.quotaExceeded:
+        return 'Cloud storage is full. Free up space to keep syncing.';
+      case SyncTransportErrorKind.permissionDenied:
+        return "Crosscue can't access cloud storage — check its permissions.";
+      case SyncTransportErrorKind.io:
+        return 'Sync hit a storage error — will retry.';
+    }
   }
 
   void _setState(SyncState next) {
