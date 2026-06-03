@@ -150,12 +150,15 @@ String _$appDatabaseHash() => r'98a09c6cfd43966155dfbdb0787fa18c85438e13';
 /// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
 ///   isn't configured yet (the native handler returns nil from `account()`,
 ///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
-/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
-///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+/// - [GoogleDriveSyncTransport] on Android — equally safe before the Google
+///   Cloud OAuth client is configured / the user signs in (silent auth returns
+///   null, so it stays in `SyncSignedOut`). See
+///   `docs/architecture/sync-googledrive-setup.md`.
+/// - [NoOpSyncTransport] everywhere else (web, desktop).
 ///
 /// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
-/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
-/// but works fine in vm-based tests — those override the provider directly).
+/// `dart:io` `Platform` branches are unavailable on web but work fine in
+/// vm-based tests — those override the provider directly).
 
 @ProviderFor(syncTransport)
 final syncTransportProvider = SyncTransportProvider._();
@@ -164,12 +167,15 @@ final syncTransportProvider = SyncTransportProvider._();
 /// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
 ///   isn't configured yet (the native handler returns nil from `account()`,
 ///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
-/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
-///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+/// - [GoogleDriveSyncTransport] on Android — equally safe before the Google
+///   Cloud OAuth client is configured / the user signs in (silent auth returns
+///   null, so it stays in `SyncSignedOut`). See
+///   `docs/architecture/sync-googledrive-setup.md`.
+/// - [NoOpSyncTransport] everywhere else (web, desktop).
 ///
 /// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
-/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
-/// but works fine in vm-based tests — those override the provider directly).
+/// `dart:io` `Platform` branches are unavailable on web but work fine in
+/// vm-based tests — those override the provider directly).
 
 final class SyncTransportProvider
     extends $FunctionalProvider<SyncTransport, SyncTransport, SyncTransport>
@@ -178,12 +184,15 @@ final class SyncTransportProvider
   /// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
   ///   isn't configured yet (the native handler returns nil from `account()`,
   ///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
-  /// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
-  ///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+  /// - [GoogleDriveSyncTransport] on Android — equally safe before the Google
+  ///   Cloud OAuth client is configured / the user signs in (silent auth returns
+  ///   null, so it stays in `SyncSignedOut`). See
+  ///   `docs/architecture/sync-googledrive-setup.md`.
+  /// - [NoOpSyncTransport] everywhere else (web, desktop).
   ///
   /// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
-  /// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
-  /// but works fine in vm-based tests — those override the provider directly).
+  /// `dart:io` `Platform` branches are unavailable on web but work fine in
+  /// vm-based tests — those override the provider directly).
   SyncTransportProvider._()
       : super(
           from: null,
@@ -217,7 +226,7 @@ final class SyncTransportProvider
   }
 }
 
-String _$syncTransportHash() => r'97b8dbb02800be63f339327995de880e8fd811e1';
+String _$syncTransportHash() => r'1f2fd5ab7e92a9277638251fedb37225389c3b11';
 
 /// Sync orchestrator. Reads the current [syncTransport] and wires up the
 /// per-namespace adapters against the shared [appDatabase].

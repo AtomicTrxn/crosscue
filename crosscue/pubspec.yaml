@@ -72,6 +72,9 @@ dependencies:
   # Deferred at 9.x: 10.x requires Dart 3.10 / Flutter 3.38.1 and conflicts
   # with file_picker 11 through incompatible win32 constraints.
   package_info_plus: ^9.0.0
+  google_sign_in: ^7.2.0
+  googleapis: ^16.0.0
+  extension_google_sign_in_as_googleapis_auth: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -105,6 +108,7 @@ dev_dependencies:
 
   # Linting
   flutter_lints: ^6.0.0
+  http: ^1.6.0
 
 flutter:
   uses-material-design: true

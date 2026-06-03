@@ -5,6 +5,7 @@ import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/entitlement/entitlement_service.dart';
 import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
 import 'package:crosscue/core/sync/sync_orchestrator.dart';
+import 'package:crosscue/core/sync/transport/google_drive_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/icloud_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
@@ -47,17 +48,20 @@ AppDatabase appDatabase(Ref ref) => AppDatabase();
 /// - [ICloudSyncTransport] on iOS — safe even when the iCloud entitlement
 ///   isn't configured yet (the native handler returns nil from `account()`,
 ///   so [SyncOrchestrator] stays in `SyncSignedOut` and writes nothing).
-/// - [NoOpSyncTransport] everywhere else, until the Google Drive transport
-///   lands as Phase 3 (see `docs/architecture/sync-progress.md`).
+/// - [GoogleDriveSyncTransport] on Android — equally safe before the Google
+///   Cloud OAuth client is configured / the user signs in (silent auth returns
+///   null, so it stays in `SyncSignedOut`). See
+///   `docs/architecture/sync-googledrive-setup.md`.
+/// - [NoOpSyncTransport] everywhere else (web, desktop).
 ///
 /// Skipped during Flutter unit tests (`kIsWeb` check covers web; the
-/// `Platform.isIOS` branch reads from `dart:io` which is unavailable on web
-/// but works fine in vm-based tests — those override the provider directly).
+/// `dart:io` `Platform` branches are unavailable on web but work fine in
+/// vm-based tests — those override the provider directly).
 @Riverpod(keepAlive: true)
 SyncTransport syncTransport(Ref ref) {
-  if (!kIsWeb && Platform.isIOS) {
-    return ICloudSyncTransport();
-  }
+  if (kIsWeb) return const NoOpSyncTransport();
+  if (Platform.isIOS) return ICloudSyncTransport();
+  if (Platform.isAndroid) return GoogleDriveSyncTransport();
   return const NoOpSyncTransport();
 }
 
