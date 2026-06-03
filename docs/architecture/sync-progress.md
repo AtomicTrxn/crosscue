@@ -60,7 +60,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | App-resume trigger in `app.dart` | In the existing app-level lifecycle observer; self-guards via the orchestrator (#151). |
 | ✅ | Post-solve trigger | Fires once per completion from `SolveScreen` (not the notifier, to keep its unit tests DB-free). `syncNow()` coalesces overlapping passes (#151). |
 | ✅ | Onboarding opt-in step | Skippable step; disabled with a sign-in hint when no iCloud account is reachable (#152). |
-| ⏳ | "Clear all data" wired to `disable()` | Privacy screen — keep cloud data by default; second confirm for cloud wipe. |
+| ✅ | "Clear all data" wired to `disable()` | Privacy screen turns sync off before wiping local data (so a background pass can't re-pull the cloud). Keeps the cloud copy by default; a second confirm offers a full cloud wipe via `disable(wipeRemote: true)`. Copy is platform-generic. |
 | ⏳ | Default-on flip | Only after both platforms have soaked. |
 
 ## Risks / open items
