@@ -451,16 +451,31 @@ See `core/utils/result.dart` for the full definition and MODELS.md for usage exa
 
 ## What to Run Before Every Commit
 
-```bash
-# Run all commands from the project root:
-# crosscue/
+Run `make ci` from the **repo root** — it is the single source of truth and
+mirrors hosted PR CI (format → analyze → generated-file check → test). The
+individual steps below exist only for iterating on a specific failure; `make
+ci` must be the final check before any push.
 
+```bash
+# From the repo root:
+make ci
+```
+
+The order that matters, if running pieces by hand (from `crosscue/`):
+
+```bash
 # 1. Regenerate if any @freezed / @riverpod / @DriftDatabase changed
 dart run build_runner build
 
-# 2. Lint — must be 0 issues
+# 2. Format — CI "Static checks" fails on any diff (run it; don't skip)
+dart format .
+
+# 3. Lint — must be 0 issues
 flutter analyze
 
-# 3. Build check
-flutter build apk --debug --no-pub
+# 4. Tests
+flutter test
 ```
+
+> `dart format` and `flutter test` are easy to forget and are independent CI
+> gates — a clean `analyze` does not imply a clean format or green tests.

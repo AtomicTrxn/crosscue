@@ -32,10 +32,13 @@ SyncOrchestrator               ← top-level: schedules pushes/pulls, exposes st
 
 - `SyncTransport` is the *only* platform-aware piece. It exposes a tiny
   CRUD-on-named-blobs API: `read(key)`, `write(key, bytes, ifMatch)`,
-  `list(prefix)`, `delete(key)`, plus `account()` and a `changes()` stream.
-  iCloud impl uses `NSUbiquitousKeyValueStore` for tiny manifest state plus
-  the app's iCloud Documents container for blobs; Google Drive impl uses the
-  AppData scope (hidden, per-app, no user file picker needed).
+  `list(prefix)`, `delete(key)`, plus account management:
+  `account()` (silent), `signIn()` (interactive where the platform needs it),
+  and the `supportsInteractiveSignIn` capability flag. (As built there is no
+  `changes()` stream — sync is driven by the app-resume / post-write triggers
+  below, not a push channel.) The iCloud impl uses the app's iCloud Documents
+  container for blobs; the Google Drive impl uses the AppData scope (hidden,
+  per-app, no user file picker needed).
 - `NamespaceSyncAdapter` per namespace owns the entity shape, conflict rule,
   and merge function. Keeps platform concerns out of domain code.
 - `SyncOrchestrator` is what `core_providers` exposes (replacing today's
@@ -117,9 +120,10 @@ abstract class SyncOrchestrator {
 }
 ```
 
-`SyncState` is a Freezed union mirroring the existing `ImportState`
-precedent. `SyncResult` reports `{pushed, pulled, conflicts, durationMs}`
-for the settings UI to render.
+`SyncState` is a hand-written sealed class (`SyncDisabled` / `SyncSignedOut` /
+`SyncIdle` / `SyncRunning` / `SyncError`) — exhaustively switchable like a
+Freezed union, but plain Dart. `SyncResult` reports `{pushed, pulled,
+conflicts, duration}` for the settings UI to render.
 
 The legacy two-method `SyncAdapter` (just `sync()` + `isSyncEnabled`) is
 removed once `SyncOrchestrator` is wired — no compatibility shim, since the
@@ -144,10 +148,14 @@ execution rabbit hole.
   `FileManager.url(forUbiquityContainerIdentifier:)` returns `nil` if the
   user has iCloud Drive off for the app — that's the `signedOut` state. No
   `google_sign_in` equivalent dialog needed.
-- **Google Drive (Android).** `googleapis_auth` + `drive.appdata` scope.
+- **Google Drive (Android).** `google_sign_in` 7.x +
+  `extension_google_sign_in_as_googleapis_auth` + `drive.appdata` scope.
   AppData folder is hidden from the user's Drive UI and per-app — exactly
-  the trust model we want. Sign-in is explicit on first enable; persist
-  refresh token via `flutter_secure_storage`.
+  the trust model we want. Sign-in is explicit on first enable (the toggle
+  drives the prompt); `google_sign_in` owns token storage/refresh internally
+  (no separate `flutter_secure_storage`). Needs an Android OAuth client plus
+  a web client whose ID is passed as `serverClientId` — see
+  [`sync-googledrive-setup.md`](sync-googledrive-setup.md).
 - **Authentication failures.** Surface as `SyncState.signedOut` (user needs
   to act) vs. `SyncState.error(transient)` (orchestrator retries on next
   trigger). Never block UI.
@@ -192,15 +200,16 @@ matches the rest of settings visually.
 ## Migration / rollout
 
 1. Schema v5 (additive columns + `clientUuid` backfill for existing
-   completions).
+   completions). ✅
 2. Land `SyncTransport` + `FakeSyncTransport` + `SyncOrchestrator` with
-   `NoOpSyncTransport` still wired — no behavior change.
-3. iCloud transport behind an off-by-default settings entry on iOS.
-4. Google Drive transport on Android.
-5. Flip default-on only after a TestFlight / internal-track soak.
+   `NoOpSyncTransport` still wired — no behavior change. ✅
+3. iCloud transport behind an off-by-default settings entry on iOS. ✅ (#142)
+4. Google Drive transport on Android. ✅ (#145 transport, #157 sign-in UI;
+   inert until the OAuth clients exist).
+5. Flip default-on only after a TestFlight / internal-track soak. ⏳ pending.
 
-Each step is independently shippable; the deferred label on the issue stays
-accurate until step 3.
+Each step is independently shippable. Steps 1–4 have landed; only the
+default-on flip (after soak) remains.
 
 ## Open questions
 

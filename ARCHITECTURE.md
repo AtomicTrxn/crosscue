@@ -30,7 +30,7 @@ lib/
     ├── archive/                     # Solved puzzles history with sort/filter/delete
     ├── stats/                       # Solve statistics (streaks, times, personal bests)
     ├── settings/                    # App settings screen (theme, haptics, clear data)
-    └── onboarding/                  # 4-step first-launch flow (welcome, source, iCloud, fetch)
+    └── onboarding/                  # 4-step first-launch flow (welcome, source, sync, fetch)
 ```
 
 ---
@@ -264,7 +264,7 @@ settings/
         ├── settings_screen.dart                   # Root settings (theme, haptics, sounds, skip cells)
         ├── source_management_screen.dart          # Puzzle source list (local + Crosshare)
         ├── crosshare_settings_screen.dart         # Crosshare Daily Mini on/off + schedule config
-        ├── sync_settings_screen.dart              # iCloud sync opt-in + status (SyncController)
+        ├── sync_settings_screen.dart              # Sync opt-in + status (SyncController; iCloud/Drive)
         └── privacy_screen.dart                    # Crash reporting, data export/import, clear all data
 ```
 
@@ -479,7 +479,18 @@ not exhaustive, to avoid going stale.
   build still default; schema v5 adds sync-readiness columns. Per-namespace
   adapters own merge rules (content-addressable union for puzzles,
   client-uuid union for completions, LWW + best-progress for sessions, LWW
-  for settings) behind a platform-pluggable `SyncTransport`. iCloud / Drive
-  transports and the settings UI are deferred — see
+  for settings) behind a platform-pluggable `SyncTransport`. See
   [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md)
   and [`docs/architecture/sync-progress.md`](docs/architecture/sync-progress.md).
+
+- **Sync transports + UI shipped (May–Jun 2026)**: The iCloud transport
+  (`ICloudSyncTransport`, #9 Phase 2) and the Settings + onboarding opt-in UI
+  (#142) shipped, followed by the Google Drive transport
+  (`GoogleDriveSyncTransport`, #145) and Android sign-in wiring (#157). The
+  transport interface gained `signIn()` + `supportsInteractiveSignIn` so the
+  orchestrator's `enable()` can drive an interactive Google prompt while iCloud
+  stays ambient. User-facing copy is platform-generic via
+  `core/sync/sync_service_copy.dart` ("iCloud" on iOS, "Google Drive" on
+  Android). iCloud is live; Android sync stays inert until the Google Cloud
+  OAuth clients exist (see
+  [`docs/architecture/sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)).
