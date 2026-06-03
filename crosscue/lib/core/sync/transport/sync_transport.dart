@@ -34,3 +34,48 @@ abstract class SyncTransport {
   /// Removes [key] if present. No-op when missing.
   Future<void> delete(String key);
 }
+
+/// Classifies a recoverable transport failure so the orchestrator can react
+/// deliberately instead of mistaking it for "the blob isn't there."
+///
+/// The critical distinction: a missing blob is reported as `null`/empty (the
+/// normal "we don't have it yet" signal), whereas an *access* failure throws a
+/// [SyncTransportException]. If a lock/permission error were silently treated
+/// as missing, the next pass would spuriously re-upload local state over the
+/// remote it couldn't read. See issue #113.
+enum SyncTransportErrorKind {
+  /// Another device holds a conflicting file-coordination claim (iCloud) or the
+  /// blob is otherwise temporarily unavailable. Transient — retry next trigger.
+  locked,
+
+  /// Cloud storage quota exceeded (or the local disk is full). Not transient —
+  /// the user must free space.
+  quotaExceeded,
+
+  /// The app isn't permitted to read/write the cloud container. Not transient.
+  permissionDenied,
+
+  /// Any other I/O failure. Transient by default.
+  io,
+}
+
+/// Thrown by a [SyncTransport] when an operation fails for a reason other than
+/// the blob simply not existing. Carries a [kind] the orchestrator maps to a
+/// `SyncError` (with the right `transient` flag).
+class SyncTransportException implements Exception {
+  const SyncTransportException(this.kind, {this.message});
+
+  final SyncTransportErrorKind kind;
+  final String? message;
+
+  /// Whether the orchestrator should retry automatically on the next trigger
+  /// (locked / generic I/O) rather than requiring the user to act
+  /// (quota / permission).
+  bool get isTransient =>
+      kind == SyncTransportErrorKind.locked ||
+      kind == SyncTransportErrorKind.io;
+
+  @override
+  String toString() => 'SyncTransportException(${kind.name}'
+      '${message == null ? '' : ': $message'})';
+}

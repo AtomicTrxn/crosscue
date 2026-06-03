@@ -5,6 +5,7 @@
 
 import 'package:crosscue/core/sync/models/sync_account.dart';
 import 'package:crosscue/core/sync/transport/icloud_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -141,6 +142,82 @@ void main() {
         throw PlatformException(code: 'IO_ERROR', message: 'disk');
       });
       await transport.delete('completions/uuid-1.json');
+    });
+  });
+
+  group('typed errors (#113)', () {
+    // The structured ICLOUD_* codes the native handler emits map to typed
+    // SyncTransportException kinds — so the orchestrator can tell a locked /
+    // quota / permission / I/O failure apart from a missing blob.
+    const cases = {
+      'ICLOUD_LOCKED': SyncTransportErrorKind.locked,
+      'ICLOUD_QUOTA': SyncTransportErrorKind.quotaExceeded,
+      'ICLOUD_PERMISSION': SyncTransportErrorKind.permissionDenied,
+      'ICLOUD_IO': SyncTransportErrorKind.io,
+    };
+
+    cases.forEach((code, kind) {
+      test('read throws SyncTransportException($kind) for $code', () async {
+        installHandler((_) async {
+          throw PlatformException(code: code, message: 'native: $code');
+        });
+        await expectLater(
+          transport.read('puzzles/p1.json'),
+          throwsA(
+            isA<SyncTransportException>()
+                .having((e) => e.kind, 'kind', kind)
+                .having((e) => e.message, 'message', 'native: $code'),
+          ),
+        );
+      });
+    });
+
+    test('list / write / delete also throw on a coordination lock', () async {
+      installHandler((_) async {
+        throw PlatformException(code: 'ICLOUD_LOCKED', message: 'busy');
+      });
+      await expectLater(
+        transport.list('puzzles/'),
+        throwsA(isA<SyncTransportException>()),
+      );
+      await expectLater(
+        transport.write('puzzles/p1.json', '{}'),
+        throwsA(isA<SyncTransportException>()),
+      );
+      await expectLater(
+        transport.delete('puzzles/p1.json'),
+        throwsA(isA<SyncTransportException>()),
+      );
+    });
+
+    test('transient flag: locked/io retry, quota/permission do not', () {
+      expect(
+        const SyncTransportException(SyncTransportErrorKind.locked).isTransient,
+        isTrue,
+      );
+      expect(
+        const SyncTransportException(SyncTransportErrorKind.io).isTransient,
+        isTrue,
+      );
+      expect(
+        const SyncTransportException(SyncTransportErrorKind.quotaExceeded)
+            .isTransient,
+        isFalse,
+      );
+      expect(
+        const SyncTransportException(SyncTransportErrorKind.permissionDenied)
+            .isTransient,
+        isFalse,
+      );
+    });
+
+    test('unclassified native codes still degrade to null', () async {
+      // INVALID_ARGS and other unknown codes preserve the graceful-null path.
+      installHandler((_) async {
+        throw PlatformException(code: 'INVALID_ARGS', message: 'bad');
+      });
+      expect(await transport.read('puzzles/p1.json'), isNull);
+      expect(await transport.list('puzzles/'), isEmpty);
     });
   });
 }

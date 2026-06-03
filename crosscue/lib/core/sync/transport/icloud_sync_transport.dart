@@ -67,18 +67,42 @@ class ICloudSyncTransport implements SyncTransport {
     await _safeInvoke<void>('delete', {'key': key});
   }
 
-  /// Swallows [MissingPluginException] (channel not registered on the running
-  /// platform, e.g. unit tests or Android) and [PlatformException] (handler
-  /// reported an iCloud-side error). Returning null is the documented
-  /// "transport unavailable" signal that [SyncOrchestrator] interprets as
-  /// [SyncSignedOut] / [SyncError] depending on context.
+  /// Invokes [method] and translates native failures:
+  ///
+  /// - [MissingPluginException] → `null`. The channel isn't registered on the
+  ///   running platform (Android, web, unit tests) — the documented "transport
+  ///   unavailable" signal the orchestrator reads as [SyncSignedOut].
+  /// - [PlatformException] with a structured `ICLOUD_*` code → a typed
+  ///   [SyncTransportException], so a lock / quota / permission / I/O failure
+  ///   is *not* mistaken for a missing blob (see #113).
+  /// - any other [PlatformException] (e.g. `INVALID_ARGS`) → `null`, preserving
+  ///   the previous graceful-degradation behavior for unclassified errors.
   Future<T?> _safeInvoke<T>(String method, [Map<String, Object?>? args]) async {
     try {
       return await _channel.invokeMethod<T>(method, args);
     } on MissingPluginException {
       return null;
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      final kind = _kindForCode(e.code);
+      if (kind != null) {
+        throw SyncTransportException(kind, message: e.message);
+      }
       return null;
+    }
+  }
+
+  static SyncTransportErrorKind? _kindForCode(String code) {
+    switch (code) {
+      case 'ICLOUD_LOCKED':
+        return SyncTransportErrorKind.locked;
+      case 'ICLOUD_QUOTA':
+        return SyncTransportErrorKind.quotaExceeded;
+      case 'ICLOUD_PERMISSION':
+        return SyncTransportErrorKind.permissionDenied;
+      case 'ICLOUD_IO':
+        return SyncTransportErrorKind.io;
+      default:
+        return null;
     }
   }
 }
