@@ -7,7 +7,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'sync_providers.g.dart';
 
-/// View-model for the iCloud sync settings screen.
+/// View-model for the cross-device sync settings screen (iCloud on iOS,
+/// Google Drive on Android).
 class SyncViewState {
   const SyncViewState({
     required this.enabled,
@@ -20,9 +21,11 @@ class SyncViewState {
   /// The persisted opt-in flag (survives launches).
   final bool enabled;
 
-  /// Whether a cloud account is reachable on this device (signed in to iCloud
-  /// + entitlement present). When false, enabling is blocked — the user must
-  /// sign in first. Independent of [enabled].
+  /// Whether sync can be turned on from this device. True when a cloud account
+  /// is already reachable (iCloud signed in), or when the transport drives its
+  /// own sign-in prompt (Google Drive) — the toggle tap completes sign-in. When
+  /// false, enabling is blocked and the UI tells the user to sign in first.
+  /// Independent of [enabled].
   final bool available;
 
   /// Live orchestrator lifecycle state (disabled / signed-out / idle /
@@ -52,7 +55,7 @@ class SyncViewState {
   }
 }
 
-/// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
+/// Drives the sync settings UI: exposes the live [SyncViewState] and the
 /// enable / disable / sync-now actions, bridging the in-memory
 /// [SyncOrchestrator] with the persisted `syncEnabled` flag.
 @riverpod
@@ -75,15 +78,17 @@ class SyncController extends _$SyncController {
     final account = await orchestrator.currentAccount();
     return SyncViewState(
       enabled: enabled,
-      available: account != null,
+      available:
+          account != null || orchestrator.transport.supportsInteractiveSignIn,
       syncState: orchestrator.currentState,
       account: account,
     );
   }
 
-  /// Turns sync on: persists the flag, links the account, and runs a first
-  /// pass. If no cloud account is available the orchestrator lands in
-  /// [SyncSignedOut] and the UI tells the user to enable iCloud Drive.
+  /// Turns sync on: persists the flag, links the account (prompting interactive
+  /// sign-in on transports that need it, e.g. Google Drive), and runs a first
+  /// pass. If sign-in is declined / no cloud account is available the
+  /// orchestrator lands in [SyncSignedOut] and the UI tells the user to sign in.
   Future<void> enable() async {
     final orchestrator = ref.read(syncOrchestratorProvider);
     await ref.read(appSettingsProvider).setSyncEnabled(true);
@@ -94,7 +99,8 @@ class SyncController extends _$SyncController {
       state = AsyncData(
         current.copyWith(
           enabled: true,
-          available: account != null,
+          available: account != null ||
+              orchestrator.transport.supportsInteractiveSignIn,
           account: account,
           syncState: orchestrator.currentState,
         ),
@@ -108,9 +114,10 @@ class SyncController extends _$SyncController {
     final orchestrator = ref.read(syncOrchestratorProvider);
     await ref.read(appSettingsProvider).setSyncEnabled(false);
     await orchestrator.disable(wipeRemote: wipeRemote);
-    // Re-query availability so the toggle can be turned back on if the device
-    // is still signed in to iCloud.
-    final available = (await orchestrator.currentAccount()) != null;
+    // Re-query availability so the toggle can be turned back on — either the
+    // device is still signed in (iCloud) or the transport can re-prompt (Drive).
+    final available = (await orchestrator.currentAccount()) != null ||
+        orchestrator.transport.supportsInteractiveSignIn;
     final current = state.asData?.value;
     if (current != null) {
       // Rebuild without an account (copyWith can't null it out).

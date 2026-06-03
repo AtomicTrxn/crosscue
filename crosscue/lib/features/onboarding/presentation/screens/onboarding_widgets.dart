@@ -291,7 +291,7 @@ class _SourceCard extends StatelessWidget {
 }
 
 // ===========================================================================
-// Step 2 — iCloud opt-in (skippable)
+// Step 2 — Sync opt-in (skippable; iCloud on iOS, Google Drive on Android)
 // ===========================================================================
 
 class _ICloudView extends StatelessWidget {
@@ -302,8 +302,8 @@ class _ICloudView extends StatelessWidget {
     required this.onSkip,
   });
 
-  /// null while the availability check is in flight; false = not signed in to
-  /// iCloud (enabling is blocked); true = can turn on.
+  /// null while the availability check is in flight; false = no account and the
+  /// transport can't prompt (enabling is blocked); true = can turn on.
   final bool? available;
   final VoidCallback onEnable;
   final VoidCallback onSkip;
@@ -341,9 +341,9 @@ class _ICloudView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Keep your puzzles, progress, and stats in sync through your '
-              'private iCloud Drive. Nothing is sent to Crosscue — your data '
-              'stays in your own iCloud account. You can change this anytime '
-              'in Settings.',
+              'private $syncServiceName. Nothing is sent to Crosscue — your '
+              'data stays in your own $syncServiceName account. You can change '
+              'this anytime in Settings.',
               style: TextStyle(
                 fontSize: 15,
                 height: 1.4,
@@ -351,14 +351,13 @@ class _ICloudView extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            // Only allow turning on when an iCloud account is reachable.
+            // Only allow turning on when sync is available (account reachable or
+            // the transport can prompt its own sign-in).
             if (available == false)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
-                  "You're not signed in to iCloud on this device. Sign in (the "
-                  'Settings app → your name → iCloud) and you can turn this on '
-                  'later in Settings.',
+                  syncSignInHint,
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.35,
@@ -367,7 +366,7 @@ class _ICloudView extends StatelessWidget {
                 ),
               ),
             _PrimaryCta(
-              label: 'Turn on iCloud Sync',
+              label: 'Turn on $syncServiceName Sync',
               onPressed: available == true ? onEnable : null,
             ),
             TextButton(

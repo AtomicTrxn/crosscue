@@ -4,6 +4,7 @@
 
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/features/settings/presentation/screens/sync_settings_screen.dart';
@@ -36,7 +37,7 @@ void main() {
       (tester) async {
     await pumpScreen(tester);
 
-    expect(find.text('Sync with iCloud'), findsOneWidget);
+    expect(find.text('Sync with $syncServiceName'), findsOneWidget);
     expect(find.text('Sync now'), findsNothing);
     final toggle = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
     expect(toggle.value, isFalse);
@@ -54,7 +55,7 @@ void main() {
     expect(find.text('Status'), findsOneWidget);
     expect(find.text('Sync now'), findsOneWidget);
     expect(
-      find.text('Turn off and remove iCloud copy'),
+      find.text('Turn off and remove $syncServiceName copy'),
       findsOneWidget,
     );
   });
@@ -75,6 +76,6 @@ void main() {
 
     final toggle = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
     expect(toggle.onChanged, isNull, reason: 'enabling is blocked when off');
-    expect(find.textContaining('Sign in to iCloud'), findsOneWidget);
+    expect(find.textContaining('Sign in to $syncServiceName'), findsOneWidget);
   });
 }

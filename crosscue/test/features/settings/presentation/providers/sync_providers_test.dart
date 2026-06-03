@@ -5,9 +5,11 @@
 
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/sync/models/sync_account.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
+import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/sync_providers.dart';
 import 'package:drift/native.dart';
@@ -108,4 +110,86 @@ void main() {
     final vm = await second.read(syncControllerProvider.future);
     expect(vm.enabled, isTrue);
   });
+
+  group('interactive sign-in transport (Google Drive shape, #157)', () {
+    ProviderContainer makeInteractiveContainer(_InteractiveSignInTransport t) {
+      return ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          syncTransportProvider.overrideWithValue(t),
+        ],
+      );
+    }
+
+    test('available is true even with no silent account (the tap signs in)',
+        () async {
+      final container = makeInteractiveContainer(_InteractiveSignInTransport());
+      addTearDown(container.dispose);
+
+      final vm = await container.read(syncControllerProvider.future);
+      expect(
+        vm.available,
+        isTrue,
+        reason: 'supportsInteractiveSignIn lets the user enable to sign in',
+      );
+      expect(vm.account, isNull, reason: 'no silent account yet');
+    });
+
+    test('enable() drives signIn() and reaches SyncIdle', () async {
+      final transport = _InteractiveSignInTransport();
+      final container = makeInteractiveContainer(transport);
+      addTearDown(container.dispose);
+      await container.read(syncControllerProvider.future);
+
+      await container.read(syncControllerProvider.notifier).enable();
+
+      expect(transport.signInCalled, isTrue);
+      final vm = container.read(syncControllerProvider).asData!.value;
+      expect(vm.account, isNotNull);
+      expect(vm.syncState, isA<SyncIdle>());
+    });
+  });
+}
+
+/// A transport with the Google-Drive shape: silent [account] is null, but
+/// [supportsInteractiveSignIn] is true and [signIn] links an account.
+class _InteractiveSignInTransport implements SyncTransport {
+  bool signInCalled = false;
+  SyncAccount? _account; // null until signIn(), like a real silent account.
+  final Map<String, String> _store = {};
+
+  static const _signedIn = SyncAccount(
+    provider: SyncProvider.googleDrive,
+    displayName: 'tester@example.com',
+  );
+
+  @override
+  Future<SyncAccount?> account() async => _account;
+
+  @override
+  bool get supportsInteractiveSignIn => true;
+
+  @override
+  Future<SyncAccount?> signIn() async {
+    signInCalled = true;
+    // After an interactive sign-in the silent account resolves too.
+    _account = _signedIn;
+    return _account;
+  }
+
+  @override
+  Future<List<String>> list(String prefix) async =>
+      _store.keys.where((k) => k.startsWith(prefix)).toList();
+
+  @override
+  Future<String?> read(String key) async => _store[key];
+
+  @override
+  Future<String?> write(String key, String bytes, {String? ifMatch}) async {
+    _store[key] = bytes;
+    return null;
+  }
+
+  @override
+  Future<void> delete(String key) async => _store.remove(key);
 }

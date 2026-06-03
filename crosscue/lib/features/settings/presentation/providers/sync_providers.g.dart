@@ -8,19 +8,19 @@ part of 'sync_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
+/// Drives the sync settings UI: exposes the live [SyncViewState] and the
 /// enable / disable / sync-now actions, bridging the in-memory
 /// [SyncOrchestrator] with the persisted `syncEnabled` flag.
 
 @ProviderFor(SyncController)
 final syncControllerProvider = SyncControllerProvider._();
 
-/// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
+/// Drives the sync settings UI: exposes the live [SyncViewState] and the
 /// enable / disable / sync-now actions, bridging the in-memory
 /// [SyncOrchestrator] with the persisted `syncEnabled` flag.
 final class SyncControllerProvider
     extends $AsyncNotifierProvider<SyncController, SyncViewState> {
-  /// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
+  /// Drives the sync settings UI: exposes the live [SyncViewState] and the
   /// enable / disable / sync-now actions, bridging the in-memory
   /// [SyncOrchestrator] with the persisted `syncEnabled` flag.
   SyncControllerProvider._()
@@ -42,9 +42,9 @@ final class SyncControllerProvider
   SyncController create() => SyncController();
 }
 
-String _$syncControllerHash() => r'f51e7a7b1a73e0c62550d2e77321a8f50a509a56';
+String _$syncControllerHash() => r'c92bd6465128870810964066fc59e61690b6035f';
 
-/// Drives the iCloud sync settings UI: exposes the live [SyncViewState] and the
+/// Drives the sync settings UI: exposes the live [SyncViewState] and the
 /// enable / disable / sync-now actions, bridging the in-memory
 /// [SyncOrchestrator] with the persisted `syncEnabled` flag.
 

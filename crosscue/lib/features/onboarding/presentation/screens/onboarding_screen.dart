@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/import/presentation/notifiers/crosshare_notifier.dart';
@@ -18,7 +19,7 @@ part 'onboarding_widgets.dart';
 //
 //   0. Welcome      — brand + value prop.
 //   1. Source       — pick Crosshare daily sync and/or local import.
-//   2. iCloud        — optional opt-in to cross-device sync (skippable).
+//   2. Sync         — optional opt-in to cross-device sync (skippable).
 //   3. Fetch/result — download today's mini and drop straight into solving.
 //
 // The crossword *tutorial* ("how to play") now lives in Settings → Help, not
@@ -39,9 +40,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _wantCrosshare = false;
   bool _wantImport = false;
 
-  /// Whether an iCloud account is reachable on this device. null while the
-  /// check is in flight; gates the "Turn on iCloud Sync" action.
-  bool? _iCloudAvailable;
+  /// Whether sync can be turned on from this device — an account is reachable
+  /// (iCloud) or the transport drives its own sign-in (Google Drive). null
+  /// while the check is in flight; gates the "Turn on … Sync" action.
+  bool? _syncAvailable;
 
   bool get _canContinue => _wantCrosshare || _wantImport;
 
@@ -56,16 +58,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     if (!mounted) return;
     setState(() => _step = _OnbStep.icloud);
-    unawaited(_checkICloudAvailability());
+    unawaited(_checkSyncAvailability());
   }
 
-  Future<void> _checkICloudAvailability() async {
-    final account = await ref.read(syncOrchestratorProvider).currentAccount();
+  Future<void> _checkSyncAvailability() async {
+    final orchestrator = ref.read(syncOrchestratorProvider);
+    final account = await orchestrator.currentAccount();
     if (!mounted) return;
-    setState(() => _iCloudAvailable = account != null);
+    setState(
+      () => _syncAvailable =
+          account != null || orchestrator.transport.supportsInteractiveSignIn,
+    );
   }
 
-  /// iCloud step → opt in, then continue to the fetch step.
+  /// Sync step → opt in, then continue to the fetch step.
   Future<void> _enableICloud() async {
     await ref.read(appSettingsProvider).setSyncEnabled(true);
     final orchestrator = ref.read(syncOrchestratorProvider);
@@ -145,7 +151,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       _OnbStep.icloud => _ICloudView(
           key: const ValueKey('icloud'),
-          available: _iCloudAvailable,
+          available: _syncAvailable,
           onEnable: _enableICloud,
           onSkip: _skipICloud,
         ),

@@ -17,10 +17,11 @@ import 'package:googleapis/drive/v3.dart' as drive;
 /// null (orchestrator stays in `SyncSignedOut`) and the CRUD methods become
 /// no-ops. So it's safe to wire on Android before any of that is set up.
 ///
-/// The interactive [signIn] is intentionally **not** on [SyncTransport] (iCloud
-/// has no app-driven sign-in — it's ambient). The UI that triggers it for
-/// Android is a follow-up to the shared sync UI (#142); until then `account()`'s
-/// silent path keeps the transport signed-out and inert.
+/// Unlike iCloud (ambient sign-in), this transport reports
+/// [supportsInteractiveSignIn] = true and implements [signIn] as a Google
+/// sign-in + Drive AppData authorization prompt. The orchestrator's `enable()`
+/// drives it; the silent `account()` path keeps the transport signed-out and
+/// inert until then.
 class GoogleDriveSyncTransport implements SyncTransport {
   GoogleDriveSyncTransport({
     Future<drive.DriveApi?> Function()? driveApiProvider,
@@ -54,8 +55,12 @@ class GoogleDriveSyncTransport implements SyncTransport {
     return account == null ? null : _toSyncAccount(account);
   }
 
-  /// Interactive Google sign-in + Drive AppData authorization. Wired by the
-  /// Android sync-UI follow-up; not part of the [SyncTransport] interface.
+  @override
+  bool get supportsInteractiveSignIn => true;
+
+  /// Interactive Google sign-in + Drive AppData authorization. Called by the
+  /// orchestrator's `enable()` (the toggle tap drives the prompt).
+  @override
   Future<SyncAccount?> signIn() async {
     try {
       await GoogleSignIn.instance.initialize();

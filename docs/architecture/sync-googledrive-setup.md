@@ -43,7 +43,8 @@ this, it just doesn't *do* anything yet.
 
 - Scope: `drive.appdata` only. The AppData folder is invisible in the user's
   Drive UI and isolated per app — the same trust model as the iCloud container.
-- The interactive sign-in (`GoogleDriveSyncTransport.signIn()`) is wired by the
-  Android sync-UI follow-up; the silent `account()` path is what the
-  orchestrator uses today, so until that follow-up + the OAuth setup land, the
-  transport is inert on Android.
+- The interactive sign-in (`GoogleDriveSyncTransport.signIn()`) is now wired:
+  the orchestrator's `enable()` calls it, and the Settings/onboarding toggle
+  drives the Google prompt (#157). Until the OAuth client above exists the
+  prompt fails gracefully and the transport stays inert — so the app ships
+  safely; it just can't actually sign in yet.
