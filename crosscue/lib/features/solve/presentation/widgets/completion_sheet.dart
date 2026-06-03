@@ -85,7 +85,17 @@ class CompletionSheet extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/ic_launcher.png',
+                      width: 44,
+                      height: 44,
+                      filterQuality: FilterQuality.medium,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     solveLabel,
                     style: TextStyle(
@@ -145,27 +155,27 @@ class CompletionSheet extends ConsumerWidget {
                   if (!isRevealed) ...[
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          SharePlus.instance.share(
-                            ShareParams(
-                              text: '${solveState.puzzle.metadata.title}\n'
-                                  '$timeStr - $solveLabel\n'
-                                  'Solved in Crosscue',
-                              subject: 'Crosscue result',
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: onSurface2,
-                          side: BorderSide(color: divider, width: 1),
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                      // Builder so the tap handler can read THIS button's
+                      // render box for the iPad share-sheet popover anchor.
+                      child: Builder(
+                        builder: (buttonCtx) => OutlinedButton(
+                          onPressed: () => _shareResult(
+                            buttonCtx,
+                            solveState,
+                            timeStr,
+                            solveLabel,
                           ),
-                          minimumSize: const Size.fromHeight(46),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: onSurface2,
+                            side: BorderSide(color: divider, width: 1),
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            minimumSize: const Size.fromHeight(46),
+                          ),
+                          child: const Text('Share result'),
                         ),
-                        child: const Text('Share result'),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -226,6 +236,37 @@ class CompletionSheet extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _shareResult(
+    BuildContext context,
+    SolveState solveState,
+    String timeStr,
+    String solveLabel,
+  ) async {
+    // iPad presents the share sheet as a popover anchored to a rect — pass the
+    // button's frame so it doesn't fail to present. (Ignored on iPhone.)
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = (box != null && box.hasSize)
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: '${solveState.puzzle.metadata.title}\n'
+              '$timeStr - $solveLabel\n'
+              'Solved in Crosscue',
+          subject: 'Crosscue result',
+          sharePositionOrigin: origin,
+        ),
+      );
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't open the share sheet.")),
+        );
+      }
+    }
   }
 
   Future<void> _confirmReset(BuildContext context) async {
