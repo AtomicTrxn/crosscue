@@ -1,8 +1,10 @@
 import 'package:crosscue/core/constants/app_links.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/settings/presentation/providers/sync_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
 import 'package:crosscue/features/stats/presentation/notifiers/stats_export_notifier.dart';
 import 'package:flutter/material.dart';
@@ -72,8 +74,8 @@ class PrivacyScreen extends ConsumerWidget {
         return AlertDialog(
           title: const Text('Clear all data?'),
           content: const Text(
-            'This will permanently delete every puzzle, solve session, '
-            'and setting. This cannot be undone.',
+            'This permanently deletes every puzzle, solve session, and setting '
+            'on this device. This cannot be undone.',
           ),
           actions: [
             FilledButton(
@@ -98,11 +100,68 @@ class PrivacyScreen extends ConsumerWidget {
     );
     if (confirmed != true) return;
 
+    // If the user opted into cloud sync, decide what happens to the cloud copy
+    // and turn sync off first — otherwise a background sync pass would just
+    // re-pull the cloud back onto this freshly-wiped device.
+    final syncEnabled = await ref.read(appSettingsProvider).getSyncEnabled();
+    if (syncEnabled) {
+      if (!context.mounted) return;
+      final wipeCloud = await _askCloudWipe(context);
+      if (wipeCloud == null) return; // cancelled — abort the whole clear
+      await ref
+          .read(syncControllerProvider.notifier)
+          .disable(wipeRemote: wipeCloud);
+    }
+
     final db = ref.read(appDatabaseProvider);
     await db.clearAllUserData();
     await resetAllSettings(ref);
 
     if (context.mounted) context.go(Routes.home);
+  }
+
+  /// Asks whether to also delete the cloud copy. Returns null on cancel,
+  /// false to keep the cloud copy (default — other devices keep their data),
+  /// true to also wipe it from the user's cloud account.
+  Future<bool?> _askCloudWipe(BuildContext context) {
+    final service = syncServiceName;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final primary = Theme.of(ctx).colorScheme.primary;
+        return AlertDialog(
+          title: Text('Also delete the $service copy?'),
+          content: Text(
+            'Your data is synced to $service. Clearing this device keeps the '
+            '$service copy by default, so your other devices keep their data. '
+            'You can also delete the $service copy now — that removes it for '
+            'every device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep cloud copy'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: ctx.crosscueActionDestructive,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Delete cloud copy'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
