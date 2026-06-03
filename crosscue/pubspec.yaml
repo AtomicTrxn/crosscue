@@ -76,6 +76,10 @@ dependencies:
   googleapis: ^16.0.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
 
+  # Home/Lock-screen widget bridge (pushes state to the iOS App Group container
+  # read by the WidgetKit extension). See docs/architecture/ios-widget-setup.md.
+  home_widget: ^0.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
