@@ -5,12 +5,14 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/app_router.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
+import 'package:crosscue/features/home/data/services/home_widget_service.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 
 /// Debug-only, one-shot log of what `dynamic_color` actually returns on this
 /// platform. Lets us verify on a device/simulator whether iOS 16+ surfaces a
@@ -69,7 +71,29 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
         await orchestrator.enable();
         await orchestrator.syncNow();
       }
+      // Push current streak + today's puzzle to the Home/Lock-screen widget,
+      // and wire widget taps to deep-link into the app. Both no-op until the
+      // widget extension + App Group are configured (ios-widget-setup.md).
+      unawaited(ref.read(homeWidgetServiceProvider).refresh());
+      _initWidgetDeepLinks();
     });
+  }
+
+  /// Routes a Home/Lock-screen widget tap into the app. The widget encodes its
+  /// target as `crosscue://widget?route=<encoded go_router path>`; we forward
+  /// that path to the router. Safe no-op when nothing launched us from a widget.
+  void _initWidgetDeepLinks() {
+    void go(Uri? uri) {
+      if (uri == null) return;
+      final route = uri.queryParameters['route'];
+      if (route == null || route.isEmpty) return;
+      ref.read(appRouterProvider).go(route);
+    }
+
+    // Cold launch from a widget tap.
+    unawaited(HomeWidget.initiallyLaunchedFromHomeWidget().then(go));
+    // Taps while the app is already running.
+    HomeWidget.widgetClicked.listen(go);
   }
 
   void _installCrashHandlers() {
@@ -140,6 +164,9 @@ class _CrosshareLifecycleObserver extends WidgetsBindingObserver {
       // Pull in changes made on other devices while we were backgrounded.
       // No-op unless sync is enabled and signed in (orchestrator self-guards).
       unawaited(_ref.read(syncOrchestratorProvider).syncNow());
+      // Refresh the Home/Lock-screen widget (streak may have changed, e.g. a
+      // missed-day reset). No-op until the widget extension is configured.
+      unawaited(_ref.read(homeWidgetServiceProvider).refresh());
     }
   }
 }
