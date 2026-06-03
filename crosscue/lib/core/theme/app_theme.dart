@@ -6,39 +6,53 @@ import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  /// Light theme — fallback when dynamic color is unavailable.
+  /// Light theme. Uses the system [dynamicScheme] (Material You on Android 12+,
+  /// and iOS 16+ where `dynamic_color` provides one) as the base when present,
+  /// otherwise a seeded fallback — then applies Crosscue's brand identity on
+  /// top of either via [_brandLight]. See issue #112.
   static ThemeData light({ColorScheme? dynamicScheme}) {
-    final scheme = dynamicScheme ??
+    final base = dynamicScheme ??
         ColorScheme.fromSeed(
           seedColor: CrosscueColors.seed,
           brightness: Brightness.light,
-        ).copyWith(
-          primary: CrosscueColors.primary,
-          onPrimary: Colors.white,
-          primaryContainer: CrosscueColors.primaryContLight,
-          surface: CrosscueColors.surfaceLight,
-          onSurface: CrosscueColors.onSurface1Light,
-          error: CrosscueColors.incorrectLight,
         );
-    return _build(scheme);
+    return _build(_brandLight(base));
   }
 
-  /// Dark theme — fallback when dynamic color is unavailable.
+  /// Dark theme. See [light] for the dynamic-vs-fallback + brand-override model.
   static ThemeData dark({ColorScheme? dynamicScheme}) {
-    final scheme = dynamicScheme ??
+    final base = dynamicScheme ??
         ColorScheme.fromSeed(
           seedColor: CrosscueColors.seed,
           brightness: Brightness.dark,
-        ).copyWith(
-          primary: CrosscueColors.primaryLight,
-          onPrimary: CrosscueColors.deepNavy,
-          primaryContainer: CrosscueColors.primaryContDark,
-          surface: CrosscueColors.surfaceDark,
-          onSurface: CrosscueColors.onSurface1Dark,
-          error: CrosscueColors.incorrectDark,
         );
-    return _build(scheme);
+    return _build(_brandDark(base));
   }
+
+  /// Crosscue brand identity layered onto a light [base] scheme — whether that
+  /// base is the system's dynamic-color scheme or the seeded fallback. We keep
+  /// brand roles fixed (rather than honoring the system accent) so the app's
+  /// identity is consistent everywhere and matches the many brand-fixed tokens
+  /// applied in [_build]; the dynamic base still harmonizes the roles we don't
+  /// override (secondary, tertiary, surface tints, etc.). See issue #112.
+  static ColorScheme _brandLight(ColorScheme base) => base.copyWith(
+        primary: CrosscueColors.primary,
+        onPrimary: Colors.white,
+        primaryContainer: CrosscueColors.primaryContLight,
+        surface: CrosscueColors.surfaceLight,
+        onSurface: CrosscueColors.onSurface1Light,
+        error: CrosscueColors.incorrectLight,
+      );
+
+  /// Dark counterpart to [_brandLight].
+  static ColorScheme _brandDark(ColorScheme base) => base.copyWith(
+        primary: CrosscueColors.primaryLight,
+        onPrimary: CrosscueColors.deepNavy,
+        primaryContainer: CrosscueColors.primaryContDark,
+        surface: CrosscueColors.surfaceDark,
+        onSurface: CrosscueColors.onSurface1Dark,
+        error: CrosscueColors.incorrectDark,
+      );
 
   static ThemeData _build(ColorScheme scheme) {
     final isLight = scheme.brightness == Brightness.light;
