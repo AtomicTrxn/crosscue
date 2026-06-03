@@ -1,14 +1,16 @@
 import 'package:crosscue/core/sync/models/sync_state.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/sync_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Settings sub-screen for cross-device sync (iCloud on iOS).
+/// Settings sub-screen for cross-device sync (iCloud on iOS, Google Drive on
+/// Android). Copy is platform-generic via `sync_service_copy.dart`.
 ///
-/// The sync engine ships (orchestrator + iCloud transport + adapters); this is
-/// the opt-in / status surface for it. See issue #142.
+/// The sync engine ships (orchestrator + transports + adapters); this is the
+/// opt-in / status surface for it. See issues #142 / #157.
 class SyncSettingsScreen extends ConsumerWidget {
   const SyncSettingsScreen({super.key});
 
@@ -18,7 +20,7 @@ class SyncSettingsScreen extends ConsumerWidget {
     final controller = ref.read(syncControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('iCloud Sync')),
+      appBar: AppBar(title: Text('$syncServiceName Sync')),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
@@ -34,8 +36,9 @@ class SyncSettingsScreen extends ConsumerWidget {
               ),
               child: Text(
                 'Keep your puzzles, progress, and stats in sync across your '
-                'devices through your private iCloud Drive. Nothing is sent to '
-                'Crosscue — your data stays in your own iCloud account.',
+                'devices through your private $syncServiceName. Nothing is sent '
+                'to Crosscue — your data stays in your own $syncServiceName '
+                'account.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: context.crosscueOnSurface3,
                     ),
@@ -44,16 +47,18 @@ class SyncSettingsScreen extends ConsumerWidget {
             const Divider(height: 32),
             SwitchListTile(
               value: vm.enabled,
-              // Allow turning off any time, but only turning on when an iCloud
-              // account is reachable on this device.
+              // Allow turning off any time, but only turning on when sync is
+              // available (an account is reachable, or the transport can prompt
+              // its own sign-in).
               onChanged: (vm.available || vm.enabled)
                   ? (on) => on ? controller.enable() : controller.disable()
                   : null,
               secondary: const Icon(Icons.cloud_outlined),
-              title: const Text('Sync with iCloud'),
+              title: Text('Sync with $syncServiceName'),
               subtitle: const Text('Sync this device with your other devices'),
             ),
-            // Not signed in to iCloud → can't enable; tell the user how.
+            // No account reachable and the transport can't prompt → can't
+            // enable; tell the user how (iCloud-only path).
             if (!vm.available && !vm.enabled)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -63,8 +68,7 @@ class SyncSettingsScreen extends ConsumerWidget {
                   16,
                 ),
                 child: Text(
-                  'Sign in to iCloud on this device (the Settings app → your '
-                  'name → iCloud, with iCloud Drive on) to turn on sync.',
+                  syncSignInHint,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: context.crosscueOnSurface3,
                       ),
@@ -107,7 +111,7 @@ class SyncSettingsScreen extends ConsumerWidget {
                   style: TextButton.styleFrom(
                     foregroundColor: context.crosscueActionDestructive,
                   ),
-                  child: const Text('Turn off and remove iCloud copy'),
+                  child: Text('Turn off and remove $syncServiceName copy'),
                 ),
               ),
             ],
@@ -126,10 +130,10 @@ class SyncSettingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove iCloud copy?'),
-        content: const Text(
-          'This turns off sync and deletes Crosscue\'s data from iCloud. '
-          'Your puzzles and progress on this device are kept.',
+        title: Text('Remove $syncServiceName copy?'),
+        content: Text(
+          'This turns off sync and deletes Crosscue\'s data from '
+          '$syncServiceName. Your puzzles and progress on this device are kept.',
         ),
         actions: [
           FilledButton(
@@ -209,8 +213,7 @@ class _StatusSection extends StatelessWidget {
   (String, Color) _statusLine(BuildContext context, SyncState s) {
     return switch (s) {
       SyncSignedOut() => (
-          'iCloud unavailable — sign in to iCloud and enable iCloud Drive for '
-              'Crosscue in Settings.',
+          syncUnavailableStatus,
           context.crosscueError,
         ),
       SyncRunning() => ('Syncing…', context.crosscueOnSurface2),

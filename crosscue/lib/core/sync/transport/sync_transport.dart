@@ -5,8 +5,19 @@ import 'package:crosscue/core/sync/models/sync_account.dart';
 /// All keys are flat strings using the namespace prefixes defined in
 /// `SyncNamespace`. See `docs/architecture/sync-design.md`.
 abstract class SyncTransport {
-  /// The currently linked account, or null if not signed in.
+  /// The currently linked account, or null if not signed in. Non-interactive
+  /// (silent) — never prompts.
   Future<SyncAccount?> account();
+
+  /// Links an account, prompting interactively if the platform requires it
+  /// (Google Drive). Ambient transports (iCloud) just resolve [account]. The
+  /// orchestrator calls this from `enable()`.
+  Future<SyncAccount?> signIn();
+
+  /// Whether [signIn] shows an app-driven sign-in prompt (Google Drive) rather
+  /// than relying on an ambient account (iCloud). Lets the UI allow enabling
+  /// even when there's no account yet (the tap drives the sign-in).
+  bool get supportsInteractiveSignIn;
 
   /// Returns the keys currently present under [prefix] (without filtering
   /// out anything). Empty list when the prefix has no blobs.

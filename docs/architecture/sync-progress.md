@@ -48,8 +48,8 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | `google_sign_in` + `googleapis` integration | `google_sign_in` v7 + `extension_google_sign_in_as_googleapis_auth` → authorized `DriveApi`. Silent `account()` + interactive `signIn()`. |
 | ✅ | Transport tests | Inert-safety (no-op when unconfigured) + `list`/`read` against a mock HTTP `DriveApi`. |
 | ⏳ | Google Cloud project + OAuth client | `drive.appdata` scope; Android client per signing-key SHA-1. See [`sync-googledrive-setup.md`](sync-googledrive-setup.md). |
-| ⏳ | Android sync-UI wiring | Trigger `signIn()` from the (currently iOS-worded) sync UI + make the Settings/onboarding copy platform-generic. Extends #142. |
-| ⏳ | Internal-track soak | Two Android devices, same Google account. |
+| ✅ | Android sync-UI wiring ([#157](https://github.com/AtomicTrxn/crosscue/issues/157)) | `signIn()` is on the `SyncTransport` interface; orchestrator `enable()` calls it (interactive on Drive, ambient on iCloud). `supportsInteractiveSignIn` lets the UI enable even with no silent account. Settings + onboarding copy is platform-generic via `core/sync/sync_service_copy.dart` (iOS "iCloud", Android "Google Drive"). |
+| ⏳ | Internal-track soak | Two Android devices, same Google account. Blocked only on the OAuth client above. |
 
 ## Phase 4 — Settings UX + triggers ([#142](https://github.com/AtomicTrxn/crosscue/issues/142))
 

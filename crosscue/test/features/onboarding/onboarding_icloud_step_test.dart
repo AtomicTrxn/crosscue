@@ -5,6 +5,7 @@
 
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
@@ -58,14 +59,14 @@ void main() {
       (tester) async {
     await pumpToICloudStep(tester);
 
-    expect(find.text('Turn on iCloud Sync'), findsOneWidget);
+    expect(find.text('Turn on $syncServiceName Sync'), findsOneWidget);
     expect(find.text('Not now'), findsOneWidget);
   });
 
   testWidgets('"Turn on iCloud Sync" persists the opt-in', (tester) async {
     final container = await pumpToICloudStep(tester);
 
-    await tester.tap(find.text('Turn on iCloud Sync'));
+    await tester.tap(find.text('Turn on $syncServiceName Sync'));
     await tester.pumpAndSettle();
 
     expect(await container.read(appSettingsProvider).getSyncEnabled(), isTrue);
@@ -87,7 +88,7 @@ void main() {
 
     final turnOn = tester.widget<FilledButton>(
       find.ancestor(
-        of: find.text('Turn on iCloud Sync'),
+        of: find.text('Turn on $syncServiceName Sync'),
         matching: find.byType(FilledButton),
       ),
     );
@@ -96,7 +97,7 @@ void main() {
       isNull,
       reason: 'cannot enable without an account',
     );
-    expect(find.textContaining("not signed in to iCloud"), findsOneWidget);
+    expect(find.textContaining('Sign in to $syncServiceName'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
   });
 }

@@ -48,7 +48,10 @@ class SyncOrchestrator {
   Future<SyncAccount?> currentAccount() => transport.account();
 
   Future<void> enable() async {
-    final account = await transport.account();
+    // signIn() prompts interactively on transports that need it (Google Drive)
+    // and just resolves the ambient account on the rest (iCloud). A null result
+    // means the user dismissed the prompt or isn't signed in — stay signed-out.
+    final account = await transport.signIn();
     _setState(
       account == null
           ? const SyncSignedOut()

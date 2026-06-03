@@ -11,6 +11,12 @@ class NoOpSyncTransport implements SyncTransport {
   Future<SyncAccount?> account() async => null;
 
   @override
+  Future<SyncAccount?> signIn() async => null;
+
+  @override
+  bool get supportsInteractiveSignIn => false;
+
+  @override
   Future<List<String>> list(String prefix) async => const [];
 
   @override

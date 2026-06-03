@@ -25,6 +25,12 @@ class FakeSyncTransport implements SyncTransport {
   Future<SyncAccount?> account() async => _account;
 
   @override
+  Future<SyncAccount?> signIn() async => _account;
+
+  @override
+  bool get supportsInteractiveSignIn => false;
+
+  @override
   Future<List<String>> list(String prefix) async =>
       store.keys.where((k) => k.startsWith(prefix)).toList();
 

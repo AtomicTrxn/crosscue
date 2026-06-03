@@ -242,6 +242,12 @@ class _GatedListTransport implements SyncTransport {
       const SyncAccount(provider: SyncProvider.fake, displayName: 'fake');
 
   @override
+  Future<SyncAccount?> signIn() => account();
+
+  @override
+  bool get supportsInteractiveSignIn => false;
+
+  @override
   Future<List<String>> list(String prefix) async {
     await _gate.future;
     return const [];

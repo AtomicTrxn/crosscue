@@ -4,6 +4,7 @@ import 'package:crosscue/core/constants/app_links.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
+import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -121,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
           const SettingsSectionHeader('Sync'),
           SettingsNavRow(
             leading: Icons.cloud_outlined,
-            title: 'iCloud Sync',
+            title: '$syncServiceName Sync',
             subtitle: 'Sync puzzles and progress across your devices',
             onTap: () => context.push(Routes.syncSettings),
           ),

@@ -33,6 +33,14 @@ class ICloudSyncTransport implements SyncTransport {
     );
   }
 
+  // iCloud is ambient — "sign in" is turning on iCloud Drive in iOS Settings,
+  // not an app prompt. So signIn just resolves the current account.
+  @override
+  Future<SyncAccount?> signIn() => account();
+
+  @override
+  bool get supportsInteractiveSignIn => false;
+
   @override
   Future<List<String>> list(String prefix) async {
     final result = await _safeInvoke<List<Object?>>('list', {'prefix': prefix});
