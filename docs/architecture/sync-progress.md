@@ -40,13 +40,15 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | Apple Developer container + Xcode capability | Completed during the v1.2.7 iOS 1.0 release push. App ID has iCloud capability in Xcode 6 / CloudKit-compatible mode; container `iCloud.dev.tomhess.crosscue` exists; provisioning profile carries `icloud-services` + `icloud-container-identifiers` + `ubiquity-container-identifiers` entitlements. See [`sync-icloud-setup.md`](sync-icloud-setup.md). |
 | ⏳ | Manual two-device soak | Unblocked (UI shipped). Needs two devices signed in to the same iCloud account with the entitlement-carrying build. |
 
-## Phase 3 — Google Drive transport (deferred — [#145](https://github.com/AtomicTrxn/crosscue/issues/145))
+## Phase 3 — Google Drive transport ([#145](https://github.com/AtomicTrxn/crosscue/issues/145))
 
 | Status | Item | Notes |
 |---|---|---|
-| ⏳ | Google Cloud project + OAuth client | `drive.appdata` scope. |
-| ⏳ | `google_sign_in` + `googleapis` integration | Refresh token via `flutter_secure_storage`. |
-| ⏳ | `GoogleDriveSyncTransport` impl | Android is still `NoOpSyncTransport` until this lands. |
+| ✅ | `GoogleDriveSyncTransport` impl | CRUD over the Drive `appDataFolder`; fails gracefully (no-op) when not signed in / not configured. Wired into `syncTransportProvider` for Android. |
+| ✅ | `google_sign_in` + `googleapis` integration | `google_sign_in` v7 + `extension_google_sign_in_as_googleapis_auth` → authorized `DriveApi`. Silent `account()` + interactive `signIn()`. |
+| ✅ | Transport tests | Inert-safety (no-op when unconfigured) + `list`/`read` against a mock HTTP `DriveApi`. |
+| ⏳ | Google Cloud project + OAuth client | `drive.appdata` scope; Android client per signing-key SHA-1. See [`sync-googledrive-setup.md`](sync-googledrive-setup.md). |
+| ⏳ | Android sync-UI wiring | Trigger `signIn()` from the (currently iOS-worded) sync UI + make the Settings/onboarding copy platform-generic. Extends #142. |
 | ⏳ | Internal-track soak | Two Android devices, same Google account. |
 
 ## Phase 4 — Settings UX + triggers ([#142](https://github.com/AtomicTrxn/crosscue/issues/142))
