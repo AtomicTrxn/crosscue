@@ -6,6 +6,16 @@ import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sig
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 
+/// Web-application OAuth client ID, injected at build time via
+/// `--dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=<id>` (see
+/// `docs/architecture/sync-googledrive-setup.md`). Because the project doesn't
+/// ship a `google-services.json`, `google_sign_in` on Android needs the *web*
+/// client ID as `serverClientId` for `authenticate()` to work. It's empty when
+/// unset — and the transport then stays inert (sign-in fails gracefully). The
+/// web client ID is not a secret (it's embedded in every shipped app).
+const String _serverClientIdFromEnv =
+    String.fromEnvironment('GOOGLE_OAUTH_SERVER_CLIENT_ID');
+
 /// Google Drive transport for Android — the Android counterpart to
 /// [ICloudSyncTransport]. Stores each named blob as a file in the app's
 /// **AppData** folder (`appDataFolder`): a hidden, per-app space that never
@@ -25,18 +35,27 @@ import 'package:googleapis/drive/v3.dart' as drive;
 class GoogleDriveSyncTransport implements SyncTransport {
   GoogleDriveSyncTransport({
     Future<drive.DriveApi?> Function()? driveApiProvider,
-  }) : _driveApiOverride = driveApiProvider;
+    String serverClientId = _serverClientIdFromEnv,
+  })  : _driveApiOverride = driveApiProvider,
+        _serverClientId = serverClientId.isEmpty ? null : serverClientId;
 
   /// Test seam: lets a test supply a `DriveApi` backed by a mock HTTP client
   /// instead of going through real Google sign-in.
   final Future<drive.DriveApi?> Function()? _driveApiOverride;
 
+  /// Web OAuth client ID passed to `GoogleSignIn.initialize` as
+  /// `serverClientId`. Null when unconfigured → sign-in fails gracefully.
+  final String? _serverClientId;
+
   static const List<String> _scopes = [drive.DriveApi.driveAppdataScope];
   static const String _space = 'appDataFolder';
 
+  Future<void> _initialize() =>
+      GoogleSignIn.instance.initialize(serverClientId: _serverClientId);
+
   Future<GoogleSignInAccount?> _silentAccount() async {
     try {
-      await GoogleSignIn.instance.initialize();
+      await _initialize();
       return await GoogleSignIn.instance.attemptLightweightAuthentication();
     } on Object {
       return null;
@@ -63,7 +82,7 @@ class GoogleDriveSyncTransport implements SyncTransport {
   @override
   Future<SyncAccount?> signIn() async {
     try {
-      await GoogleSignIn.instance.initialize();
+      await _initialize();
       final account =
           await GoogleSignIn.instance.authenticate(scopeHint: _scopes);
       await account.authorizationClient.authorizeScopes(_scopes);
