@@ -45,9 +45,17 @@ enum CrosshareFetchMonthError {
 /// Downloaded puzzle bytes are persisted via the import repository. No raw
 /// bytes are retained beyond the import call.
 class CrosshareDownloader {
-  CrosshareDownloader({required Dio dio}) : _dio = dio;
+  CrosshareDownloader({
+    required Dio dio,
+    Duration hardTimeout = _defaultHardTimeout,
+  })  : _dio = dio,
+        _hardTimeout = hardTimeout;
 
   final Dio _dio;
+
+  /// Hard wall-clock cap for [downloadToday]. Injectable so tests can drive the
+  /// timeout path with a tiny value instead of waiting on the real default.
+  final Duration _hardTimeout;
 
   static const _dailyMinisBase = 'https://crosshare.org/dailyminis';
   static const _puzApiBase = 'https://crosshare.org/api/puz';
@@ -59,11 +67,11 @@ class CrosshareDownloader {
   static const _pageReceiveTimeout = Duration(seconds: 15);
   static const _puzReceiveTimeout = Duration(seconds: 10);
 
-  // Hard wall-clock cap for the entire two-step downloadToday() call.
+  // Default hard wall-clock cap for the entire two-step downloadToday() call.
   // Dio's receiveTimeout only resets between chunks; if the server stalls
   // mid-stream (or a middlebox drops packets silently after the TCP handshake),
   // Dio can hang indefinitely. This guard guarantees we always return.
-  static const _hardTimeout = Duration(seconds: 35);
+  static const _defaultHardTimeout = Duration(seconds: 35);
 
   // Max HTML response body size.
   static const _maxHtmlBytes = 10 * 1024 * 1024; // 10 MB
