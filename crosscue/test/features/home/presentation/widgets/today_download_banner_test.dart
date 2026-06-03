@@ -8,14 +8,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<void> _pump(WidgetTester tester, CrosshareAutoDownloadPhase phase) {
-  return tester.pumpWidget(
+Future<void> _pump(
+  WidgetTester tester,
+  CrosshareAutoDownloadPhase phase,
+) async {
+  await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
         home: Scaffold(body: TodayDownloadBanner(phase: phase)),
       ),
     ),
   );
+  // The inProgress phase renders an infinitely-animating
+  // CircularProgressIndicator. Tear the tree down explicitly so its ticker is
+  // disposed inside the test body rather than at the test boundary, where a
+  // leaked animation can surface as an unexpected exception misattributed to
+  // the next test (the source of an intermittent full-suite flake).
+  addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
 }
 
 void main() {

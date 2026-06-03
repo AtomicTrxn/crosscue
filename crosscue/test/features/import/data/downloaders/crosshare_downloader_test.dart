@@ -235,19 +235,22 @@ void main() {
 
     // ── Hard timeout ────────────────────────────────────────────────────────
 
-    test(
-      'returns networkError when download hangs past hard timeout',
-      () async {
-        final dio = Dio();
-        dio.httpClientAdapter = _HangingAdapter();
-        final downloader = CrosshareDownloader(dio: dio);
+    test('returns networkError when download hangs past hard timeout',
+        () async {
+      final dio = Dio();
+      dio.httpClientAdapter = _HangingAdapter();
+      // Inject a tiny hard timeout so this is fast and deterministic — the
+      // real 35s default would make the test slow and race its own deadline
+      // under load (the source of an intermittent flake).
+      final downloader = CrosshareDownloader(
+        dio: dio,
+        hardTimeout: const Duration(milliseconds: 50),
+      );
 
-        final result = await downloader.downloadToday();
-        expect(result.isErr, isTrue);
-        expect(result.error, CrosshareDownloadError.networkError);
-      },
-      timeout: const Timeout(Duration(seconds: 60)),
-    );
+      final result = await downloader.downloadToday();
+      expect(result.isErr, isTrue);
+      expect(result.error, CrosshareDownloadError.networkError);
+    });
 
     // ── Request options ─────────────────────────────────────────────────────
 
