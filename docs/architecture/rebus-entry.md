@@ -1,7 +1,10 @@
 # Rebus Entry (G6) — Implementation Plan
 
 > Tracks [#8 (G6)](https://github.com/AtomicTrxn/crosscue/issues/8): _Rebus entry — editable multi-letter cells._
-> Companion doc to `ARCHITECTURE.md`. Status: planning.
+> Companion doc to `ARCHITECTURE.md`. **Status: shipped** — this is the
+> historical plan of record. The feature is live (Rebus key + long-press +
+> `Esc`, first-letter acceptance, autoshrink rendering); see "Feature: solve"
+> in `ARCHITECTURE.md` for the as-built summary.
 
 ## 1. Goal
 
@@ -353,9 +356,8 @@ Goal: existing rebus entries (via long-press) render correctly.
 ### Phase E — Documentation & tests
 
 - Update `ARCHITECTURE.md`: under "Feature: solve", mention rebus entry
-  surfaces (keyboard "…" key, long-press, dialog) and the `hasRebusSquares`
-  derived state.
-- Move issue #8 out of deferred → in progress → done.
+  surfaces (keyboard "Rebus" key, long-press, `Esc`). ✅ done.
+- Close issue #8. ✅ done.
 - New tests:
   - `solve_notifier_test.dart`: cover the empty / 1-char / >6-char
     paths of `inputRebus`.

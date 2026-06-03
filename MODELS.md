@@ -421,3 +421,107 @@ class SourceRegistrationException implements Exception {
   final String message;  // contains the offending source id
 }
 ```
+
+---
+
+## Sync models — `core/sync/models/`
+
+Cross-device sync (G5; iCloud on iOS, Google Drive on Android). Design lives in
+[`docs/architecture/sync-design.md`](docs/architecture/sync-design.md); these
+are the model shapes.
+
+### `SyncState` — `sync_state.dart`
+
+Hand-written **sealed** class (not Freezed) — the orchestrator's lifecycle.
+Switch exhaustively.
+
+```dart
+sealed class SyncState { }
+class SyncDisabled  extends SyncState {}                       // off (default)
+class SyncSignedOut extends SyncState {}                       // on, no account linked yet
+class SyncIdle      extends SyncState { DateTime? lastSyncedAt; }  // on, not syncing
+class SyncRunning   extends SyncState {}                       // a pass is in flight
+class SyncError     extends SyncState { String message; bool transient; }
+```
+
+`transient: true` → orchestrator retries on the next trigger; `false` → user
+must act (re-sign-in, free quota).
+
+### `SyncResult` — `sync_result.dart`
+
+Outcome of one `syncNow()`. `SyncResult.zero` sentinel; `operator +` folds
+per-namespace results.
+
+```dart
+class SyncResult {
+  final int pushed;     // entities written to the transport
+  final int pulled;     // entities applied to the local DB
+  final int conflicts;  // merges the strategy resolved (informational, not errors)
+  final Duration duration;
+}
+```
+
+### `SyncAccount` — `sync_account.dart`
+
+```dart
+class SyncAccount {
+  final SyncProvider provider;   // iCloud | googleDrive | fake
+  final String displayName;      // human label (iCloud name / Google email)
+  final String? id;              // stable provider id; null on iCloud (token rotates)
+}
+
+enum SyncProvider { iCloud, googleDrive, fake }
+```
+
+### `SyncBlob` — `sync_blob.dart`
+
+Envelope wrapped around every namespace payload before it hits the transport
+(see sync-design → Wire format). `encode()` → JSON string; `decode()` returns
+null on malformed bytes **or** a schema newer than `currentSchemaVersion`
+(forward-compat: skip the blob).
+
+```dart
+class SyncBlob {
+  static const int currentSchemaVersion = 1;
+  final int schemaVersion;             // envelope schema
+  final String deviceId;               // originating device at write time
+  final int syncVersion;               // monotonic per-entity version
+  final DateTime updatedAt;            // UTC wall-clock at write
+  final Map<String, Object?> payload;  // namespace-specific JSON
+}
+```
+
+### `SyncNamespace` — `sync_namespace.dart`
+
+```dart
+enum SyncNamespace {
+  puzzles('puzzles/'), sessions('sessions/'),
+  completions('completions/'), settings('settings/');
+  final String prefix;  // blob-key prefix (with trailing slash)
+}
+```
+
+### `SyncTransport` — `core/sync/transport/sync_transport.dart`
+
+The only platform-aware piece. CRUD-on-named-blobs + account management.
+Implementations: `ICloudSyncTransport` (iOS), `GoogleDriveSyncTransport`
+(Android), `NoOpSyncTransport` (web/desktop), `FakeSyncTransport` (tests).
+
+```dart
+abstract class SyncTransport {
+  Future<SyncAccount?> account();          // silent — never prompts
+  Future<SyncAccount?> signIn();           // interactive where needed (Drive); else == account()
+  bool get supportsInteractiveSignIn;      // true only for app-driven sign-in (Drive)
+
+  Future<List<String>> list(String prefix);
+  Future<String?> read(String key);
+  Future<String?> write(String key, String bytes, {String? ifMatch});
+  Future<void> delete(String key);
+}
+```
+
+`SyncOrchestrator` (`core/sync/sync_orchestrator.dart`) is the presentation-
+facing facade — `state` stream, `currentAccount()`, `enable()` / `disable()` /
+`syncNow()`, `lastSyncedAt`. The `SyncController`
+(`features/settings/presentation/providers/sync_providers.dart`) bridges it to
+the Settings + onboarding UI.

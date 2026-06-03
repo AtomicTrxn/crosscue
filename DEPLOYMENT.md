@@ -422,6 +422,13 @@ Go to **GitHub → repo → Settings → Secrets and variables → Actions** and
 | `STORE_PASSWORD` | The keystore password you entered |
 | `PLAY_SERVICE_ACCOUNT_JSON` | Play Console service account JSON (used only when dispatching with `play_store: true`) |
 
+**Android — Actions variables** (Settings → Secrets and variables → Actions →
+**Variables**, not Secrets — these are not sensitive):
+
+| Variable | Value |
+|----------|-------|
+| `GOOGLE_OAUTH_SERVER_CLIENT_ID` | Web OAuth client ID for Google Drive sign-in, passed to the APK/AAB builds as `--dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID`. Leave unset and Android sync stays inert (sign-in fails gracefully). The web client ID is public — embedded in every shipped app — so it's a variable, not a secret. Full setup: [`docs/architecture/sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md). |
+
 **iOS:**
 
 | Secret | Value |

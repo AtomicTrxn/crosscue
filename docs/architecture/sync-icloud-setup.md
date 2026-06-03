@@ -1,15 +1,15 @@
 # iCloud sync — one-time iOS setup
 
-> Reader: developer / release engineer activating the sync feature
-> (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9), marked
-> deferred). Design: [`sync-design.md`](sync-design.md). Status:
+> Reader: developer / release engineer maintaining the sync feature
+> (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9)). Design:
+> [`sync-design.md`](sync-design.md). Status:
 > [`sync-progress.md`](sync-progress.md).
 
-The Dart side and the Swift `ICloudSyncHandler` already ship. The build
-compiles and runs cleanly on iOS without sync activating —
-`ICloudSyncTransport.account()` returns null and the orchestrator stays
-in `SyncSignedOut` until both the Apple-side configuration AND an in-app
-opt-in are in place.
+The Dart side, the Swift `ICloudSyncHandler`, **and** the in-app opt-in UI
+(Settings → Sync + the onboarding step, #142) all ship. The build compiles
+and runs cleanly on iOS; `ICloudSyncTransport.account()` returns null and the
+orchestrator stays in `SyncSignedOut` until both the Apple-side configuration
+AND a signed-in iCloud account with iCloud Drive on for the app are in place.
 
 **Apple-side status as of iOS 1.0 (v1.2.7):** steps 1, 2, and 3 below
 were completed during the v1.2.7 release push — the App ID has iCloud
@@ -25,11 +25,11 @@ security cms -D -i /path/to/Crosscue_App_Store.mobileprovision \
   | grep -A1 -E "icloud-container-identifiers|icloud-services|ubiquity-container-identifiers"
 ```
 
-**What's still pending:** the in-app UI to actually let users sign in
-to iCloud sync. The transport is dormant by design — when issue #9
-moves from deferred to in-flight, the steps below stay as the
-on-ramp reference. The verification section at the bottom is what
-you'd run end-to-end when the in-app UI ships.
+**What's still pending:** the manual two-device soak (Step 5 below) —
+end-to-end verification on two devices signed into the same iCloud account
+with an entitlement-carrying build. Everything else (transport, handler,
+opt-in UI) is in place; this guide is the Apple-side on-ramp + verification
+reference.
 
 This guide walks through the three things that *must* happen on the
 Apple side before sync can activate, plus how to verify it end-to-end.
@@ -122,8 +122,8 @@ on the host Mac (for simulator) or in the cloud on a real device.
 1. Install the build on Device A and Device B, both signed into the same
    iCloud account, both with iCloud Drive on for Crosscue.
 2. On A, import a puzzle, solve it.
-3. Trigger sync (foreground app, or the manual button once the settings
-   screen lands in Phase 4).
+3. Trigger sync (foreground the app, or use the manual "Sync now" button in
+   Settings → Sync).
 4. On B, trigger sync. Assert the puzzle + completion show up.
 5. Repeat with a session conflict: leave A's solve in progress, complete
    it on B, sync B → A. A's session should be replaced via the
@@ -132,9 +132,9 @@ on the host Mac (for simulator) or in the cloud on a real device.
 ## Rollback
 
 If anything goes wrong, the sync feature is off-by-default at the
-`SyncOrchestrator` level (`enable()` is never called automatically in
-Phase 2). Even with the entitlement attached, no writes happen until the
-Phase 4 settings UI lands or someone calls `enable()` from code.
+`SyncOrchestrator` level — `enable()` is only ever called when the user opts
+in (Settings → Sync or the onboarding step). Even with the entitlement
+attached, no writes happen until the user turns sync on.
 
 To fully revoke: in Xcode → Signing & Capabilities, click the trash icon
 next to the **iCloud** capability. Rebuild. The Swift handler reverts to

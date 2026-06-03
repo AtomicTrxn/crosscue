@@ -47,7 +47,8 @@ Legend: ✅ done · 🚧 in progress · ⏳ deferred · ❌ blocked
 | ✅ | `GoogleDriveSyncTransport` impl | CRUD over the Drive `appDataFolder`; fails gracefully (no-op) when not signed in / not configured. Wired into `syncTransportProvider` for Android. |
 | ✅ | `google_sign_in` + `googleapis` integration | `google_sign_in` v7 + `extension_google_sign_in_as_googleapis_auth` → authorized `DriveApi`. Silent `account()` + interactive `signIn()`. |
 | ✅ | Transport tests | Inert-safety (no-op when unconfigured) + `list`/`read` against a mock HTTP `DriveApi`. |
-| ⏳ | Google Cloud project + OAuth client | `drive.appdata` scope; Android client per signing-key SHA-1. See [`sync-googledrive-setup.md`](sync-googledrive-setup.md). |
+| ✅ | `serverClientId` wiring ([#160](https://github.com/AtomicTrxn/crosscue/issues/160)) | Web client ID threaded via `--dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID` (required by `google_sign_in` 7.x on Android without `google-services.json`); `release.yml` passes it from a non-secret Actions variable. Empty → inert. |
+| ⏳ | Google Cloud project + OAuth clients (manual) | Enable Drive API; consent screen + test users; **two** OAuth clients — Android (package + signing-key SHA-1) and Web (its ID is the `serverClientId`). `drive.appdata` scope. See [`sync-googledrive-setup.md`](sync-googledrive-setup.md). |
 | ✅ | Android sync-UI wiring ([#157](https://github.com/AtomicTrxn/crosscue/issues/157)) | `signIn()` is on the `SyncTransport` interface; orchestrator `enable()` calls it (interactive on Drive, ambient on iCloud). `supportsInteractiveSignIn` lets the UI enable even with no silent account. Settings + onboarding copy is platform-generic via `core/sync/sync_service_copy.dart` (iOS "iCloud", Android "Google Drive"). |
 | ⏳ | Internal-track soak | Two Android devices, same Google account. Blocked only on the OAuth client above. |
 

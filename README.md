@@ -50,8 +50,8 @@ App Store release.
 
 ### Android
 
-Sideload the latest APK from [Releases](../../releases) or install via Play
-Store (when published).
+Sideload the latest APK from [Releases](../../releases), or join the Play
+Store closed test (public production listing pending).
 
 ### Build from source
 
