@@ -292,6 +292,19 @@ change every token:
 Grid semantics are intentionally kept outside Android dynamic-color overrides;
 they carry puzzle meaning, not just decoration.
 
+**Dynamic color + brand reconciliation (#112).** `AppTheme.light/dark` use the
+system dynamic scheme (Material You on Android 12+; iOS via `dynamic_color`) as
+the *base* when present, then apply Crosscue's brand roles
+(`primary`/`surface`/`error` etc.) on top via `_brandLight`/`_brandDark` —
+applied on **both** the dynamic and seeded-fallback paths, so the system accent
+can never replace brand identity on key roles (it previously could on Android
+12+, producing a half-dynamic look that clashed with the brand-fixed tokens in
+`_build`). The dynamic base still harmonizes the roles we don't override. On
+iOS, `dynamic_color` returns `null` in practice (no global user accent like
+Android), so iOS always lands on the brand fallback — verified on the iOS 17
+simulator (`lightDynamic`/`darkDynamic` both null; see the debug log in
+`app.dart`).
+
 ---
 
 ## Core: Domain Models

@@ -8,8 +8,22 @@ import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Debug-only, one-shot log of what `dynamic_color` actually returns on this
+/// platform. Lets us verify on a device/simulator whether iOS 16+ surfaces a
+/// system scheme (issue #112) without shipping any logging in release builds.
+bool _dynamicSchemesLogged = false;
+void _logDynamicSchemesOnce(ColorScheme? light, ColorScheme? dark) {
+  if (!kDebugMode || _dynamicSchemesLogged) return;
+  _dynamicSchemesLogged = true;
+  String describe(ColorScheme? s) =>
+      s == null ? 'null' : 'primary=${s.primary}, surface=${s.surface}';
+  debugPrint('[dynamic_color] lightDynamic: ${describe(light)}');
+  debugPrint('[dynamic_color] darkDynamic:  ${describe(dark)}');
+}
 
 ThemeMode _toFlutterThemeMode(AppThemeMode m) => switch (m) {
       AppThemeMode.light => ThemeMode.light,
@@ -85,6 +99,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
 
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
+        _logDynamicSchemesOnce(lightDynamic, darkDynamic);
         return MaterialApp.router(
           title: 'Crosscue',
           debugShowCheckedModeBanner: false,
