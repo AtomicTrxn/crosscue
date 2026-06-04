@@ -10,25 +10,28 @@ part of 'past_puzzles_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Loads and manages the "Past puzzles" listing on the Today screen.
 ///
-/// Walks Crosshare's monthly archive pages backward from the current month,
-/// excludes today and any future-scheduled days, and joins each archive entry
-/// with the local puzzle list so the UI can show download/solve state.
+/// Walks Crosshare's monthly archive pages backward from the current UTC month,
+/// excludes today's UTC daily mini and any future-scheduled days, and joins
+/// each archive entry with the local puzzle list so the UI can show
+/// download/solve state.
 
 @ProviderFor(PastPuzzlesNotifier)
 final pastPuzzlesProvider = PastPuzzlesNotifierProvider._();
 
 /// Loads and manages the "Past puzzles" listing on the Today screen.
 ///
-/// Walks Crosshare's monthly archive pages backward from the current month,
-/// excludes today and any future-scheduled days, and joins each archive entry
-/// with the local puzzle list so the UI can show download/solve state.
+/// Walks Crosshare's monthly archive pages backward from the current UTC month,
+/// excludes today's UTC daily mini and any future-scheduled days, and joins
+/// each archive entry with the local puzzle list so the UI can show
+/// download/solve state.
 final class PastPuzzlesNotifierProvider
     extends $AsyncNotifierProvider<PastPuzzlesNotifier, PastPuzzlesState> {
   /// Loads and manages the "Past puzzles" listing on the Today screen.
   ///
-  /// Walks Crosshare's monthly archive pages backward from the current month,
-  /// excludes today and any future-scheduled days, and joins each archive entry
-  /// with the local puzzle list so the UI can show download/solve state.
+  /// Walks Crosshare's monthly archive pages backward from the current UTC month,
+  /// excludes today's UTC daily mini and any future-scheduled days, and joins
+  /// each archive entry with the local puzzle list so the UI can show
+  /// download/solve state.
   PastPuzzlesNotifierProvider._()
       : super(
           from: null,
@@ -49,13 +52,14 @@ final class PastPuzzlesNotifierProvider
 }
 
 String _$pastPuzzlesNotifierHash() =>
-    r'0465753d8afb536de5235e0e51bfd374bf9a1c6d';
+    r'40df297b53dd705b6daba0a6ef78f5fc897b0038';
 
 /// Loads and manages the "Past puzzles" listing on the Today screen.
 ///
-/// Walks Crosshare's monthly archive pages backward from the current month,
-/// excludes today and any future-scheduled days, and joins each archive entry
-/// with the local puzzle list so the UI can show download/solve state.
+/// Walks Crosshare's monthly archive pages backward from the current UTC month,
+/// excludes today's UTC daily mini and any future-scheduled days, and joins
+/// each archive entry with the local puzzle list so the UI can show
+/// download/solve state.
 
 abstract class _$PastPuzzlesNotifier extends $AsyncNotifier<PastPuzzlesState> {
   FutureOr<PastPuzzlesState> build();

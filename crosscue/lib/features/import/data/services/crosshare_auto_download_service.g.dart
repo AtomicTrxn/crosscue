@@ -122,4 +122,4 @@ final class CrosshareAutoDownloadServiceProvider extends $FunctionalProvider<
 }
 
 String _$crosshareAutoDownloadServiceHash() =>
-    r'3ab90ed0916606eb49284e8c00fee53a4e8054fb';
+    r'62bd59af7fd80f0b68a4805f642ec275a2c09188';
