@@ -63,17 +63,24 @@ hand-editing `project.pbxproj` safely.
    uncheck "Include Live Activity" and "Include Configuration App Intent".
 3. Set the target's **Team** to `ZS9BL7472D` (same as Runner) and minimum
    deployment to **iOS 16.0**.
-4. **Replace** the Xcode-generated sources with the ones already in
-   `ios/CrosscueWidget/` (`CrosscueWidget.swift`, `Info.plist`,
-   `CrosscueWidget.entitlements`) — delete the template `.swift`/assets Xcode
-   created and add these files to the target instead.
+   (Xcode names the target `CrosscueWidgetExtension`, bundle id
+   `dev.tomhess.crosscue.CrosscueWidget`.)
+4. **Replace the generated sources with the real widget code.** Xcode generates
+   a sample emoji widget (`CrosscueWidget.swift`), a `CrosscueWidgetBundle.swift`
+   (the `@main` entry), and a sample Control widget (`CrosscueWidgetControl.swift`).
+   Keep the bundle's `@main`; put the streak/today widget code in
+   `CrosscueWidget.swift` (as a plain `struct CrosscueWidget: Widget`, no
+   `@main`); trim the bundle to list only `CrosscueWidget()`; and empty out /
+   delete `CrosscueWidgetControl.swift` (we don't ship a Control widget). The
+   final sources are committed under `ios/CrosscueWidget/`.
 5. **Signing & Capabilities → + App Groups** on **both** the `Runner` and
-   `CrosscueWidget` targets; check `group.dev.tomhess.crosscue`. (For Runner,
-   point `Runner.entitlements` at the group; for the widget, use
-   `CrosscueWidget.entitlements`.)
-6. Confirm the **Runner** target's "Embed App Extensions" build phase includes
-   `CrosscueWidget.appex` (Xcode adds this automatically when the target is
-   created from Runner).
+   `CrosscueWidgetExtension` targets; check `group.dev.tomhess.crosscue`. Xcode
+   writes `Runner.entitlements` and `CrosscueWidgetExtension.entitlements`.
+6. **Fix the "Cycle inside Runner" build error.** Embedding an app extension in
+   a Flutter app creates a build-phase cycle. In **Runner → Build Phases**, drag
+   the **"Embed Foundation Extensions"** phase to run **before** the
+   **"Thin Binary"** phase. (Without this, `flutter run` fails with
+   `Cycle inside Runner; building could produce unreliable results`.)
 
 ### 3. Verify
 
@@ -85,6 +92,12 @@ hand-editing `project.pbxproj` safely.
    payload).
 4. With an empty library, the widget reads "No puzzle yet" and doesn't crash
    (verifies the optional-row contract, incl. the still-null `leaderboard`).
+
+> **Status: ✅ verified on the iPhone 17 simulator (2026-06).** Target builds +
+> embeds, the app writes the versioned payload to the App Group, and the
+> `systemSmall` widget renders the streak + today's puzzle. Remaining: re-issue
+> the App Store provisioning profile with the App Group capability (+ a widget
+> profile) before a device/TestFlight build — simulator needs no provisioning.
 
 ## Notes
 
