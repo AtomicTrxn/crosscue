@@ -4,11 +4,6 @@
 // the shared App Group container: the current streak and today's puzzle, with a
 // leaderboard row that's deliberately optional so it can be filled in later
 // (#111) WITHOUT a widget rebuild or schema migration.
-//
-// This file is the drop-in source. It only compiles once the widget extension
-// target + App Group entitlement exist — see
-// docs/architecture/ios-widget-setup.md for the one-time Xcode / Apple-portal
-// setup.
 
 import SwiftUI
 import WidgetKit
@@ -58,7 +53,7 @@ struct CrosscueProvider: TimelineProvider {
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<CrosscueEntry>) -> Void) {
-    // One entry; the app pushes fresh state and calls reloadAllTimelines via
+    // One entry; the app pushes fresh state and reloads the timeline via
     // `home_widget`'s updateWidget, so we don't need a time-based refresh.
     completion(Timeline(entries: [load()], policy: .never))
   }
@@ -161,7 +156,6 @@ struct CrosscueWidgetView: View {
 
 // MARK: - Widget
 
-@main
 struct CrosscueWidget: Widget {
   let kind = "CrosscueWidget"
 
