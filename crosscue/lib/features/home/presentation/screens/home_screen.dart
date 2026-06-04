@@ -13,6 +13,7 @@ import 'package:crosscue/features/home/presentation/widgets/today_download_banne
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/import/domain/repositories/puzzle_source.dart';
 import 'package:crosscue/features/import/presentation/providers/source_registry_provider.dart';
+import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,6 +55,10 @@ class HomeScreen extends ConsumerWidget {
     final statsAsync = ref.watch(statsDataProvider);
     final archiveAsync = ref.watch(archiveEntriesProvider);
     final autoDownloadPhase = ref.watch(crosshareAutoDownloadProgressProvider);
+    final crosshareAutoEnabled = ref.watch(crosshareAutoDownloadProvider);
+    final lastCrosshareStatus = ref.watch(
+      crosshareLastAttemptStatusProvider,
+    );
 
     final currentStreak = statsAsync.when(
       data: (s) => s.currentStreak,
@@ -90,16 +95,23 @@ class HomeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzles) {
-          final downloadPending =
-              autoDownloadPhase != CrosshareAutoDownloadPhase.idle;
+          final notAvailableYet = crosshareAutoEnabled &&
+              autoDownloadPhase == CrosshareAutoDownloadPhase.idle &&
+              lastCrosshareStatus.asData?.value == CrosshareStatus.notFound;
+          final showDownloadBanner =
+              autoDownloadPhase != CrosshareAutoDownloadPhase.idle ||
+                  notAvailableYet;
 
           if (puzzles.isEmpty) {
             return ListView(
               children: [
                 // A pending/failed daily download is an honest stand-in for the
                 // generic "no puzzles yet" empty state.
-                if (downloadPending)
-                  TodayDownloadBanner(phase: autoDownloadPhase)
+                if (showDownloadBanner)
+                  TodayDownloadBanner(
+                    phase: autoDownloadPhase,
+                    notAvailableYet: notAvailableYet,
+                  )
                 else
                   const _EmptyState(),
                 const PastPuzzlesSection(),
@@ -124,8 +136,11 @@ class HomeScreen extends ConsumerWidget {
             children: [
               // Today's daily is still fetching (or failed) while an earlier
               // puzzle is featured — surface that above the content.
-              if (downloadPending)
-                TodayDownloadBanner(phase: autoDownloadPhase),
+              if (showDownloadBanner)
+                TodayDownloadBanner(
+                  phase: autoDownloadPhase,
+                  notAvailableYet: notAvailableYet,
+                ),
               const SizedBox(height: 20),
               _FeaturedPuzzle(
                 puzzle: featured,

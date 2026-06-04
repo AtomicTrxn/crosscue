@@ -137,15 +137,15 @@ CrosshareEntry _entry({
 }) =>
     CrosshareEntry(
       id: id,
-      date: date,
+      date: DateTime.utc(date.year, date.month, date.day),
       title: title,
       authorName: author,
       width: 5,
       height: 5,
     );
 
-// Today is 2026-05-14 per the runtime injection used in this session.
-final _today = DateTime(2026, 5, 14);
+// Crosshare daily minis roll over by UTC date.
+final _today = DateTime.utc(2026, 5, 14);
 
 ProviderContainer _container({
   required _FakeDownloader downloader,

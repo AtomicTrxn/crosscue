@@ -194,7 +194,7 @@ class CrosshareSettingsScreen extends ConsumerWidget {
     return switch (status) {
       'success' => 'Downloaded successfully',
       'duplicate' => 'Already in library',
-      'not_found' => "Today's puzzle not available yet",
+      'not_found' => "Today's puzzle not available yet (00:00 UTC rollover)",
       'network_error' => 'Network error — check your connection',
       _ => 'No download attempted yet',
     };

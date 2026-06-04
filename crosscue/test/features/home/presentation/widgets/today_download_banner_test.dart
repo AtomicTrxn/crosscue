@@ -1,6 +1,7 @@
 // Widget tests for TodayDownloadBanner (#116 Phase 1). Confirms the three
 // phases render visibly distinct states: a spinner + "fetching" copy while in
-// progress, an error row + Retry while failed, and nothing at all when idle.
+// progress, an error row + Retry while failed, "not available yet" for the
+// Crosshare publish-lag path, and nothing at all when idle.
 
 import 'package:crosscue/features/home/presentation/widgets/today_download_banner.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
@@ -10,12 +11,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _pump(
   WidgetTester tester,
-  CrosshareAutoDownloadPhase phase,
-) async {
+  CrosshareAutoDownloadPhase phase, {
+  bool notAvailableYet = false,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       child: MaterialApp(
-        home: Scaffold(body: TodayDownloadBanner(phase: phase)),
+        home: Scaffold(
+          body: TodayDownloadBanner(
+            phase: phase,
+            notAvailableYet: notAvailableYet,
+          ),
+        ),
       ),
     ),
   );
@@ -52,5 +59,18 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text("Couldn't fetch today's puzzle"), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('not available yet shows Try now without spinner',
+      (tester) async {
+    await _pump(
+      tester,
+      CrosshareAutoDownloadPhase.idle,
+      notAvailableYet: true,
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text("Today's puzzle isn't available yet"), findsOneWidget);
+    expect(find.text('Try now'), findsOneWidget);
   });
 }

@@ -7,6 +7,7 @@ import 'package:crosscue/features/import/data/services/crosshare_auto_download_s
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/models/parse_error.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -74,37 +75,7 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   }
 
   Future<void> _runDownload() async {
-    // Step 1: enumerate the current month so we can stamp the puzzle's
-    // Crosshare ID onto the imported row (used by the Recently-missed feature
-    // to detect already-imported entries).
-    final today = DateTime.now();
-    final monthResult = await _downloader.fetchMonth(today.year, today.month);
-    if (monthResult.isErr) {
-      final dlError = _monthToDownloadError(monthResult.error);
-      final statusStr = switch (dlError) {
-        CrosshareDownloadError.notFound => CrosshareStatus.notFound,
-        CrosshareDownloadError.networkError => CrosshareStatus.networkError,
-        CrosshareDownloadError.malformedPage => CrosshareStatus.networkError,
-      };
-      await _persistStatus(statusStr);
-      state = CrosshareFailure(message: _downloadErrorMessage(dlError));
-      _invalidateStatusProviders();
-      return;
-    }
-
-    final entry =
-        monthResult.value.where((e) => e.date.day == today.day).firstOrNull;
-    if (entry == null) {
-      await _persistStatus(CrosshareStatus.notFound);
-      state = CrosshareFailure(
-        message: _downloadErrorMessage(CrosshareDownloadError.notFound),
-      );
-      _invalidateStatusProviders();
-      return;
-    }
-
-    // Step 2: fetch .puz bytes for today's entry.
-    final dlResult = await _downloader.downloadById(entry.id);
+    final dlResult = await _downloader.downloadTodayWithMetadata();
     if (dlResult.isErr) {
       final statusStr = switch (dlResult.error) {
         CrosshareDownloadError.notFound => CrosshareStatus.notFound,
@@ -117,14 +88,15 @@ class CrosshareNotifier extends _$CrosshareNotifier {
       return;
     }
 
-    // Step 3: parse + persist via ImportRepository.
+    final entry = dlResult.value.entry;
+
     final importResult = await _importRepo.importBytes(
-      dlResult.value,
+      dlResult.value.bytes,
       sourceId: 'crosshare_daily_mini',
       sourcePuzzleId: entry.id,
       publishDate: entry.date,
     );
-    final todayStr = _todayString();
+    final todayStr = crosshareUtcDateString(entry.date);
 
     switch (importResult) {
       case JobSuccess(:final puzzle):
@@ -142,17 +114,6 @@ class CrosshareNotifier extends _$CrosshareNotifier {
     _invalidateStatusProviders();
   }
 
-  CrosshareDownloadError _monthToDownloadError(CrosshareFetchMonthError e) {
-    return switch (e) {
-      CrosshareFetchMonthError.beforeArchiveStart =>
-        CrosshareDownloadError.notFound,
-      CrosshareFetchMonthError.networkError =>
-        CrosshareDownloadError.networkError,
-      CrosshareFetchMonthError.malformedPage =>
-        CrosshareDownloadError.malformedPage,
-    };
-  }
-
   void reset() => state = const CrosshareIdle();
 
   Future<void> _persistStatus(String status, {String? date}) async {
@@ -167,13 +128,6 @@ class CrosshareNotifier extends _$CrosshareNotifier {
   void _invalidateStatusProviders() {
     ref.invalidate(crosshareLastDownloadedDateProvider);
     ref.invalidate(crosshareLastAttemptStatusProvider);
-  }
-
-  static String _todayString() {
-    final now = DateTime.now();
-    final mm = now.month.toString().padLeft(2, '0');
-    final dd = now.day.toString().padLeft(2, '0');
-    return '${now.year}-$mm-$dd';
   }
 
   String _downloadErrorMessage(CrosshareDownloadError error) {

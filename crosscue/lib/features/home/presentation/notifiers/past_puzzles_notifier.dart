@@ -7,6 +7,7 @@ import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.d
 import 'package:crosscue/features/import/domain/models/crosshare_entry.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -17,9 +18,10 @@ const _crosshareSourceId = 'crosshare_daily_mini';
 
 /// Loads and manages the "Past puzzles" listing on the Today screen.
 ///
-/// Walks Crosshare's monthly archive pages backward from the current month,
-/// excludes today and any future-scheduled days, and joins each archive entry
-/// with the local puzzle list so the UI can show download/solve state.
+/// Walks Crosshare's monthly archive pages backward from the current UTC month,
+/// excludes today's UTC daily mini and any future-scheduled days, and joins
+/// each archive entry with the local puzzle list so the UI can show
+/// download/solve state.
 @riverpod
 class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
   late final CrosshareDownloader _downloader;
@@ -37,7 +39,8 @@ class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
     return _loadInitial();
   }
 
-  /// Fetches the initial page: the current month minus today and future days.
+  /// Fetches the initial page: the current UTC month minus today and future
+  /// days.
   Future<PastPuzzlesState> _loadInitial() async {
     final today = _today();
     final monthKey = _encodeMonth(today.year, today.month);
@@ -210,7 +213,7 @@ class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
     final today = _today();
     final filtered = entries.where((e) {
       if (e.date.isAfter(today)) return false;
-      if (excludeToday && _isSameDay(e.date, today)) return false;
+      if (excludeToday && isSameCrosshareUtcDate(e.date, today)) return false;
       if (beforeOrEqual != null && e.date.isAfter(beforeOrEqual)) return false;
       return true;
     }).toList()
@@ -278,9 +281,6 @@ class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
   }
 
   DateTime _today() => ref.read(currentLocalDateProvider);
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   static int _encodeMonth(int year, int month) => year * 12 + (month - 1);
 

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/import/domain/models/crosshare_entry.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:dio/dio.dart';
 
 /// Errors that can occur when downloading a Crosshare puzzle.
@@ -48,10 +49,13 @@ class CrosshareDownloader {
   CrosshareDownloader({
     required Dio dio,
     Duration hardTimeout = _defaultHardTimeout,
+    DateTime Function()? now,
   })  : _dio = dio,
-        _hardTimeout = hardTimeout;
+        _hardTimeout = hardTimeout,
+        _now = now ?? DateTime.now;
 
   final Dio _dio;
+  final DateTime Function() _now;
 
   /// Hard wall-clock cap for [downloadToday]. Injectable so tests can drive the
   /// timeout path with a tiny value instead of waiting on the real default.
@@ -79,24 +83,46 @@ class CrosshareDownloader {
   /// Downloads today's daily-mini .puz bytes. Convenience wrapper over
   /// [fetchMonth] + [downloadById] with a hard wall-clock timeout.
   Future<Result<Uint8List, CrosshareDownloadError>> downloadToday() {
-    return _doDownloadToday().timeout(
+    return downloadTodayWithMetadata()
+        .then(
+          (result) => result.isOk
+              ? Ok<Uint8List, CrosshareDownloadError>(result.value.bytes)
+              : Err<Uint8List, CrosshareDownloadError>(result.error),
+        )
+        .timeout(
+          _hardTimeout,
+          onTimeout: () => const Err(CrosshareDownloadError.networkError),
+        );
+  }
+
+  /// Downloads today's daily-mini .puz bytes along with the Crosshare archive
+  /// entry that identified it.
+  Future<Result<CrosshareDailyDownload, CrosshareDownloadError>>
+      downloadTodayWithMetadata() {
+    return _doDownloadTodayWithMetadata().timeout(
       _hardTimeout,
       onTimeout: () => const Err(CrosshareDownloadError.networkError),
     );
   }
 
-  Future<Result<Uint8List, CrosshareDownloadError>> _doDownloadToday() async {
-    final today = DateTime.now();
+  Future<Result<CrosshareDailyDownload, CrosshareDownloadError>>
+      _doDownloadTodayWithMetadata() async {
+    final today = crosshareUtcDate(_now());
     final fetch = await fetchMonth(today.year, today.month);
     if (fetch.isErr) {
       return Err(_fetchToDownloadError(fetch.error));
     }
     final entries = fetch.value;
-    final entry = entries.where((e) => e.date.day == today.day).firstOrNull;
+    final entry =
+        entries.where((e) => isSameCrosshareUtcDate(e.date, today)).firstOrNull;
     if (entry == null) {
       return const Err(CrosshareDownloadError.notFound);
     }
-    return downloadById(entry.id);
+    final download = await downloadById(entry.id);
+    if (download.isErr) {
+      return Err(download.error);
+    }
+    return Ok(CrosshareDailyDownload(bytes: download.value, entry: entry));
   }
 
   /// Lists daily-mini entries for the given [year]/[month] from the Crosshare
@@ -239,7 +265,7 @@ class CrosshareDownloader {
       entries.add(
         CrosshareEntry(
           id: id,
-          date: DateTime(year, month, day),
+          date: DateTime.utc(year, month, day),
           title: title,
           authorName: author is String ? author : '',
           width: width,
@@ -249,6 +275,16 @@ class CrosshareDownloader {
     }
     return entries;
   }
+}
+
+class CrosshareDailyDownload {
+  const CrosshareDailyDownload({
+    required this.bytes,
+    required this.entry,
+  });
+
+  final Uint8List bytes;
+  final CrosshareEntry entry;
 }
 
 /// Internal sentinel thrown when HTML parsing fails; converted to

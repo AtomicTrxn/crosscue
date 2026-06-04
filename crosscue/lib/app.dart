@@ -72,6 +72,7 @@ class CrosscueApp extends ConsumerStatefulWidget {
 
 class _CrosscueAppState extends ConsumerState<CrosscueApp> {
   late final _CrosshareLifecycleObserver _lifecycleObserver;
+  Timer? _crosshareUtcMidnightTimer;
 
   @override
   void initState() {
@@ -95,6 +96,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
         unawaited(ref.read(homeWidgetServiceProvider).refresh());
       }
     });
+    _scheduleCrosshareUtcMidnightTimer();
     // Trigger auto-download on first launch (post-frame so providers are ready).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       unawaited(
@@ -119,6 +121,28 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       // waiting from a cold launch. No-op otherwise.
       unawaited(_consumePendingIntentRoute(ref));
     });
+  }
+
+  void _scheduleCrosshareUtcMidnightTimer() {
+    _crosshareUtcMidnightTimer?.cancel();
+    _crosshareUtcMidnightTimer = Timer(
+      _durationUntilNextUtcMidnight(),
+      () {
+        unawaited(
+          ref.read(crosshareAutoDownloadServiceProvider).attemptIfNeeded(),
+        );
+        if (mounted) {
+          _scheduleCrosshareUtcMidnightTimer();
+        }
+      },
+    );
+  }
+
+  Duration _durationUntilNextUtcMidnight() {
+    final now = DateTime.now().toUtc();
+    final tomorrow = DateTime.utc(now.year, now.month, now.day + 1);
+    final delay = tomorrow.difference(now);
+    return delay.isNegative ? Duration.zero : delay;
   }
 
   /// Routes a Home/Lock-screen widget tap into the app. The widget encodes its
@@ -163,6 +187,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
 
   @override
   void dispose() {
+    _crosshareUtcMidnightTimer?.cancel();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     super.dispose();
   }

@@ -86,4 +86,4 @@ final class CurrentLocalDateProvider
   }
 }
 
-String _$currentLocalDateHash() => r'db69a8ad2b81152de711b9549c01e8a2bb0ff915';
+String _$currentLocalDateHash() => r'0c955757a80699f1b091ed07a09ee011272552c7';
