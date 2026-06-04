@@ -1,4 +1,5 @@
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/share/result_share.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/core/utils/time_format.dart';
@@ -6,7 +7,6 @@ import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart'
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 
 class CompletionSheet extends ConsumerWidget {
   const CompletionSheet({
@@ -15,12 +15,16 @@ class CompletionSheet extends ConsumerWidget {
     required this.onViewGrid,
     required this.onNextPuzzle,
     required this.onResetPuzzle,
+    this.resultShare,
   });
 
   final SolveState solveState;
   final VoidCallback onViewGrid;
   final VoidCallback onNextPuzzle;
   final VoidCallback onResetPuzzle;
+
+  /// Injectable for tests; defaults to the platform [ResultShare].
+  final ResultShare? resultShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -251,14 +255,12 @@ class CompletionSheet extends ConsumerWidget {
         ? box.localToGlobal(Offset.zero) & box.size
         : null;
     try {
-      await SharePlus.instance.share(
-        ShareParams(
-          text: '${solveState.puzzle.metadata.title}\n'
-              '$timeStr - $solveLabel\n'
-              'Solved in Crosscue',
-          subject: 'Crosscue result',
-          sharePositionOrigin: origin,
-        ),
+      await (resultShare ?? ResultShare()).share(
+        text: '${solveState.puzzle.metadata.title}\n'
+            '$timeStr - $solveLabel\n'
+            'Solved in Crosscue',
+        subject: 'Crosscue result',
+        origin: origin,
       );
     } on Object {
       if (context.mounted) {

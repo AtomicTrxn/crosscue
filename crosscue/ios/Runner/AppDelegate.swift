@@ -22,5 +22,14 @@ import UIKit
     ) {
       ICloudSyncHandler.register(with: registrar.messenger())
     }
+
+    // Branded share sheet (#147): present a text-only share whose preview
+    // thumbnail shows the Crosscue icon via LPLinkMetadata.iconProvider —
+    // something share_plus can't do without putting the image in the payload.
+    if let registrar = engineBridge.pluginRegistry.registrar(
+      forPlugin: "ShareHandler"
+    ) {
+      ShareHandler.register(with: registrar.messenger())
+    }
   }
 }
