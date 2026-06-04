@@ -15,8 +15,10 @@ import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
+import 'package:crosscue/features/import/domain/models/crosshare_entry.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:crosscue/features/settings/data/repositories/app_settings_repository_impl.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +43,21 @@ class _FakeDownloader implements CrosshareDownloader {
   }
 
   @override
+  Future<Result<CrosshareDailyDownload, CrosshareDownloadError>>
+      downloadTodayWithMetadata() async {
+    final result = await downloadToday();
+    if (result.isErr) {
+      return Err(result.error);
+    }
+    return Ok(
+      CrosshareDailyDownload(
+        bytes: result.value,
+        entry: _todayEntry(),
+      ),
+    );
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('${invocation.memberName} not stubbed');
 }
@@ -52,6 +69,9 @@ class _FakeImportRepo implements ImportRepository {
 
   final ImportJobResult result;
   int imports = 0;
+  String? lastSourceId;
+  String? lastSourcePuzzleId;
+  DateTime? lastPublishDate;
 
   @override
   Future<ImportJobResult> importBytes(
@@ -61,6 +81,9 @@ class _FakeImportRepo implements ImportRepository {
     DateTime? publishDate,
   }) async {
     imports++;
+    lastSourceId = sourceId;
+    lastSourcePuzzleId = sourcePuzzleId;
+    lastPublishDate = publishDate;
     return result;
   }
 
@@ -74,6 +97,17 @@ Uint8List _bytes() => Uint8List.fromList(const [1, 2, 3]);
 Result<Uint8List, CrosshareDownloadError> _ok() => Ok(_bytes());
 Result<Uint8List, CrosshareDownloadError> _err(CrosshareDownloadError e) =>
     Err(e);
+
+CrosshareEntry _todayEntry() {
+  return CrosshareEntry(
+    id: 'crosshare-today',
+    date: crosshareUtcDate(),
+    title: 'Today',
+    authorName: 'Crosshare',
+    width: 5,
+    height: 5,
+  );
+}
 
 void main() {
   late AppDatabase db;
@@ -90,12 +124,14 @@ void main() {
   CrosshareAutoDownloadService build({
     required _FakeDownloader downloader,
     ImportJobResult importResult = const JobDuplicate(),
+    _FakeImportRepo? importRepo,
     int maxAttempts = 3,
   }) {
+    final repo = importRepo ?? _FakeImportRepo(importResult);
     return CrosshareAutoDownloadService(
       downloader: downloader,
       settings: settings,
-      importRepo: _FakeImportRepo(importResult),
+      importRepo: repo,
       onPhase: phases.add,
       retryBackoff: Duration.zero,
       maxAttempts: maxAttempts,
@@ -103,10 +139,7 @@ void main() {
   }
 
   String today() {
-    final now = DateTime.now();
-    final mm = now.month.toString().padLeft(2, '0');
-    final dd = now.day.toString().padLeft(2, '0');
-    return '${now.year}-$mm-$dd';
+    return crosshareUtcDateString();
   }
 
   group('attemptIfNeeded short-circuits', () {
@@ -149,6 +182,17 @@ void main() {
       ]);
       expect(await settings.getCrosshareLastDownloadedDate(), today());
       expect(dl.calls, 1);
+    });
+
+    test('imports with Crosshare ID and UTC publish date', () async {
+      final dl = _FakeDownloader([_ok()]);
+      final repo = _FakeImportRepo(JobSuccess(_FakePuzzle()));
+
+      await build(downloader: dl, importRepo: repo).attemptIfNeeded();
+
+      expect(repo.lastSourceId, 'crosshare_daily_mini');
+      expect(repo.lastSourcePuzzleId, 'crosshare-today');
+      expect(repo.lastPublishDate, crosshareUtcDate());
     });
 
     test('duplicate is treated as success (idle, no retry)', () async {
@@ -217,6 +261,29 @@ void main() {
       gate.complete();
       await future;
 
+      expect(phases, [
+        CrosshareAutoDownloadPhase.inProgress,
+        CrosshareAutoDownloadPhase.idle,
+      ]);
+    });
+
+    test('coalesces concurrent attempts into one download', () async {
+      await settings.setCrosshareAutoDownload(true);
+      final gate = Completer<void>();
+      final dl = _FakeDownloader([_ok()], gate: gate);
+      final service = build(downloader: dl);
+
+      final first = service.attemptIfNeeded();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      final second = service.attemptIfNeeded();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(dl.calls, 1);
+      gate.complete();
+      await Future.wait([first, second]);
+
+      expect(dl.calls, 1);
       expect(phases, [
         CrosshareAutoDownloadPhase.inProgress,
         CrosshareAutoDownloadPhase.idle,

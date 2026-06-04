@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -85,7 +86,7 @@ void main() {
     // ── Happy path ──────────────────────────────────────────────────────────
 
     test('returns Ok with puz bytes when both requests succeed', () async {
-      final today = DateTime.now().day;
+      final today = crosshareUtcDate().day;
       const puzzleId = 'abc123';
 
       final downloader = _downloaderWith((options) {
@@ -105,7 +106,7 @@ void main() {
     });
 
     test('sets User-Agent header on page request', () async {
-      final today = DateTime.now().day;
+      final today = crosshareUtcDate().day;
       String? capturedAgent;
 
       final downloader = _downloaderWith((options) {
@@ -127,9 +128,9 @@ void main() {
 
     test('returns notFound when today is absent from puzzle list', () async {
       // Use a day that won't match today's day
-      final wrongDay = (DateTime.now().day % 28) + 1 == DateTime.now().day
-          ? (DateTime.now().day % 28) + 2
-          : (DateTime.now().day % 28) + 1;
+      final today = crosshareUtcDate().day;
+      final wrongDay =
+          (today % 28) + 1 == today ? (today % 28) + 2 : (today % 28) + 1;
 
       final downloader = _downloaderWith((options) {
         if (options.path.contains('dailyminis')) {
@@ -257,7 +258,7 @@ void main() {
     test(
         'sets connectTimeout and disables persistentConnection on page request',
         () async {
-      final today = DateTime.now().day;
+      final today = crosshareUtcDate().day;
       Duration? capturedConnectTimeout;
       bool? capturedPersistentConnection;
 
@@ -281,7 +282,7 @@ void main() {
 
     test('sets connectTimeout and disables persistentConnection on puz request',
         () async {
-      final today = DateTime.now().day;
+      final today = crosshareUtcDate().day;
       Duration? capturedConnectTimeout;
       bool? capturedPersistentConnection;
 
@@ -354,9 +355,36 @@ void main() {
       expect(entries[0].authorName, 'A. Author');
       expect(entries[0].width, 5);
       expect(entries[0].height, 5);
-      expect(entries[0].date, DateTime(2024, 3, 10));
-      expect(entries[1].date, DateTime(2024, 3, 5));
-      expect(entries[2].date, DateTime(2024, 3, 1));
+      expect(entries[0].date, DateTime.utc(2024, 3, 10));
+      expect(entries[1].date, DateTime.utc(2024, 3, 5));
+      expect(entries[2].date, DateTime.utc(2024, 3, 1));
+    });
+
+    test('downloadToday uses Crosshare UTC day and archive month', () async {
+      final paths = <String>[];
+      final utcEveningInUs = DateTime.parse('2026-06-03T20:05:00-04:00');
+      final dio = Dio()
+        ..httpClientAdapter = _FakeAdapter((options) {
+          paths.add(options.path);
+          if (options.path.contains('dailyminis')) {
+            return ResponseBody.fromString(
+              monthHtml(const [(4, 'utc-day', 'UTC Day')]),
+              200,
+            );
+          }
+          return ResponseBody.fromBytes(_fakePuzBytes, 200);
+        });
+      final withClock = CrosshareDownloader(
+        dio: dio,
+        now: () => utcEveningInUs,
+      );
+
+      final result = await withClock.downloadTodayWithMetadata();
+
+      expect(result.isOk, isTrue);
+      expect(result.value.entry.id, 'utc-day');
+      expect(result.value.entry.date, DateTime.utc(2026, 6, 4));
+      expect(paths.first, contains('/dailyminis/2026/6'));
     });
 
     test('returns beforeArchiveStart when the server returns HTTP 404',

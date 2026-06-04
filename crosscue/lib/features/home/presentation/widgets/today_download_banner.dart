@@ -11,15 +11,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// affordance. Renders nothing when [phase] is
 /// [CrosshareAutoDownloadPhase.idle].
 class TodayDownloadBanner extends ConsumerWidget {
-  const TodayDownloadBanner({required this.phase, super.key});
+  const TodayDownloadBanner({
+    required this.phase,
+    this.notAvailableYet = false,
+    super.key,
+  });
 
   final CrosshareAutoDownloadPhase phase;
+  final bool notAvailableYet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fetching = phase == CrosshareAutoDownloadPhase.inProgress;
     final failed = phase == CrosshareAutoDownloadPhase.failed;
-    if (!fetching && !failed) return const SizedBox.shrink();
+    if (!fetching && !failed && !notAvailableYet) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -36,6 +43,12 @@ class TodayDownloadBanner extends ConsumerWidget {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
+          else if (notAvailableYet)
+            Icon(
+              Icons.schedule_outlined,
+              size: 20,
+              color: context.crosscueOnSurface3,
+            )
           else
             Icon(
               Icons.cloud_off_outlined,
@@ -45,23 +58,27 @@ class TodayDownloadBanner extends ConsumerWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              fetching
-                  ? "Fetching today's puzzle…"
-                  : "Couldn't fetch today's puzzle",
+              _message(fetching, failed),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.crosscueOnSurface2,
                   ),
             ),
           ),
-          if (failed)
+          if (failed || notAvailableYet)
             TextButton(
               onPressed: () => ref
                   .read(crosshareAutoDownloadServiceProvider)
                   .attemptIfNeeded(),
-              child: const Text('Retry'),
+              child: Text(failed ? 'Retry' : 'Try now'),
             ),
         ],
       ),
     );
+  }
+
+  String _message(bool fetching, bool failed) {
+    if (fetching) return "Fetching today's puzzle…";
+    if (failed) return "Couldn't fetch today's puzzle";
+    return "Today's puzzle isn't available yet";
   }
 }

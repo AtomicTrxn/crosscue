@@ -1,6 +1,7 @@
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/domain/repositories/import_repository.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/domain/repositories/app_settings_repository.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -61,12 +62,14 @@ class CrosshareAutoDownloadService {
     required AppSettingsRepository settings,
     required ImportRepository importRepo,
     void Function(CrosshareAutoDownloadPhase phase)? onPhase,
+    void Function()? onStatusChanged,
     Duration retryBackoff = const Duration(seconds: 1),
     int maxAttempts = 3,
   })  : _downloader = downloader,
         _settings = settings,
         _importRepo = importRepo,
         _onPhase = onPhase,
+        _onStatusChanged = onStatusChanged,
         _retryBackoff = retryBackoff,
         _maxAttempts = maxAttempts;
 
@@ -74,6 +77,7 @@ class CrosshareAutoDownloadService {
   final AppSettingsRepository _settings;
   final ImportRepository _importRepo;
   final void Function(CrosshareAutoDownloadPhase phase)? _onPhase;
+  final void Function()? _onStatusChanged;
 
   /// Base backoff between retries; the Nth retry waits `_retryBackoff * N`.
   final Duration _retryBackoff;
@@ -81,19 +85,39 @@ class CrosshareAutoDownloadService {
   /// Total tries (initial attempt + retries) for a transient network failure.
   final int _maxAttempts;
 
+  Future<void>? _attemptInFlight;
+
   /// Called on app launch and when the app returns to the foreground.
   /// Returns immediately (does nothing, no phase change) if auto-download is
   /// off or already done today — keeping cold start cheap when today is cached.
   Future<void> attemptIfNeeded() async {
+    final existing = _attemptInFlight;
+    if (existing != null) {
+      return existing;
+    }
+
+    final attempt = _attemptIfNeeded();
+    _attemptInFlight = attempt;
+    try {
+      await attempt;
+    } finally {
+      if (identical(_attemptInFlight, attempt)) {
+        _attemptInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _attemptIfNeeded() async {
     final enabled = await _settings.getCrosshareAutoDownload();
     if (!enabled) return;
 
-    final today = _todayString();
+    final today = crosshareUtcDateString();
     final lastDate = await _settings.getCrosshareLastDownloadedDate();
     if (lastDate == today) return; // Already downloaded today
 
     _emit(CrosshareAutoDownloadPhase.inProgress);
     final terminal = await _download(today);
+    _onStatusChanged?.call();
     _emit(terminal);
   }
 
@@ -121,7 +145,7 @@ class CrosshareAutoDownloadService {
   /// puzzle (`notFound`), a changed page structure, or a parse failure won't
   /// fix themselves on a quick retry.
   Future<({String status, bool retryable})> _attemptOnce(String today) async {
-    final dlResult = await _downloader.downloadToday();
+    final dlResult = await _downloader.downloadTodayWithMetadata();
 
     if (dlResult.isErr) {
       final (status, retryable) = switch (dlResult.error) {
@@ -140,9 +164,10 @@ class CrosshareAutoDownloadService {
     }
 
     final importResult = await _importRepo.importBytes(
-      dlResult.value,
+      dlResult.value.bytes,
       sourceId: 'crosshare_daily_mini',
-      publishDate: DateTime.now(),
+      sourcePuzzleId: dlResult.value.entry.id,
+      publishDate: dlResult.value.entry.date,
     );
     switch (importResult) {
       case JobSuccess():
@@ -165,13 +190,6 @@ class CrosshareAutoDownloadService {
   }
 
   void _emit(CrosshareAutoDownloadPhase phase) => _onPhase?.call(phase);
-
-  static String _todayString() {
-    final now = DateTime.now();
-    final mm = now.month.toString().padLeft(2, '0');
-    final dd = now.day.toString().padLeft(2, '0');
-    return '${now.year}-$mm-$dd';
-  }
 }
 
 @Riverpod(keepAlive: true)
@@ -182,5 +200,9 @@ CrosshareAutoDownloadService crosshareAutoDownloadService(Ref ref) {
     importRepo: ref.watch(importRepositoryProvider),
     onPhase: (phase) =>
         ref.read(crosshareAutoDownloadProgressProvider.notifier).report(phase),
+    onStatusChanged: () {
+      ref.invalidate(crosshareLastDownloadedDateProvider);
+      ref.invalidate(crosshareLastAttemptStatusProvider);
+    },
   );
 }

@@ -1,4 +1,5 @@
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
+import 'package:crosscue/features/import/domain/services/crosshare_daily_date.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -12,6 +13,5 @@ Stream<List<PuzzleMetadata>> puzzleList(Ref ref) {
 
 @riverpod
 DateTime currentLocalDate(Ref ref) {
-  final now = DateTime.now();
-  return DateTime(now.year, now.month, now.day);
+  return crosshareUtcDate();
 }
