@@ -50,4 +50,4 @@ final class HomeWidgetServiceProvider extends $FunctionalProvider<
   }
 }
 
-String _$homeWidgetServiceHash() => r'e10110de0ffc956029a3b5800d7a05e80a657d19';
+String _$homeWidgetServiceHash() => r'aa24cdbc2e2496202d917a82f0954985109f5d75';

@@ -8,6 +8,7 @@ import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/features/home/data/services/home_widget_service.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +59,15 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       },
       fireImmediately: true,
     );
+    // Keep the Home/Lock-screen widget in sync with the streak + today's solve
+    // state. statsData is invalidated after a completion is persisted
+    // (solve_notifier), so reacting to it here pushes *fresh* data — unlike a
+    // fire-and-forget refresh at completion time, which races the DB write.
+    ref.listenManual(statsDataProvider, (_, next) {
+      if (next is AsyncData) {
+        unawaited(ref.read(homeWidgetServiceProvider).refresh());
+      }
+    });
     // Trigger auto-download on first launch (post-frame so providers are ready).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       unawaited(
@@ -92,10 +102,19 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       ref.read(appRouterProvider).go(route);
     }
 
-    // Cold launch from a widget tap.
-    unawaited(HomeWidget.initiallyLaunchedFromHomeWidget().then(go));
-    // Taps while the app is already running.
-    HomeWidget.widgetClicked.listen(go);
+    unawaited(() async {
+      try {
+        // The App Group id must be set before querying widget launches,
+        // otherwise home_widget throws "AppGroupId not set".
+        await HomeWidget.setAppGroupId(HomeWidgetService.appGroupId);
+        // Cold launch from a widget tap.
+        go(await HomeWidget.initiallyLaunchedFromHomeWidget());
+        // Taps while the app is already running.
+        HomeWidget.widgetClicked.listen(go);
+      } on Object {
+        // Widget extension / App Group not configured — nothing to route.
+      }
+    }());
   }
 
   void _installCrashHandlers() {
