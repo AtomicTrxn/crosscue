@@ -50,16 +50,17 @@ class GoogleDriveSyncTransport implements SyncTransport {
   static const List<String> _scopes = [drive.DriveApi.driveAppdataScope];
   static const String _space = 'appDataFolder';
 
-  Future<void> _initialize() =>
-      GoogleSignIn.instance.initialize(serverClientId: _serverClientId);
+  /// The signed-in account, cached for the life of the transport. Without this
+  /// every Drive operation would re-run authentication — and since a single
+  /// sync pass makes dozens of CRUD calls, the Android sign-in sheet would pop
+  /// over and over in a loop. Cache it once; reuse it for every op.
+  GoogleSignInAccount? _account;
+  bool _initialized = false;
 
-  Future<GoogleSignInAccount?> _silentAccount() async {
-    try {
-      await _initialize();
-      return await GoogleSignIn.instance.attemptLightweightAuthentication();
-    } on Object {
-      return null;
-    }
+  Future<void> _initialize() async {
+    if (_initialized) return;
+    await GoogleSignIn.instance.initialize(serverClientId: _serverClientId);
+    _initialized = true;
   }
 
   SyncAccount _toSyncAccount(GoogleSignInAccount account) => SyncAccount(
@@ -68,24 +69,36 @@ class GoogleDriveSyncTransport implements SyncTransport {
         id: account.id,
       );
 
+  /// Silent account check. Returns ONLY the already-signed-in cached account and
+  /// **never triggers Google's auth UI** — the toggle's "available" gate uses
+  /// [supportsInteractiveSignIn], so a null here before sign-in is fine. This
+  /// is critical: the CRUD methods call [_driveApi] many times per sync pass,
+  /// so if any of them could pop the sign-in sheet it would loop endlessly.
   @override
-  Future<SyncAccount?> account() async {
-    final account = await _silentAccount();
-    return account == null ? null : _toSyncAccount(account);
-  }
+  Future<SyncAccount?> account() async =>
+      _account == null ? null : _toSyncAccount(_account!);
 
   @override
   bool get supportsInteractiveSignIn => true;
 
-  /// Interactive Google sign-in + Drive AppData authorization. Called by the
-  /// orchestrator's `enable()` (the toggle tap drives the prompt).
+  /// Google sign-in + Drive AppData authorization. Called by the orchestrator's
+  /// `enable()` — both on the user's toggle and on the boot-time re-enable.
+  ///
+  /// Tries a silent restore first so we don't pop the Google sheet on every
+  /// launch; only prompts interactively when there's no recoverable session.
   @override
   Future<SyncAccount?> signIn() async {
     try {
       await _initialize();
-      final account =
+      // The single authentication entry point. Try a silent restore first (so
+      // the boot-time re-enable doesn't pop the sheet on every launch), only
+      // prompting interactively when there's no recoverable session.
+      final restored =
+          await GoogleSignIn.instance.attemptLightweightAuthentication();
+      final account = restored ??
           await GoogleSignIn.instance.authenticate(scopeHint: _scopes);
       await account.authorizationClient.authorizeScopes(_scopes);
+      _account = account;
       return _toSyncAccount(account);
     } on Object {
       return null;
@@ -94,9 +107,10 @@ class GoogleDriveSyncTransport implements SyncTransport {
 
   Future<drive.DriveApi?> _driveApi() async {
     if (_driveApiOverride != null) return _driveApiOverride();
+    // Cached session only — never authenticates here, so CRUD never pops UI.
+    final account = _account;
+    if (account == null) return null;
     try {
-      final account = await _silentAccount();
-      if (account == null) return null;
       final authz =
           await account.authorizationClient.authorizationForScopes(_scopes);
       if (authz == null) return null;
