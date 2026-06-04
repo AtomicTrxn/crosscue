@@ -3,7 +3,7 @@
 // Renders glanceable state pushed from Dart (via the `home_widget` plugin) into
 // the shared App Group container: the current streak and today's puzzle, with a
 // leaderboard row that's deliberately optional so it can be filled in later
-// (#111) WITHOUT a widget rebuild or schema migration.
+// (friend boards, #159) WITHOUT a widget rebuild or schema migration.
 
 import SwiftUI
 import UIKit
@@ -39,7 +39,7 @@ struct CrosscueEntry: TimelineEntry {
   let todayTitle: String?
   let todayRoute: String?
   let todayStatus: TodayStatus?
-  /// Null today; becomes a real rank once the leaderboard ships (#111). The
+  /// Null today; becomes a real rank once friend boards ship (#159). The
   /// view treats it as an optional row — additive, no rebuild needed.
   let leaderboardRank: Int?
 
@@ -153,7 +153,7 @@ struct CrosscueWidgetView: View {
       } else {
         Text("No puzzle yet").font(.caption)
       }
-      // Additive: shows only once a leaderboard rank exists (#111).
+      // Additive: shows only once a leaderboard rank exists (#159).
       if let rank = entry.leaderboardRank {
         Text("Rank #\(rank)").font(.caption2)
       }
