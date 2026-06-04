@@ -13,6 +13,7 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		7AC10D5B2EC3CC0700C636F2 /* ICloudSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC10D5A2EC3CC0400C636F2 /* ICloudSyncHandler.swift */; };
+		F6BBB3E85991C2AFE8C2C55E /* CrosscueAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6DDFA45C5E95D174B89980 /* CrosscueAppIntents.swift */; };
 		811374AE2FD1163800EFEEEA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 811374AD2FD1163800EFEEEA /* WidgetKit.framework */; };
 		811374B02FD1163800EFEEEA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 811374AF2FD1163800EFEEEA /* SwiftUI.framework */; };
 		811374BD2FD1163900EFEEEA /* CrosscueWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 811374AC2FD1163800EFEEEA /* CrosscueWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -78,6 +79,7 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		7AC10D5A2EC3CC0400C636F2 /* ICloudSyncHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSyncHandler.swift; sourceTree = "<group>"; };
+		9E6DDFA45C5E95D174B89980 /* CrosscueAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrosscueAppIntents.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		811374AC2FD1163800EFEEEA /* CrosscueWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CrosscueWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		811374AD2FD1163800EFEEEA /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -218,6 +220,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				7AC10D5A2EC3CC0400C636F2 /* ICloudSyncHandler.swift */,
+				9E6DDFA45C5E95D174B89980 /* CrosscueAppIntents.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -511,6 +514,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				7AC10D5B2EC3CC0700C636F2 /* ICloudSyncHandler.swift in Sources */,
+				F6BBB3E85991C2AFE8C2C55E /* CrosscueAppIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,6 +5,8 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/app_router.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
+import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
+import 'package:crosscue/features/home/data/services/app_intent_router.dart';
 import 'package:crosscue/features/home/data/services/home_widget_service.dart';
 import 'package:crosscue/features/import/data/services/crosshare_auto_download_service.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -26,6 +28,31 @@ void _logDynamicSchemesOnce(ColorScheme? light, ColorScheme? dark) {
       s == null ? 'null' : 'primary=${s.primary}, surface=${s.surface}';
   debugPrint('[dynamic_color] lightDynamic: ${describe(light)}');
   debugPrint('[dynamic_color] darkDynamic:  ${describe(dark)}');
+}
+
+/// Reads a pending route token left by an iOS App Intent
+/// (`CrosscueAppIntents.swift`) in the shared App Group, clears it, resolves it
+/// to a go_router path, and navigates. Called on launch and on resume. No-op
+/// (swallowed) when the App Group / widget extension isn't configured, or when
+/// nothing is pending. See issue #115.
+Future<void> _consumePendingIntentRoute(WidgetRef ref) async {
+  try {
+    await HomeWidget.setAppGroupId(HomeWidgetService.appGroupId);
+    final token =
+        await HomeWidget.getWidgetData<String>(kPendingIntentRouteKey);
+    if (token == null || token.isEmpty) return;
+    // Clear first so a token is consumed exactly once.
+    await HomeWidget.saveWidgetData<String>(kPendingIntentRouteKey, '');
+    final route = await resolveAppIntentRoute(
+      token,
+      archive: ref.read(archiveRepositoryProvider),
+    );
+    if (route != null && route.isNotEmpty) {
+      ref.read(appRouterProvider).go(route);
+    }
+  } on Object {
+    // App Group not configured (non-iOS / pre-setup) — nothing to route.
+  }
 }
 
 ThemeMode _toFlutterThemeMode(AppThemeMode m) => switch (m) {
@@ -88,6 +115,9 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       // widget extension + App Group are configured (ios-widget-setup.md).
       unawaited(ref.read(homeWidgetServiceProvider).refresh());
       _initWidgetDeepLinks();
+      // Route a pending iOS App Intent (Shortcuts/Siri/Spotlight) if one is
+      // waiting from a cold launch. No-op otherwise.
+      unawaited(_consumePendingIntentRoute(ref));
     });
   }
 
@@ -188,6 +218,9 @@ class _CrosshareLifecycleObserver extends WidgetsBindingObserver {
       // Refresh the Home/Lock-screen widget (streak may have changed, e.g. a
       // missed-day reset). No-op until the widget extension is configured.
       unawaited(_ref.read(homeWidgetServiceProvider).refresh());
+      // An App Intent (Shortcuts/Siri) triggered while we were backgrounded
+      // opens the app; route it now. No-op when nothing is pending.
+      unawaited(_consumePendingIntentRoute(_ref));
     }
   }
 }
