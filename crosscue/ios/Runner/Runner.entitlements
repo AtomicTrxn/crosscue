@@ -14,5 +14,9 @@
 	<array>
 		<string>iCloud.dev.tomhess.crosscue</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.dev.tomhess.crosscue</string>
+	</array>
 </dict>
 </plist>
