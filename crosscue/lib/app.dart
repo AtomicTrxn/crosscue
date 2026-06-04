@@ -68,7 +68,9 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       // iCloud account leaves it SyncSignedOut and writes nothing.
       if (await ref.read(appSettingsProvider).getSyncEnabled()) {
         final orchestrator = ref.read(syncOrchestratorProvider);
-        await orchestrator.enable();
+        // Silent restore — launch must never pop a sign-in sheet. The user
+        // signs in interactively only via the Settings/onboarding toggle.
+        await orchestrator.enableSilently();
         await orchestrator.syncNow();
       }
       // Push current streak + today's puzzle to the Home/Lock-screen widget,

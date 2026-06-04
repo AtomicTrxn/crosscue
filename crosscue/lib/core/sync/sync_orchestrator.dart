@@ -59,6 +59,20 @@ class SyncOrchestrator {
     );
   }
 
+  /// Boot/launch re-enable: restores an existing session **silently** via
+  /// [SyncTransport.account] and never shows sign-in UI. Stays [SyncSignedOut]
+  /// if nothing can be restored without a prompt — the user re-enables
+  /// interactively from Settings. Use this on launch (and any non-user-initiated
+  /// path); use [enable] only for an explicit opt-in.
+  Future<void> enableSilently() async {
+    final account = await transport.account();
+    _setState(
+      account == null
+          ? const SyncSignedOut()
+          : SyncIdle(lastSyncedAt: _lastSyncedAt),
+    );
+  }
+
   Future<void> disable({bool wipeRemote = false}) async {
     if (wipeRemote) {
       for (final adapter in adapters) {

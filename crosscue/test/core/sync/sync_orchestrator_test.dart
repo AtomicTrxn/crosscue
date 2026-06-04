@@ -69,6 +69,22 @@ void main() {
     expect(orchestratorA.currentState, isA<SyncIdle>());
   });
 
+  test('enableSilently restores via account() and never calls signIn()',
+      () async {
+    // The boot/launch path must not pop a sign-in sheet: it reaches SyncIdle
+    // through the silent account() check, not the interactive signIn().
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final transport = _NoInteractiveSignInTransport();
+    final orchestrator = SyncOrchestrator(transport: transport, db: db);
+    addTearDown(orchestrator.dispose);
+
+    await orchestrator.enableSilently();
+
+    expect(orchestrator.currentState, isA<SyncIdle>());
+    expect(transport.signInCalls, 0, reason: 'silent path must not sign in');
+  });
+
   test('puzzles converge across devices in one sync round trip', () async {
     await insertPuzzle(deviceA, 'puz-1');
     await insertPuzzle(deviceA, 'puz-2');
@@ -303,6 +319,36 @@ class _ThrowingTransport implements SyncTransport {
   Future<String?> write(String key, String bytes, {String? ifMatch}) async =>
       null;
 
+  @override
+  Future<void> delete(String key) async {}
+}
+
+/// A transport that has an ambient account but records whether the interactive
+/// `signIn()` is ever called — proving `enableSilently()` stays on the silent
+/// `account()` path.
+class _NoInteractiveSignInTransport implements SyncTransport {
+  int signInCalls = 0;
+
+  @override
+  Future<SyncAccount?> account() async =>
+      const SyncAccount(provider: SyncProvider.fake, displayName: 'fake');
+
+  @override
+  Future<SyncAccount?> signIn() async {
+    signInCalls++;
+    return account();
+  }
+
+  @override
+  bool get supportsInteractiveSignIn => true;
+
+  @override
+  Future<List<String>> list(String prefix) async => const [];
+  @override
+  Future<String?> read(String key) async => null;
+  @override
+  Future<String?> write(String key, String bytes, {String? ifMatch}) async =>
+      null;
   @override
   Future<void> delete(String key) async {}
 }
