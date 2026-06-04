@@ -7,7 +7,6 @@ import 'package:crosscue/core/domain/models/puzzle_size_bucket.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
-import 'package:crosscue/features/home/data/services/home_widget_service.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
@@ -129,9 +128,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     // unless sync is enabled and signed in (the orchestrator self-guards).
     unawaited(ref.read(syncOrchestratorProvider).syncNow());
 
-    // Refresh the Home/Lock-screen widget so the streak reflects this solve.
-    // No-op until the widget extension is configured (ios-widget-setup.md).
-    unawaited(ref.read(homeWidgetServiceProvider).refresh());
+    // (The Home/Lock-screen widget refreshes reactively in app.dart when
+    // statsData is invalidated after the completion is persisted — doing it
+    // here would race the DB write and push a stale streak/solve-state.)
 
     if (_hapticsEnabled) {
       unawaited(_pulseCompletionHaptics());

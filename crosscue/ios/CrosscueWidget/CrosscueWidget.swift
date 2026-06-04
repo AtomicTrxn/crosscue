@@ -14,12 +14,20 @@ private let dataKey = "crosscue_widget_v1"
 
 // MARK: - Model
 
+/// Solve state of today's puzzle (wire values match Dart's TodayStatus).
+enum TodayStatus: String {
+  case solved
+  case inProgress
+  case notStarted = "new"
+}
+
 struct CrosscueEntry: TimelineEntry {
   let date: Date
   let streakCurrent: Int
   let streakBest: Int
   let todayTitle: String?
   let todayRoute: String?
+  let todayStatus: TodayStatus?
   /// Null today; becomes a real rank once the leaderboard ships (#111). The
   /// view treats it as an optional row — additive, no rebuild needed.
   let leaderboardRank: Int?
@@ -30,6 +38,7 @@ struct CrosscueEntry: TimelineEntry {
     streakBest: 30,
     todayTitle: "Today's Mini",
     todayRoute: nil,
+    todayStatus: .notStarted,
     leaderboardRank: nil
   )
 
@@ -39,6 +48,7 @@ struct CrosscueEntry: TimelineEntry {
     streakBest: 0,
     todayTitle: nil,
     todayRoute: nil,
+    todayStatus: nil,
     leaderboardRank: nil
   )
 }
@@ -76,6 +86,7 @@ struct CrosscueProvider: TimelineProvider {
       streakBest: streak?["best"] as? Int ?? 0,
       todayTitle: today?["title"] as? String,
       todayRoute: today?["route"] as? String,
+      todayStatus: (today?["status"] as? String).flatMap(TodayStatus.init),
       leaderboardRank: leaderboard?["rank"] as? Int
     )
   }
@@ -119,7 +130,13 @@ struct CrosscueWidgetView: View {
       Text("🔥 \(entry.streakCurrent) day\(entry.streakCurrent == 1 ? "" : "s")")
         .font(.headline)
       if let title = entry.todayTitle {
-        Text(title).font(.caption).lineLimit(1)
+        HStack(spacing: 4) {
+          if let status = entry.todayStatus {
+            Image(systemName: statusSymbol(status))
+          }
+          Text(title).lineLimit(1)
+        }
+        .font(.caption)
       } else {
         Text("No puzzle yet").font(.caption)
       }
@@ -144,6 +161,9 @@ struct CrosscueWidgetView: View {
         Text(entry.todayTitle ?? "No puzzle yet")
           .font(.subheadline.weight(.semibold))
           .lineLimit(2)
+        if let status = entry.todayStatus {
+          statusBadge(status)
+        }
       }
       // Additive leaderboard row — renders only when present.
       if let rank = entry.leaderboardRank {
@@ -151,6 +171,33 @@ struct CrosscueWidgetView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  /// Solved / in-progress / not-solved badge for today's puzzle.
+  @ViewBuilder
+  private func statusBadge(_ status: TodayStatus) -> some View {
+    switch status {
+    case .solved:
+      Label("Solved", systemImage: "checkmark.circle.fill")
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.green)
+    case .inProgress:
+      Label("In progress", systemImage: "ellipsis.circle")
+        .font(.caption2)
+        .foregroundStyle(.orange)
+    case .notStarted:
+      Label("Not solved", systemImage: "circle")
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+    }
+  }
+
+  private func statusSymbol(_ status: TodayStatus) -> String {
+    switch status {
+    case .solved: return "checkmark.circle.fill"
+    case .inProgress: return "ellipsis.circle"
+    case .notStarted: return "circle"
+    }
   }
 }
 
