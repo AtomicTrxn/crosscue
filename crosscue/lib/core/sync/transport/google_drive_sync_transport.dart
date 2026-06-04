@@ -56,6 +56,7 @@ class GoogleDriveSyncTransport implements SyncTransport {
   /// over and over in a loop. Cache it once; reuse it for every op.
   GoogleSignInAccount? _account;
   bool _initialized = false;
+  bool _restoreAttempted = false;
 
   Future<void> _initialize() async {
     if (_initialized) return;
@@ -69,14 +70,42 @@ class GoogleDriveSyncTransport implements SyncTransport {
         id: account.id,
       );
 
-  /// Silent account check. Returns ONLY the already-signed-in cached account and
-  /// **never triggers Google's auth UI** — the toggle's "available" gate uses
-  /// [supportsInteractiveSignIn], so a null here before sign-in is fine. This
-  /// is critical: the CRUD methods call [_driveApi] many times per sync pass,
-  /// so if any of them could pop the sign-in sheet it would loop endlessly.
+  /// Silently restores a previously-authorized session — **no interactive UI**.
+  /// Returns the account only when Drive authorization is already granted
+  /// without prompting (the silent `authorizationForScopes`, not the
+  /// interactive `authorizeScopes`). Caches the result. Used by [account] and as
+  /// the fast path in [signIn] so launches and re-toggles don't re-prompt.
+  Future<GoogleSignInAccount?> _restoreSilently() async {
+    if (_account != null) return _account;
+    // Attempt the (silent) lightweight restore at most once per app session, so
+    // even if the platform surfaces a brief chooser it can never appear more
+    // than once — and a failed restore never re-prompts.
+    if (_restoreAttempted) return null;
+    _restoreAttempted = true;
+    await _initialize();
+    final restored =
+        await GoogleSignIn.instance.attemptLightweightAuthentication();
+    if (restored == null) return null;
+    final authz =
+        await restored.authorizationClient.authorizationForScopes(_scopes);
+    if (authz == null) return null;
+    _account = restored;
+    return restored;
+  }
+
+  /// Silent account check (no interactive UI). The toggle's "available" gate
+  /// uses [supportsInteractiveSignIn], so a null here before sign-in is fine.
+  /// Never authenticates interactively, and the CRUD path uses [_driveApi]'s
+  /// cached account — so a sync pass can never trigger sign-in UI.
   @override
-  Future<SyncAccount?> account() async =>
-      _account == null ? null : _toSyncAccount(_account!);
+  Future<SyncAccount?> account() async {
+    try {
+      final restored = await _restoreSilently();
+      return restored == null ? null : _toSyncAccount(restored);
+    } on Object {
+      return null;
+    }
+  }
 
   @override
   bool get supportsInteractiveSignIn => true;
@@ -89,13 +118,13 @@ class GoogleDriveSyncTransport implements SyncTransport {
   @override
   Future<SyncAccount?> signIn() async {
     try {
+      // Reuse an already-authorized session silently (boot re-enable, or a
+      // toggle while still signed in) — no prompt in that case.
+      final silent = await _restoreSilently();
+      if (silent != null) return _toSyncAccount(silent);
+      // No recoverable session → full interactive sign-in + authorization.
       await _initialize();
-      // The single authentication entry point. Try a silent restore first (so
-      // the boot-time re-enable doesn't pop the sheet on every launch), only
-      // prompting interactively when there's no recoverable session.
-      final restored =
-          await GoogleSignIn.instance.attemptLightweightAuthentication();
-      final account = restored ??
+      final account =
           await GoogleSignIn.instance.authenticate(scopeHint: _scopes);
       await account.authorizationClient.authorizeScopes(_scopes);
       _account = account;
