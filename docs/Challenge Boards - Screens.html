@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crosscue — Challenge Boards · Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0C0F17;font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1400px;margin:0 auto;padding:40px 36px 120px}
+.dochead{border-bottom:1px solid #1C2234;padding-bottom:26px;margin-bottom:8px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#4E5C7E;margin-bottom:10px}
+h1{font-size:30px;font-weight:700;letter-spacing:-.03em;color:#DDE2F0;margin-bottom:8px}
+.lead{font-size:15px;line-height:1.6;color:#8892AC;max-width:680px}
+.meta{margin-top:14px;font-size:11px;color:#4E5C7E;font-family:'DM Mono',monospace}
+nav{position:sticky;top:0;z-index:50;background:rgba(12,15,23,.9);backdrop-filter:blur(8px);display:flex;gap:4px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid #1C2234;margin-bottom:8px}
+nav a{font-size:12px;font-weight:500;color:#5C6E96;text-decoration:none;padding:7px 13px;border-radius:7px}
+nav a:hover{color:#DDE2F0;background:#161B26}
+
+section{padding:44px 0 8px;border-bottom:1px solid #161B26}
+.sec-eyebrow{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#4E5C7E;margin-bottom:7px}
+h2{font-size:21px;font-weight:600;letter-spacing:-.02em;color:#DDE2F0;margin-bottom:7px}
+.sec-desc{font-size:13.5px;line-height:1.6;color:#8892AC;max-width:660px;margin-bottom:28px}
+.row{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.col{display:flex;flex-direction:column;align-items:center;gap:13px}
+.plabel{font-size:11px;font-weight:600;color:#8892AC;letter-spacing:.05em;text-transform:uppercase;text-align:center}
+.plabel.dim{color:#4E5C7E;font-weight:500}
+.plabel b{color:#DDE2F0;font-weight:600}
+.divider-note{display:flex;align-items:center;gap:10px;margin:6px 0 26px}
+.divider-note .pill{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7EB8F7;background:rgba(126,184,247,.1);padding:4px 9px;border-radius:5px}
+.divider-note .pill.amber{color:#F5A623;background:rgba(245,166,35,.1)}
+.divider-note .pill.neutral{color:#8892AC;background:#161B26}
+.divider-note span{font-size:12px;color:#5C6E96}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="dochead">
+    <div class="eyebrow">Crosscue · Design System</div>
+    <h1>Challenge Boards — Screens</h1>
+    <p class="lead">High-fidelity mockups, every interface state, the full set of invite &amp; account flows, and low-fidelity wireframes for the new Challenge primary tab. Light and dark mode throughout, built on Color Guide v3.5 tokens.</p>
+    <div class="meta">v1 · June 2026 · pairs with “Challenge Boards — Spec”</div>
+  </div>
+
+  <nav>
+    <a href="#hifi">Hi-fi tab</a>
+    <a href="#detail">Board detail</a>
+    <a href="#states">States</a>
+    <a href="#flows">Flows &amp; sheets</a>
+    <a href="#invite">Invite states</a>
+    <a href="#name">Display name</a>
+    <a href="#wire">Wireframes</a>
+  </nav>
+
+  <div id="root"></div>
+</div>
+
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="challenge/cb_kit.jsx"></script>
+<script type="text/babel" src="challenge/cb_screens.jsx"></script>
+<script type="text/babel" src="challenge/cb_sheets.jsx"></script>
+<script type="text/babel" src="challenge/cb_wireframes.jsx"></script>
+
+<script type="text/babel">
+const { CB_LIGHT, CB_DARK, WF_LIGHT, WF_DARK } = window;
+
+function Phone({ label, sub, dark, w=320, h=680, children }) {
+  return (
+    <div className="col">
+      <AndroidDevice width={w} height={h} dark={dark}>{children}</AndroidDevice>
+      <div className="plabel">{label}{sub && <><br/><span className="dim">{sub}</span></>}</div>
+    </div>
+  );
+}
+
+function Section({ id, eyebrow, title, desc, children }) {
+  return (
+    <section id={id}>
+      <div className="sec-eyebrow">{eyebrow}</div>
+      <h2>{title}</h2>
+      <p className="sec-desc">{desc}</p>
+      <div className="row">{children}</div>
+    </section>
+  );
+}
+
+function Gallery() {
+  return (
+    <>
+      {/* HERO — hi-fi tab */}
+      <Section id="hifi" eyebrow="High fidelity · primary deliverable"
+        title="The Challenge tab"
+        desc="The default, populated view: a profile chip and create/join action in the header, the Weekly Challenge card as the primary surface with up to five compact board rows, and a quieter Lifetime Stats card below. Rankings are per board and visible only to members.">
+        <Phone label="Light mode" sub="5 active boards" dark={false} w={336} h={712}><ChallengeTab T={CB_LIGHT} variant="full" /></Phone>
+        <Phone label="Dark mode" sub="5 active boards" dark={true} w={336} h={712}><ChallengeTab T={CB_DARK} variant="full" /></Phone>
+        <Phone label="Light mode" sub="single board" dark={false} w={336} h={712}><ChallengeTab T={CB_LIGHT} variant="single" /></Phone>
+      </Section>
+
+      {/* BOARD DETAIL */}
+      <Section id="detail" eyebrow="High fidelity · entry from a board row"
+        title="Board detail"
+        desc="Tapping a board row opens its detail. A segmented control switches between the current UTC week and the lifetime leaderboard (completed weeks only). The signed-in player’s row is highlighted; share lives in the app bar and pinned at the bottom.">
+        <Phone label="This week" sub="weekly leaderboard" dark={false} w={336} h={712}><BoardDetail T={CB_LIGHT} mode="weekly" /></Phone>
+        <Phone label="Lifetime" sub="completed weeks only" dark={true} w={336} h={712}><BoardDetail T={CB_DARK} mode="lifetime" /></Phone>
+      </Section>
+
+      {/* STATES */}
+      <Section id="states" eyebrow="Interface states"
+        title="Empty · loading · error · offline"
+        desc="Every data surface resolves to one of these. Empty leads with the two ways in. Loading uses skeleton rows, never a spinner. Error preserves trust (“your standings are safe”). Offline shows cached standings behind a non-blocking banner — there is no live updating in v1.">
+        <Phone label="Empty" sub="0 boards · insufficient lifetime" dark={false} w={300} h={636}><ChallengeTab T={CB_LIGHT} variant="empty" /></Phone>
+        <Phone label="Loading" sub="skeleton, no spinner" dark={false} w={300} h={636}><ChallengeTab T={CB_LIGHT} variant="loading" /></Phone>
+        <Phone label="Error" sub="retry" dark={true} w={300} h={636}><ChallengeTab T={CB_DARK} variant="error" /></Phone>
+        <Phone label="Offline" sub="cached + banner" dark={true} w={300} h={636}><ChallengeTab T={CB_DARK} variant="offline" /></Phone>
+      </Section>
+
+      {/* FLOWS / SHEETS */}
+      <Section id="flows" eyebrow="Flows · bottom sheets &amp; dialogs"
+        title="Create, join, share &amp; manage"
+        desc="Creating and joining are bottom sheets; destructive and irreversible actions (regenerate, leave) are center dialogs that name the consequence. Sharing surfaces the link with copy, share and regenerate in one place. 30-day expiry is stated wherever a link appears.">
+        <Phone label="Create board" sub="name field · limits" dark={false} w={300} h={636}><CreateBoardSheet T={CB_LIGHT} /></Phone>
+        <Phone label="Join via link" sub="paste · disabled until valid" dark={false} w={300} h={636}><JoinSheet T={CB_LIGHT} /></Phone>
+        <Phone label="Board created → share" sub="copy · share · regenerate" dark={true} w={300} h={636}><ShareSheet T={CB_DARK} created /></Phone>
+        <Phone label="Regenerate link" sub="dialog · names consequence" dark={false} w={300} h={636}><RegenerateDialog T={CB_LIGHT} /></Phone>
+        <Phone label="Leave board" sub="destructive dialog" dark={true} w={300} h={636}><LeaveDialog T={CB_DARK} /></Phone>
+      </Section>
+
+      {/* INVITE STATES */}
+      <Section id="invite" eyebrow="Invite preview · confirmation states"
+        title="Opening an invite link"
+        desc="The same preview sheet resolves to whichever state applies. Honor-system language throughout — no claims of cheat-proofing, no public discovery.">
+        <Phone label="Valid invite" sub="join · 28 days left" dark={false} w={290} h={612}><InviteSheet T={CB_LIGHT} state="valid" /></Phone>
+        <Phone label="Board full" sub="20 / 20 players" dark={false} w={290} h={612}><InviteSheet T={CB_LIGHT} state="full" /></Phone>
+        <Phone label="Already a member" sub="go to board" dark={true} w={290} h={612}><InviteSheet T={CB_DARK} state="member" /></Phone>
+        <Phone label="Board limit reached" sub="5 / 5 boards" dark={false} w={290} h={612}><InviteSheet T={CB_LIGHT} state="limit" /></Phone>
+        <Phone label="Invalid / expired" sub="link > 30 days" dark={true} w={290} h={612}><InviteSheet T={CB_DARK} state="invalid" /></Phone>
+      </Section>
+
+      {/* DISPLAY NAME */}
+      <Section id="name" eyebrow="Account · modal sheet"
+        title="Edit display name"
+        desc="One field, a live 10-character counter, and validation against the allowed character set. Save is disabled while offline and while the value is invalid. Shown to other players on shared boards.">
+        <Phone label="Default" sub="4 / 10 · valid" dark={false} w={290} h={612}><EditNameSheet T={CB_LIGHT} state="default" /></Phone>
+        <Phone label="Validation error" sub="disallowed characters" dark={false} w={290} h={612}><EditNameSheet T={CB_LIGHT} state="error" /></Phone>
+        <Phone label="Offline" sub="save disabled" dark={true} w={290} h={612}><EditNameSheet T={CB_DARK} state="offline" /></Phone>
+      </Section>
+
+      {/* WIREFRAMES */}
+      <Section id="wire" eyebrow="Low fidelity · structure"
+        title="Wireframes"
+        desc="The skeleton behind the hi-fi: header, primary weekly card, quieter lifetime card, freshness line and the new four-tab bar with Challenge in slot two. Monochrome on purpose — hierarchy without visual commitment.">
+        <Phone label="Light wireframe" dark={false} w={320} h={680}><CBWireframe W={WF_LIGHT} /></Phone>
+        <Phone label="Dark wireframe" dark={true} w={320} h={680}><CBWireframe W={WF_DARK} /></Phone>
+      </Section>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Gallery />);
+</script>
+</body>
+</html>
