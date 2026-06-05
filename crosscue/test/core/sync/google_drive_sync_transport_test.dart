@@ -25,6 +25,9 @@ void main() {
     test('signIn() returns null', () async {
       expect(await transport.signIn(), isNull);
     });
+    test('interactive sign-in is unavailable without OAuth client ID', () {
+      expect(transport.supportsInteractiveSignIn, isFalse);
+    });
     test('list() returns empty', () async {
       expect(await transport.list('puzzles/'), isEmpty);
     });
@@ -37,6 +40,12 @@ void main() {
     test('delete() does not throw', () async {
       await transport.delete('puzzles/a');
     });
+  });
+
+  test('interactive sign-in is available when OAuth client ID is configured',
+      () {
+    final transport = GoogleDriveSyncTransport(serverClientId: 'test-client');
+    expect(transport.supportsInteractiveSignIn, isTrue);
   });
 
   group('CRUD against a mock Drive API', () {
