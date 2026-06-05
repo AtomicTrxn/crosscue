@@ -2,11 +2,13 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
+import 'package:crosscue/core/utils/source_links.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/puzzle_info_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,17 +32,9 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Size get preferredSize =>
       const Size.fromHeight(CrosscueSpacing.appBarHeightSolve);
 
-  String? _sourceLabel(String sourceId) {
-    if (sourceId == 'local_import') return null;
-    return switch (sourceId) {
-      'crosshare_daily_mini' => 'via Crosshare',
-      _ => 'via $sourceId',
-    };
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sourceLabel = _sourceLabel(solveState.puzzle.metadata.sourceId);
+    final sourceLabel = sourceLabelFor(solveState.puzzle.metadata.sourceId);
     // The AppBar is the only widget that needs the per-second tick.
     // Watching the dedicated elapsed-seconds provider keeps the rest of
     // the solve screen out of the per-tick rebuild path. See #119.
@@ -67,12 +61,19 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  sourceLabel,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: context.crosscueOnSurface3,
-                        fontSize: 11,
-                      ),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showPuzzleInfoSheet(
+                    context,
+                    solveState.puzzle.metadata,
+                  ),
+                  child: Text(
+                    sourceLabel,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: context.crosscueOnSurface3,
+                          fontSize: 11,
+                        ),
+                  ),
                 ),
               ],
             )
@@ -108,6 +109,13 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 isPaused: solveState.isPaused,
               ),
             ),
+          ),
+        if (sourceLabel != null)
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Puzzle info',
+            onPressed: () =>
+                showPuzzleInfoSheet(context, solveState.puzzle.metadata),
           ),
         if (isComplete)
           IconButton(
