@@ -1,8 +1,8 @@
 # Sync Adapter Design (G5 — iCloud / Google Drive)
 
 > Tracks [#9 (G5)](https://github.com/AtomicTrxn/crosscue/issues/9).
-> Companion doc to `ARCHITECTURE.md`. Implementation progress lives in
-> [`sync-progress.md`](sync-progress.md).
+> Companion doc to `ARCHITECTURE.md`. Remaining manual rollout steps are
+> tracked in [#176](https://github.com/AtomicTrxn/crosscue/issues/176).
 
 ## Goals / non-goals
 

@@ -2,8 +2,8 @@
 
 > Reader: developer / release engineer maintaining the sync feature
 > (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9)). Design:
-> [`sync-design.md`](sync-design.md). Status:
-> [`sync-progress.md`](sync-progress.md).
+> [`sync-design.md`](sync-design.md). Remaining rollout:
+> [#176](https://github.com/AtomicTrxn/crosscue/issues/176).
 
 The Dart side, the Swift `ICloudSyncHandler`, **and** the in-app opt-in UI
 (Settings → Sync + the onboarding step, #142) all ship. The build compiles
@@ -11,8 +11,9 @@ and runs cleanly on iOS; `ICloudSyncTransport.account()` returns null and the
 orchestrator stays in `SyncSignedOut` until both the Apple-side configuration
 AND a signed-in iCloud account with iCloud Drive on for the app are in place.
 
-**Apple-side status as of iOS 1.0 (v1.2.7):** steps 1, 2, and 3 below
-were completed during the v1.2.7 release push — the App ID has iCloud
+**Apple-side status (completed in the v1.2.7 / iOS 1.0 release; still
+current):** steps 1, 2, and 3 below were completed during the v1.2.7
+release push — the App ID has iCloud
 capability enabled (Xcode 6 / CloudKit-compatible mode), the iCloud
 container `iCloud.dev.tomhess.crosscue` exists, and the App Store
 provisioning profile carries the modern `icloud-services` +

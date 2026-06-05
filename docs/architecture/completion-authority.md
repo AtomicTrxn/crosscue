@@ -49,7 +49,7 @@ The encoding is consistent but the naming is confusing: `usedReveal=true` in mem
 
 Today, in-memory and DB state can disagree in these windows:
 
-1. **Completion → DB write window.** `_checkCompletion` sets `state = AsyncData(completed)` immediately, then calls `_persistCompletion` which fires `markComplete` **unawaited** (`solve_notifier.dart:565`). If the process dies in this window, the in-memory completion is lost — the next resume sees the previous in-progress state.
+1. **Completion → DB write window.** `_checkCompletion` sets `state = AsyncData(completed)` immediately, then calls `_persistCompletion` which fires `markComplete` **unawaited** (in `_persistCompletion`, `solve_notifier.dart`). If the process dies in this window, the in-memory completion is lost — the next resume sees the previous in-progress state.
 
 2. **Autosave debounce window (500 ms).** Letter input mutates `SolveState` immediately, schedules a debounced save. A kill before the debounce fires loses up to 500 ms of input.
 

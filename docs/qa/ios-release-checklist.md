@@ -149,8 +149,8 @@ Skip if testing on iPhone only.
 - [ ] Receive a notification or phone call mid-solve → app handles
   interruption gracefully when foregrounded again
 - [ ] Low-memory: install on the oldest supported device you own (minimum
-  iOS target is `13.0` per `Runner.xcodeproj`) and confirm core flows still
-  work
+  iOS target is `16.0` per `Runner.xcodeproj` / `Podfile`) and confirm core
+  flows still work
 
 ---
 
