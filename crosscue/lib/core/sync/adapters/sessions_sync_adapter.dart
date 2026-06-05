@@ -72,6 +72,13 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
       final blob = SyncBlob.decode(bytes);
       if (blob == null) continue;
 
+      final parentPuzzle = await (db.select(db.puzzlesTable)
+            ..where((t) => t.id.equals(puzzleId)))
+          .getSingleOrNull();
+      if (parentPuzzle == null) {
+        continue;
+      }
+
       final local = await (db.select(db.solveSessionsTable)
             ..where((t) => t.puzzleId.equals(puzzleId))
             ..orderBy([(t) => OrderingTerm.desc(t.lastPlayedAt)])

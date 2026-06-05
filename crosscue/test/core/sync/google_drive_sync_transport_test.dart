@@ -25,8 +25,12 @@ void main() {
     test('signIn() returns null', () async {
       expect(await transport.signIn(), isNull);
     });
-    test('interactive sign-in is unavailable without OAuth client ID', () {
-      expect(transport.supportsInteractiveSignIn, isFalse);
+    test('interactive sign-in can be attempted without a silent account', () {
+      expect(
+        transport.supportsInteractiveSignIn,
+        isTrue,
+        reason: 'the UI should allow the tap that requests Drive permission',
+      );
     });
     test('list() returns empty', () async {
       expect(await transport.list('puzzles/'), isEmpty);

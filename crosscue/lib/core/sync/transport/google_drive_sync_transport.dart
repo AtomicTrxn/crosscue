@@ -11,7 +11,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 /// `docs/architecture/sync-googledrive-setup.md`). Because the project doesn't
 /// ship a `google-services.json`, `google_sign_in` on Android needs the *web*
 /// client ID as `serverClientId` for `authenticate()` to work. It's empty when
-/// unset — and the transport then stays inert (sign-in fails gracefully). The
+/// unset — and sign-in then fails gracefully when the user taps the toggle. The
 /// web client ID is not a secret (it's embedded in every shipped app).
 const String _serverClientIdFromEnv =
     String.fromEnvironment('GOOGLE_OAUTH_SERVER_CLIENT_ID');
@@ -44,7 +44,8 @@ class GoogleDriveSyncTransport implements SyncTransport {
   final Future<drive.DriveApi?> Function()? _driveApiOverride;
 
   /// Web OAuth client ID passed to `GoogleSignIn.initialize` as
-  /// `serverClientId`. Null when unconfigured → sign-in fails gracefully.
+  /// `serverClientId`. Null when unconfigured → sign-in fails gracefully after
+  /// the user explicitly tries to enable Google Drive sync.
   final String? _serverClientId;
 
   static const List<String> _scopes = [drive.DriveApi.driveAppdataScope];
@@ -108,7 +109,7 @@ class GoogleDriveSyncTransport implements SyncTransport {
   }
 
   @override
-  bool get supportsInteractiveSignIn => _serverClientId != null;
+  bool get supportsInteractiveSignIn => true;
 
   /// Google sign-in + Drive AppData authorization. Called by the orchestrator's
   /// `enable()` — both on the user's toggle and on the boot-time re-enable.

@@ -189,6 +189,31 @@ void main() {
       expect(await db.select(db.cellProgressTable).get(), hasLength(1));
     });
 
+    test('session is skipped until its parent puzzle exists', () async {
+      final cloud = <String, String>{
+        'sessions/missing-puzzle.json': encodedBlob(
+          deviceId: deviceB,
+          syncVersion: 1,
+          updatedAt: t1,
+          payload: {
+            'status': 'in_progress',
+            'startedAt': t0.toIso8601String(),
+            'lastPlayedAt': t1.toIso8601String(),
+            'elapsedMs': 100,
+          },
+        ),
+      };
+      final db = newTestDb();
+      addTearDown(db.close);
+
+      final outcome = await SessionsSyncAdapter(db).pull(
+        FakeSyncTransport(store: cloud),
+      );
+
+      expect(outcome.pulled, 0);
+      expect(await db.select(db.solveSessionsTable).get(), isEmpty);
+    });
+
     test('newer schema blobs are skipped without crashing', () async {
       final cloud = <String, String>{
         'sessions/puzzle.json': encodedBlob(
