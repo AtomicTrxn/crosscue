@@ -568,6 +568,16 @@ Crosscue current-release answers:
 | Users can request deletion? | Yes |
 | Required for core function? | Not applicable |
 
+> **Re-confirm before Android (Google Drive) sync goes live.** These answers
+> stay accurate while Drive sync is inert: the *developer* collects nothing —
+> synced data goes to the user's own Google Drive AppData folder, never to a
+> Crosscue server (same model already accepted for iCloud). But before the
+> Android sync default-on flip (tracked in
+> [#176](https://github.com/AtomicTrxn/crosscue/issues/176)), deliberately
+> re-review the Data Safety form: confirm Google Play still treats "stored in the
+> user's own Drive via the `drive.appdata` scope" as *not collected/not shared*,
+> and update the answers + privacy policy if that interpretation has changed.
+
 ### App content & targeting
 - [x] Confirmed app is **not** targeted at children under 13 in the store listing.
 - [x] Play Console → App Content → Target Audience completed.

@@ -361,12 +361,18 @@ Goal: existing rebus entries (via long-press) render correctly.
 - New tests:
   - `solve_notifier_test.dart`: cover the empty / 1-char / >6-char
     paths of `inputRebus`.
-  - `crossword_keyboard_test.dart` (new): rebus key shown iff
-    `showRebus` is true; tap fires callback.
-  - `solve_state_test.dart` (or wherever derived state is tested): add
-    a `hasRebusSquares` case for a puzzle with and without a rebus cell.
-  - `solve_screen_widget_test.dart`: rebus key appears only for the
-    rebus3x3 fixture, not for the plain fixture.
+  - `crossword_keyboard_test.dart` (new): rebus key is present and its
+    tap fires the callback. (As-built: the key is **always** shown — there
+    is no `showRebus` visibility flag, per §4.1 and the Phase B note.)
+  - ~~`solve_state_test.dart` (or wherever derived state is tested): add
+    a `hasRebusSquares` case for a puzzle with and without a rebus cell.~~
+    **As-built: dropped.** The always-visible "Rebus" key (§4.1, §3 note
+    after Phase B) made a `hasRebusSquares` derived getter unnecessary, so
+    neither the getter nor this test was added.
+  - ~~`solve_screen_widget_test.dart`: rebus key appears only for the
+    rebus3x3 fixture, not for the plain fixture.~~ **As-built: the key
+    appears on every puzzle** (always-visible decision, §4.1), so this
+    fixture-conditional assertion does not apply.
   - Golden / pixel test for multi-letter rendering at three cell sizes.
 
 ## 6. File-by-file change list
@@ -413,33 +419,14 @@ No changes to:
   a dead end. ✅
 - **Max rebus length.** 6 characters. ✅
 
-## 8. Open questions
-
-1. **Keyboard slot for "Rebus".** Primary recommendation: right of
-   `✓`, making "Rebus" the bottom-right-most key (matches NYT
-   position exactly). Fallback if that crowds `✓`: between `⌫` and
-   `Z`. Worth a quick visual prototype on both small and mini
-   puzzles.
-2. **"Tap outside to save" dismissal.** NYT's web/iOS pattern is
-   tap-outside saves. Our `AlertDialog` currently has explicit
-   buttons. Add tap-to-save now, or defer? Recommendation: defer —
-   the buttons are more discoverable. Revisit after users have lived
-   with the feature.
-3. **Bidirectional rebuses** (different Across vs Down answer in the
-   same cell, e.g. NYT's PB/AU alchemy puzzle). Out of scope for
-   this issue — see §9.
-4. **Pencil-rebus interaction.** Out of scope; revisit when pencil
-   mode itself ships.
-5. **Entry animation.** Play the existing cell-entry animation once
-   for the whole word (not per character). Matches "one cell = one
-   answer".
-
-## 9. Out of scope
+## 8. Out of scope
 
 - **Bidirectional rebuses** (NYT's PB-across / AU-down pattern).
-  Requires a per-direction solution field on `SolutionCell` and a
-  parser path that recognizes the construction. `.puz` files don't
-  encode it standardly; iPuz can. Track as a separate issue.
+  Was deferred in this plan as needing a per-direction solution field
+  on `SolutionCell`. **As-built: a lightweight form shipped** —
+  `SolutionCell.accepts` recognizes a `"/"`-delimited pair (e.g.
+  `"PB/AU"`) without a schema change. See ARCHITECTURE.md → "Feature:
+  solve". A full per-direction model remains out of scope.
 - **Symbol/numeric rebuses** (a "❤" or "1" representing a word).
   Our `_letterFilterRe` strips non-A–Z; keep that for now. The puzzle
   file formats already preserve arbitrary strings in `SolutionCell.
@@ -452,27 +439,3 @@ No changes to:
 - **Reverse-engineering display tricks** (e.g. shrinking the letter
   inside a circle annotation differently). Use the same autoshrink
   path as plain rebus cells.
-
-## 10. Risk / consistency checklist
-
-- [ ] Completion check still passes for the existing rebus fixture
-      after Phase B (no regression in `_checkCompletion`).
-- [ ] Completion accepts the first letter alone in a rebus cell
-      (new behavior, §4.6) — add an explicit test using the rebus3x3
-      fixture.
-- [ ] `checkCells` agrees with completion: a single letter that
-      matches the rebus's first character is marked
-      `checkedCorrect`, not `checkedIncorrect`.
-- [ ] Reveal on a rebus cell writes the full canonical answer
-      (existing behavior); confirm it overwrites a prior first-letter-
-      only entry.
-- [ ] Backspace on a multi-letter cell clears the whole cell and then
-      retreats on the next press — already true; add a unit test to
-      lock it.
-- [ ] Autosave writes the full string and `createOrResumeSession`
-      reads it back unchanged.
-- [ ] Sync round-trip: a rebus session synced to iCloud / Drive
-      restores the multi-letter cell on a second device. Extend the
-      sessions-namespace fixture to include a multi-letter cell.
-- [ ] Esc on grid opens the dialog; Esc in dialog cancels (no leaking
-      Esc keystrokes back to the focus node).

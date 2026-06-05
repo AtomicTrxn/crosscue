@@ -493,8 +493,9 @@ not exhaustive, to avoid going stale.
   adapters own merge rules (content-addressable union for puzzles,
   client-uuid union for completions, LWW + best-progress for sessions, LWW
   for settings) behind a platform-pluggable `SyncTransport`. See
-  [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md)
-  and [`docs/architecture/sync-progress.md`](docs/architecture/sync-progress.md).
+  [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md).
+  Remaining manual rollout steps (soak, Android OAuth, default-on flip) are
+  tracked in [#176](https://github.com/AtomicTrxn/crosscue/issues/176).
 
 - **Sync transports + UI shipped (May–Jun 2026)**: The iCloud transport
   (`ICloudSyncTransport`, #9 Phase 2) and the Settings + onboarding opt-in UI
