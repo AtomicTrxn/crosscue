@@ -153,25 +153,37 @@ solve/
 ├── domain/
 │   ├── models/
 │   │   ├── cell_progress.dart    # @freezed abstract class — one cell of user progress (solve-only)
+│   │   ├── check_result.dart     # Outcome of a check action (correct/incorrect counts)
 │   │   ├── focus_position.dart   # @freezed abstract class — cursor row/col/direction (solve-only)
 │   │   └── solve_errors.dart     # sealed SolveLoadError, PuzzleNotFoundError, SolveSessionLoadError
 │   ├── repositories/solve_repository.dart # Abstract solve contract
 │   └── services/
-│       └── clue_progress_calculator.dart  # cellsFor(Clue) + isWordComplete — single source of truth
+│       ├── clue_progress_calculator.dart  # cellsFor(Clue) + isWordComplete — single source of truth
+│       ├── grid_progress_mutator.dart     # Pure cell mutations + checkCells (no notifier/Flutter deps)
+│       └── solve_focus_navigator.dart     # Focus movement / direction-toggle / clue traversal logic
 ├── data/
-│   ├── daos/solve_session_dao.dart          # Autosave, resume, getLatestSession()
+│   ├── daos/
+│   │   ├── solve_session_dao.dart          # Autosave, resume, getLatestSession()
+│   │   └── puzzle_completion_dao.dart       # Immutable per-completion history (streaks/PBs)
 │   └── repositories/solve_repository_impl.dart  # createOrResumeSession + save
 └── presentation/
     ├── providers/solve_providers.dart  # solveRepositoryProvider (keepAlive)
     ├── notifiers/
-    │   ├── solve_state.dart      # Plain immutable class (not Freezed — contains Grid<T>); memoizes sortedClues
-    │   └── solve_notifier.dart   # @riverpod AsyncNotifier family (puzzleId: String)
+    │   ├── solve_state.dart           # Plain immutable class (not Freezed — contains Grid<T>); memoizes sortedClues
+    │   ├── solve_notifier.dart        # @riverpod AsyncNotifier family (puzzleId: String) — orchestrator
+    │   └── solve_elapsed_notifier.dart # SolveElapsedSeconds — per-second tick isolated off the rebuild path (#130)
     ├── screens/
     │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + CluePanel + completion sheet
     └── widgets/
-        ├── crossword_grid.dart         # ConsumerStatefulWidget — tap + long-press + keyboard input
+        ├── crossword_grid.dart         # ConsumerStatefulWidget — tap + long-press
+        ├── crossword_grid_input.dart   # Physical + soft-keyboard input plumbing
         ├── crossword_grid_painter.dart # CustomPainter — cell rendering
-        └── clue_panel.dart             # Active clue + cross clue display
+        ├── crossword_grid_effects.dart # Completion / verification visual effects
+        ├── crossword_keyboard.dart     # On-screen keyboard (incl. Rebus key)
+        ├── clue_panel.dart             # Active clue + cross clue display
+        ├── solve_app_bar.dart          # AppBar: title, timer, pause, check/reveal menu
+        ├── pause_overlay.dart          # Pause scrim over the grid
+        └── completion_sheet.dart       # Post-solve summary (time, method, PB, confetti)
 ```
 
 **Data flow:**
