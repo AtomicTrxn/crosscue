@@ -80,6 +80,11 @@ dependencies:
   # read by the WidgetKit extension). See docs/architecture/ios-widget-setup.md.
   home_widget: ^0.7.0
 
+  # Best-effort daily background refresh of the home-screen widget (#175):
+  # iOS BGAppRefreshTask + Android WorkManager via one Dart callback. See
+  # lib/core/background/widget_refresh_scheduler.dart.
+  workmanager: ^0.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

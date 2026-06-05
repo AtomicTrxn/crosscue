@@ -68,6 +68,18 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Background widget refresh (#175): a BGAppRefreshTask keeps the
+	     home-screen widget's "today" tile current for users who don't open the
+	     app. The identifier must match `widgetRefreshTaskId` in
+	     widget_refresh_scheduler.dart and the AppDelegate registration. -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>dev.tomhess.crosscue.refresh</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
