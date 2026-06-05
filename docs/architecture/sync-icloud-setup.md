@@ -2,8 +2,8 @@
 
 > Reader: developer / release engineer maintaining the sync feature
 > (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9)). Design:
-> [`sync-design.md`](sync-design.md). Remaining rollout:
-> [#176](https://github.com/AtomicTrxn/crosscue/issues/176).
+> [`sync-design.md`](sync-design.md). Sync is opt-in (off by default); the only
+> remaining step is the manual two-device soak in [Step 5](#step-5--two-device-soak-manual) below.
 
 The Dart side, the Swift `ICloudSyncHandler`, **and** the in-app opt-in UI
 (Settings → Sync + the onboarding step, #142) all ship. The build compiles
