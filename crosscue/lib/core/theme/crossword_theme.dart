@@ -115,7 +115,7 @@ class CrosswordTheme extends ThemeExtension<CrosswordTheme> {
   final Color activeClueBg;
 
   /// Active cross-clue row highlight in clue panel.
-  /// v3.5: perpendicular highlighting was removed from the *grid*. This token
+  /// v3.6: perpendicular highlighting was removed from the *grid*. This token
   /// remains for the clue-panel row tint only and is NOT a grid-state token.
   final Color cluePanelCrossRowBg;
 

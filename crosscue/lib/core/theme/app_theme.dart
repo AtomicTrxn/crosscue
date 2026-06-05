@@ -132,7 +132,7 @@ abstract final class AppTheme {
       dividerColor:
           isLight ? CrosscueColors.dividerLight : CrosscueColors.dividerDark,
 
-      // ── Dialogs (v3.5) ──────────────────────────────────────────────────────
+      // ── Dialogs (v3.6) ──────────────────────────────────────────────────────
       // Centralised scrim (barrier) and surface so every AlertDialog/showDialog
       // call site picks up the guide values without per-call overrides.
       dialogTheme: DialogThemeData(
@@ -174,7 +174,7 @@ abstract final class AppTheme {
       ),
 
       // ── Outlined buttons ────────────────────────────────────────────────────
-      // v3.5: border uses the toggleTrackOff token (not divider colors).
+      // v3.6: border uses the toggleTrackOff token (not divider colors).
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.onSurface,
@@ -200,7 +200,7 @@ abstract final class AppTheme {
       ),
 
       // ── Text buttons ────────────────────────────────────────────────────────
-      // v3.5 default is the "dismiss" semantic = onSurface2. Action/link buttons
+      // v3.6 default is the "dismiss" semantic = onSurface2. Action/link buttons
       // (primary) and destructive buttons override per-call.
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -215,7 +215,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Switches (v3.5) ─────────────────────────────────────────────────────
+      // ── Switches (v3.6) ─────────────────────────────────────────────────────
       // Off-state track uses the dedicated toggleTrackOff guide token. On-state
       // track uses primary. Thumb is white in both states for legibility.
       switchTheme: SwitchThemeData(
@@ -236,7 +236,7 @@ abstract final class AppTheme {
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
 
-      // ── Segmented buttons (v3.5) ────────────────────────────────────────────
+      // ── Segmented buttons (v3.6) ────────────────────────────────────────────
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
@@ -265,7 +265,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Filter chips (v3.5) ─────────────────────────────────────────────────
+      // ── Filter chips (v3.6) ─────────────────────────────────────────────────
       // Unselected: surface bg, toggleTrackOff border, onSurface3 label.
       // Selected:   primaryContainer bg, wordHighlight border, primary label.
       chipTheme: ChipThemeData(

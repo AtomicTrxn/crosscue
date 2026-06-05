@@ -355,25 +355,9 @@ class _FeaturedPuzzle extends StatelessWidget {
     return 'CONTINUE SOLVING';
   }
 
-  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   String? _formatPublishDate(DateTime? d) {
     if (d == null) return null;
-    return '${_weekdays[d.weekday - 1]} ${_months[d.month - 1]} ${d.day}';
+    return formatPuzzlePublishDateShort(d);
   }
 }
 

@@ -108,7 +108,7 @@ class GoogleDriveSyncTransport implements SyncTransport {
   }
 
   @override
-  bool get supportsInteractiveSignIn => true;
+  bool get supportsInteractiveSignIn => _serverClientId != null;
 
   /// Google sign-in + Drive AppData authorization. Called by the orchestrator's
   /// `enable()` — both on the user's toggle and on the boot-time re-enable.
@@ -118,6 +118,7 @@ class GoogleDriveSyncTransport implements SyncTransport {
   @override
   Future<SyncAccount?> signIn() async {
     try {
+      if (_serverClientId == null) return null;
       // Reuse an already-authorized session silently (boot re-enable, or a
       // toggle while still signed in) — no prompt in that case.
       final silent = await _restoreSilently();
