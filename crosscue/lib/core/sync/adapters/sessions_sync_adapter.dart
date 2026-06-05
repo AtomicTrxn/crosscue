@@ -91,11 +91,19 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
   _MergeDecision _resolveConflict(SolveSessionRow? local, SyncBlob remote) {
     if (local == null) return _MergeDecision.takeRemote;
 
-    final remoteCompleted = remote.payload['status'] == 'completed' ||
-        remote.payload['status'] == 'revealed';
+    final remoteStatus = remote.payload['status'];
+    final remoteCompleted =
+        remoteStatus == 'completed' || remoteStatus == 'revealed';
+    final localCompleted =
+        local.status == 'completed' || local.status == 'revealed';
+    final remoteInProgress =
+        remoteStatus == 'in_progress' || remoteStatus == 'not_started';
     final localInProgress = local.status == 'in_progress';
     if (remoteCompleted && localInProgress) {
       return _MergeDecision.bestProgressOverride;
+    }
+    if (localCompleted && remoteInProgress) {
+      return _MergeDecision.keepLocal;
     }
 
     if (remote.syncVersion > local.syncVersion) {
@@ -111,7 +119,7 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
     if (remote.updatedAt.isBefore(local.updatedAt)) {
       return _MergeDecision.keepLocal;
     }
-    return remote.deviceId.compareTo('local') > 0
+    return remote.deviceId.compareTo(local.deviceId) > 0
         ? _MergeDecision.takeRemote
         : _MergeDecision.keepLocal;
   }

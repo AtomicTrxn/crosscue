@@ -99,8 +99,8 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
           .getSingleOrNull();
 
       if (local != null) {
-        if (local.syncVersion >= blob.syncVersion) continue;
-        if (local.updatedAt.isAfter(blob.updatedAt)) {
+        if (_isIdempotentReapply(local, blob, valueJson)) continue;
+        if (!_shouldTakeRemote(local, blob)) {
           conflicts++;
           continue;
         }
@@ -122,4 +122,27 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
   /// Setting keys can contain characters (like `.`) that are awkward in
   /// blob keys; URL-encode to keep transports happy.
   String _encodeKey(String key) => Uri.encodeComponent(key);
+
+  bool _isIdempotentReapply(
+    AppSettingRow local,
+    SyncBlob remote,
+    String valueJson,
+  ) {
+    return local.syncVersion == remote.syncVersion &&
+        local.updatedAt.isAtSameMomentAs(remote.updatedAt) &&
+        local.valueJson == valueJson;
+  }
+
+  bool _shouldTakeRemote(AppSettingRow local, SyncBlob remote) {
+    if (local.syncVersion > remote.syncVersion) return false;
+    if (local.syncVersion < remote.syncVersion) {
+      if (local.updatedAt.isAfter(remote.updatedAt)) return false;
+      if (local.updatedAt.isBefore(remote.updatedAt)) return true;
+      return remote.deviceId.compareTo('local') > 0;
+    }
+
+    if (remote.updatedAt.isAfter(local.updatedAt)) return true;
+    if (remote.updatedAt.isBefore(local.updatedAt)) return false;
+    return remote.deviceId.compareTo('local') > 0;
+  }
 }
