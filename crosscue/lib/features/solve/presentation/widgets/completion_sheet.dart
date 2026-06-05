@@ -2,8 +2,10 @@ import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/share/result_share.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
+import 'package:crosscue/core/utils/source_links.dart';
 import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/puzzle_info_sheet.dart';
 import 'package:crosscue/features/stats/presentation/providers/stats_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ class CompletionSheet extends ConsumerWidget {
     required this.onNextPuzzle,
     required this.onResetPuzzle,
     this.resultShare,
+    this.launch,
   });
 
   final SolveState solveState;
@@ -25,6 +28,9 @@ class CompletionSheet extends ConsumerWidget {
 
   /// Injectable for tests; defaults to the platform [ResultShare].
   final ResultShare? resultShare;
+
+  /// Injectable URL launcher forwarded to the puzzle-info sheet (tests).
+  final PuzzleLinkLauncher? launch;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -180,6 +186,30 @@ class CompletionSheet extends ConsumerWidget {
                           ),
                           child: const Text('Share result'),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (crosshareUrlFor(solveState.puzzle.metadata) != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => showPuzzleInfoSheet(
+                          ctx,
+                          solveState.puzzle.metadata,
+                          launch: launch,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: onSurface2,
+                          side: BorderSide(color: divider, width: 1),
+                          textStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          minimumSize: const Size.fromHeight(46),
+                        ),
+                        icon: const Icon(Icons.info_outline, size: 18),
+                        label: const Text('Puzzle info'),
                       ),
                     ),
                     const SizedBox(height: 8),
