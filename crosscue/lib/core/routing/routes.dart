@@ -13,7 +13,6 @@ abstract final class Routes {
   static const crosshareSettings = '/settings/sources/crosshare';
   static const privacySettings = '/settings/privacy';
   static const syncSettings = '/settings/sync';
-  static const howToPlay = '/settings/howto';
   static const solve = '/solve/:puzzleId';
 
   /// Build the solve route for a specific puzzle ID.

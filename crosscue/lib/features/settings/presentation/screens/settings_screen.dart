@@ -139,12 +139,6 @@ class SettingsScreen extends ConsumerWidget {
           // ── Help ───────────────────────────────────────────────────────────
           const SettingsSectionHeader('Help'),
           SettingsNavRow(
-            leading: Icons.help_outline,
-            title: 'How to play',
-            subtitle: 'Learn the basics with an interactive walkthrough',
-            onTap: () => context.push(Routes.howToPlay),
-          ),
-          SettingsNavRow(
             leading: Icons.info_outline,
             title: 'About Crosscue',
             subtitle: appVersion,

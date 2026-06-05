@@ -22,8 +22,8 @@ part 'onboarding_widgets.dart';
 //   2. Sync         — optional opt-in to cross-device sync (skippable).
 //   3. Fetch/result — download today's mini and drop straight into solving.
 //
-// The crossword *tutorial* ("how to play") now lives in Settings → Help, not
-// here. Completion is gated by hasSeenOnboarding, identical to before.
+// There is no in-app crossword tutorial; onboarding covers source + sync +
+// fetch only. Completion is gated by hasSeenOnboarding, identical to before.
 // ---------------------------------------------------------------------------
 
 enum _OnbStep { welcome, source, icloud, fetch }
@@ -120,8 +120,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     unawaited(nav.push(Routes.import_));
   }
 
-  void _openHowToPlay() => context.push(Routes.howToPlay);
-
   @override
   Widget build(BuildContext context) {
     // Watch unconditionally (not just on the fetch step) so the autoDispose
@@ -135,7 +133,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _OnbStep.welcome => _WelcomeView(
           key: const ValueKey('welcome'),
           onGetStarted: _goToSource,
-          onHowToPlay: _openHowToPlay,
         ),
       _OnbStep.source => _SourceChoiceView(
           key: const ValueKey('source'),
@@ -147,7 +144,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           canContinue: _canContinue,
           onContinue: _onContinue,
           onLater: _finishToHome,
-          onHowToPlay: _openHowToPlay,
         ),
       _OnbStep.icloud => _ICloudView(
           key: const ValueKey('icloud'),
