@@ -49,7 +49,7 @@ extension CrosscueThemeColors on BuildContext {
       ? CrosscueColors.actionDestructiveLight
       : CrosscueColors.actionDestructiveDark;
 
-  /// Off-state toggle/segmented-control track color. Also the v3.5 outlined-
+  /// Off-state toggle/segmented-control track color. Also the v3.6 outlined-
   /// button border color.
   Color get crosscueToggleTrackOff => isCrosscueLight
       ? CrosscueColors.toggleTrackOffLight

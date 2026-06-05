@@ -42,7 +42,7 @@ abstract class CrosscueColors {
   static const Color wordHLLight = Color(0xFFBBDEFB); // active word
   static const Color wordHLDark = Color(0xFF1C3D78);
 
-  // Clue-panel row highlight for the perpendicular ("cross") clue. v3.5 removed
+  // Clue-panel row highlight for the perpendicular ("cross") clue. v3.6 removed
   // perpendicular highlighting from the *grid*; these values now exist solely
   // to tint the cross-clue row in the clue panel and are NOT grid-state tokens.
   static const Color cluePanelCrossRowLight = Color(0xFFE3F2FD);
@@ -96,7 +96,7 @@ abstract class CrosscueColors {
   static const Color completedCellFg = Color(0xFF2E7D32); // dark green letter
 
   // ── Overlay & misc ─────────────────────────────────────────────────────────
-  static const Color barrierDeepNavy = Color(0xE10A2A6E); // 88% alpha deep navy
+  static const Color barrierDeepNavy = Color(0xE00A2A6E); // 88% alpha deep navy
   static const Color trackGrey = Color(
     0xFFE0E0E0,
   ); // pie chart / progress track
@@ -123,7 +123,7 @@ abstract class CrosscueColors {
   static const Color keyDelete = Color(0xFFB0BEC5);
   static const Color keyDeleteDark = Color(0xFF4E5C7E);
 
-  // ── Dialogs (v3.5) ─────────────────────────────────────────────────────────
+  // ── Dialogs (v3.6) ─────────────────────────────────────────────────────────
   // Centralised dialog surface + barrier scrim. Light reuses [surfaceLight];
   // dark uses a dedicated near-navy surface that sits above [bgDark].
   static const Color dialogSurfaceLight = surfaceLight;
@@ -131,7 +131,7 @@ abstract class CrosscueColors {
   static const Color dialogScrimLight = Color(0x85000000); // 52% black
   static const Color dialogScrimDark = Color(0xA3000000); // 64% black
 
-  // ── Toggles & segmented controls (v3.5) ────────────────────────────────────
+  // ── Toggles & segmented controls (v3.6) ────────────────────────────────────
   // Off-state track color, reused as the outlined-button border per the guide.
   static const Color toggleTrackOffLight = Color(0xFFBDBDBD);
   static const Color toggleTrackOffDark = Color(0xFF424242);
@@ -140,7 +140,7 @@ abstract class CrosscueColors {
   static const Color segmentedControlBgLight = Color(0xFFE8E8E8);
   static const Color segmentedControlBgDark = Color(0xFF1A2030);
 
-  // ── Onboarding tutorial (v3.5) ──────────────────────────────────────────────
+  // ── Onboarding tutorial (v3.6) ──────────────────────────────────────────────
   // Fixed brand navy used by the "How to play" tutorial background — theme-
   // independent so the walkthrough reads consistently regardless of system
   // light/dark mode. (As of v3.6 this is the tutorial in Settings → Help, not
@@ -159,7 +159,7 @@ abstract class CrosscueColors {
   static const Color onbHeroGradStartDark = deepNavy; // #0A2A6E
   static const Color onbHeroGradEndDark = gridBlackDark; // #060810
 
-  // ── Disabled buttons (v3.5) ────────────────────────────────────────────────
+  // ── Disabled buttons (v3.6) ────────────────────────────────────────────────
   static const Color buttonDisabledBgLight = Color(0xFFE0E0E0);
   static const Color buttonDisabledBgDark = Color(0xFF2A3148);
   static const Color buttonDisabledTextLight = Color(0xFF9CA3AF);
