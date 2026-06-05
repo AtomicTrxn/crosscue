@@ -1,13 +1,13 @@
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
+import 'package:crosscue/core/utils/time_format.dart';
 import 'package:crosscue/features/archive/domain/models/archive_entry.dart';
 import 'package:crosscue/features/archive/presentation/providers/archive_providers.dart';
 import 'package:crosscue/features/archive/presentation/widgets/puzzle_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 const _filterChipLabelStyle = TextStyle(
   fontSize: CrosscueTypography.bodySmall,
@@ -343,8 +343,29 @@ class _SortBar extends StatelessWidget {
 }
 
 String _archiveSubtitle(ArchiveEntry entry) {
-  final date = entry.publishDate ?? entry.importedAt;
-  return '${DateFormat('d MMM yyyy').format(date.toLocal())} · ${entry.sizeLabel}';
+  final date = entry.publishDate == null
+      ? _formatLocalDate(entry.importedAt)
+      : formatPuzzlePublishDateLong(entry.publishDate!);
+  return '$date · ${entry.sizeLabel}';
+}
+
+String _formatLocalDate(DateTime date) {
+  final local = date.toLocal();
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${local.day} ${months[local.month - 1]} ${local.year}';
 }
 
 // ---------------------------------------------------------------------------
