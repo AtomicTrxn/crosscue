@@ -571,10 +571,12 @@ Crosscue current-release answers:
 > **Re-confirm before Android (Google Drive) sync goes live.** These answers
 > stay accurate while Drive sync is inert: the *developer* collects nothing —
 > synced data goes to the user's own Google Drive AppData folder, never to a
-> Crosscue server (same model already accepted for iCloud). But before the
-> Android sync default-on flip (tracked in
-> [#176](https://github.com/AtomicTrxn/crosscue/issues/176)), deliberately
-> re-review the Data Safety form: confirm Google Play still treats "stored in the
+> Crosscue server (same model already accepted for iCloud). But before Android
+> (Google Drive) sync ships enabled in a public build — i.e. once the Google
+> Cloud OAuth clients are wired (see
+> [`sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)) —
+> deliberately re-review the Data Safety form: confirm Google Play still treats
+> "stored in the
 > user's own Drive via the `drive.appdata` scope" as *not collected/not shared*,
 > and update the answers + privacy policy if that interpretation has changed.
 

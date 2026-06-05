@@ -1,8 +1,12 @@
 # Sync Adapter Design (G5 — iCloud / Google Drive)
 
 > Tracks [#9 (G5)](https://github.com/AtomicTrxn/crosscue/issues/9).
-> Companion doc to `ARCHITECTURE.md`. Remaining manual rollout steps are
-> tracked in [#176](https://github.com/AtomicTrxn/crosscue/issues/176).
+> Companion doc to `ARCHITECTURE.md`. Sync ships **opt-in (off by default)**;
+> users enable it from the onboarding sync step or Settings — there is no
+> default-on flip (see "Migration / rollout"). The one-time platform setup
+> (iCloud entitlement / Google Cloud OAuth) and two-device soak live in
+> [`sync-icloud-setup.md`](sync-icloud-setup.md) and
+> [`sync-googledrive-setup.md`](sync-googledrive-setup.md).
 
 ## Goals / non-goals
 
@@ -206,10 +210,16 @@ matches the rest of settings visually.
 3. iCloud transport behind an off-by-default settings entry on iOS. ✅ (#142)
 4. Google Drive transport on Android. ✅ (#145 transport, #157 sign-in UI;
    inert until the OAuth clients exist).
-5. Flip default-on only after a TestFlight / internal-track soak. ⏳ pending.
+5. **Ship opt-in (off by default) — no default-on flip.** ✅ (decided)
+   Sync stays disabled until the user turns it on from the onboarding sync
+   step (#142) or Settings; `getSyncEnabled()` defaults to `false`. The
+   onboarding enablement screen makes an automatic default-on flip
+   unnecessary, so it has been dropped from the plan.
 
-Each step is independently shippable. Steps 1–4 have landed; only the
-default-on flip (after soak) remains.
+All steps have landed. Remaining work is **operational, not code**: the
+one-time iCloud-entitlement / Google-Drive-OAuth platform setup and the
+two-device soaks, both documented in the setup guides above. Background
+sync and a server-side bridge remain out of scope (see "Open questions").
 
 ## Open questions
 
