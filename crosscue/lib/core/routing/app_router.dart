@@ -2,7 +2,6 @@ import 'package:crosscue/core/routing/app_shell.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
-import 'package:crosscue/features/how_to_play/presentation/screens/how_to_play_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
@@ -105,10 +104,6 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'sync',
                     builder: (context, state) => const SyncSettingsScreen(),
-                  ),
-                  GoRoute(
-                    path: 'howto',
-                    builder: (context, state) => const HowToPlayScreen(),
                   ),
                 ],
               ),

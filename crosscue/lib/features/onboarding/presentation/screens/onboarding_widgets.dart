@@ -8,11 +8,9 @@ class _WelcomeView extends StatelessWidget {
   const _WelcomeView({
     super.key,
     required this.onGetStarted,
-    required this.onHowToPlay,
   });
 
   final VoidCallback onGetStarted;
-  final VoidCallback onHowToPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -66,8 +64,6 @@ class _WelcomeView extends StatelessWidget {
                 onDark: true,
                 onPressed: onGetStarted,
               ),
-              const SizedBox(height: 4),
-              _HowToPlayLink(onTap: onHowToPlay, onDark: true),
             ],
           ),
         ),
@@ -123,7 +119,6 @@ class _SourceChoiceView extends StatelessWidget {
     required this.canContinue,
     required this.onContinue,
     required this.onLater,
-    required this.onHowToPlay,
   });
 
   final bool wantCrosshare;
@@ -133,7 +128,6 @@ class _SourceChoiceView extends StatelessWidget {
   final bool canContinue;
   final VoidCallback onContinue;
   final VoidCallback onLater;
-  final VoidCallback onHowToPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -610,28 +604,6 @@ class _PrimaryCta extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-/// "New to crosswords? How to play →" — the persistent footer link that points
-/// at the tutorial in Settings → Help.
-class _HowToPlayLink extends StatelessWidget {
-  const _HowToPlayLink({required this.onTap, this.onDark = false});
-
-  final VoidCallback onTap;
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final color =
-        onDark ? Colors.white.withValues(alpha: 0.9) : context.crosscuePrimary;
-    return TextButton(
-      onPressed: onTap,
-      child: Text(
-        'New to crosswords?  How to play',
-        style: TextStyle(color: color, fontWeight: FontWeight.w500),
       ),
     );
   }

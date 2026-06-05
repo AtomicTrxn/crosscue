@@ -140,11 +140,10 @@ abstract class CrosscueColors {
   static const Color segmentedControlBgLight = Color(0xFFE8E8E8);
   static const Color segmentedControlBgDark = Color(0xFF1A2030);
 
-  // ── Onboarding tutorial (v3.6) ──────────────────────────────────────────────
-  // Fixed brand navy used by the "How to play" tutorial background — theme-
-  // independent so the walkthrough reads consistently regardless of system
-  // light/dark mode. (As of v3.6 this is the tutorial in Settings → Help, not
-  // first-run onboarding.)
+  // Retained brand-navy token (formerly the How-to-Play tutorial background).
+  // The tutorial was removed in #182; this value is still documented in the
+  // Color Guide and covered by the design-token guardrail, so it stays until
+  // the guide is reconciled. See follow-up note on #181.
   static const Color onboardingBackground = Color(0xFF3B5280);
   // Inactive pagination-dot color (white at 40% alpha).
   static const Color onboardingDotInactive = Color(0x66FFFFFF);
