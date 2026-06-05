@@ -99,10 +99,47 @@ hand-editing `project.pbxproj` safely.
 > the App Store provisioning profile with the App Group capability (+ a widget
 > profile) before a device/TestFlight build — simulator needs no provisioning.
 
+## Background refresh ([#175](https://github.com/AtomicTrxn/crosscue/issues/175))
+
+The widget snapshot is normally refreshed only when the app runs (launch /
+resume / post-solve). To keep the "today" tile current for users who don't open
+the app, a best-effort background task also refreshes it: **iOS
+`BGAppRefreshTask`** and **Android WorkManager**, driven by one Dart callback
+(`lib/core/background/widget_refresh_scheduler.dart`) via the `workmanager`
+plugin. On wake it runs the Crosshare auto-download (`attemptIfNeeded()`) then
+pushes a fresh snapshot.
+
+What's already wired in the repo (no action needed):
+
+- **Dart** — `WidgetRefreshScheduler` is registered post-first-frame in
+  `app.dart`; the headless callback stands up its own `ProviderContainer`.
+- **iOS Info.plist** — `UIBackgroundModes` = `fetch` and
+  `BGTaskSchedulerPermittedIdentifiers` = `dev.tomhess.crosscue.refresh`.
+- **iOS AppDelegate** — `WorkmanagerPlugin.registerPeriodicTask(withIdentifier:
+  "dev.tomhess.crosscue.refresh", …)` + the plugin-registrant callback, both
+  before launch finishes (a `BGTaskScheduler` requirement).
+- **Android** — `workmanager` auto-registers; no manifest/Application changes.
+
+One-time Xcode step (parallel to the App Group above): on the **Runner** target
+→ **Signing & Capabilities → + Capability → Background Modes**, check
+**Background fetch**. (We've already written the equivalent `UIBackgroundModes`
+key into `Info.plist`, so the build behaves correctly; enabling the capability
+in Xcode just keeps the project UI in sync and is validated by App Store
+Connect.) No new entitlement or provisioning-profile change is required.
+
+The identifier is reverse-DNS and must stay identical across
+`widget_refresh_scheduler.dart`, `Info.plist`, and `AppDelegate.swift` — if they
+drift, iOS silently never runs the task. Cadence is **best-effort**: iOS decides
+when (or whether) it fires from the user's usage pattern; see the caveat in
+`docs/qa/ios-release-checklist.md`.
+
 ## Notes
 
 - **Inert before setup:** until the App Group + target exist, `home_widget`
   calls throw and are swallowed — the app is unaffected.
+- **Background refresh is best-effort:** the task above is polish, not a
+  guarantee — iOS may throttle it for low-engagement users. The reliable
+  freshness path remains the in-app on-open refresh.
 - **Android Glance parity** is intentionally out of scope (separate issue), as
   are Live Activities and the `accessoryCircular`/`accessoryInline` families.
 - The leaderboard row is added as a follow-on once the leaderboard implementation

@@ -11,6 +11,8 @@ lib/
 ├── app.dart                         # MaterialApp + router wiring
 ├── core/
 │   ├── audio/                       # SoundPlayer (in-app feedback beep)
+│   ├── background/                   # WidgetRefreshScheduler + headless callback
+│   │                                #   (BGAppRefreshTask / WorkManager, #175)
 │   ├── constants/                   # AppLinks (privacy/repo URLs), CrosscueRetention
 │   ├── database/                    # Drift DB definition + all tables
 │   ├── domain/models/               # ALL shared domain models: Puzzle, Clue, Grid, SolutionCell,
@@ -508,3 +510,15 @@ not exhaustive, to avoid going stale.
   Android). iCloud is live; Android sync stays inert until the Google Cloud
   OAuth clients exist (see
   [`docs/architecture/sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)).
+
+- **Widget background refresh (#175, Jun 2026)**: Best-effort daily refresh of
+  the home-screen widget's "today" tile for users who don't open the app —
+  iOS `BGAppRefreshTask` + Android WorkManager via the `workmanager` plugin and
+  a single Dart callback (`core/background/widget_refresh_scheduler.dart`). The
+  headless callback stands up its own `ProviderContainer` and runs the existing
+  `attemptIfNeeded()` + `HomeWidgetService.refresh()`; it reads settings via the
+  repository, never the boot-throwing `bootSettingsProvider`. Scheduled
+  post-first-frame (no cold-start impact), idempotent, and a no-op off-device.
+  Explicitly *not* an observer (the two-observer rule still holds — it runs in a
+  separate isolate). Best-effort by design: iOS controls actual cadence. Setup +
+  caveats in [`docs/architecture/ios-widget-setup.md`](docs/architecture/ios-widget-setup.md).

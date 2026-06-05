@@ -152,6 +152,28 @@ Skip if testing on iPhone only.
   iOS target is `16.0` per `Runner.xcodeproj` / `Podfile`) and confirm core
   flows still work
 
+## 11. Home-screen widget background refresh (#175)
+
+> **Best-effort, not guaranteed.** The home-screen widget's "today" tile is
+> kept current by a `BGAppRefreshTask` (and Android WorkManager). **iOS decides
+> when — or whether — it runs**, based on how often the user opens the app; for
+> low-engagement users it may fire rarely or not at all. This only affects the
+> *widget glance* for someone who hasn't opened the app in a day or two — the
+> in-app on-open experience is always fresh (Crosshare auto-download + refresh).
+> Don't treat a stale tile after a long gap as a bug.
+
+- [ ] On-open refresh still works (the reliable path): with the widget added,
+  open the app on a new day → the tile reflects today's puzzle + streak.
+- [ ] (Best-effort, may not fire) Leave the app closed overnight with
+  auto-download on → the tile updates on its own. If it doesn't, this is
+  expected iOS throttling, not a regression.
+- [ ] Cold-start time is unchanged — scheduling runs post-first-frame, never
+  on the critical launch path.
+
+To force the iOS task during development (instead of waiting for the OS), pause
+in the debugger right after launch and run:
+`e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"dev.tomhess.crosscue.refresh"]`
+
 ---
 
 ## Reporting bugs found during QA

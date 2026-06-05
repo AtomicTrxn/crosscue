@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:crosscue/core/background/widget_refresh_scheduler.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/app_router.dart';
@@ -120,6 +121,10 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
       // Route a pending iOS App Intent (Shortcuts/Siri/Spotlight) if one is
       // waiting from a cold launch. No-op otherwise.
       unawaited(_consumePendingIntentRoute(ref));
+      // Register the best-effort daily background refresh so the widget's
+      // "today" tile stays current even for users who don't open the app
+      // (#175). Idempotent; no-op off-device. iOS controls actual cadence.
+      unawaited(const WidgetRefreshScheduler().initializeAndSchedule());
     });
   }
 
