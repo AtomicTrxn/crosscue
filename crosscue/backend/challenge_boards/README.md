@@ -44,10 +44,42 @@ The smoke test bootstraps two players, creates a board, previews and joins an
 invite, submits one clean and one assisted result, and verifies the clean solve
 ranks first.
 
-Point Flutter at the local Worker with:
+### Flutter API Configuration
+
+Challenge Boards uses sample data unless an API mode is selected with Dart
+defines.
+
+Sample/mock mode:
 
 ```sh
-flutter run --dart-define=CHALLENGE_API_BASE_URL=http://127.0.0.1:8787
+flutter run
 ```
 
-When the Dart define is absent, the app keeps using the sample repository.
+Local Worker mode:
+
+```sh
+flutter run --dart-define=CHALLENGE_API_ENV=local
+```
+
+In local mode the app maps the Worker host automatically:
+
+- Android emulator: `http://10.0.2.2:8787`
+- iOS simulator, macOS, and other hosts: `http://127.0.0.1:8787`
+
+An explicit URL always wins, which is useful for physical devices, tunnels,
+staging, and production:
+
+```sh
+flutter run \
+  --dart-define=CHALLENGE_API_ENV=staging \
+  --dart-define=CHALLENGE_API_BASE_URL=https://<staging-worker-url>
+
+flutter build ios \
+  --dart-define=CHALLENGE_API_ENV=production \
+  --dart-define=CHALLENGE_API_BASE_URL=https://<production-worker-url>
+```
+
+Supported `CHALLENGE_API_ENV` values are `sample`, `local`, `staging`,
+`production`, and `custom`. When `CHALLENGE_API_BASE_URL` is absent for
+`staging` or `production`, the app stays in sample mode until the real Worker
+URL is provided.
