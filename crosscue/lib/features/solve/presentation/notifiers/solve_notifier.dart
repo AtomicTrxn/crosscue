@@ -4,6 +4,8 @@ import 'package:crosscue/core/domain/models/clue.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
+import 'package:crosscue/features/challenge_boards/domain/services/challenge_solve_submission_mapper.dart';
+import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
@@ -673,6 +675,8 @@ class SolveNotifier extends _$SolveNotifier {
 
   void _persistCompletion(SolveState s) {
     final repo = ref.read(solveRepositoryProvider);
+    final completionType = _deriveCompletionType(s);
+    final completedAtUtc = DateTime.now().toUtc();
     unawaited(
       repo
           .markComplete(
@@ -684,7 +688,7 @@ class SolveNotifier extends _$SolveNotifier {
         focus: s.focus,
         elapsedMs: s.elapsedSeconds * 1000,
         status: s.status,
-        completionType: _deriveCompletionType(s),
+        completionType: completionType,
         checkCount: s.checkCount,
         revealCount: s.revealCount,
         usedCheck: s.usedCheck,
@@ -693,6 +697,20 @@ class SolveNotifier extends _$SolveNotifier {
       )
           .then((_) {
         ref.invalidate(statsDataProvider);
+        final submission = challengeSubmissionFromCompletion(
+          puzzle: s.puzzle,
+          elapsedMs: s.elapsedSeconds * 1000,
+          completionType: completionType,
+          cleanSolveEligible: s.cleanSolveEligible,
+          completedAtUtc: completedAtUtc,
+        );
+        if (submission != null) {
+          unawaited(
+            ref
+                .read(challengeResultSubmitterProvider)
+                .submitOrQueue(submission),
+          );
+        }
       }),
     );
   }
