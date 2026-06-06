@@ -147,6 +147,11 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
                 width: gridW,
                 height: gridH,
                 child: GestureDetector(
+                  // Pointer gestures only — the per-cell semantics emitted by
+                  // CrosswordGridPainter.semanticsBuilder are the sole a11y
+                  // surface for the grid (issue #179). Without this, the
+                  // GestureDetector's own node would shadow the cell nodes.
+                  excludeFromSemantics: true,
                   onTapDown: (details) => _onTap(
                     context,
                     details.localPosition,
@@ -178,6 +183,7 @@ class _CrosswordGridState extends ConsumerState<CrosswordGrid>
                         effectValue: animationsDisabled
                             ? 1.0
                             : Curves.easeOut.transform(_effectController.value),
+                        onCellTap: _focusCell,
                       ),
                     ),
                   ),

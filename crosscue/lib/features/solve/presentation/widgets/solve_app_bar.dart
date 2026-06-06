@@ -10,6 +10,7 @@ import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.da
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:crosscue/features/solve/presentation/widgets/puzzle_info_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -94,20 +95,18 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           )
         else
-          GestureDetector(
-            onTap: () {
-              final notifier = ref.read(solveProvider(puzzleId).notifier);
-              if (solveState.isPaused) {
-                notifier.resume();
-              } else {
-                notifier.pause();
-              }
-            },
-            child: Center(
-              child: _TimerDisplay(
-                seconds: liveElapsed,
-                isPaused: solveState.isPaused,
-              ),
+          Center(
+            child: _TimerDisplay(
+              seconds: liveElapsed,
+              isPaused: solveState.isPaused,
+              onToggle: () {
+                final notifier = ref.read(solveProvider(puzzleId).notifier);
+                if (solveState.isPaused) {
+                  notifier.resume();
+                } else {
+                  notifier.pause();
+                }
+              },
             ),
           ),
         if (sourceLabel != null)
@@ -320,23 +319,60 @@ Future<void> _confirmResetFromAppBar(
   }
 }
 
-class _TimerDisplay extends StatelessWidget {
-  const _TimerDisplay({required this.seconds, required this.isPaused});
+/// The elapsed-time display in the solve app bar.
+///
+/// Accessibility (issue #179): the visible `MM:SS` is exposed to screen
+/// readers as a readable label ("Elapsed time, 4 minutes 7 seconds") that can
+/// be read on demand. Per product decision the time is **not** a per-second
+/// live region (that would interrupt the screen reader every tick); instead
+/// only pause/resume transitions are announced via
+/// [SemanticsService.sendAnnouncement].
+class _TimerDisplay extends StatefulWidget {
+  const _TimerDisplay({
+    required this.seconds,
+    required this.isPaused,
+    this.onToggle,
+  });
 
   final int seconds;
   final bool isPaused;
 
+  /// Tap handler that toggles pause/resume. Null on terminal states, where the
+  /// timer is read-only.
+  final VoidCallback? onToggle;
+
+  @override
+  State<_TimerDisplay> createState() => _TimerDisplayState();
+}
+
+class _TimerDisplayState extends State<_TimerDisplay> {
+  @override
+  void didUpdateWidget(_TimerDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isPaused != widget.isPaused) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        widget.isPaused ? 'Timer paused' : 'Timer resumed',
+        Directionality.of(context),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
+    final m = widget.seconds ~/ 60;
+    final s = widget.seconds % 60;
     final text =
         '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
 
-    return Row(
+    final spoken = widget.isPaused
+        ? 'Timer paused, ${_spokenDuration(widget.seconds)}'
+        : 'Elapsed time, ${_spokenDuration(widget.seconds)}';
+
+    final display = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isPaused) ...[
+        if (widget.isPaused) ...[
           const Icon(Icons.pause, size: 14),
           const SizedBox(width: 3),
         ],
@@ -344,5 +380,29 @@ class _TimerDisplay extends StatelessWidget {
         const SizedBox(width: 8),
       ],
     );
+
+    return Semantics(
+      label: spoken,
+      button: widget.onToggle != null,
+      hint: widget.onToggle == null
+          ? null
+          : (widget.isPaused ? 'Resume timer' : 'Pause timer'),
+      onTap: widget.onToggle,
+      excludeSemantics: true,
+      child: widget.onToggle == null
+          ? display
+          : GestureDetector(onTap: widget.onToggle, child: display),
+    );
   }
+}
+
+/// Spoken elapsed time for screen readers, e.g. "4 minutes 7 seconds",
+/// "1 minute", "0 seconds".
+String _spokenDuration(int seconds) {
+  final m = seconds ~/ 60;
+  final s = seconds % 60;
+  final parts = <String>[];
+  if (m > 0) parts.add('$m minute${m == 1 ? '' : 's'}');
+  if (s > 0 || m == 0) parts.add('$s second${s == 1 ? '' : 's'}');
+  return parts.join(' ');
 }

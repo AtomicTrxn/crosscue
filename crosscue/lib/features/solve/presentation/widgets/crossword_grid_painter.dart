@@ -7,7 +7,9 @@ import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid_semantics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 /// Paints the crossword grid using direct canvas calls.
 class CrosswordGridPainter extends CustomPainter {
@@ -20,6 +22,7 @@ class CrosswordGridPainter extends CustomPainter {
     this.previousSolveState,
     this.effects = const {},
     this.effectValue = 1.0,
+    this.onCellTap,
   });
 
   final Puzzle puzzle;
@@ -30,6 +33,11 @@ class CrosswordGridPainter extends CustomPainter {
   final SolveState? previousSolveState;
   final Map<(int, int), GridCellEffect> effects;
   final double effectValue;
+
+  /// Invoked when a screen reader activates (double-taps) a cell. Lets
+  /// VoiceOver/TalkBack users move the solve focus without a pointer gesture.
+  /// Pointer taps still flow through the [GestureDetector] in CrosswordGrid.
+  final void Function(int row, int col)? onCellTap;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -435,6 +443,71 @@ class CrosswordGridPainter extends CustomPainter {
       default:
         return;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Accessibility (issue #179)
+  //
+  // The grid is a single CustomPaint, so without a semanticsBuilder the entire
+  // solving surface is invisible to VoiceOver/TalkBack. We emit one
+  // CustomPainterSemantics per cell, in row-major (natural reading) order, each
+  // labeled with its position/letter/state and — for white cells — tappable so
+  // a screen-reader user can move the solve focus by double-tapping.
+  // ---------------------------------------------------------------------------
+
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => _buildSemantics;
+
+  List<CustomPainterSemantics> _buildSemantics(Size size) {
+    final cellW = size.width / puzzle.width;
+    final cellH = size.height / puzzle.height;
+    final cellSize = cellW < cellH ? cellW : cellH;
+    final totalW = cellSize * puzzle.width;
+    final totalH = cellSize * puzzle.height;
+    final offsetX = (size.width - totalW) / 2;
+    final offsetY = (size.height - totalH) / 2;
+
+    final nodes = <CustomPainterSemantics>[];
+    for (var r = 0; r < puzzle.height; r++) {
+      for (var c = 0; c < puzzle.width; c++) {
+        final rect = Rect.fromLTWH(
+          offsetX + c * cellSize,
+          offsetY + r * cellSize,
+          cellSize,
+          cellSize,
+        );
+        final cell = puzzle.grid.cell(r, c);
+        final focused = solveState.isFocused(r, c);
+        final label = cellSemanticLabel(
+          solution: cell,
+          progress: progress.cell(r, c),
+          row: r,
+          col: c,
+          focused: focused,
+        );
+        nodes.add(
+          CustomPainterSemantics(
+            rect: rect,
+            properties: SemanticsProperties(
+              label: label,
+              // Blocked cells aren't fillable: no button role / tap action.
+              button: cell.isBlack ? null : true,
+              selected: cell.isBlack ? null : focused,
+              onTap: cell.isBlack ? null : () => onCellTap?.call(r, c),
+            ),
+          ),
+        );
+      }
+    }
+    return nodes;
+  }
+
+  @override
+  bool shouldRebuildSemantics(CrosswordGridPainter oldDelegate) {
+    // Labels depend on entered letters, per-cell state, and the focused cell.
+    return oldDelegate.progress != progress ||
+        oldDelegate.solveState.focus != solveState.focus ||
+        oldDelegate.onCellTap != onCellTap;
   }
 
   @override

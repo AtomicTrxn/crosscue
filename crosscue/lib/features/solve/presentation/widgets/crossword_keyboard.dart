@@ -207,6 +207,7 @@ class _BottomKeyRow extends StatelessWidget {
               textColor: Colors.white,
               metrics: metrics,
               onTap: onBackspace,
+              semanticLabel: 'Delete',
             ),
             const SizedBox(width: 3),
             for (final letter in keys) ...[
@@ -226,6 +227,7 @@ class _BottomKeyRow extends StatelessWidget {
               textColor: Colors.white,
               metrics: metrics,
               onTap: onCheckWord,
+              semanticLabel: 'Check word',
             ),
             const SizedBox(width: 3),
             _SpecialKey(
@@ -235,6 +237,7 @@ class _BottomKeyRow extends StatelessWidget {
               textColor: context.crosscueOnSurface1,
               metrics: metrics,
               onTap: onRebus,
+              semanticLabel: 'Enter rebus',
               fontSize: 12,
             ),
           ],
@@ -265,30 +268,35 @@ class _LetterKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: metrics.height,
-        decoration: BoxDecoration(
-          color: xwTheme.keyDefault,
-          borderRadius: BorderRadius.circular(5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x26000000), // rgba(0,0,0,0.15)
-              blurRadius: 1,
-              offset: Offset(0, 1),
+    return Semantics(
+      button: true,
+      label: letter,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          height: metrics.height,
+          decoration: BoxDecoration(
+            color: xwTheme.keyDefault,
+            borderRadius: BorderRadius.circular(5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000), // rgba(0,0,0,0.15)
+                blurRadius: 1,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            letter,
+            style: TextStyle(
+              fontSize: metrics.letterFontSize,
+              fontWeight: FontWeight.w500,
+              color: context.crosscueOnSurface1,
+              height: 1,
             ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          letter,
-          style: TextStyle(
-            fontSize: metrics.letterFontSize,
-            fontWeight: FontWeight.w500,
-            color: context.crosscueOnSurface1,
-            height: 1,
           ),
         ),
       ),
@@ -308,6 +316,7 @@ class _SpecialKey extends StatelessWidget {
     required this.textColor,
     required this.metrics,
     required this.onTap,
+    required this.semanticLabel,
     this.fontSize = 14,
   });
 
@@ -317,34 +326,44 @@ class _SpecialKey extends StatelessWidget {
   final Color textColor;
   final _KeyMetrics metrics;
   final VoidCallback onTap;
+
+  /// Spoken label for screen readers — the visible [label] is often a glyph
+  /// (⌫, ✓) that VoiceOver/TalkBack read poorly, so we announce a word
+  /// instead (issue #179).
+  final String semanticLabel;
   final double fontSize;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: metrics.height,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x26000000),
-              blurRadius: 1,
-              offset: Offset(0, 1),
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          height: metrics.height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 1,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              height: 1,
             ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-            height: 1,
           ),
         ),
       ),
