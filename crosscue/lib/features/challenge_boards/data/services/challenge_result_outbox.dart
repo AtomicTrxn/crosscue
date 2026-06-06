@@ -1,0 +1,46 @@
+import 'dart:convert';
+
+import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
+
+class ChallengeResultOutbox {
+  ChallengeResultOutbox({required AppSettingsDao dao}) : _dao = dao;
+
+  static const _key = 'challenge_result_outbox_v1';
+
+  final AppSettingsDao _dao;
+
+  Future<List<ChallengeSolveSubmission>> read() async {
+    final raw = await _dao.getValue(_key);
+    if (raw == null || raw.isEmpty) return const [];
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const [];
+    return decoded.whereType<Map>().map((item) {
+      return ChallengeSolveSubmission.fromJson(
+        Map<String, Object?>.from(item),
+      );
+    }).toList(growable: false);
+  }
+
+  Future<void> add(ChallengeSolveSubmission submission) async {
+    final submissions = await read();
+    final deduped = [
+      ...submissions.where(
+        (item) =>
+            item.sourceId != submission.sourceId ||
+            item.sourcePuzzleId != submission.sourcePuzzleId,
+      ),
+      submission,
+    ];
+    await replace(deduped);
+  }
+
+  Future<void> replace(List<ChallengeSolveSubmission> submissions) {
+    return _dao.setValue(
+      _key,
+      jsonEncode(
+        submissions.map((submission) => submission.toJson()).toList(),
+      ),
+    );
+  }
+}

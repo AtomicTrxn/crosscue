@@ -1,6 +1,8 @@
 import 'package:crosscue/core/routing/app_shell.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
+import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_board_route_screen.dart';
+import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_boards_screen.dart';
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -44,6 +46,10 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const ImportScreen(),
       ),
       GoRoute(
+        path: Routes.archive,
+        builder: (context, state) => const ArchiveScreen(),
+      ),
+      GoRoute(
         path: Routes.solve,
         builder: (context, state) {
           final puzzleId = state.pathParameters['puzzleId']!;
@@ -66,8 +72,20 @@ GoRouter appRouter(Ref ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.archive,
-                builder: (context, state) => const ArchiveScreen(),
+                path: Routes.challenge,
+                builder: (context, state) => const ChallengeBoardsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'board/:boardId',
+                    builder: (context, state) => ChallengeBoardRouteScreen(
+                      boardId: state.pathParameters['boardId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'join',
+                    builder: (context, state) => const ChallengeBoardsScreen(),
+                  ),
+                ],
               ),
             ],
           ),

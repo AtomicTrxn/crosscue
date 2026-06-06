@@ -112,6 +112,13 @@ class SettingsScreen extends ConsumerWidget {
           // ── Puzzles ────────────────────────────────────────────────────────
           const SettingsSectionHeader('Puzzles'),
           SettingsNavRow(
+            leading: Icons.archive_outlined,
+            title: 'Archive',
+            subtitle: 'Browse past puzzles',
+            onTap: () => context.push(Routes.archive),
+          ),
+          const SettingsRowDivider(),
+          SettingsNavRow(
             leading: Icons.source_outlined,
             title: 'Puzzle Sources',
             subtitle: 'Import local files and manage sources',

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Persistent 4-tab shell. Shown for Home, Archive, Stats, and Settings tabs.
+/// Persistent 4-tab shell. Shown for Home, Challenge, Stats, and Settings tabs.
 /// Full-page routes (Solve, Import, Onboarding) push over this shell.
 ///
 /// Crosshare auto-download is triggered by the root app lifecycle observer, not
@@ -28,9 +28,9 @@ class AppShell extends ConsumerWidget {
             label: 'Today',
           ),
           NavigationDestination(
-            icon: CrosscueNavIcon.archive(selected: false),
-            selectedIcon: CrosscueNavIcon.archive(selected: true),
-            label: 'Archive',
+            icon: CrosscueNavIcon.challenge(selected: false),
+            selectedIcon: CrosscueNavIcon.challenge(selected: true),
+            label: 'Challenge',
           ),
           NavigationDestination(
             icon: CrosscueNavIcon.stats(selected: false),

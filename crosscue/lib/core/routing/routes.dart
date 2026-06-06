@@ -2,6 +2,7 @@
 abstract final class Routes {
   // Shell tabs (persistent navigation)
   static const home = '/';
+  static const challenge = '/challenge';
   static const archive = '/archive';
   static const stats = '/stats';
   static const settings = '/settings';
@@ -13,8 +14,11 @@ abstract final class Routes {
   static const crosshareSettings = '/settings/sources/crosshare';
   static const privacySettings = '/settings/privacy';
   static const syncSettings = '/settings/sync';
+  static const challengeJoin = '/challenge/join';
   static const solve = '/solve/:puzzleId';
 
   /// Build the solve route for a specific puzzle ID.
   static String solveFor(String puzzleId) => '/solve/$puzzleId';
+
+  static String challengeBoard(String boardId) => '/challenge/board/$boardId';
 }

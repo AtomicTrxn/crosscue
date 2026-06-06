@@ -10,6 +10,9 @@ class CrosscueNavIcon extends StatelessWidget {
   const CrosscueNavIcon.archive({super.key, required this.selected})
       : _type = _NavIconType.archive;
 
+  const CrosscueNavIcon.challenge({super.key, required this.selected})
+      : _type = _NavIconType.challenge;
+
   const CrosscueNavIcon.stats({super.key, required this.selected})
       : _type = _NavIconType.stats;
 
@@ -31,7 +34,7 @@ class CrosscueNavIcon extends StatelessWidget {
   }
 }
 
-enum _NavIconType { home, archive, stats, settings }
+enum _NavIconType { home, archive, challenge, stats, settings }
 
 class _NavIconPainter extends CustomPainter {
   const _NavIconPainter({
@@ -51,6 +54,8 @@ class _NavIconPainter extends CustomPainter {
         _paintHome(canvas);
       case _NavIconType.archive:
         _paintArchive(canvas);
+      case _NavIconType.challenge:
+        _paintChallenge(canvas);
       case _NavIconType.stats:
         _paintStats(canvas);
       case _NavIconType.settings:
@@ -127,6 +132,41 @@ class _NavIconPainter extends CustomPainter {
         paint,
       );
     }
+  }
+
+  void _paintChallenge(Canvas canvas) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    final fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final cup = Path()
+      ..moveTo(8, 5)
+      ..lineTo(16, 5)
+      ..lineTo(15, 12)
+      ..quadraticBezierTo(12, 15, 9, 12)
+      ..close();
+    selected ? canvas.drawPath(cup, fill) : canvas.drawPath(cup, stroke);
+
+    canvas.drawLine(const Offset(12, 15), const Offset(12, 18), stroke);
+    canvas.drawLine(const Offset(8, 20), const Offset(16, 20), stroke);
+    canvas.drawLine(const Offset(10, 18), const Offset(14, 18), stroke);
+
+    final leftHandle = Path()
+      ..moveTo(8, 7)
+      ..lineTo(5, 7)
+      ..quadraticBezierTo(5, 11, 9, 11);
+    final rightHandle = Path()
+      ..moveTo(16, 7)
+      ..lineTo(19, 7)
+      ..quadraticBezierTo(19, 11, 15, 11);
+    canvas.drawPath(leftHandle, stroke);
+    canvas.drawPath(rightHandle, stroke);
   }
 
   void _paintSettings(Canvas canvas, Size size) {
