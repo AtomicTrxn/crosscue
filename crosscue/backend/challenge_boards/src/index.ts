@@ -24,11 +24,14 @@ type BoardRow = {
   id: string;
   name: string;
   source_id: string;
+  ranking_mode?: RankingMode;
   invite_expires_at: string;
   invite_version: number;
   player_count?: number;
   deleted_at?: string | null;
 };
+
+type RankingMode = "fastest_time" | "average_time" | "total_time";
 
 type Auth = {
   player: PlayerRow;
@@ -40,6 +43,8 @@ type LeaderboardRow = {
   player: PlayerRow;
   cleanSolves: number;
   avgCleanMs: number | null;
+  bestCleanMs: number | null;
+  totalCleanMs: number | null;
   weeksCounted: number;
   submittedCount: number;
   assistedCount: number;
@@ -212,8 +217,8 @@ async function updateAvatar(
 
 async function listBoards(env: Env, auth: Auth): Promise<JsonValue> {
   const boards = await env.DB.prepare(
-    `select b.id, b.name, b.source_id, b.invite_expires_at, b.invite_version,
-            count(active.player_id) as player_count
+    `select b.id, b.name, b.source_id, b.ranking_mode,
+            b.invite_expires_at, b.invite_version, count(active.player_id) as player_count
      from boards b
      join memberships mine on mine.board_id = b.id
        and mine.player_id = ? and mine.left_at is null
@@ -255,6 +260,7 @@ async function createBoard(
 
   const body = await readBody(request);
   const name = validateBoardName(body.name);
+  const rankingMode = validateRankingMode(body.rankingMode);
   const boardId = crypto.randomUUID();
   const inviteSecret = randomSecret();
   const inviteHash = await sha256(inviteSecret);
@@ -264,14 +270,15 @@ async function createBoard(
   await env.DB.batch([
     env.DB.prepare(
       `insert into boards (
-        id, name, source_id, invite_code_hash, invite_expires_at,
+        id, name, source_id, ranking_mode, invite_code_hash, invite_expires_at,
         invite_rotated_at, invite_rotated_by_player_id, created_by_player_id,
         created_at
-      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       boardId,
       name,
       defaultSourceId,
+      rankingMode,
       inviteHash,
       expires,
       now,
@@ -293,6 +300,7 @@ async function createBoard(
         id: boardId,
         name,
         source_id: defaultSourceId,
+        ranking_mode: rankingMode,
         invite_expires_at: expires,
         invite_version: 1,
         player_count: 1,
@@ -331,7 +339,7 @@ async function previewInvite(
   const body = await readBody(request);
   const invite = parseInviteLink(body.inviteLink);
   const board = await env.DB.prepare(
-    `select id, name, source_id, invite_expires_at, invite_version, deleted_at
+    `select id, name, source_id, ranking_mode, invite_expires_at, invite_version, deleted_at
      from boards
      where id = ?`,
   )
@@ -406,7 +414,7 @@ async function joinInvite(
   }
 
   const board = await env.DB.prepare(
-    `select id, name, source_id, invite_expires_at, invite_version
+    `select id, name, source_id, ranking_mode, invite_expires_at, invite_version
      from boards
      where id = ? and deleted_at is null`,
   )
@@ -461,6 +469,10 @@ async function submitResult(
       ? validateDateOnly(body.publishedOn, "published_on")
       : null;
   const now = utcNow();
+
+  if (sourceId !== defaultSourceId || publishedOn == null) {
+    return { accepted: false, reason: "not_challenge_daily_mini" };
+  }
 
   const hasBoardForSource = await env.DB.prepare(
     `select 1 as ok
@@ -610,8 +622,8 @@ async function requireActiveBoardMember(
   boardId: string,
 ): Promise<BoardRow> {
   const board = await env.DB.prepare(
-    `select b.id, b.name, b.source_id, b.invite_expires_at, b.invite_version,
-            count(active.player_id) as player_count
+    `select b.id, b.name, b.source_id, b.ranking_mode,
+            b.invite_expires_at, b.invite_version, count(active.player_id) as player_count
      from boards b
      join memberships mine on mine.board_id = b.id
        and mine.player_id = ? and mine.left_at is null
@@ -682,13 +694,14 @@ async function boardLeaderboard(
   mode: "weekly" | "lifetime",
 ): Promise<LeaderboardRow[]> {
   const week = currentUtcWeekRange();
+  const rankingMode = board.ranking_mode ?? "average_time";
   const params =
     mode === "weekly"
-      ? [board.id, board.source_id, week.start, week.end]
+      ? [board.id, board.source_id, week.startDate, week.endDate]
       : [board.id, board.source_id];
   const where =
     mode === "weekly"
-      ? "and r.completed_at >= ? and r.completed_at < ?"
+      ? "and r.published_on >= ? and r.published_on < ?"
       : "";
   const rows = await env.DB.prepare(
     `select p.id, m.display_name, p.avatar_kind, p.avatar_silhouette_look,
@@ -701,6 +714,14 @@ async function boardLeaderboard(
               when r.completion_type = 'clean'
                and r.clean_solve_eligible = 1
               then r.elapsed_ms else null end) as avgCleanMs,
+            min(case
+              when r.completion_type = 'clean'
+               and r.clean_solve_eligible = 1
+              then r.elapsed_ms else null end) as bestCleanMs,
+            sum(case
+              when r.completion_type = 'clean'
+               and r.clean_solve_eligible = 1
+              then r.elapsed_ms else null end) as totalCleanMs,
             count(r.id) as submittedCount,
             coalesce(sum(case
               when r.id is not null
@@ -728,6 +749,8 @@ async function boardLeaderboard(
     .all<PlayerRow & {
       cleanSolves: number;
       avgCleanMs: number | null;
+      bestCleanMs: number | null;
+      totalCleanMs: number | null;
       weeksCounted: number;
       submittedCount: number;
       assistedCount: number;
@@ -743,12 +766,14 @@ async function boardLeaderboard(
     },
     cleanSolves: Number(row.cleanSolves ?? 0),
     avgCleanMs: row.avgCleanMs == null ? null : Number(row.avgCleanMs),
+    bestCleanMs: row.bestCleanMs == null ? null : Number(row.bestCleanMs),
+    totalCleanMs: row.totalCleanMs == null ? null : Number(row.totalCleanMs),
     weeksCounted: Number(row.weeksCounted ?? 0),
     submittedCount: Number(row.submittedCount ?? 0),
     assistedCount: Number(row.assistedCount ?? 0),
   }));
 
-  entries.sort(compareLeaderboardRows);
+  entries.sort((a, b) => compareLeaderboardRows(a, b, rankingMode));
   entries.forEach((entry, index) => {
     entry.rank = index + 1;
   });
@@ -790,18 +815,35 @@ async function lifetimeStats(env: Env, playerId: string): Promise<JsonValue> {
   };
 }
 
-function compareLeaderboardRows(a: LeaderboardRow, b: LeaderboardRow): number {
-  if (b.cleanSolves !== a.cleanSolves) return b.cleanSolves - a.cleanSolves;
-  if (a.avgCleanMs == null && b.avgCleanMs != null) return 1;
-  if (a.avgCleanMs != null && b.avgCleanMs == null) return -1;
-  if (a.avgCleanMs != null && b.avgCleanMs != null) {
-    const avg = a.avgCleanMs - b.avgCleanMs;
-    if (avg !== 0) return avg;
+function compareLeaderboardRows(
+  a: LeaderboardRow,
+  b: LeaderboardRow,
+  rankingMode: RankingMode,
+): number {
+  if (a.cleanSolves === 0 && b.cleanSolves > 0) return 1;
+  if (a.cleanSolves > 0 && b.cleanSolves === 0) return -1;
+  const aMetric = rankingMetric(a, rankingMode);
+  const bMetric = rankingMetric(b, rankingMode);
+  if (aMetric == null && bMetric != null) return 1;
+  if (aMetric != null && bMetric == null) return -1;
+  if (aMetric != null && bMetric != null && aMetric !== bMetric) {
+    return aMetric - bMetric;
   }
+  if (b.cleanSolves !== a.cleanSolves) return b.cleanSolves - a.cleanSolves;
   if (b.assistedCount !== a.assistedCount) {
     return b.assistedCount - a.assistedCount;
   }
   return a.player.display_name.localeCompare(b.player.display_name);
+}
+
+function rankingMetric(
+  entry: LeaderboardRow,
+  rankingMode: RankingMode,
+): number | null {
+  if (entry.cleanSolves === 0) return null;
+  if (rankingMode === "fastest_time") return entry.bestCleanMs;
+  if (rankingMode === "total_time") return entry.totalCleanMs;
+  return entry.avgCleanMs;
 }
 
 function serializePlayer(player: PlayerRow, isMe = true): JsonValue {
@@ -826,11 +868,14 @@ function serializeBoardSummary(
     id: board.id,
     name: board.name,
     playerCount: count,
+    rankingMode: board.ranking_mode ?? "average_time",
     myWeekly: {
       rank: standing?.rank ?? count,
       outOf: count,
       cleanSolves: standing?.cleanSolves ?? 0,
       avgClean: formatMs(standing?.avgCleanMs ?? null),
+      bestClean: formatMs(standing?.bestCleanMs ?? null),
+      totalClean: formatMs(standing?.totalCleanMs ?? null),
     },
   };
 }
@@ -844,6 +889,8 @@ function serializeLeaderboardEntry(
     player: serializePlayer(entry.player, entry.player.id === currentPlayerId),
     cleanSolves: entry.cleanSolves,
     avgClean: formatMs(entry.avgCleanMs),
+    bestClean: formatMs(entry.bestCleanMs),
+    totalClean: formatMs(entry.totalCleanMs),
     weeksCounted: entry.weeksCounted,
   };
 }
@@ -975,6 +1022,17 @@ function validateCompletionType(raw: unknown): string {
   throw new ApiError(400, "invalid_completion_type", "Completion type invalid.");
 }
 
+function validateRankingMode(raw: unknown): RankingMode {
+  if (
+    raw === "fastest_time" ||
+    raw === "average_time" ||
+    raw === "total_time"
+  ) {
+    return raw;
+  }
+  return "average_time";
+}
+
 function dataUrlForAvatar(rawBase64: string): string {
   if (rawBase64.length > 500_000) {
     throw new ApiError(
@@ -1039,7 +1097,12 @@ function daysUntil(iso: string): number {
   );
 }
 
-function currentUtcWeekRange(): { start: string; end: string } {
+function currentUtcWeekRange(): {
+  start: string;
+  end: string;
+  startDate: string;
+  endDate: string;
+} {
   const now = new Date();
   const start = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
@@ -1048,7 +1111,16 @@ function currentUtcWeekRange(): { start: string; end: string } {
   start.setUTCDate(start.getUTCDate() - daysSinceMonday);
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 7);
-  return { start: start.toISOString(), end: end.toISOString() };
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+    startDate: dateOnly(start),
+    endDate: dateOnly(end),
+  };
+}
+
+function dateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
 function formatMs(value: number | null | undefined): string {

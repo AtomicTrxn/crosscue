@@ -74,7 +74,7 @@ class WeeklyEmpty extends StatelessWidget {
                   fontSize: 16, color: AppColors.onSurface1(context))),
           const SizedBox(height: 6),
           Text(
-              'Create a private board or join one with an invite link. Compete on clean solves each week.',
+              'Create a private board or join one with an invite link. Compete on Daily Mini times each week.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium
                   .copyWith(color: AppColors.onSurface2(context))),

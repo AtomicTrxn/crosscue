@@ -21,7 +21,7 @@ class BoardRow extends StatelessWidget {
       child: Semantics(
         button: true,
         label: '${board.name}, you are ranked ${s.rank} of ${s.outOf}, '
-            '${s.cleanSolves} clean solves. Opens board.',
+            '${board.rankingMode.metricLabel.toLowerCase()} ${s.metricFor(board.rankingMode)}. Opens board.',
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
@@ -44,7 +44,7 @@ class BoardRow extends StatelessWidget {
                             color: AppColors.onSurface1(context))),
                     const SizedBox(height: 4),
                     Text(
-                        '${s.cleanSolves} clean · ${s.avgClean} avg · ${board.playerCount} players',
+                        '${board.rankingMode.metricLabel} ${s.metricFor(board.rankingMode)} · ${s.cleanSolves} clean · ${board.playerCount} players',
                         style: AppTextStyles.bodySmall
                             .copyWith(color: AppColors.onSurface3(context))),
                   ]),

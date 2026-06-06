@@ -16,6 +16,9 @@ create table if not exists boards (
   id text primary key,
   name text not null,
   source_id text not null,
+  ranking_mode text not null default 'average_time' check (
+    ranking_mode in ('fastest_time', 'average_time', 'total_time')
+  ),
   invite_code_hash text not null,
   invite_version integer not null default 1,
   invite_expires_at text not null,

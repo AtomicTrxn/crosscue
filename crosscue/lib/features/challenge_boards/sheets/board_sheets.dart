@@ -74,9 +74,11 @@ Widget _caption(BuildContext c, IconData icon, String text,
 }
 
 /// 1 · Create board.
-Future<String?> showCreateBoardSheet(BuildContext context) {
+Future<CreateBoardDraft?> showCreateBoardSheet(BuildContext context) {
   final controller = TextEditingController();
-  return showCbSheet<String>(context, title: 'Create a board', builder: (ctx) {
+  var rankingMode = ChallengeRankingMode.averageTime;
+  return showCbSheet<CreateBoardDraft>(context, title: 'Create a board',
+      builder: (ctx) {
     return StatefulBuilder(builder: (ctx, setState) {
       final value = controller.text.trim();
       return Column(
@@ -93,10 +95,40 @@ Future<String?> showCreateBoardSheet(BuildContext context) {
             ),
             _caption(ctx, Icons.group_outlined,
                 'You and up to ${ChallengeLimits.maxPlayersPerBoard} friends. You can be in ${ChallengeLimits.maxBoardsPerPlayer} boards at once.'),
+            const SizedBox(height: 14),
+            Text('Rank players by',
+                style: AppTextStyles.caption.copyWith(
+                    color: AppColors.onSurface2(ctx),
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final mode in ChallengeRankingMode.values)
+                  ChoiceChip(
+                    label: Text(mode.label),
+                    selected: rankingMode == mode,
+                    onSelected: (_) => setState(() => rankingMode = mode),
+                  ),
+              ],
+            ),
+            _caption(
+              ctx,
+              Icons.timer_outlined,
+              'Only Crosshare Daily Mini puzzles published during the current UTC week count.',
+            ),
             const SizedBox(height: 18),
             FilledButton(
-                onPressed:
-                    value.isEmpty ? null : () => Navigator.pop(ctx, value),
+                onPressed: value.isEmpty
+                    ? null
+                    : () => Navigator.pop(
+                          ctx,
+                          CreateBoardDraft(
+                            name: value,
+                            rankingMode: rankingMode,
+                          ),
+                        ),
                 child: const Text('Create board')),
             const SizedBox(height: 4),
             TextButton(

@@ -12,6 +12,7 @@ import '../widgets/segmented_control.dart';
 class BoardDetailScreen extends StatefulWidget {
   final String boardName;
   final int playerCount;
+  final ChallengeRankingMode rankingMode;
   final List<LeaderboardEntry> weekly;
   final List<LeaderboardEntry> lifetime;
   final Future<void> Function()? onRefresh;
@@ -23,6 +24,7 @@ class BoardDetailScreen extends StatefulWidget {
     super.key,
     this.boardName = 'Friday Night Crew',
     this.playerCount = 8,
+    this.rankingMode = ChallengeRankingMode.averageTime,
     this.weekly = SampleData.weeklyLeaderboard,
     this.lifetime = SampleData.weeklyLeaderboard,
     this.onRefresh,
@@ -100,7 +102,7 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
             Text(
                 mode == LeaderboardMode.lifetime
                     ? '${UtcWeek.lifetimeBasis} · ${widget.lifetime.isEmpty ? 0 : (widget.lifetime.first.weeksCounted ?? 16)} weeks counted'
-                    : '${UtcWeek.detailBoundaryLabel} · updated 2h ago',
+                    : '${UtcWeek.detailBoundaryLabel} · ${widget.rankingMode.label.toLowerCase()}',
                 style: AppTextStyles.caption
                     .copyWith(color: AppColors.onSurface3(context))),
           ]),
@@ -111,7 +113,11 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
               itemCount: rows.length,
-              itemBuilder: (_, i) => LeaderboardRow(entry: rows[i], mode: mode),
+              itemBuilder: (_, i) => LeaderboardRow(
+                entry: rows[i],
+                mode: mode,
+                rankingMode: widget.rankingMode,
+              ),
             ),
           ),
         ),

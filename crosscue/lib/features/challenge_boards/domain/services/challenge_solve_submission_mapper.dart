@@ -1,6 +1,7 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/util/utc_week.dart';
 
 const challengeEligibleSourceId = 'crosshare_daily_mini';
 
@@ -13,9 +14,12 @@ ChallengeSolveSubmission? challengeSubmissionFromCompletion({
 }) {
   final metadata = puzzle.metadata;
   final sourcePuzzleId = metadata.sourcePuzzleId;
+  final publishDate = metadata.publishDate?.toUtc();
   if (metadata.sourceId != challengeEligibleSourceId ||
       sourcePuzzleId == null ||
-      sourcePuzzleId.trim().isEmpty) {
+      sourcePuzzleId.trim().isEmpty ||
+      publishDate == null ||
+      !_isInChallengeWeek(publishDate, completedAtUtc)) {
     return null;
   }
 
@@ -27,8 +31,14 @@ ChallengeSolveSubmission? challengeSubmissionFromCompletion({
     completionType: _completionType(completionType),
     cleanSolveEligible: cleanSolveEligible,
     puzzleTitle: metadata.title,
-    publishedOn: metadata.publishDate,
+    publishedOn: publishDate,
   );
+}
+
+bool _isInChallengeWeek(DateTime publishDate, DateTime completedAtUtc) {
+  final start = UtcWeek.weekStart(completedAtUtc);
+  final end = start.add(const Duration(days: 7));
+  return !publishDate.isBefore(start) && publishDate.isBefore(end);
 }
 
 ChallengeCompletionType _completionType(CompletionType completionType) {

@@ -49,11 +49,12 @@ class SampleChallengeRepository extends ChangeNotifier
   }
 
   @override
-  Future<Board> createBoard(String name) async {
+  Future<Board> createBoard(CreateBoardDraft draft) async {
     final board = Board(
       id: 'b${_nextBoard++}',
-      name: name,
+      name: draft.name,
       playerCount: 1,
+      rankingMode: draft.rankingMode,
       myWeekly: const Standing(
         rank: 1,
         outOf: 1,

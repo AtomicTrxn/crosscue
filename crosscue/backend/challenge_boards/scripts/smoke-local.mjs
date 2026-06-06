@@ -50,6 +50,7 @@ await request('/invites/join', {
 });
 
 const completedAt = new Date().toISOString();
+const publishedOn = completedAt.slice(0, 10);
 await request('/results', {
   method: 'POST',
   token: maya.authToken,
@@ -62,7 +63,7 @@ await request('/results', {
     completionType: 'clean',
     cleanSolveEligible: true,
     puzzleTitle: 'Daily Mini',
-    publishedOn: '2026-06-06',
+    publishedOn,
   },
 });
 await request('/results', {
@@ -77,7 +78,7 @@ await request('/results', {
     completionType: 'checked',
     cleanSolveEligible: false,
     puzzleTitle: 'Daily Mini',
-    publishedOn: '2026-06-06',
+    publishedOn,
   },
 });
 

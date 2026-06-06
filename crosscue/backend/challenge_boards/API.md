@@ -87,11 +87,14 @@ Response:
       "id": "...",
       "name": "Friday Crew",
       "playerCount": 8,
+      "rankingMode": "average_time",
       "myWeekly": {
         "rank": 1,
         "outOf": 8,
         "cleanSolves": 0,
-        "avgClean": "—"
+        "avgClean": "—",
+        "bestClean": "—",
+        "totalClean": "—"
       }
     }
   ],
@@ -110,8 +113,11 @@ Response:
 Request:
 
 ```json
-{ "name": "Friday Crew" }
+{ "name": "Friday Crew", "rankingMode": "average_time" }
 ```
+
+`rankingMode` is optional and defaults to `average_time`. Supported values:
+`fastest_time`, `average_time`, and `total_time`.
 
 Response:
 
@@ -132,6 +138,8 @@ Response:
       "player": { "...": "player" },
       "cleanSolves": 0,
       "avgClean": "—",
+      "bestClean": "—",
+      "totalClean": "—",
       "weeksCounted": 0
     }
   ],
@@ -139,9 +147,14 @@ Response:
 }
 ```
 
-Weekly rankings use Monday 00:00 UTC through the next Monday 00:00 UTC.
-Clean solves rank first, then lower average clean time, then assisted
-submission count as a deterministic tie-breaker.
+Weekly rankings use Daily Mini publish dates from Monday 00:00 UTC through the
+next Monday 00:00 UTC. Finishing an older Daily Mini during the current week
+does not count toward the current weekly board.
+
+Players with at least one clean Daily Mini rank above assisted-only or
+unsubmitted players. Within clean entries, boards sort by their configured
+time mode: lowest best clean time, lowest average clean time, or lowest total
+clean time. Clean solve count and assisted count are deterministic tie-breakers.
 
 `POST /boards/:id/leave`
 
@@ -215,6 +228,10 @@ Request:
   "cleanSolveEligible": true
 }
 ```
+
+Only `sourceId: "crosshare_daily_mini"` with a `publishedOn` Daily Mini date is
+accepted for Challenge Boards. Other puzzle sources are ignored and do not count
+toward weekly or lifetime challenge standings.
 
 `completionType` values:
 

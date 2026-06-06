@@ -11,6 +11,25 @@ import 'package:flutter/foundation.dart';
 /// How a player's avatar is rendered.
 enum AvatarKind { initials, silhouette, photo }
 
+enum ChallengeRankingMode {
+  fastestTime('fastest_time', 'Fastest time', 'Best'),
+  averageTime('average_time', 'Average time', 'Avg'),
+  totalTime('total_time', 'Total time', 'Total');
+
+  const ChallengeRankingMode(this.apiValue, this.label, this.metricLabel);
+
+  final String apiValue;
+  final String label;
+  final String metricLabel;
+
+  static ChallengeRankingMode fromApi(Object? value) {
+    return ChallengeRankingMode.values.firstWhere(
+      (mode) => mode.apiValue == value,
+      orElse: () => ChallengeRankingMode.averageTime,
+    );
+  }
+}
+
 @immutable
 class PlayerAvatar {
   final AvatarKind kind;
@@ -84,14 +103,26 @@ class Standing {
 
   /// Average clean solve time, pre-formatted "m:ss" for display.
   final String avgClean;
+  final String bestClean;
+  final String totalClean;
   const Standing({
     required this.rank,
     required this.outOf,
     required this.cleanSolves,
     required this.avgClean,
+    this.bestClean = '—',
+    this.totalClean = '—',
   });
 
   bool get isFirst => rank == 1;
+
+  String metricFor(ChallengeRankingMode mode) {
+    return switch (mode) {
+      ChallengeRankingMode.fastestTime => bestClean,
+      ChallengeRankingMode.averageTime => avgClean,
+      ChallengeRankingMode.totalTime => totalClean,
+    };
+  }
 }
 
 /// A board the signed-in player belongs to, with their weekly standing.
@@ -100,6 +131,7 @@ class Board {
   final String id;
   final String name;
   final int playerCount;
+  final ChallengeRankingMode rankingMode;
 
   /// The signed-in player's standing this UTC week.
   final Standing myWeekly;
@@ -108,7 +140,19 @@ class Board {
     required this.name,
     required this.playerCount,
     required this.myWeekly,
+    this.rankingMode = ChallengeRankingMode.averageTime,
   });
+}
+
+@immutable
+class CreateBoardDraft {
+  const CreateBoardDraft({
+    required this.name,
+    required this.rankingMode,
+  });
+
+  final String name;
+  final ChallengeRankingMode rankingMode;
 }
 
 /// Compact lifetime aggregate (completed UTC weeks only).
@@ -139,6 +183,8 @@ class LeaderboardEntry {
   final Player player;
   final int cleanSolves;
   final String avgClean;
+  final String bestClean;
+  final String totalClean;
 
   /// Lifetime view only.
   final int? weeksCounted;
@@ -147,8 +193,18 @@ class LeaderboardEntry {
     required this.player,
     required this.cleanSolves,
     required this.avgClean,
+    this.bestClean = '—',
+    this.totalClean = '—',
     this.weeksCounted,
   });
+
+  String metricFor(ChallengeRankingMode mode) {
+    return switch (mode) {
+      ChallengeRankingMode.fastestTime => bestClean,
+      ChallengeRankingMode.averageTime => avgClean,
+      ChallengeRankingMode.totalTime => totalClean,
+    };
+  }
 }
 
 enum LeaderboardMode { weekly, lifetime }

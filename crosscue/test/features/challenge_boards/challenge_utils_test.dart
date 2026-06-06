@@ -92,6 +92,22 @@ void main() {
         isNull,
       );
     });
+
+    test('ignores daily minis outside the completion UTC week', () {
+      expect(
+        challengeSubmissionFromCompletion(
+          puzzle: _puzzle(
+            sourceId: challengeEligibleSourceId,
+            publishDate: DateTime.utc(2026, 5, 31),
+          ),
+          elapsedMs: 125000,
+          completionType: CompletionType.clean,
+          cleanSolveEligible: true,
+          completedAtUtc: DateTime.utc(2026, 6, 1, 12),
+        ),
+        isNull,
+      );
+    });
   });
 
   testWidgets('AvatarNormalizer outputs a 512 square PNG', (tester) async {
@@ -115,6 +131,7 @@ void main() {
 Puzzle _puzzle({
   required String sourceId,
   String? sourcePuzzleId = '2026-06-05',
+  DateTime? publishDate,
 }) {
   return Puzzle(
     metadata: PuzzleMetadata(
@@ -128,7 +145,7 @@ Puzzle _puzzle({
       width: 1,
       height: 1,
       importedAt: DateTime.utc(2026, 6, 5),
-      publishDate: DateTime.utc(2026, 6, 5),
+      publishDate: publishDate ?? DateTime.utc(2026, 6, 5),
       fillableCellCount: 1,
     ),
     grid: Grid<SolutionCell>.generate(

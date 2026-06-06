@@ -20,6 +20,7 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
       data: (data) => BoardDetailScreen(
         boardName: data.board.name,
         playerCount: data.board.playerCount,
+        rankingMode: data.board.rankingMode,
         weekly: data.weekly,
         lifetime: data.lifetime,
         onRefresh: () async =>

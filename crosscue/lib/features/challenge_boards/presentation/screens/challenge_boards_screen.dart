@@ -125,13 +125,13 @@ class ChallengeBoardsScreen extends ConsumerWidget {
   }
 
   Future<void> _createBoard(BuildContext context, WidgetRef ref) async {
-    final name = await showCreateBoardSheet(context);
-    if (name == null || name.trim().isEmpty) return;
+    final draft = await showCreateBoardSheet(context);
+    if (draft == null || draft.name.trim().isEmpty) return;
     final repository = ref.read(challengeBoardRepositoryProvider);
     final created = repository is ApiChallengeRepository
-        ? await repository.createBoardWithInvite(name.trim())
+        ? await repository.createBoardWithInvite(draft)
         : null;
-    final board = created?.board ?? await repository.createBoard(name.trim());
+    final board = created?.board ?? await repository.createBoard(draft);
     ref.invalidate(challengeBoardsProvider);
     ref.invalidate(challengeLifetimeProvider);
     if (!context.mounted) return;

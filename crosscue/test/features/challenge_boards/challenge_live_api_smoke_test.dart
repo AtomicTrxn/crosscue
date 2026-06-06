@@ -30,7 +30,12 @@ void main() {
       expect(noahIdentity, isNotNull);
 
       await identityStore.write(mayaIdentity!);
-      final created = await api.createBoard('Friday Crew');
+      final created = await api.createBoard(
+        const CreateBoardDraft(
+          name: 'Friday Crew',
+          rankingMode: ChallengeRankingMode.averageTime,
+        ),
+      );
       await identityStore.write(noahIdentity!);
       final preview = await api.previewInvite(created.inviteLink!);
       expect(preview.result, InviteResult.valid);
@@ -41,6 +46,11 @@ void main() {
       final sourcePuzzleId =
           'flutter-smoke-${DateTime.now().microsecondsSinceEpoch}';
       final completedAt = DateTime.now().toUtc();
+      final publishedOn = DateTime.utc(
+        completedAt.year,
+        completedAt.month,
+        completedAt.day,
+      );
       await identityStore.write(mayaIdentity);
       await api.submitSolveResult(
         ChallengeSolveSubmission(
@@ -51,7 +61,7 @@ void main() {
           completionType: ChallengeCompletionType.clean,
           cleanSolveEligible: true,
           puzzleTitle: 'Daily Mini',
-          publishedOn: DateTime.utc(2026, 6, 6),
+          publishedOn: publishedOn,
         ),
       );
       await identityStore.write(noahIdentity);
@@ -64,7 +74,7 @@ void main() {
           completionType: ChallengeCompletionType.checked,
           cleanSolveEligible: false,
           puzzleTitle: 'Daily Mini',
-          publishedOn: DateTime.utc(2026, 6, 6),
+          publishedOn: publishedOn,
         ),
       );
 

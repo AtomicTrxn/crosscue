@@ -19,13 +19,13 @@ class ApiChallengeRepository
   }
 
   @override
-  Future<Board> createBoard(String name) async {
-    final created = await _api.createBoard(name);
+  Future<Board> createBoard(CreateBoardDraft draft) async {
+    final created = await _api.createBoard(draft);
     return created.board;
   }
 
-  Future<CreateBoardResponse> createBoardWithInvite(String name) =>
-      _api.createBoard(name);
+  Future<CreateBoardResponse> createBoardWithInvite(CreateBoardDraft draft) =>
+      _api.createBoard(draft);
 
   @override
   Future<BoardDetail> getBoardDetail(String boardId) =>

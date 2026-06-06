@@ -111,6 +111,56 @@ test('result submissions rank clean solves above assisted entries', async () => 
   assert.equal(summary.lifetime.cleanSolves, 1);
 });
 
+test('weekly rankings use board time mode and published Daily Mini week', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew', rankingMode: 'average_time' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  await app.submitResult(maya.authToken, {
+    sourcePuzzleId: 'last-week',
+    publishedOn: previousUtcWeekDateOnly(),
+    elapsedMs: 1000,
+  });
+  await app.submitResult(maya.authToken, {
+    sourcePuzzleId: 'current-1',
+    publishedOn: currentUtcDateOnly(),
+    elapsedMs: 90000,
+  });
+  await app.submitResult(maya.authToken, {
+    sourcePuzzleId: 'current-2',
+    publishedOn: currentUtcDateOnly(),
+    elapsedMs: 110000,
+  });
+  await app.submitResult(noah.authToken, {
+    sourcePuzzleId: 'current-1',
+    publishedOn: currentUtcDateOnly(),
+    elapsedMs: 60000,
+  });
+
+  const detail = await app.fetchJson(`/boards/${created.board.id}`, {
+    token: maya.authToken,
+  });
+
+  assert.equal(detail.board.rankingMode, 'average_time');
+  assert.equal(detail.weekly[0].player.displayName, 'Noah');
+  assert.equal(detail.weekly[0].avgClean, '1:00');
+  assert.equal(detail.weekly[1].player.displayName, 'Maya');
+  assert.equal(detail.weekly[1].cleanSolves, 2);
+  assert.equal(detail.weekly[1].avgClean, '1:40');
+  assert.equal(detail.weekly[1].totalClean, '3:20');
+});
+
 test('result submissions are idempotent per player source puzzle', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');
@@ -140,6 +190,36 @@ test('result submissions are idempotent per player source puzzle', async () => {
   assert.equal(detail.weekly[0].cleanSolves, 1);
   assert.equal(detail.weekly[0].avgClean, '1:20');
 });
+
+test('non Daily Mini submissions are not accepted', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  const result = await app.submitResult(maya.authToken, {
+    sourceId: 'local_import',
+    sourcePuzzleId: 'local-puzzle',
+    publishedOn: currentUtcDateOnly(),
+  });
+
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'not_challenge_daily_mini');
+});
+
+function currentUtcDateOnly() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function previousUtcWeekDateOnly() {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - 7);
+  return date.toISOString().slice(0, 10);
+}
 
 async function createApp() {
   const db = new DatabaseSync(':memory:');
@@ -173,7 +253,7 @@ async function createApp() {
           completionType: 'clean',
           cleanSolveEligible: true,
           puzzleTitle: 'Daily Mini',
-          publishedOn: '2026-06-05',
+          publishedOn: currentUtcDateOnly(),
           ...overrides,
         },
       });

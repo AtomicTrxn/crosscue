@@ -4,7 +4,7 @@ import 'package:crosscue/features/challenge_boards/models/challenge_models.dart'
 abstract interface class ChallengeBoardRepository {
   Future<List<Board>> listBoards();
   Future<BoardDetail> getBoardDetail(String boardId);
-  Future<Board> createBoard(String name);
+  Future<Board> createBoard(CreateBoardDraft draft);
   Future<InvitePreview> previewInvite(String inviteLink);
   Future<Board?> joinInvite(String inviteLink);
   Future<void> leaveBoard(String boardId);

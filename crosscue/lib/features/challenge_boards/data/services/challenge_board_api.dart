@@ -85,10 +85,13 @@ class ChallengeBoardApi {
     );
   }
 
-  Future<CreateBoardResponse> createBoard(String name) async {
+  Future<CreateBoardResponse> createBoard(CreateBoardDraft draft) async {
     final response = await _dio.post<Object?>(
       '$_baseUrl/boards',
-      data: {'name': name},
+      data: {
+        'name': draft.name,
+        'rankingMode': draft.rankingMode.apiValue,
+      },
       options: await _authOptions(),
     );
     final data = _dataMap(response);
@@ -186,6 +189,7 @@ class ChallengeBoardApi {
       id: data['id'] as String,
       name: data['name'] as String,
       playerCount: (data['playerCount'] as num).toInt(),
+      rankingMode: ChallengeRankingMode.fromApi(data['rankingMode']),
       myWeekly: _standing(data['myWeekly']),
     );
   }
@@ -197,6 +201,8 @@ class ChallengeBoardApi {
       outOf: (data['outOf'] as num).toInt(),
       cleanSolves: (data['cleanSolves'] as num).toInt(),
       avgClean: data['avgClean'] as String,
+      bestClean: data['bestClean'] as String? ?? '—',
+      totalClean: data['totalClean'] as String? ?? '—',
     );
   }
 
@@ -218,6 +224,8 @@ class ChallengeBoardApi {
       player: _player(data['player']),
       cleanSolves: (data['cleanSolves'] as num).toInt(),
       avgClean: data['avgClean'] as String,
+      bestClean: data['bestClean'] as String? ?? '—',
+      totalClean: data['totalClean'] as String? ?? '—',
       weeksCounted: (data['weeksCounted'] as num?)?.toInt(),
     );
   }

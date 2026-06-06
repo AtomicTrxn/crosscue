@@ -10,7 +10,13 @@ import '../theme/app_text_styles.dart';
 class LeaderboardRow extends StatelessWidget {
   final LeaderboardEntry entry;
   final LeaderboardMode mode;
-  const LeaderboardRow({super.key, required this.entry, required this.mode});
+  final ChallengeRankingMode rankingMode;
+  const LeaderboardRow({
+    super.key,
+    required this.entry,
+    required this.mode,
+    this.rankingMode = ChallengeRankingMode.averageTime,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,20 +87,26 @@ class LeaderboardRow extends StatelessWidget {
             Text(
                 mode == LeaderboardMode.lifetime
                     ? '${entry.avgClean} avg · ${entry.weeksCounted ?? 0} weeks'
-                    : '${entry.avgClean} avg clean',
+                    : '${rankingMode.label} · ${entry.cleanSolves} clean',
                 style: AppTextStyles.caption
                     .copyWith(color: AppColors.onSurface3(context))),
           ]),
         ),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('${entry.cleanSolves}',
+          Text(
+              mode == LeaderboardMode.lifetime
+                  ? '${entry.cleanSolves}'
+                  : entry.metricFor(rankingMode),
               style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
                   color: AppColors.onSurface1(context))),
-          Text('CLEAN',
+          Text(
+              mode == LeaderboardMode.lifetime
+                  ? 'CLEAN'
+                  : rankingMode.metricLabel.toUpperCase(),
               style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: 10,
