@@ -5662,6 +5662,414 @@ class PuzzleCompletionsTableCompanion
   }
 }
 
+class $RemoteSyncCursorsTableTable extends RemoteSyncCursorsTable
+    with TableInfo<$RemoteSyncCursorsTableTable, RemoteSyncCursorRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteSyncCursorsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _namespaceMeta =
+      const VerificationMeta('namespace');
+  @override
+  late final GeneratedColumn<String> namespace = GeneratedColumn<String>(
+      'namespace', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _syncKeyMeta =
+      const VerificationMeta('syncKey');
+  @override
+  late final GeneratedColumn<String> syncKey = GeneratedColumn<String>(
+      'sync_key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _syncVersionMeta =
+      const VerificationMeta('syncVersion');
+  @override
+  late final GeneratedColumn<int> syncVersion = GeneratedColumn<int>(
+      'sync_version', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _transportTokenMeta =
+      const VerificationMeta('transportToken');
+  @override
+  late final GeneratedColumn<String> transportToken = GeneratedColumn<String>(
+      'transport_token', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _lastSeenAtMeta =
+      const VerificationMeta('lastSeenAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSeenAt = GeneratedColumn<DateTime>(
+      'last_seen_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        namespace,
+        syncKey,
+        syncVersion,
+        updatedAt,
+        deviceId,
+        transportToken,
+        lastSeenAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_sync_cursors';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<RemoteSyncCursorRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('namespace')) {
+      context.handle(_namespaceMeta,
+          namespace.isAcceptableOrUnknown(data['namespace']!, _namespaceMeta));
+    } else if (isInserting) {
+      context.missing(_namespaceMeta);
+    }
+    if (data.containsKey('sync_key')) {
+      context.handle(_syncKeyMeta,
+          syncKey.isAcceptableOrUnknown(data['sync_key']!, _syncKeyMeta));
+    } else if (isInserting) {
+      context.missing(_syncKeyMeta);
+    }
+    if (data.containsKey('sync_version')) {
+      context.handle(
+          _syncVersionMeta,
+          syncVersion.isAcceptableOrUnknown(
+              data['sync_version']!, _syncVersionMeta));
+    } else if (isInserting) {
+      context.missing(_syncVersionMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('transport_token')) {
+      context.handle(
+          _transportTokenMeta,
+          transportToken.isAcceptableOrUnknown(
+              data['transport_token']!, _transportTokenMeta));
+    }
+    if (data.containsKey('last_seen_at')) {
+      context.handle(
+          _lastSeenAtMeta,
+          lastSeenAt.isAcceptableOrUnknown(
+              data['last_seen_at']!, _lastSeenAtMeta));
+    } else if (isInserting) {
+      context.missing(_lastSeenAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {namespace, syncKey};
+  @override
+  RemoteSyncCursorRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteSyncCursorRow(
+      namespace: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}namespace'])!,
+      syncKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sync_key'])!,
+      syncVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}sync_version'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
+      transportToken: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}transport_token']),
+      lastSeenAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_seen_at'])!,
+    );
+  }
+
+  @override
+  $RemoteSyncCursorsTableTable createAlias(String alias) {
+    return $RemoteSyncCursorsTableTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteSyncCursorRow extends DataClass
+    implements Insertable<RemoteSyncCursorRow> {
+  final String namespace;
+  final String syncKey;
+  final int syncVersion;
+  final DateTime updatedAt;
+  final String deviceId;
+  final String? transportToken;
+  final DateTime lastSeenAt;
+  const RemoteSyncCursorRow(
+      {required this.namespace,
+      required this.syncKey,
+      required this.syncVersion,
+      required this.updatedAt,
+      required this.deviceId,
+      this.transportToken,
+      required this.lastSeenAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['namespace'] = Variable<String>(namespace);
+    map['sync_key'] = Variable<String>(syncKey);
+    map['sync_version'] = Variable<int>(syncVersion);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['device_id'] = Variable<String>(deviceId);
+    if (!nullToAbsent || transportToken != null) {
+      map['transport_token'] = Variable<String>(transportToken);
+    }
+    map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
+    return map;
+  }
+
+  RemoteSyncCursorsTableCompanion toCompanion(bool nullToAbsent) {
+    return RemoteSyncCursorsTableCompanion(
+      namespace: Value(namespace),
+      syncKey: Value(syncKey),
+      syncVersion: Value(syncVersion),
+      updatedAt: Value(updatedAt),
+      deviceId: Value(deviceId),
+      transportToken: transportToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(transportToken),
+      lastSeenAt: Value(lastSeenAt),
+    );
+  }
+
+  factory RemoteSyncCursorRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteSyncCursorRow(
+      namespace: serializer.fromJson<String>(json['namespace']),
+      syncKey: serializer.fromJson<String>(json['syncKey']),
+      syncVersion: serializer.fromJson<int>(json['syncVersion']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      transportToken: serializer.fromJson<String?>(json['transportToken']),
+      lastSeenAt: serializer.fromJson<DateTime>(json['lastSeenAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'namespace': serializer.toJson<String>(namespace),
+      'syncKey': serializer.toJson<String>(syncKey),
+      'syncVersion': serializer.toJson<int>(syncVersion),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'transportToken': serializer.toJson<String?>(transportToken),
+      'lastSeenAt': serializer.toJson<DateTime>(lastSeenAt),
+    };
+  }
+
+  RemoteSyncCursorRow copyWith(
+          {String? namespace,
+          String? syncKey,
+          int? syncVersion,
+          DateTime? updatedAt,
+          String? deviceId,
+          Value<String?> transportToken = const Value.absent(),
+          DateTime? lastSeenAt}) =>
+      RemoteSyncCursorRow(
+        namespace: namespace ?? this.namespace,
+        syncKey: syncKey ?? this.syncKey,
+        syncVersion: syncVersion ?? this.syncVersion,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deviceId: deviceId ?? this.deviceId,
+        transportToken:
+            transportToken.present ? transportToken.value : this.transportToken,
+        lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      );
+  RemoteSyncCursorRow copyWithCompanion(RemoteSyncCursorsTableCompanion data) {
+    return RemoteSyncCursorRow(
+      namespace: data.namespace.present ? data.namespace.value : this.namespace,
+      syncKey: data.syncKey.present ? data.syncKey.value : this.syncKey,
+      syncVersion:
+          data.syncVersion.present ? data.syncVersion.value : this.syncVersion,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      transportToken: data.transportToken.present
+          ? data.transportToken.value
+          : this.transportToken,
+      lastSeenAt:
+          data.lastSeenAt.present ? data.lastSeenAt.value : this.lastSeenAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteSyncCursorRow(')
+          ..write('namespace: $namespace, ')
+          ..write('syncKey: $syncKey, ')
+          ..write('syncVersion: $syncVersion, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('transportToken: $transportToken, ')
+          ..write('lastSeenAt: $lastSeenAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(namespace, syncKey, syncVersion, updatedAt,
+      deviceId, transportToken, lastSeenAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteSyncCursorRow &&
+          other.namespace == this.namespace &&
+          other.syncKey == this.syncKey &&
+          other.syncVersion == this.syncVersion &&
+          other.updatedAt == this.updatedAt &&
+          other.deviceId == this.deviceId &&
+          other.transportToken == this.transportToken &&
+          other.lastSeenAt == this.lastSeenAt);
+}
+
+class RemoteSyncCursorsTableCompanion
+    extends UpdateCompanion<RemoteSyncCursorRow> {
+  final Value<String> namespace;
+  final Value<String> syncKey;
+  final Value<int> syncVersion;
+  final Value<DateTime> updatedAt;
+  final Value<String> deviceId;
+  final Value<String?> transportToken;
+  final Value<DateTime> lastSeenAt;
+  final Value<int> rowid;
+  const RemoteSyncCursorsTableCompanion({
+    this.namespace = const Value.absent(),
+    this.syncKey = const Value.absent(),
+    this.syncVersion = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.transportToken = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteSyncCursorsTableCompanion.insert({
+    required String namespace,
+    required String syncKey,
+    required int syncVersion,
+    required DateTime updatedAt,
+    required String deviceId,
+    this.transportToken = const Value.absent(),
+    required DateTime lastSeenAt,
+    this.rowid = const Value.absent(),
+  })  : namespace = Value(namespace),
+        syncKey = Value(syncKey),
+        syncVersion = Value(syncVersion),
+        updatedAt = Value(updatedAt),
+        deviceId = Value(deviceId),
+        lastSeenAt = Value(lastSeenAt);
+  static Insertable<RemoteSyncCursorRow> custom({
+    Expression<String>? namespace,
+    Expression<String>? syncKey,
+    Expression<int>? syncVersion,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? deviceId,
+    Expression<String>? transportToken,
+    Expression<DateTime>? lastSeenAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (namespace != null) 'namespace': namespace,
+      if (syncKey != null) 'sync_key': syncKey,
+      if (syncVersion != null) 'sync_version': syncVersion,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deviceId != null) 'device_id': deviceId,
+      if (transportToken != null) 'transport_token': transportToken,
+      if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteSyncCursorsTableCompanion copyWith(
+      {Value<String>? namespace,
+      Value<String>? syncKey,
+      Value<int>? syncVersion,
+      Value<DateTime>? updatedAt,
+      Value<String>? deviceId,
+      Value<String?>? transportToken,
+      Value<DateTime>? lastSeenAt,
+      Value<int>? rowid}) {
+    return RemoteSyncCursorsTableCompanion(
+      namespace: namespace ?? this.namespace,
+      syncKey: syncKey ?? this.syncKey,
+      syncVersion: syncVersion ?? this.syncVersion,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deviceId: deviceId ?? this.deviceId,
+      transportToken: transportToken ?? this.transportToken,
+      lastSeenAt: lastSeenAt ?? this.lastSeenAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (namespace.present) {
+      map['namespace'] = Variable<String>(namespace.value);
+    }
+    if (syncKey.present) {
+      map['sync_key'] = Variable<String>(syncKey.value);
+    }
+    if (syncVersion.present) {
+      map['sync_version'] = Variable<int>(syncVersion.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (transportToken.present) {
+      map['transport_token'] = Variable<String>(transportToken.value);
+    }
+    if (lastSeenAt.present) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteSyncCursorsTableCompanion(')
+          ..write('namespace: $namespace, ')
+          ..write('syncKey: $syncKey, ')
+          ..write('syncVersion: $syncVersion, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('transportToken: $transportToken, ')
+          ..write('lastSeenAt: $lastSeenAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5678,6 +6086,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ImportedSolveStatsTableTable(this);
   late final $PuzzleCompletionsTableTable puzzleCompletionsTable =
       $PuzzleCompletionsTableTable(this);
+  late final $RemoteSyncCursorsTableTable remoteSyncCursorsTable =
+      $RemoteSyncCursorsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5690,7 +6100,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         cellProgressTable,
         appSettingsTable,
         importedSolveStatsTable,
-        puzzleCompletionsTable
+        puzzleCompletionsTable,
+        remoteSyncCursorsTable
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -9174,6 +9585,218 @@ typedef $$PuzzleCompletionsTableTableProcessedTableManager
         (PuzzleCompletionRow, $$PuzzleCompletionsTableTableReferences),
         PuzzleCompletionRow,
         PrefetchHooks Function({bool puzzleId})>;
+typedef $$RemoteSyncCursorsTableTableCreateCompanionBuilder
+    = RemoteSyncCursorsTableCompanion Function({
+  required String namespace,
+  required String syncKey,
+  required int syncVersion,
+  required DateTime updatedAt,
+  required String deviceId,
+  Value<String?> transportToken,
+  required DateTime lastSeenAt,
+  Value<int> rowid,
+});
+typedef $$RemoteSyncCursorsTableTableUpdateCompanionBuilder
+    = RemoteSyncCursorsTableCompanion Function({
+  Value<String> namespace,
+  Value<String> syncKey,
+  Value<int> syncVersion,
+  Value<DateTime> updatedAt,
+  Value<String> deviceId,
+  Value<String?> transportToken,
+  Value<DateTime> lastSeenAt,
+  Value<int> rowid,
+});
+
+class $$RemoteSyncCursorsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteSyncCursorsTableTable> {
+  $$RemoteSyncCursorsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get namespace => $composableBuilder(
+      column: $table.namespace, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get syncKey => $composableBuilder(
+      column: $table.syncKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get transportToken => $composableBuilder(
+      column: $table.transportToken,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSeenAt => $composableBuilder(
+      column: $table.lastSeenAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemoteSyncCursorsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteSyncCursorsTableTable> {
+  $$RemoteSyncCursorsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get namespace => $composableBuilder(
+      column: $table.namespace, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get syncKey => $composableBuilder(
+      column: $table.syncKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get transportToken => $composableBuilder(
+      column: $table.transportToken,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSeenAt => $composableBuilder(
+      column: $table.lastSeenAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemoteSyncCursorsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteSyncCursorsTableTable> {
+  $$RemoteSyncCursorsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get namespace =>
+      $composableBuilder(column: $table.namespace, builder: (column) => column);
+
+  GeneratedColumn<String> get syncKey =>
+      $composableBuilder(column: $table.syncKey, builder: (column) => column);
+
+  GeneratedColumn<int> get syncVersion => $composableBuilder(
+      column: $table.syncVersion, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get transportToken => $composableBuilder(
+      column: $table.transportToken, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSeenAt => $composableBuilder(
+      column: $table.lastSeenAt, builder: (column) => column);
+}
+
+class $$RemoteSyncCursorsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemoteSyncCursorsTableTable,
+    RemoteSyncCursorRow,
+    $$RemoteSyncCursorsTableTableFilterComposer,
+    $$RemoteSyncCursorsTableTableOrderingComposer,
+    $$RemoteSyncCursorsTableTableAnnotationComposer,
+    $$RemoteSyncCursorsTableTableCreateCompanionBuilder,
+    $$RemoteSyncCursorsTableTableUpdateCompanionBuilder,
+    (
+      RemoteSyncCursorRow,
+      BaseReferences<_$AppDatabase, $RemoteSyncCursorsTableTable,
+          RemoteSyncCursorRow>
+    ),
+    RemoteSyncCursorRow,
+    PrefetchHooks Function()> {
+  $$RemoteSyncCursorsTableTableTableManager(
+      _$AppDatabase db, $RemoteSyncCursorsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteSyncCursorsTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteSyncCursorsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteSyncCursorsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> namespace = const Value.absent(),
+            Value<String> syncKey = const Value.absent(),
+            Value<int> syncVersion = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
+            Value<String?> transportToken = const Value.absent(),
+            Value<DateTime> lastSeenAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteSyncCursorsTableCompanion(
+            namespace: namespace,
+            syncKey: syncKey,
+            syncVersion: syncVersion,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            transportToken: transportToken,
+            lastSeenAt: lastSeenAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String namespace,
+            required String syncKey,
+            required int syncVersion,
+            required DateTime updatedAt,
+            required String deviceId,
+            Value<String?> transportToken = const Value.absent(),
+            required DateTime lastSeenAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemoteSyncCursorsTableCompanion.insert(
+            namespace: namespace,
+            syncKey: syncKey,
+            syncVersion: syncVersion,
+            updatedAt: updatedAt,
+            deviceId: deviceId,
+            transportToken: transportToken,
+            lastSeenAt: lastSeenAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemoteSyncCursorsTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $RemoteSyncCursorsTableTable,
+        RemoteSyncCursorRow,
+        $$RemoteSyncCursorsTableTableFilterComposer,
+        $$RemoteSyncCursorsTableTableOrderingComposer,
+        $$RemoteSyncCursorsTableTableAnnotationComposer,
+        $$RemoteSyncCursorsTableTableCreateCompanionBuilder,
+        $$RemoteSyncCursorsTableTableUpdateCompanionBuilder,
+        (
+          RemoteSyncCursorRow,
+          BaseReferences<_$AppDatabase, $RemoteSyncCursorsTableTable,
+              RemoteSyncCursorRow>
+        ),
+        RemoteSyncCursorRow,
+        PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9196,4 +9819,7 @@ class $AppDatabaseManager {
   $$PuzzleCompletionsTableTableTableManager get puzzleCompletionsTable =>
       $$PuzzleCompletionsTableTableTableManager(
           _db, _db.puzzleCompletionsTable);
+  $$RemoteSyncCursorsTableTableTableManager get remoteSyncCursorsTable =>
+      $$RemoteSyncCursorsTableTableTableManager(
+          _db, _db.remoteSyncCursorsTable);
 }

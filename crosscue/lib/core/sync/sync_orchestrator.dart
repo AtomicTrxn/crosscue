@@ -8,8 +8,10 @@ import 'package:crosscue/core/sync/adapters/puzzles_sync_adapter.dart';
 import 'package:crosscue/core/sync/adapters/sessions_sync_adapter.dart';
 import 'package:crosscue/core/sync/adapters/settings_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_account.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_result.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
+import 'package:crosscue/core/sync/sync_manifest_store.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/utils/uuid.dart';
@@ -24,6 +26,7 @@ class SyncOrchestrator {
     required this.transport,
     required this.db,
     List<NamespaceSyncAdapter>? adapters,
+    this.manifestStore = const SyncManifestStore(),
   }) : adapters = adapters ??
             <NamespaceSyncAdapter>[
               PuzzlesSyncAdapter(db),
@@ -35,6 +38,7 @@ class SyncOrchestrator {
   final SyncTransport transport;
   final AppDatabase db;
   final List<NamespaceSyncAdapter> adapters;
+  final SyncManifestStore manifestStore;
 
   final StreamController<SyncState> _stateController =
       StreamController<SyncState>.broadcast();
@@ -88,6 +92,12 @@ class SyncOrchestrator {
           // later disable.
         }
       }
+      try {
+        await transport.delete(SyncManifest.key);
+      } on SyncTransportException {
+        // Same best-effort semantics as namespace blobs: stale manifest data is
+        // harmless if the remote wipe is interrupted.
+      }
     }
     _setState(const SyncDisabled());
   }
@@ -113,6 +123,8 @@ class SyncOrchestrator {
 
     NamespaceSyncOutcome total = NamespaceSyncOutcome.zero;
     try {
+      final manifestRead = await manifestStore.read(transport);
+
       // Pull first so per-namespace merge rules (best-progress override,
       // LWW) can fold remote state into ours before we push. Pushing first
       // would silently overwrite a remote completed session with a local
@@ -123,6 +135,14 @@ class SyncOrchestrator {
       }
       for (final adapter in adapters) {
         total += await adapter.push(transport, deviceId);
+      }
+
+      if (manifestRead.requiresFallback) {
+        final manifest = await manifestStore.rebuildFromRemote(
+          transport: transport,
+          adapters: adapters,
+        );
+        await manifestStore.write(transport, manifest);
       }
     } on SyncTransportException catch (e) {
       // Typed transport failure → a SyncError with the right retry semantics.

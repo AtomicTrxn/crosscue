@@ -6,12 +6,15 @@ import 'dart:async';
 
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/sync/models/sync_account.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
+import 'package:crosscue/core/sync/models/sync_namespace.dart';
+import 'package:crosscue/core/sync/models/sync_result.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
 import 'package:crosscue/core/sync/sync_orchestrator.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/utils/uuid.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -209,6 +212,68 @@ void main() {
     expect(second.pulled, equals(0));
   });
 
+  test('missing manifest falls back to full sync and rebuilds manifest',
+      () async {
+    await insertPuzzle(deviceA, 'puz-1');
+    await orchestratorA.syncNow();
+    cloud.remove(SyncManifest.key);
+
+    final loggingTransport = _LoggingFakeTransport(store: cloud);
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final orchestrator = SyncOrchestrator(
+      transport: loggingTransport,
+      db: db,
+    );
+    addTearDown(orchestrator.dispose);
+    await orchestrator.enable();
+
+    final result = await orchestrator.syncNow();
+
+    expect(result.pulled, equals(1));
+    expect(cloud[SyncManifest.key], isNotNull);
+    final manifest = SyncManifest.decode(cloud[SyncManifest.key]!);
+    expect(manifest, isNotNull);
+    expect(
+      manifest!.namespaces[SyncNamespace.puzzles]!.keys,
+      contains('puzzles/puz-1.json'),
+    );
+
+    final firstPuzzleRead =
+        loggingTransport.events.indexOf('read:puzzles/puz-1.json');
+    final manifestWrite =
+        loggingTransport.events.indexOf('write:${SyncManifest.key}');
+    expect(firstPuzzleRead, isNonNegative);
+    expect(manifestWrite, isNonNegative);
+    expect(
+      manifestWrite,
+      greaterThan(firstPuzzleRead),
+      reason: 'manifest rebuild must happen after full fallback processing',
+    );
+  });
+
+  test('valid manifest does not trigger fallback rebuild', () async {
+    await insertPuzzle(deviceA, 'puz-1');
+    await orchestratorA.syncNow();
+
+    final loggingTransport = _LoggingFakeTransport(store: cloud);
+    final orchestrator = SyncOrchestrator(
+      transport: loggingTransport,
+      db: deviceA,
+    );
+    addTearDown(orchestrator.dispose);
+    await orchestrator.enable();
+
+    final result = await orchestrator.syncNow();
+
+    expect(result.pushed, equals(SyncResult.zero.pushed));
+    expect(result.pulled, equals(SyncResult.zero.pulled));
+    expect(
+      loggingTransport.events.where((e) => e == 'write:${SyncManifest.key}'),
+      isEmpty,
+    );
+  });
+
   test('disable(wipeRemote: true) clears the cloud bucket', () async {
     await insertPuzzle(deviceA, 'puz-1');
     await orchestratorA.syncNow();
@@ -321,6 +386,30 @@ class _ThrowingTransport implements SyncTransport {
 
   @override
   Future<void> delete(String key) async {}
+}
+
+class _LoggingFakeTransport extends FakeSyncTransport {
+  _LoggingFakeTransport({required super.store});
+
+  final List<String> events = [];
+
+  @override
+  Future<List<String>> list(String prefix) async {
+    events.add('list:$prefix');
+    return super.list(prefix);
+  }
+
+  @override
+  Future<String?> read(String key) async {
+    events.add('read:$key');
+    return super.read(key);
+  }
+
+  @override
+  Future<String?> write(String key, String bytes, {String? ifMatch}) async {
+    events.add('write:$key');
+    return super.write(key, bytes, ifMatch: ifMatch);
+  }
 }
 
 /// A transport that has an ambient account but records whether the interactive
