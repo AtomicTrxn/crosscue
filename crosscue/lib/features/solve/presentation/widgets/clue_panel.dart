@@ -112,8 +112,13 @@ class _ClueRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final xwTheme =
         Theme.of(context).extension<CrosswordTheme>() ?? CrosswordTheme.light();
+    final directionWord =
+        clue.direction == Direction.across ? 'Across' : 'Down';
     final label =
         '${clue.number}${clue.direction == Direction.across ? 'A' : 'D'}';
+    // Spoken form, e.g. "14 Across, Capital of France". Used as the active
+    // clue's live-region announcement and the inactive clue's button label.
+    final spokenClue = '${clue.number} $directionWord, ${clue.text}';
 
     final labelWidget = Padding(
       padding: const EdgeInsets.only(top: 1, right: 10),
@@ -154,9 +159,18 @@ class _ClueRow extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [labelWidget, textWidget],
+                // Live region: when the focused cell moves to a new word, the
+                // active clue's label changes and the screen reader announces
+                // it, so the solver always hears the current clue (issue #179).
+                child: Semantics(
+                  liveRegion: true,
+                  label: spokenClue,
+                  child: ExcludeSemantics(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [labelWidget, textWidget],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -174,13 +188,18 @@ class _ClueRow extends StatelessWidget {
 
     // Inactive clue — tap to switch direction. Inset so its text lines up with
     // the active row's text (past the arrow gutter), so nothing jumps.
-    return InkWell(
-      onTap: () => onSelect(clue),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(40, 12, 40, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [labelWidget, textWidget],
+    return Semantics(
+      button: true,
+      label: 'Switch to $spokenClue',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => onSelect(clue),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(40, 12, 40, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labelWidget, textWidget],
+          ),
         ),
       ),
     );

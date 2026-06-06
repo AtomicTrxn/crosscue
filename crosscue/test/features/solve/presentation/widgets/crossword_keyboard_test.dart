@@ -63,4 +63,30 @@ void main() {
     );
     expect(find.text('Rebus'), findsOneWidget);
   });
+
+  // Issue #179: glyph keys (⌫ / ✓) and the Rebus key carry word labels so
+  // VoiceOver/TalkBack announce something meaningful, and letter keys expose
+  // their letter as a button.
+  testWidgets('keys expose screen-reader labels', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      wrap(
+        CrosswordKeyboard(
+          onLetter: (_) {},
+          onBackspace: () {},
+          onCheckWord: () {},
+          onRebus: () {},
+          onFeedbackSound: () {},
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Delete'), findsOneWidget);
+    expect(find.bySemanticsLabel('Check word'), findsOneWidget);
+    expect(find.bySemanticsLabel('Enter rebus'), findsOneWidget);
+    // A representative letter key exposes its letter as its label.
+    expect(find.bySemanticsLabel('Q'), findsOneWidget);
+
+    handle.dispose();
+  });
 }
