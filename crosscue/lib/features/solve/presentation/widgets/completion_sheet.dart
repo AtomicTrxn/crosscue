@@ -49,6 +49,11 @@ class CompletionSheet extends ConsumerWidget {
     final s = solveState.elapsedSeconds % 60;
     final timeStr =
         '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    // Spoken time for screen readers — "00:42" otherwise reads as digits.
+    final spokenTime = [
+      if (m > 0) '$m minute${m == 1 ? '' : 's'}',
+      if (s > 0 || m == 0) '$s second${s == 1 ? '' : 's'}',
+    ].join(' ');
 
     final statsAsync = ref.watch(statsDataProvider);
     final streak = statsAsync.asData?.value.currentStreak ?? 0;
@@ -106,24 +111,31 @@ class CompletionSheet extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    solveLabel,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: onSurface1,
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      solveLabel,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: onSurface1,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    timeStr,
-                    style: TextStyle(
-                      fontFamily: CrosscueTypography.robotoMono,
-                      fontSize: CrosscueTypography.timerLarge,
-                      fontWeight: FontWeight.w700,
-                      color: onSurface1,
-                      letterSpacing: -2,
-                      height: 1,
+                  Semantics(
+                    label: 'Time, $spokenTime',
+                    excludeSemantics: true,
+                    child: Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontFamily: CrosscueTypography.robotoMono,
+                        fontSize: CrosscueTypography.timerLarge,
+                        fontWeight: FontWeight.w700,
+                        color: onSurface1,
+                        letterSpacing: -2,
+                        height: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),

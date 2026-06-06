@@ -26,6 +26,13 @@ extension _CrosswordGridInput on _CrosswordGridState {
       return;
     }
 
+    _focusCell(row, col);
+  }
+
+  /// Moves the solve focus to ([row], [col]) and re-arms keyboard input.
+  /// Shared by pointer taps ([_onTap]) and screen-reader cell activation
+  /// (the `onCellTap` wired into [CrosswordGridPainter], issue #179).
+  void _focusCell(int row, int col) {
     if (_hapticsEnabled) HapticFeedback.selectionClick();
     final focus =
         ref.read(solveProvider(widget.puzzleId).notifier).tapCell(row, col);
