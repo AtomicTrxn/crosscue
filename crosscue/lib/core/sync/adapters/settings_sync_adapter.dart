@@ -1,6 +1,7 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_blob.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:drift/drift.dart';
@@ -27,21 +28,32 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
   SyncNamespace get namespace => SyncNamespace.settings;
 
   @override
-  Future<NamespaceSyncOutcome> push(
+  Future<PushResult> push(
     SyncTransport transport,
-    String deviceId,
-  ) async {
+    String deviceId, {
+    Map<String, SyncManifestEntry>? remoteIndex,
+  }) async {
     final all = await db.select(db.appSettingsTable).get();
     final localRows = all.where((r) => !excludedKeys.contains(r.key)).toList();
-    if (localRows.isEmpty) return NamespaceSyncOutcome.zero;
+    if (localRows.isEmpty) return PushResult.zero;
 
+    final written = <String, SyncManifestEntry>{};
     var pushed = 0;
     for (final row in localRows) {
       final key = keyFor(_encodeKey(row.key));
-      final existing = await transport.read(key);
-      final remote = existing == null ? null : SyncBlob.decode(existing);
 
-      if (remote != null && remote.syncVersion >= row.syncVersion) {
+      // Cheap metadata check: trust the manifest's version for this key when
+      // given, otherwise read the remote blob to learn it.
+      final int? remoteVersion;
+      if (remoteIndex != null) {
+        remoteVersion = remoteIndex[key]?.syncVersion;
+      } else {
+        final existing = await transport.read(key);
+        remoteVersion =
+            existing == null ? null : SyncBlob.decode(existing)?.syncVersion;
+      }
+
+      if (remoteVersion != null && remoteVersion >= row.syncVersion) {
         // Remote already at-or-above our version — nothing to push.
         continue;
       }
@@ -57,6 +69,7 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
         },
       );
       await transport.write(key, blob.encode());
+      written[key] = manifestEntryFor(blob);
       pushed++;
 
       await (db.update(db.appSettingsTable)
@@ -67,14 +80,21 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
         ),
       );
     }
-    return NamespaceSyncOutcome(pushed: pushed);
+    return PushResult(
+      outcome: NamespaceSyncOutcome(pushed: pushed),
+      written: written,
+    );
   }
 
   @override
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport) async {
-    final remoteKeys = await transport.list(namespace.prefix);
-    if (remoteKeys.isEmpty) return NamespaceSyncOutcome.zero;
+  Future<PullResult> pull(
+    SyncTransport transport, {
+    Iterable<String>? onlyKeys,
+  }) async {
+    final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
+    final seen = <String, SyncManifestEntry>{};
+    final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     var conflicts = 0;
     for (final transportKey in remoteKeys) {
@@ -86,11 +106,16 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
       final blob = SyncBlob.decode(bytes);
       if (blob == null) continue;
 
+      final entry = manifestEntryFor(blob);
+      seen[transportKey] = entry;
+
       final settingKey = blob.payload['key'];
       final valueJson = blob.payload['valueJson'];
       if (settingKey is! String ||
           valueJson is! String ||
           excludedKeys.contains(settingKey)) {
+        // Malformed or device-local key — we've seen it; don't re-read it.
+        caughtUp[transportKey] = entry;
         continue;
       }
 
@@ -99,9 +124,13 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
           .getSingleOrNull();
 
       if (local != null) {
-        if (_isIdempotentReapply(local, blob, valueJson)) continue;
+        if (_isIdempotentReapply(local, blob, valueJson)) {
+          caughtUp[transportKey] = entry;
+          continue;
+        }
         if (!_shouldTakeRemote(local, blob)) {
           conflicts++;
+          caughtUp[transportKey] = entry;
           continue;
         }
       }
@@ -115,8 +144,13 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
             ),
           );
       pulled++;
+      caughtUp[transportKey] = entry;
     }
-    return NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts);
+    return PullResult(
+      outcome: NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts),
+      seen: seen,
+      caughtUp: caughtUp,
+    );
   }
 
   /// Setting keys can contain characters (like `.`) that are awkward in

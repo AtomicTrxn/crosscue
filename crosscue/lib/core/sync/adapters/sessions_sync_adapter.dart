@@ -1,6 +1,7 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_blob.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:drift/drift.dart';
@@ -18,15 +19,19 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
   SyncNamespace get namespace => SyncNamespace.sessions;
 
   @override
-  Future<NamespaceSyncOutcome> push(
+  Future<PushResult> push(
     SyncTransport transport,
-    String deviceId,
-  ) async {
+    String deviceId, {
+    Map<String, SyncManifestEntry>? remoteIndex,
+  }) async {
+    // Sessions are always written when dirty (last-writer-wins), so the
+    // [remoteIndex] isn't needed to decide what to push.
     final dirty = await (db.select(db.solveSessionsTable)
           ..where((t) => t.isSynced.equals(false)))
         .get();
-    if (dirty.isEmpty) return NamespaceSyncOutcome.zero;
+    if (dirty.isEmpty) return PushResult.zero;
 
+    final written = <String, SyncManifestEntry>{};
     var pushed = 0;
     for (final session in dirty) {
       final cells = await (db.select(db.cellProgressTable)
@@ -41,7 +46,9 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
         updatedAt: session.updatedAt,
         payload: _encodeSession(session, cells),
       );
-      await transport.write(keyFor(session.puzzleId), blob.encode());
+      final key = keyFor(session.puzzleId);
+      await transport.write(key, blob.encode());
+      written[key] = manifestEntryFor(blob);
       pushed++;
 
       await (db.update(db.solveSessionsTable)
@@ -53,14 +60,21 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
         ),
       );
     }
-    return NamespaceSyncOutcome(pushed: pushed);
+    return PushResult(
+      outcome: NamespaceSyncOutcome(pushed: pushed),
+      written: written,
+    );
   }
 
   @override
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport) async {
-    final remoteKeys = await transport.list(namespace.prefix);
-    if (remoteKeys.isEmpty) return NamespaceSyncOutcome.zero;
+  Future<PullResult> pull(
+    SyncTransport transport, {
+    Iterable<String>? onlyKeys,
+  }) async {
+    final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
+    final seen = <String, SyncManifestEntry>{};
+    final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     var conflicts = 0;
     for (final key in remoteKeys) {
@@ -72,10 +86,14 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
       final blob = SyncBlob.decode(bytes);
       if (blob == null) continue;
 
+      final entry = manifestEntryFor(blob);
+      seen[key] = entry;
+
       final parentPuzzle = await (db.select(db.puzzlesTable)
             ..where((t) => t.id.equals(puzzleId)))
           .getSingleOrNull();
       if (parentPuzzle == null) {
+        // Parent not here yet — leave the cursor behind so we retry next pass.
         continue;
       }
 
@@ -86,13 +104,22 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
           .getSingleOrNull();
 
       final decision = _resolveConflict(local, blob);
-      if (decision == _MergeDecision.keepLocal) continue;
+      if (decision == _MergeDecision.keepLocal) {
+        // We've seen this remote and deliberately kept ours — reconciled.
+        caughtUp[key] = entry;
+        continue;
+      }
       if (decision == _MergeDecision.bestProgressOverride) conflicts++;
 
       await _applyRemoteSession(puzzleId, blob, replacing: local);
       pulled++;
+      caughtUp[key] = entry;
     }
-    return NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts);
+    return PullResult(
+      outcome: NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts),
+      seen: seen,
+      caughtUp: caughtUp,
+    );
   }
 
   _MergeDecision _resolveConflict(SolveSessionRow? local, SyncBlob remote) {

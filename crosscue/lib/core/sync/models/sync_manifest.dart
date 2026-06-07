@@ -146,13 +146,6 @@ class SyncManifestEntry {
   final DateTime updatedAt;
   final String deviceId;
 
-  /// Whether this entry advertises different remote state than [other] — used
-  /// to decide if a local cursor is stale relative to the manifest.
-  bool differsFrom(SyncManifestEntry other) =>
-      syncVersion != other.syncVersion ||
-      !updatedAt.isAtSameMomentAs(other.updatedAt) ||
-      deviceId != other.deviceId;
-
   Map<String, Object?> toJson() => {
         'syncVersion': syncVersion,
         'updatedAt': updatedAt.toUtc().toIso8601String(),

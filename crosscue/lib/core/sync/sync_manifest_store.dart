@@ -1,7 +1,4 @@
-import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
-import 'package:crosscue/core/sync/models/sync_blob.dart';
 import 'package:crosscue/core/sync/models/sync_manifest.dart';
-import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 
 enum SyncManifestReadStatus { found, fallbackRequired }
@@ -48,42 +45,5 @@ class SyncManifestStore {
 
   Future<void> write(SyncTransport transport, SyncManifest manifest) {
     return transport.write(SyncManifest.manifestKey, manifest.encode());
-  }
-
-  Future<SyncManifest> rebuildFromRemote({
-    required SyncTransport transport,
-    required List<NamespaceSyncAdapter> adapters,
-    DateTime? now,
-  }) async {
-    final namespaces = <SyncNamespace, Map<String, SyncManifestEntry>>{};
-
-    // TODO(#189): this re-lists and re-reads every remote blob that the
-    // preceding pull already decoded. Acceptable on the rare fallback path,
-    // but a future phase should surface the blobs the pull already saw so a
-    // corrupt manifest doesn't cost a second full scan.
-    for (final adapter in adapters) {
-      final entries = <String, SyncManifestEntry>{};
-      final keys = await transport.list(adapter.namespace.prefix);
-      for (final key in keys) {
-        final bytes = await transport.read(key);
-        if (bytes == null) continue;
-
-        final blob = SyncBlob.decode(bytes);
-        if (blob == null) continue;
-
-        entries[key] = SyncManifestEntry(
-          syncVersion: blob.syncVersion,
-          updatedAt: blob.updatedAt,
-          deviceId: blob.deviceId,
-        );
-      }
-      namespaces[adapter.namespace] = entries;
-    }
-
-    return SyncManifest(
-      schemaVersion: SyncManifest.currentSchemaVersion,
-      updatedAt: now?.toUtc() ?? DateTime.now().toUtc(),
-      namespaces: namespaces,
-    );
   }
 }
