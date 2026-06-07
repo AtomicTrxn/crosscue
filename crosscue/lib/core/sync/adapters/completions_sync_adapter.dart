@@ -1,6 +1,7 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_blob.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:drift/drift.dart';
@@ -16,19 +17,24 @@ class CompletionsSyncAdapter extends NamespaceSyncAdapter {
   SyncNamespace get namespace => SyncNamespace.completions;
 
   @override
-  Future<NamespaceSyncOutcome> push(
+  Future<PushResult> push(
     SyncTransport transport,
-    String deviceId,
-  ) async {
-    final remoteUuids = (await transport.list(namespace.prefix))
-        .map(idFromKey)
-        .whereType<String>()
-        .toSet();
+    String deviceId, {
+    Map<String, SyncManifestEntry>? remoteIndex,
+  }) async {
+    // Set-union dedup: the remote keys (from the manifest when given, else a
+    // live list) tell us which completion uuids already exist on the cloud.
+    final remoteUuids =
+        (remoteIndex?.keys ?? await transport.list(namespace.prefix))
+            .map(idFromKey)
+            .whereType<String>()
+            .toSet();
 
     final localRows = await db.select(db.puzzleCompletionsTable).get();
     final missing =
         localRows.where((r) => !remoteUuids.contains(r.clientUuid)).toList();
 
+    final written = <String, SyncManifestEntry>{};
     var pushed = 0;
     for (final row in missing) {
       final blob = SyncBlob(
@@ -38,16 +44,23 @@ class CompletionsSyncAdapter extends NamespaceSyncAdapter {
         updatedAt: row.completedAt,
         payload: _encodeRow(row),
       );
-      await transport.write(keyFor(row.clientUuid), blob.encode());
+      final key = keyFor(row.clientUuid);
+      await transport.write(key, blob.encode());
+      written[key] = manifestEntryFor(blob);
       pushed++;
     }
-    return NamespaceSyncOutcome(pushed: pushed);
+    return PushResult(
+      outcome: NamespaceSyncOutcome(pushed: pushed),
+      written: written,
+    );
   }
 
   @override
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport) async {
-    final remoteKeys = await transport.list(namespace.prefix);
-    if (remoteKeys.isEmpty) return NamespaceSyncOutcome.zero;
+  Future<PullResult> pull(
+    SyncTransport transport, {
+    Iterable<String>? onlyKeys,
+  }) async {
+    final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
     final localUuids = (await (db.selectOnly(db.puzzleCompletionsTable)
               ..addColumns([db.puzzleCompletionsTable.clientUuid]))
@@ -63,28 +76,44 @@ class CompletionsSyncAdapter extends NamespaceSyncAdapter {
         .whereType<String>()
         .toSet();
 
+    final seen = <String, SyncManifestEntry>{};
+    final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     for (final key in remoteKeys) {
       final uuid = idFromKey(key);
-      if (uuid == null || localUuids.contains(uuid)) continue;
+      if (uuid == null) continue;
 
       final bytes = await transport.read(key);
       if (bytes == null) continue;
       final blob = SyncBlob.decode(bytes);
       if (blob == null) continue;
 
+      final entry = manifestEntryFor(blob);
+      seen[key] = entry;
+
+      // Immutable + content-stable: a uuid we already hold is reconciled.
+      if (localUuids.contains(uuid)) {
+        caughtUp[key] = entry;
+        continue;
+      }
+
       final companion = _decodeRow(uuid, blob);
       if (companion == null) continue;
 
-      // Skip if the parent puzzle isn't on this device yet — the next sync
-      // pass (after the puzzles adapter pulls) will pick it up. Avoids FK
+      // Skip if the parent puzzle isn't on this device yet — leave the cursor
+      // un-advanced so the next pass (after puzzles pulls) retries. Avoids FK
       // violations under partial-sync conditions.
       if (!localPuzzleIds.contains(companion.puzzleId.value)) continue;
 
       await db.into(db.puzzleCompletionsTable).insert(companion);
       pulled++;
+      caughtUp[key] = entry;
     }
-    return NamespaceSyncOutcome(pulled: pulled);
+    return PullResult(
+      outcome: NamespaceSyncOutcome(pulled: pulled),
+      seen: seen,
+      caughtUp: caughtUp,
+    );
   }
 
   Map<String, Object?> _encodeRow(PuzzleCompletionRow r) => <String, Object?>{

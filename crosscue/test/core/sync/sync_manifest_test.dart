@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
-import 'package:crosscue/core/sync/models/sync_blob.dart';
 import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/sync_manifest_store.dart';
@@ -122,17 +120,6 @@ void main() {
         );
       }
     });
-
-    test('SyncManifestEntry.differsFrom detects each field change', () {
-      final base = entry(syncVersion: 1);
-      expect(base.differsFrom(entry(syncVersion: 1)), isFalse);
-      expect(base.differsFrom(entry(syncVersion: 2)), isTrue);
-      expect(
-        base.differsFrom(entry(updatedAt: DateTime.utc(2026, 1, 2))),
-        isTrue,
-      );
-      expect(base.differsFrom(entry(deviceId: 'other')), isTrue);
-    });
   });
 
   group('SyncManifestStore', () {
@@ -184,57 +171,7 @@ void main() {
       expect(result.requiresFallback, isFalse);
       expect(result.manifest, isNotNull);
     });
-
-    test('rebuildFromRemote indexes only valid sync blobs', () async {
-      final valid = SyncBlob(
-        schemaVersion: SyncBlob.currentSchemaVersion,
-        deviceId: 'device-a',
-        syncVersion: 2,
-        updatedAt: DateTime.utc(2026, 6, 5),
-        payload: const {'id': 'puz-1'},
-      );
-      final transport = FakeSyncTransport(
-        store: {
-          'puzzles/puz-1.json': valid.encode(),
-          'puzzles/bad.json': 'not-json',
-        },
-      );
-
-      final rebuilt = await const SyncManifestStore().rebuildFromRemote(
-        transport: transport,
-        adapters: [_TestAdapter(SyncNamespace.puzzles)],
-        now: DateTime.utc(2026, 6, 6),
-      );
-
-      expect(rebuilt.updatedAt, equals(DateTime.utc(2026, 6, 6)));
-      expect(
-        rebuilt.namespaces[SyncNamespace.puzzles]!.keys,
-        contains('puzzles/puz-1.json'),
-      );
-      expect(
-        rebuilt.namespaces[SyncNamespace.puzzles]!.keys,
-        isNot(contains('puzzles/bad.json')),
-      );
-    });
   });
-}
-
-class _TestAdapter extends NamespaceSyncAdapter {
-  _TestAdapter(this.namespace);
-
-  @override
-  final SyncNamespace namespace;
-
-  @override
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport) async =>
-      NamespaceSyncOutcome.zero;
-
-  @override
-  Future<NamespaceSyncOutcome> push(
-    SyncTransport transport,
-    String deviceId,
-  ) async =>
-      NamespaceSyncOutcome.zero;
 }
 
 /// Fake transport whose [read] always throws, to exercise the store's

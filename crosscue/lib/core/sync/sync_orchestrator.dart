@@ -9,6 +9,7 @@ import 'package:crosscue/core/sync/adapters/sessions_sync_adapter.dart';
 import 'package:crosscue/core/sync/adapters/settings_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_account.dart';
 import 'package:crosscue/core/sync/models/sync_manifest.dart';
+import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/models/sync_result.dart';
 import 'package:crosscue/core/sync/models/sync_state.dart';
 import 'package:crosscue/core/sync/sync_manifest_store.dart';
@@ -98,6 +99,9 @@ class SyncOrchestrator {
         // Same best-effort semantics as namespace blobs: stale manifest data is
         // harmless if the remote wipe is interrupted.
       }
+      // The remote is gone; our cursors describe state that no longer exists.
+      // Drop them so a later re-enable rediscovers the remote from scratch.
+      await db.remoteSyncCursorDao.clearAll();
     }
     _setState(const SyncDisabled());
   }
@@ -124,35 +128,58 @@ class SyncOrchestrator {
     NamespaceSyncOutcome total = NamespaceSyncOutcome.zero;
     try {
       final manifestRead = await manifestStore.read(transport);
+      // A missing / corrupt / newer-schema manifest → full namespace scan and
+      // rebuild. Otherwise diff the manifest against our cursors and read only
+      // what changed.
+      final fallback = manifestRead.requiresFallback;
+      final manifest = manifestRead.manifest;
 
-      // Pull first so per-namespace merge rules (best-progress override,
-      // LWW) can fold remote state into ours before we push. Pushing first
-      // would silently overwrite a remote completed session with a local
-      // in-progress one when the in-progress row happens to be newer.
-      // Puzzles must land before completions for FK satisfaction.
+      // Pull first so per-namespace merge rules (best-progress override, LWW)
+      // can fold remote state into ours before we push. Puzzles must land
+      // before sessions/completions for FK satisfaction — adapter order does
+      // that within this single pass.
+      final seenByNs = <SyncNamespace, Map<String, SyncManifestEntry>>{};
       for (final adapter in adapters) {
-        total += await adapter.pull(transport);
-      }
-      for (final adapter in adapters) {
-        total += await adapter.push(transport, deviceId);
+        final onlyKeys =
+            fallback ? null : await _changedKeys(adapter.namespace, manifest!);
+        final result = await adapter.pull(transport, onlyKeys: onlyKeys);
+        total += result.outcome;
+        seenByNs[adapter.namespace] = result.seen;
+        await _advanceCursors(adapter.namespace, result.caughtUp);
       }
 
-      // NOTE: the manifest is currently *write-once* — it's only (re)written
-      // here on the fallback path (missing / corrupt / newer-schema). Routine
-      // pushes do NOT yet update it, so once written it advertises only the
-      // remote state captured at rebuild time. That's safe today because pull
-      // is still a full namespace scan and never consults the manifest.
-      //
-      // WARNING for the next phase: do not drive incremental pull off this
-      // manifest until pushes also fold their written entries back into it
-      // (SyncManifest.withEntry) and persist local cursors. A reader trusting a
-      // write-once manifest would skip another device's pushes → lost sync.
-      if (manifestRead.requiresFallback) {
-        final manifest = await manifestStore.rebuildFromRemote(
-          transport: transport,
-          adapters: adapters,
+      final writtenByNs = <SyncNamespace, Map<String, SyncManifestEntry>>{};
+      for (final adapter in adapters) {
+        final remoteIndex = fallback
+            ? seenByNs[adapter.namespace]!
+            : manifest!.entriesFor(adapter.namespace);
+        final result = await adapter.push(
+          transport,
+          deviceId,
+          remoteIndex: remoteIndex,
         );
-        await manifestStore.write(transport, manifest);
+        total += result.outcome;
+        writtenByNs[adapter.namespace] = result.written;
+        // Advance our own cursor for what we just uploaded so we don't re-pull
+        // our own writes next pass.
+        await _advanceCursors(adapter.namespace, result.written);
+      }
+
+      // Update the remote manifest *after* the blob writes, so it never
+      // advertises data that wasn't uploaded. On fallback we rebuild it from
+      // everything we saw + wrote; otherwise we fold our writes into the
+      // manifest we read. A no-op incremental pass writes nothing.
+      final anyWrites = writtenByNs.values.any((m) => m.isNotEmpty);
+      if (fallback || anyWrites) {
+        await manifestStore.write(
+          transport,
+          _composeManifest(
+            fallback: fallback,
+            previous: manifest,
+            seenByNs: seenByNs,
+            writtenByNs: writtenByNs,
+          ),
+        );
       }
     } on SyncTransportException catch (e) {
       // Typed transport failure → a SyncError with the right retry semantics.
@@ -179,6 +206,70 @@ class SyncOrchestrator {
 
   Future<void> dispose() async {
     await _stateController.close();
+  }
+
+  /// The remote keys in [manifest] for [namespace] whose entry differs from our
+  /// local cursor (or that we have no cursor for) — i.e. what actually changed
+  /// remotely since we last reconciled. Unchanged keys are skipped entirely, so
+  /// a no-op pass reads nothing beyond the manifest.
+  Future<List<String>> _changedKeys(
+    SyncNamespace namespace,
+    SyncManifest manifest,
+  ) async {
+    final cursors = await db.remoteSyncCursorDao.getNamespaceCursors(namespace);
+    final cursorByKey = {for (final c in cursors) c.syncKey: c};
+    final changed = <String>[];
+    for (final entry in manifest.entriesFor(namespace).entries) {
+      final cursor = cursorByKey[entry.key];
+      // Compare on (syncVersion, deviceId) only — both reliably identify a
+      // distinct remote write. `updatedAt` is derived and, because the cursor
+      // store persists DateTime at second precision, can't be compared exactly
+      // against the sub-second value in the manifest JSON.
+      final isStale = cursor == null ||
+          cursor.syncVersion != entry.value.syncVersion ||
+          cursor.deviceId != entry.value.deviceId;
+      if (isStale) changed.add(entry.key);
+    }
+    return changed;
+  }
+
+  /// Records [entries] as reconciled for [namespace] so future passes skip them.
+  Future<void> _advanceCursors(
+    SyncNamespace namespace,
+    Map<String, SyncManifestEntry> entries,
+  ) async {
+    for (final entry in entries.entries) {
+      await db.remoteSyncCursorDao.upsertCursor(
+        namespace: namespace,
+        syncKey: entry.key,
+        metadata: entry.value,
+      );
+    }
+  }
+
+  /// Builds the manifest to write back. On [fallback] it's rebuilt from what we
+  /// saw + wrote across all namespaces; otherwise it's [previous] with our
+  /// freshly-written entries folded in.
+  SyncManifest _composeManifest({
+    required bool fallback,
+    required SyncManifest? previous,
+    required Map<SyncNamespace, Map<String, SyncManifestEntry>> seenByNs,
+    required Map<SyncNamespace, Map<String, SyncManifestEntry>> writtenByNs,
+  }) {
+    final namespaces = <SyncNamespace, Map<String, SyncManifestEntry>>{
+      for (final namespace in SyncNamespace.values)
+        namespace: {
+          ...(fallback
+              ? (seenByNs[namespace] ?? const {})
+              : previous!.entriesFor(namespace)),
+          ...(writtenByNs[namespace] ?? const {}),
+        },
+    };
+    return SyncManifest(
+      schemaVersion: SyncManifest.currentSchemaVersion,
+      updatedAt: DateTime.now().toUtc(),
+      namespaces: namespaces,
+    );
   }
 
   /// Reads or generates the stable per-install device id. Stored in

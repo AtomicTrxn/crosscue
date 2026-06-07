@@ -1,3 +1,5 @@
+import 'package:crosscue/core/sync/models/sync_blob.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 
@@ -23,19 +25,86 @@ class NamespaceSyncOutcome {
       );
 }
 
-/// Per-namespace sync logic. The orchestrator calls [push] then [pull] on
-/// each adapter once per sync pass. Implementations encapsulate the merge
-/// rules described in `docs/architecture/sync-design.md` (Conflict resolution).
+/// Outcome of an adapter [NamespaceSyncAdapter.pull].
+class PullResult {
+  const PullResult({
+    this.outcome = NamespaceSyncOutcome.zero,
+    this.seen = const {},
+    this.caughtUp = const {},
+  });
+
+  static const PullResult zero = PullResult();
+
+  final NamespaceSyncOutcome outcome;
+
+  /// Every remote key we successfully decoded this pass, with the metadata read
+  /// from the blob. Used to (re)build the manifest on the fallback path.
+  final Map<String, SyncManifestEntry> seen;
+
+  /// Keys we fully reconciled — applied **or** deliberately kept local. The
+  /// orchestrator advances the local cursor for these. A key skipped for a
+  /// missing parent FK or a decode/read failure is intentionally absent so the
+  /// next pass retries it (its manifest entry still won't match the cursor).
+  final Map<String, SyncManifestEntry> caughtUp;
+
+  int get pulled => outcome.pulled;
+  int get conflicts => outcome.conflicts;
+}
+
+/// Outcome of an adapter [NamespaceSyncAdapter.push].
+class PushResult {
+  const PushResult({
+    this.outcome = NamespaceSyncOutcome.zero,
+    this.written = const {},
+  });
+
+  static const PushResult zero = PushResult();
+
+  final NamespaceSyncOutcome outcome;
+
+  /// Keys we wrote this pass, with the metadata we wrote, so the orchestrator
+  /// can fold them into the manifest and advance our own cursor (avoiding a
+  /// re-pull of our own upload next pass).
+  final Map<String, SyncManifestEntry> written;
+
+  int get pushed => outcome.pushed;
+}
+
+/// Builds the manifest index entry for a decoded blob.
+SyncManifestEntry manifestEntryFor(SyncBlob blob) => SyncManifestEntry(
+      syncVersion: blob.syncVersion,
+      updatedAt: blob.updatedAt,
+      deviceId: blob.deviceId,
+    );
+
+/// Per-namespace sync logic. The orchestrator calls [pull] then [push] on each
+/// adapter once per sync pass. Implementations encapsulate the merge rules for
+/// their namespace (see issue #189 for the manifest-assisted incremental flow).
 abstract class NamespaceSyncAdapter {
   SyncNamespace get namespace;
 
-  /// Uploads local entities that the cloud doesn't yet have. Returns the
-  /// number of blobs written.
-  Future<NamespaceSyncOutcome> push(SyncTransport transport, String deviceId);
+  /// Downloads remote entities and applies them locally.
+  ///
+  /// When [onlyKeys] is null the adapter lists and scans the whole namespace
+  /// (the fallback / first-sync path). Otherwise it reads only the given keys —
+  /// the incremental path, where the orchestrator has already diffed the remote
+  /// manifest against local cursors and knows exactly what changed.
+  Future<PullResult> pull(
+    SyncTransport transport, {
+    Iterable<String>? onlyKeys,
+  });
 
-  /// Downloads remote entities and applies them locally. Returns the number
-  /// of local rows mutated, plus a count of conflicts the merge resolved.
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport);
+  /// Uploads local entities the cloud doesn't yet have.
+  ///
+  /// [remoteIndex], when provided, is the manifest's view of this namespace's
+  /// remote keys; the adapter trusts it to skip remote metadata probes
+  /// (`list`/`read`). When null the adapter probes the transport directly —
+  /// used by lower-level unit tests and as a safe fallback.
+  Future<PushResult> push(
+    SyncTransport transport,
+    String deviceId, {
+    Map<String, SyncManifestEntry>? remoteIndex,
+  });
 
   /// Convenience: full blob key for a namespace-local id.
   String keyFor(String id) => '${namespace.prefix}$id.json';

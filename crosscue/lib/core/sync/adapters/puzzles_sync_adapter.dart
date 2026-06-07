@@ -1,6 +1,7 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/sync/adapters/namespace_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_blob.dart';
+import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:drift/drift.dart';
@@ -17,16 +18,20 @@ class PuzzlesSyncAdapter extends NamespaceSyncAdapter {
   SyncNamespace get namespace => SyncNamespace.puzzles;
 
   @override
-  Future<NamespaceSyncOutcome> push(
+  Future<PushResult> push(
     SyncTransport transport,
-    String deviceId,
-  ) async {
+    String deviceId, {
+    Map<String, SyncManifestEntry>? remoteIndex,
+  }) async {
     final localRows = await (db.select(db.puzzlesTable)
           ..where((t) => t.isSynced.equals(false)))
         .get();
-    if (localRows.isEmpty) return NamespaceSyncOutcome.zero;
+    if (localRows.isEmpty) return PushResult.zero;
 
-    final remoteKeys = (await transport.list(namespace.prefix)).toSet();
+    // Trust the manifest's key set when given; otherwise probe the remote.
+    final remoteKeys = remoteIndex?.keys.toSet() ??
+        (await transport.list(namespace.prefix)).toSet();
+    final written = <String, SyncManifestEntry>{};
     var pushed = 0;
     for (final row in localRows) {
       final key = keyFor(row.id);
@@ -39,6 +44,7 @@ class PuzzlesSyncAdapter extends NamespaceSyncAdapter {
           payload: _encodeRow(row),
         );
         await transport.write(key, blob.encode());
+        written[key] = manifestEntryFor(blob);
         pushed++;
       }
       // Mark synced regardless: either we just uploaded, or it was already
@@ -51,13 +57,18 @@ class PuzzlesSyncAdapter extends NamespaceSyncAdapter {
         ),
       );
     }
-    return NamespaceSyncOutcome(pushed: pushed);
+    return PushResult(
+      outcome: NamespaceSyncOutcome(pushed: pushed),
+      written: written,
+    );
   }
 
   @override
-  Future<NamespaceSyncOutcome> pull(SyncTransport transport) async {
-    final remoteKeys = await transport.list(namespace.prefix);
-    if (remoteKeys.isEmpty) return NamespaceSyncOutcome.zero;
+  Future<PullResult> pull(
+    SyncTransport transport, {
+    Iterable<String>? onlyKeys,
+  }) async {
+    final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
     final localIds = (await (db.selectOnly(db.puzzlesTable)
               ..addColumns([db.puzzlesTable.id]))
@@ -66,22 +77,39 @@ class PuzzlesSyncAdapter extends NamespaceSyncAdapter {
         .whereType<String>()
         .toSet();
 
+    final seen = <String, SyncManifestEntry>{};
+    final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     for (final key in remoteKeys) {
       final id = idFromKey(key);
-      if (id == null || localIds.contains(id)) continue;
+      if (id == null) continue;
 
       final bytes = await transport.read(key);
       if (bytes == null) continue;
       final blob = SyncBlob.decode(bytes);
       if (blob == null) continue;
 
+      final entry = manifestEntryFor(blob);
+      seen[key] = entry;
+
+      // Content-addressable: an id we already hold is byte-identical, so we're
+      // reconciled with no write. Record it as caught-up to advance the cursor.
+      if (localIds.contains(id)) {
+        caughtUp[key] = entry;
+        continue;
+      }
+
       final companion = _decodeRow(id, blob);
       if (companion == null) continue;
       await db.into(db.puzzlesTable).insert(companion);
       pulled++;
+      caughtUp[key] = entry;
     }
-    return NamespaceSyncOutcome(pulled: pulled);
+    return PullResult(
+      outcome: NamespaceSyncOutcome(pulled: pulled),
+      seen: seen,
+      caughtUp: caughtUp,
+    );
   }
 
   Map<String, Object?> _encodeRow(PuzzleRow r) => <String, Object?>{

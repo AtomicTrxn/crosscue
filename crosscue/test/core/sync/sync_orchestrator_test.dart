@@ -275,6 +275,142 @@ void main() {
     );
   });
 
+  group('incremental sync (#189)', () {
+    Future<int> insertSession(
+      AppDatabase db,
+      String puzzleId, {
+      String status = 'in_progress',
+      DateTime? updatedAt,
+    }) {
+      final now = updatedAt ?? DateTime.now().toUtc();
+      return db.into(db.solveSessionsTable).insert(
+            SolveSessionsTableCompanion.insert(
+              puzzleId: puzzleId,
+              deviceId: 'device-a',
+              startedAt: now,
+              lastPlayedAt: now,
+              createdAt: now,
+              updatedAt: now,
+              status: Value(status),
+            ),
+          );
+    }
+
+    List<String> blobReads(_LoggingFakeTransport t) => t.events
+        .where(
+          (e) =>
+              e.startsWith('read:') && e != 'read:${SyncManifest.manifestKey}',
+        )
+        .toList();
+
+    test('a converged second pass reads nothing but the manifest', () async {
+      await insertPuzzle(deviceA, 'puz-1');
+      await insertSession(deviceA, 'puz-1');
+      await orchestratorA.syncNow();
+
+      final logging = _LoggingFakeTransport(store: cloud);
+      final orchestrator = SyncOrchestrator(transport: logging, db: deviceA);
+      addTearDown(orchestrator.dispose);
+      await orchestrator.enable();
+      logging.events.clear();
+
+      final result = await orchestrator.syncNow();
+
+      expect(result.pulled, 0);
+      expect(result.pushed, 0);
+      // The manifest comparison alone decides there's nothing to do: no
+      // per-blob reads, and no manifest rewrite.
+      expect(blobReads(logging), isEmpty);
+      expect(
+        logging.events.where((e) => e.startsWith('write:')),
+        isEmpty,
+      );
+    });
+
+    test('a single changed session pulls only that blob on the peer', () async {
+      await insertPuzzle(deviceA, 'puz-1');
+      await insertPuzzle(deviceA, 'puz-2');
+      await insertSession(deviceA, 'puz-1');
+      await insertSession(deviceA, 'puz-2');
+
+      // A publishes everything; B does a first (full) reconcile.
+      await orchestratorA.syncNow();
+      await orchestratorB.syncNow();
+
+      // Change exactly one session on A and re-publish.
+      final later = DateTime.now().toUtc().add(const Duration(hours: 1));
+      await (deviceA.update(deviceA.solveSessionsTable)
+            ..where((t) => t.puzzleId.equals('puz-1')))
+          .write(
+        SolveSessionsTableCompanion(
+          status: const Value('completed'),
+          completionType: const Value('clean'),
+          completedAt: Value(later),
+          solvedDateLocal: const Value('2026-01-02'),
+          elapsedMs: const Value(1000),
+          updatedAt: Value(later),
+          isSynced: const Value(false),
+        ),
+      );
+      await orchestratorA.syncNow();
+
+      // B reconciles again through a logging transport.
+      final logging = _LoggingFakeTransport(store: cloud);
+      final orchestrator = SyncOrchestrator(transport: logging, db: deviceB);
+      addTearDown(orchestrator.dispose);
+      await orchestrator.enable();
+      logging.events.clear();
+
+      await orchestrator.syncNow();
+
+      // Only the one changed session is read — not the unchanged session, not
+      // the unchanged puzzles.
+      expect(blobReads(logging), ['read:sessions/puz-1.json']);
+      final sessionOnB = await (deviceB.select(deviceB.solveSessionsTable)
+            ..where((t) => t.puzzleId.equals('puz-1')))
+          .getSingle();
+      expect(sessionOnB.status, 'completed');
+    });
+
+    test('a new puzzle + session + completion converge in one peer pass',
+        () async {
+      await insertPuzzle(deviceA, 'puz-1');
+      await insertSession(deviceA, 'puz-1', status: 'completed');
+      final uuid = Uuid.v4();
+      await deviceA.into(deviceA.puzzleCompletionsTable).insert(
+            PuzzleCompletionsTableCompanion.insert(
+              puzzleId: 'puz-1',
+              completionType: 'clean',
+              completedAt: DateTime.now().toUtc(),
+              solvedDateLocal: '2026-01-01',
+              elapsedMs: 60000,
+              clientUuid: uuid,
+            ),
+          );
+      await orchestratorA.syncNow();
+
+      // A single pass on the peer must satisfy puzzle → session/completion
+      // foreign keys (adapter order pulls puzzles before its children).
+      await orchestratorB.syncNow();
+
+      expect(
+        await (deviceB.select(deviceB.puzzlesTable)
+              ..where((t) => t.id.equals('puz-1')))
+            .getSingleOrNull(),
+        isNotNull,
+      );
+      expect(
+        await (deviceB.select(deviceB.solveSessionsTable)
+              ..where((t) => t.puzzleId.equals('puz-1')))
+            .getSingleOrNull(),
+        isNotNull,
+      );
+      final completionsOnB =
+          await deviceB.select(deviceB.puzzleCompletionsTable).get();
+      expect(completionsOnB.map((c) => c.clientUuid), contains(uuid));
+    });
+  });
+
   test('disable(wipeRemote: true) clears the cloud bucket', () async {
     await insertPuzzle(deviceA, 'puz-1');
     await orchestratorA.syncNow();
