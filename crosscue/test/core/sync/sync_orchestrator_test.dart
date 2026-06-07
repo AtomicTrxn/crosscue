@@ -216,7 +216,7 @@ void main() {
       () async {
     await insertPuzzle(deviceA, 'puz-1');
     await orchestratorA.syncNow();
-    cloud.remove(SyncManifest.key);
+    cloud.remove(SyncManifest.manifestKey);
 
     final loggingTransport = _LoggingFakeTransport(store: cloud);
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -231,8 +231,8 @@ void main() {
     final result = await orchestrator.syncNow();
 
     expect(result.pulled, equals(1));
-    expect(cloud[SyncManifest.key], isNotNull);
-    final manifest = SyncManifest.decode(cloud[SyncManifest.key]!);
+    expect(cloud[SyncManifest.manifestKey], isNotNull);
+    final manifest = SyncManifest.decode(cloud[SyncManifest.manifestKey]!);
     expect(manifest, isNotNull);
     expect(
       manifest!.namespaces[SyncNamespace.puzzles]!.keys,
@@ -242,7 +242,7 @@ void main() {
     final firstPuzzleRead =
         loggingTransport.events.indexOf('read:puzzles/puz-1.json');
     final manifestWrite =
-        loggingTransport.events.indexOf('write:${SyncManifest.key}');
+        loggingTransport.events.indexOf('write:${SyncManifest.manifestKey}');
     expect(firstPuzzleRead, isNonNegative);
     expect(manifestWrite, isNonNegative);
     expect(
@@ -269,7 +269,8 @@ void main() {
     expect(result.pushed, equals(SyncResult.zero.pushed));
     expect(result.pulled, equals(SyncResult.zero.pulled));
     expect(
-      loggingTransport.events.where((e) => e == 'write:${SyncManifest.key}'),
+      loggingTransport.events
+          .where((e) => e == 'write:${SyncManifest.manifestKey}'),
       isEmpty,
     );
   });
