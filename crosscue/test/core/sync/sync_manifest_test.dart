@@ -58,6 +58,83 @@ void main() {
     });
   });
 
+  group('SyncManifest helpers', () {
+    SyncManifestEntry entry({
+      int syncVersion = 1,
+      String deviceId = 'device-a',
+      DateTime? updatedAt,
+    }) =>
+        SyncManifestEntry(
+          syncVersion: syncVersion,
+          updatedAt: updatedAt ?? DateTime.utc(2026, 1, 1, 12),
+          deviceId: deviceId,
+        );
+
+    test('empty() has every namespace present but bare', () {
+      final manifest = SyncManifest.empty();
+      for (final namespace in SyncNamespace.values) {
+        expect(manifest.entriesFor(namespace), isEmpty);
+      }
+      expect(manifest.schemaVersion, SyncManifest.currentSchemaVersion);
+    });
+
+    test('entriesFor / entryFor read namespace entries', () {
+      final manifest = SyncManifest.empty().withEntry(
+        SyncNamespace.puzzles,
+        'puzzles/p-1.json',
+        entry(syncVersion: 4),
+      );
+
+      expect(
+        manifest.entriesFor(SyncNamespace.puzzles).keys,
+        ['puzzles/p-1.json'],
+      );
+      expect(
+        manifest
+            .entryFor(SyncNamespace.puzzles, 'puzzles/p-1.json')!
+            .syncVersion,
+        4,
+      );
+      expect(manifest.entryFor(SyncNamespace.puzzles, 'missing.json'), isNull);
+      expect(manifest.entriesFor(SyncNamespace.sessions), isEmpty);
+    });
+
+    test('withEntry returns a copy without mutating the receiver', () {
+      final original = SyncManifest.empty();
+      final next = original.withEntry(
+        SyncNamespace.settings,
+        'settings/theme.json',
+        entry(),
+      );
+
+      expect(original.entriesFor(SyncNamespace.settings), isEmpty);
+      expect(
+        next.entryFor(SyncNamespace.settings, 'settings/theme.json'),
+        isNotNull,
+      );
+    });
+
+    test('manifestKey does not collide with any namespace prefix', () {
+      for (final namespace in SyncNamespace.values) {
+        expect(
+          SyncManifest.manifestKey.startsWith(namespace.prefix),
+          isFalse,
+        );
+      }
+    });
+
+    test('SyncManifestEntry.differsFrom detects each field change', () {
+      final base = entry(syncVersion: 1);
+      expect(base.differsFrom(entry(syncVersion: 1)), isFalse);
+      expect(base.differsFrom(entry(syncVersion: 2)), isTrue);
+      expect(
+        base.differsFrom(entry(updatedAt: DateTime.utc(2026, 1, 2))),
+        isTrue,
+      );
+      expect(base.differsFrom(entry(deviceId: 'other')), isTrue);
+    });
+  });
+
   group('SyncManifestStore', () {
     test('missing, corrupt, and newer-schema manifests require fallback',
         () async {
@@ -67,15 +144,29 @@ void main() {
 
       expect((await manifestStore.read(transport)).requiresFallback, isTrue);
 
-      store[SyncManifest.key] = 'not-json';
+      store[SyncManifest.manifestKey] = 'not-json';
       expect((await manifestStore.read(transport)).requiresFallback, isTrue);
 
-      store[SyncManifest.key] = jsonEncode({
+      store[SyncManifest.manifestKey] = jsonEncode({
         'schemaVersion': SyncManifest.currentSchemaVersion + 1,
         'updatedAt': DateTime.utc(2026).toIso8601String(),
         'namespaces': <String, Object?>{},
       });
       expect((await manifestStore.read(transport)).requiresFallback, isTrue);
+    });
+
+    test('a transport error reading the manifest degrades to fallback',
+        () async {
+      // The manifest is just an optimization index — a transient lock/IO error
+      // reading it must not abort the sync; it falls back to a full scan.
+      final transport = _ThrowingReadTransport(
+        store: {},
+        kind: SyncTransportErrorKind.locked,
+      );
+
+      final result = await const SyncManifestStore().read(transport);
+
+      expect(result.requiresFallback, isTrue);
     });
 
     test('valid manifest is found', () async {
@@ -85,7 +176,7 @@ void main() {
         namespaces: const {},
       );
       final transport = FakeSyncTransport(
-        store: {SyncManifest.key: manifest.encode()},
+        store: {SyncManifest.manifestKey: manifest.encode()},
       );
 
       final result = await const SyncManifestStore().read(transport);
@@ -144,4 +235,18 @@ class _TestAdapter extends NamespaceSyncAdapter {
     String deviceId,
   ) async =>
       NamespaceSyncOutcome.zero;
+}
+
+/// Fake transport whose [read] always throws, to exercise the store's
+/// degrade-to-fallback behavior on a transient manifest read failure.
+class _ThrowingReadTransport extends FakeSyncTransport {
+  _ThrowingReadTransport({
+    required super.store,
+    required this.kind,
+  });
+
+  final SyncTransportErrorKind kind;
+
+  @override
+  Future<String?> read(String key) async => throw SyncTransportException(kind);
 }

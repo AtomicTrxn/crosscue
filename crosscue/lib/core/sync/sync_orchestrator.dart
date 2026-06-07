@@ -93,7 +93,7 @@ class SyncOrchestrator {
         }
       }
       try {
-        await transport.delete(SyncManifest.key);
+        await transport.delete(SyncManifest.manifestKey);
       } on SyncTransportException {
         // Same best-effort semantics as namespace blobs: stale manifest data is
         // harmless if the remote wipe is interrupted.
@@ -137,6 +137,16 @@ class SyncOrchestrator {
         total += await adapter.push(transport, deviceId);
       }
 
+      // NOTE: the manifest is currently *write-once* — it's only (re)written
+      // here on the fallback path (missing / corrupt / newer-schema). Routine
+      // pushes do NOT yet update it, so once written it advertises only the
+      // remote state captured at rebuild time. That's safe today because pull
+      // is still a full namespace scan and never consults the manifest.
+      //
+      // WARNING for the next phase: do not drive incremental pull off this
+      // manifest until pushes also fold their written entries back into it
+      // (SyncManifest.withEntry) and persist local cursors. A reader trusting a
+      // write-once manifest would skip another device's pushes → lost sync.
       if (manifestRead.requiresFallback) {
         final manifest = await manifestStore.rebuildFromRemote(
           transport: transport,

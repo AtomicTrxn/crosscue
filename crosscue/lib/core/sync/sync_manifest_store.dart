@@ -26,7 +26,16 @@ class SyncManifestStore {
   const SyncManifestStore();
 
   Future<SyncManifestReadResult> read(SyncTransport transport) async {
-    final bytes = await transport.read(SyncManifest.key);
+    final String? bytes;
+    try {
+      bytes = await transport.read(SyncManifest.manifestKey);
+    } on SyncTransportException {
+      // The manifest is an optimization index, not the source of truth. A
+      // transient lock / I/O error reading it must not abort the whole sync —
+      // degrade to the full namespace scan, which is always correct. If the
+      // failure is real and persistent, the subsequent pull will surface it.
+      return const SyncManifestReadResult.fallbackRequired();
+    }
     if (bytes == null) return const SyncManifestReadResult.fallbackRequired();
 
     final manifest = SyncManifest.decode(bytes);
@@ -38,7 +47,7 @@ class SyncManifestStore {
   }
 
   Future<void> write(SyncTransport transport, SyncManifest manifest) {
-    return transport.write(SyncManifest.key, manifest.encode());
+    return transport.write(SyncManifest.manifestKey, manifest.encode());
   }
 
   Future<SyncManifest> rebuildFromRemote({
@@ -48,6 +57,10 @@ class SyncManifestStore {
   }) async {
     final namespaces = <SyncNamespace, Map<String, SyncManifestEntry>>{};
 
+    // TODO(#189): this re-lists and re-reads every remote blob that the
+    // preceding pull already decoded. Acceptable on the rare fallback path,
+    // but a future phase should surface the blobs the pull already saw so a
+    // corrupt manifest doesn't cost a second full scan.
     for (final adapter in adapters) {
       final entries = <String, SyncManifestEntry>{};
       final keys = await transport.list(adapter.namespace.prefix);
