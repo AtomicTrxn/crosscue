@@ -41,6 +41,10 @@ void main() {
       expect(await db.select(db.appSettingsTable).get(), isEmpty);
     });
 
+    test('remote_sync_cursors table is queryable after onCreate', () async {
+      expect(await db.select(db.remoteSyncCursorsTable).get(), isEmpty);
+    });
+
     test('imported_solve_stats table is queryable after onCreate', () async {
       expect(await db.select(db.importedSolveStatsTable).get(), isEmpty);
     });
@@ -680,6 +684,61 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // v6 → v7 migration
+  // ---------------------------------------------------------------------------
+
+  group('v6 → v7 migration', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('drift_v6_test_');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) await tempDir.delete(recursive: true);
+    });
+
+    test('creates remote_sync_cursors table', () async {
+      final file = File('${tempDir.path}/v6.db');
+      final rawDb = raw_sqlite.sqlite3.open(file.path);
+      try {
+        rawDb.execute('''
+          CREATE TABLE sources (
+            id TEXT NOT NULL PRIMARY KEY,
+            display_name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''');
+        rawDb.execute('PRAGMA user_version = 6');
+      } finally {
+        rawDb.dispose();
+      }
+
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(() => db.close());
+
+      await db.into(db.remoteSyncCursorsTable).insert(
+            RemoteSyncCursorsTableCompanion.insert(
+              namespace: 'sessions',
+              syncKey: 'sessions/puzzle-1.json',
+              syncVersion: 1,
+              updatedAt: DateTime.utc(2026),
+              deviceId: 'device-a',
+              lastSeenAt: DateTime.utc(2026, 1, 2),
+            ),
+          );
+
+      final rows = await db.select(db.remoteSyncCursorsTable).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.namespace, equals('sessions'));
+      expect(rows.single.syncKey, equals('sessions/puzzle-1.json'));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // clearAllUserData
   // ---------------------------------------------------------------------------
 
@@ -694,6 +753,23 @@ void main() {
 
       await db.clearAllUserData();
       expect(await db.select(db.appSettingsTable).get(), isEmpty);
+    });
+
+    test('removes remote_sync_cursors rows', () async {
+      await db.into(db.remoteSyncCursorsTable).insert(
+            RemoteSyncCursorsTableCompanion.insert(
+              namespace: 'settings',
+              syncKey: 'settings/theme_mode.json',
+              syncVersion: 1,
+              updatedAt: DateTime.utc(2026),
+              deviceId: 'device-a',
+              lastSeenAt: DateTime.utc(2026, 1, 2),
+            ),
+          );
+      expect(await db.select(db.remoteSyncCursorsTable).get(), isNotEmpty);
+
+      await db.clearAllUserData();
+      expect(await db.select(db.remoteSyncCursorsTable).get(), isEmpty);
     });
 
     test('removes imported_solve_stats rows', () async {

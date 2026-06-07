@@ -7,9 +7,11 @@ import 'package:crosscue/core/database/tables/clues_table.dart';
 import 'package:crosscue/core/database/tables/imported_solve_stats_table.dart';
 import 'package:crosscue/core/database/tables/puzzle_completions_table.dart';
 import 'package:crosscue/core/database/tables/puzzles_table.dart';
+import 'package:crosscue/core/database/tables/remote_sync_cursors_table.dart';
 import 'package:crosscue/core/database/tables/solve_sessions_table.dart';
 import 'package:crosscue/core/database/tables/sources_table.dart';
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/sync/data/remote_sync_cursor_dao.dart';
 import 'package:crosscue/core/utils/uuid.dart';
 import 'package:crosscue/features/import/data/daos/puzzle_dao.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
@@ -33,6 +35,7 @@ part 'app_database.g.dart';
     AppSettingsTable,
     ImportedSolveStatsTable,
     PuzzleCompletionsTable,
+    RemoteSyncCursorsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -47,9 +50,10 @@ class AppDatabase extends _$AppDatabase {
   AppSettingsDao get appSettingsDao => AppSettingsDao(this);
   StatsDao get statsDao => StatsDao(this);
   PuzzleCompletionDao get puzzleCompletionDao => PuzzleCompletionDao(this);
+  RemoteSyncCursorDao get remoteSyncCursorDao => RemoteSyncCursorDao(this);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   /// Migration strategy.
   ///
@@ -73,6 +77,8 @@ class AppDatabase extends _$AppDatabase {
   ///          backfilled from `canonical_json` on upgrade. Unblocks the
   ///          archive-list completion fraction without a full grid decode.
   ///          See issue #122.
+  /// v6 → v7: `remote_sync_cursors` — device-local cache of remote manifest
+  ///          metadata used by incremental sync planning. See issue #189.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
@@ -265,6 +271,10 @@ class AppDatabase extends _$AppDatabase {
               }
             }
           }
+
+          if (from < 7) {
+            await m.createTable(remoteSyncCursorsTable);
+          }
         },
         beforeOpen: (details) async {
           // Enable foreign key enforcement.
@@ -295,6 +305,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(puzzleCompletionsTable).go();
       await delete(importedSolveStatsTable).go();
       await delete(appSettingsTable).go();
+      await delete(remoteSyncCursorsTable).go();
     });
   }
 
