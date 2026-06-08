@@ -21,7 +21,6 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
   static const Set<String> excludedKeys = {
     'device_id',
     'has_seen_onboarding',
-    'notifications_last_scheduled_at',
   };
 
   @override

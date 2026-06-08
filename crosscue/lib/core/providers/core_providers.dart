@@ -2,8 +2,6 @@ import 'dart:io' show Platform;
 
 import 'package:crosscue/core/audio/sound_player.dart';
 import 'package:crosscue/core/database/app_database.dart';
-import 'package:crosscue/core/entitlement/entitlement_service.dart';
-import 'package:crosscue/core/entitlement/free_entitlement_service.dart';
 import 'package:crosscue/core/sync/sync_orchestrator.dart';
 import 'package:crosscue/core/sync/transport/google_drive_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/icloud_sync_transport.dart';
@@ -76,11 +74,6 @@ SyncOrchestrator syncOrchestrator(Ref ref) {
   ref.onDispose(orchestrator.dispose);
   return orchestrator;
 }
-
-/// Entitlement service — all features free.
-@Riverpod(keepAlive: true)
-EntitlementService entitlementService(Ref ref) =>
-    const FreeEntitlementService();
 
 /// Crash reporter — local-only; no data leaves the device.
 @Riverpod(keepAlive: true)

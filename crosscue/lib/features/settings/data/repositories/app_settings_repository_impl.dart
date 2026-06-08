@@ -20,8 +20,6 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const _keyColorblindMode = 'colorblind_mode';
   static const _keySoundsEnabled = 'sounds_enabled';
   static const _keySkipFilledCells = 'skip_filled_cells';
-  static const _keyPuzzleReminder = 'puzzle_reminder';
-  static const _keyStreakReminder = 'streak_reminder';
   static const _keyCrashReporting = 'crash_reporting';
   static const _keyCrosshareAutoDownload = 'crosshare_auto_download_enabled';
   static const _keyCrosshareLastDownloadedDate =
@@ -134,18 +132,6 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   @override
   Future<void> setSkipFilledCells(bool value) =>
       _setBool(_keySkipFilledCells, value);
-
-  @override
-  Future<bool> getPuzzleReminder() => _getBool(_keyPuzzleReminder);
-  @override
-  Future<void> setPuzzleReminder(bool value) =>
-      _setBool(_keyPuzzleReminder, value);
-
-  @override
-  Future<bool> getStreakReminder() => _getBool(_keyStreakReminder);
-  @override
-  Future<void> setStreakReminder(bool value) =>
-      _setBool(_keyStreakReminder, value);
 
   @override
   Future<bool> getCrashReporting() => _getBool(_keyCrashReporting);
