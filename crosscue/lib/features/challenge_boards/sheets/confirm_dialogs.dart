@@ -1,15 +1,16 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
 
 /// Center confirmation dialog. Names the consequence; primary action is the
 /// affirmative, destructive variant uses actionDestructive.
-Future<bool?> _confirm(BuildContext context,
-    {required String title,
-    required String body,
-    required String confirmLabel,
-    bool destructive = false}) {
+Future<bool?> _confirm(
+  BuildContext context, {
+  required String title,
+  required String body,
+  required String confirmLabel,
+  bool destructive = false,
+}) {
   return showDialog<bool>(
     context: context,
     barrierColor: AppColors.dialogScrim(context),
@@ -20,41 +21,58 @@ Future<bool?> _confirm(BuildContext context,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: AppTextStyles.titleMedium.copyWith(
-                      fontSize: 18, color: AppColors.onSurface1(ctx))),
-              const SizedBox(height: 8),
-              Text(body,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.onSurface2(ctx))),
-              const SizedBox(height: 20),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontSize: 18,
+                color: AppColors.onSurface1(ctx),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.onSurface2(ctx)),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
                 TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: Text('Cancel',
-                        style: TextStyle(color: AppColors.onSurface2(ctx)))),
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: AppColors.onSurface2(ctx)),
+                  ),
+                ),
                 const SizedBox(width: 6),
                 if (destructive)
                   FilledButton(
-                      style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.actionDestructive(ctx),
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 48),
-                          padding: const EdgeInsets.symmetric(horizontal: 18)),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(confirmLabel))
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.actionDestructive(ctx),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(confirmLabel),
+                  )
                 else
                   FilledButton(
-                      style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, 48),
-                          padding: const EdgeInsets.symmetric(horizontal: 18)),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: Text(confirmLabel)),
-              ]),
-            ]),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(confirmLabel),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     ),
   );

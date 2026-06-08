@@ -1,6 +1,5 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'theme/app_colors.dart';
 
 /// Crosscue · Challenge Boards palette helpers.
 ///
@@ -19,7 +18,8 @@ abstract final class ChallengePalette {
   /// First-place tint reuses the shared warm accent (streakAccent / difficultyHard).
   static const Color firstPlace = AppColors.streakAccent; // #FF9800
   /// First-place pill background — 15% streakAccent over the surface.
-  static Color firstPlaceChipBg(BuildContext c) => firstPlace.withOpacity(0.15);
+  static Color firstPlaceChipBg(BuildContext c) =>
+      firstPlace.withValues(alpha: 0.15);
 
   // ── Card surfaces ───────────────────────────────────────────────────
   /// Quiet (secondary) card border = divider.
@@ -31,18 +31,25 @@ abstract final class ChallengePalette {
     return dark
         ? const [
             BoxShadow(
-                color: Color(0x73000000), blurRadius: 8, offset: Offset(0, 2))
+              color: Color(0x73000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
           ]
         : const [
             BoxShadow(
-                color: Color(0x17000000), blurRadius: 4, offset: Offset(0, 1)),
+              color: Color(0x17000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
             BoxShadow(color: Color(0x0A000000), blurRadius: 0, spreadRadius: 1),
           ];
   }
 
   /// Status-banner tints.
   static Color bannerInfoBg(BuildContext c) => AppColors.primaryContainer(c);
-  static Color bannerWarnBg(BuildContext c) => firstPlace.withOpacity(0.13);
+  static Color bannerWarnBg(BuildContext c) =>
+      firstPlace.withValues(alpha: 0.13);
   static Color bannerErrorBg(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark
           ? const Color(0x1FE89691)
@@ -64,10 +71,19 @@ class SilhouettePalette {
 
 /// The three preset "looks", indexed 1..3 (see avatar/silhouette_painter.dart).
 const List<SilhouettePalette> kSilhouettePalettes = [
-  SilhouettePalette(Color(0xFFDCEBFF), Color(0xFF1E6FD0),
-      Color(0xFF10538F)), // 1 · blue · headphones
-  SilhouettePalette(Color(0xFFFFE6C2), Color(0xFFE08900),
-      Color(0xFFA85F00)), // 2 · warm · cap
-  SilhouettePalette(Color(0xFF16294E), Color(0xFF8FC0FF),
-      Color(0xFFC9DEFF)), // 3 · navy · top-knot
+  SilhouettePalette(
+    Color(0xFFDCEBFF),
+    Color(0xFF1E6FD0),
+    Color(0xFF10538F),
+  ), // 1 · blue · headphones
+  SilhouettePalette(
+    Color(0xFFFFE6C2),
+    Color(0xFFE08900),
+    Color(0xFFA85F00),
+  ), // 2 · warm · cap
+  SilhouettePalette(
+    Color(0xFF16294E),
+    Color(0xFF8FC0FF),
+    Color(0xFFC9DEFF),
+  ), // 3 · navy · top-knot
 ];

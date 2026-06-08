@@ -1,4 +1,3 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/painting.dart';
@@ -64,8 +63,11 @@ abstract final class AvatarNormalizer {
     // Center of output + user pan (scaled into output space).
     canvas.translate(out / 2 + userOffset.dx * k, out / 2 + userOffset.dy * k);
     canvas.scale(totalScale * k);
-    canvas.drawImage(source, Offset(-imgW / 2, -imgH / 2),
-        Paint()..filterQuality = FilterQuality.high);
+    canvas.drawImage(
+      source,
+      Offset(-imgW / 2, -imgH / 2),
+      Paint()..filterQuality = FilterQuality.high,
+    );
     canvas.restore();
 
     final picture = recorder.endRecording();

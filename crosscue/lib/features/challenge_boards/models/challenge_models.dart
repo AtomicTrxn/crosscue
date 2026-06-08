@@ -1,6 +1,3 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 
 /// Crosscue · Challenge Boards — domain models.

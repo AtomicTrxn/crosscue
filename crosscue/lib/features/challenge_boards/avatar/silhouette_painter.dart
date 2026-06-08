@@ -1,6 +1,5 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/challenge_palette.dart';
 import 'package:flutter/material.dart';
-import '../challenge_palette.dart';
 
 /// Crosscue · Preset avatar silhouettes.
 ///
@@ -19,8 +18,10 @@ class SilhouettePainter extends CustomPainter {
     final s = size.width / 100.0;
     canvas.save();
     canvas.scale(s);
-    canvas.clipPath(Path()
-      ..addOval(Rect.fromCircle(center: const Offset(50, 50), radius: 50)));
+    canvas.clipPath(
+      Path()
+        ..addOval(Rect.fromCircle(center: const Offset(50, 50), radius: 50)),
+    );
 
     // background
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 100), Paint()..color = p.bg);
@@ -46,8 +47,11 @@ class SilhouettePainter extends CustomPainter {
       case 1: // headphones
         final band = Path()
           ..moveTo(33, 45)
-          ..arcToPoint(const Offset(67, 45),
-              radius: const Radius.circular(17), clockwise: true);
+          ..arcToPoint(
+            const Offset(67, 45),
+            radius: const Radius.circular(17),
+            clockwise: true,
+          );
         canvas.drawPath(
           band,
           Paint()
@@ -58,19 +62,28 @@ class SilhouettePainter extends CustomPainter {
             ..isAntiAlias = true,
         );
         canvas.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(27.5, 41, 9, 15), const Radius.circular(4)),
-            accFill);
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(27.5, 41, 9, 15),
+            const Radius.circular(4),
+          ),
+          accFill,
+        );
         canvas.drawRRect(
-            RRect.fromRectAndRadius(
-                const Rect.fromLTWH(63.5, 41, 9, 15), const Radius.circular(4)),
-            accFill);
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(63.5, 41, 9, 15),
+            const Radius.circular(4),
+          ),
+          accFill,
+        );
         break;
       case 2: // cap with side brim
         final crown = Path()
           ..moveTo(35.5, 45)
-          ..arcToPoint(const Offset(64.5, 45),
-              radius: const Radius.circular(14.5), clockwise: true)
+          ..arcToPoint(
+            const Offset(64.5, 45),
+            radius: const Radius.circular(14.5),
+            clockwise: true,
+          )
           ..close();
         canvas.drawPath(crown, accFill);
         final brim = Path()
@@ -85,8 +98,11 @@ class SilhouettePainter extends CustomPainter {
         canvas.drawCircle(const Offset(50, 27), 7.5, accFill);
         final hair = Path()
           ..moveTo(35, 44)
-          ..arcToPoint(const Offset(65, 44),
-              radius: const Radius.circular(15), clockwise: true)
+          ..arcToPoint(
+            const Offset(65, 44),
+            radius: const Radius.circular(15),
+            clockwise: true,
+          )
           ..quadraticBezierTo(50, 37, 35, 44)
           ..close();
         canvas.drawPath(hair, accFill);
@@ -107,5 +123,7 @@ class Silhouette extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox.square(
-      dimension: size, child: CustomPaint(painter: SilhouettePainter(look)));
+        dimension: size,
+        child: CustomPaint(painter: SilhouettePainter(look)),
+      );
 }
