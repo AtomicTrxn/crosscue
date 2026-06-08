@@ -278,55 +278,6 @@ final class SyncOrchestratorProvider extends $FunctionalProvider<
 
 String _$syncOrchestratorHash() => r'2a33ae58d6e8985111a731a040986bedcc7c567b';
 
-/// Entitlement service — all features free.
-
-@ProviderFor(entitlementService)
-final entitlementServiceProvider = EntitlementServiceProvider._();
-
-/// Entitlement service — all features free.
-
-final class EntitlementServiceProvider extends $FunctionalProvider<
-    EntitlementService,
-    EntitlementService,
-    EntitlementService> with $Provider<EntitlementService> {
-  /// Entitlement service — all features free.
-  EntitlementServiceProvider._()
-      : super(
-          from: null,
-          argument: null,
-          retry: null,
-          name: r'entitlementServiceProvider',
-          isAutoDispose: false,
-          dependencies: null,
-          $allTransitiveDependencies: null,
-        );
-
-  @override
-  String debugGetCreateSourceHash() => _$entitlementServiceHash();
-
-  @$internal
-  @override
-  $ProviderElement<EntitlementService> $createElement(
-          $ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  EntitlementService create(Ref ref) {
-    return entitlementService(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(EntitlementService value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<EntitlementService>(value),
-    );
-  }
-}
-
-String _$entitlementServiceHash() =>
-    r'8b777f0857c0b0277e787bd83e737e8c2d1556d2';
-
 /// Crash reporter — local-only; no data leaves the device.
 
 @ProviderFor(crashReporter)

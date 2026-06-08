@@ -559,16 +559,10 @@ final class _PermissiveAppSettings implements AppSettingsRepository {
   Future<bool> getHasSeenOnboarding() async => true;
 
   @override
-  Future<bool> getPuzzleReminder() async => false;
-
-  @override
   Future<bool> getSkipFilledCells() async => false;
 
   @override
   Future<bool> getSoundsEnabled() async => false;
-
-  @override
-  Future<bool> getStreakReminder() async => false;
 
   @override
   Future<AppThemeMode> getThemeMode() async => AppThemeMode.system;
@@ -586,16 +580,10 @@ final class _PermissiveAppSettings implements AppSettingsRepository {
   Future<void> setHasSeenOnboarding(bool value) async {}
 
   @override
-  Future<void> setPuzzleReminder(bool value) async {}
-
-  @override
   Future<void> setSkipFilledCells(bool value) async {}
 
   @override
   Future<void> setSoundsEnabled(bool value) async {}
-
-  @override
-  Future<void> setStreakReminder(bool value) async {}
 
   @override
   Future<void> setThemeMode(AppThemeMode mode) async {}

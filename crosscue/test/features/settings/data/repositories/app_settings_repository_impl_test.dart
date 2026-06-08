@@ -112,22 +112,18 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Boolean toggle settings (sounds, skip, reminders, crash reporting)
+  // Boolean toggle settings (sounds, skip, crash reporting)
   // ---------------------------------------------------------------------------
 
-  group('sounds / skip / reminders / crash (bool toggles)', () {
+  group('sounds / skip / crash (bool toggles)', () {
     final boolGetters = <String, Future<bool> Function()>{
       'sounds': () => repo.getSoundsEnabled(),
       'skip': () => repo.getSkipFilledCells(),
-      'puzzleReminder': () => repo.getPuzzleReminder(),
-      'streakReminder': () => repo.getStreakReminder(),
       'crashReporting': () => repo.getCrashReporting(),
     };
     final boolSetters = <String, Future<void> Function(bool)>{
       'sounds': (v) => repo.setSoundsEnabled(v),
       'skip': (v) => repo.setSkipFilledCells(v),
-      'puzzleReminder': (v) => repo.setPuzzleReminder(v),
-      'streakReminder': (v) => repo.setStreakReminder(v),
       'crashReporting': (v) => repo.setCrashReporting(v),
     };
 

@@ -30,12 +30,6 @@ abstract interface class AppSettingsRepository {
   Future<bool> getSkipFilledCells();
   Future<void> setSkipFilledCells(bool value);
 
-  Future<bool> getPuzzleReminder();
-  Future<void> setPuzzleReminder(bool value);
-
-  Future<bool> getStreakReminder();
-  Future<void> setStreakReminder(bool value);
-
   Future<bool> getCrashReporting();
   Future<void> setCrashReporting(bool value);
 
