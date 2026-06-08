@@ -7,9 +7,6 @@ class CrosscueNavIcon extends StatelessWidget {
   const CrosscueNavIcon.home({super.key, required this.selected})
       : _type = _NavIconType.home;
 
-  const CrosscueNavIcon.archive({super.key, required this.selected})
-      : _type = _NavIconType.archive;
-
   const CrosscueNavIcon.challenge({super.key, required this.selected})
       : _type = _NavIconType.challenge;
 
@@ -34,7 +31,7 @@ class CrosscueNavIcon extends StatelessWidget {
   }
 }
 
-enum _NavIconType { home, archive, challenge, stats, settings }
+enum _NavIconType { home, challenge, stats, settings }
 
 class _NavIconPainter extends CustomPainter {
   const _NavIconPainter({
@@ -52,8 +49,6 @@ class _NavIconPainter extends CustomPainter {
     switch (type) {
       case _NavIconType.home:
         _paintHome(canvas);
-      case _NavIconType.archive:
-        _paintArchive(canvas);
       case _NavIconType.challenge:
         _paintChallenge(canvas);
       case _NavIconType.stats:
@@ -86,34 +81,6 @@ class _NavIconPainter extends CustomPainter {
         canvas.drawRRect(rrect, stroke);
       }
     }
-  }
-
-  void _paintArchive(Canvas canvas) {
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
-    final fill = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final outline = RRect.fromRectAndRadius(
-      const Rect.fromLTWH(4, 5, 16, 15),
-      const Radius.circular(2),
-    );
-    canvas.drawRRect(outline, selected ? fill : stroke);
-    if (!selected) {
-      canvas.drawLine(const Offset(4, 9), const Offset(20, 9), stroke);
-    }
-    final cutout = Paint()
-      ..color = selected ? Colors.white : color
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(8, 12, 5, 4),
-        const Radius.circular(1),
-      ),
-      cutout,
-    );
   }
 
   void _paintStats(Canvas canvas) {
