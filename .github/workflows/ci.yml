@@ -13,10 +13,9 @@ permissions:
   contents: read
 
 env:
-  # Flutter SDK bump experiment (#128 prerequisite): validate the host-side
-  # toolchain on 3.44 (resolution / analyze / codegen / tests) before touching
-  # release builds. release.yml stays on 3.41.9 until the Android built-in-Kotlin
-  # migration (a 3.44 breaking change) is done + verified.
+  # Toolchain pinned to match release.yml (#128 / #216). The built-in-Kotlin
+  # migration (a 3.44 change) is deferred: it's only required at AGP 9.0+ and
+  # we're on AGP 8.11.1, so KGP keeps working. See flutter/flutter#184837.
   FLUTTER_VERSION: '3.44.0'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 

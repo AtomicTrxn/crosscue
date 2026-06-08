@@ -34,7 +34,11 @@ on:
         default: false
 
 env:
-  FLUTTER_VERSION: '3.41.9'
+  # Matches ci.yml (#128 / #216): release builds now use the same toolchain CI
+  # validates. 3.44 is backwards-compatible for our Android setup — the
+  # built-in-Kotlin migration is only required at AGP 9.0+ (we're on AGP 8.11.1),
+  # so KGP keeps working. Revisit when we move to AGP 9 (flutter/flutter#184837).
+  FLUTTER_VERSION: '3.44.0'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
