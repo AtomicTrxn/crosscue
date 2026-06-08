@@ -87,5 +87,8 @@ class ImportRepositoryImpl implements ImportRepository {
   Future<Puzzle?> getPuzzle(String id) => _dao.getPuzzle(id);
 
   @override
+  Stream<bool> watchPuzzleExists(String id) => _dao.watchPuzzleExists(id);
+
+  @override
   Future<void> deletePuzzle(String id) => _dao.deletePuzzle(id);
 }

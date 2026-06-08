@@ -16,6 +16,7 @@ import 'package:crosscue/features/settings/presentation/providers/settings_provi
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/check_result.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
+import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/repositories/solve_repository.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_elapsed_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
@@ -45,6 +46,35 @@ void main() {
       solveState.focus,
       const FocusPosition(row: 0, col: 1, direction: Direction.across),
     );
+  });
+
+  test(
+      'flips to PuzzleNotFoundError when its puzzle is deleted while open '
+      '(reactive-teardown regression)', () async {
+    final puzzle = _puzzle();
+    final exists = StreamController<bool>();
+    addTearDown(exists.close);
+    final container = _containerFor(
+      puzzle,
+      _blankProgress(),
+      puzzleExistsStream: exists.stream,
+    );
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    // Hold the provider alive across the async gap so its existence-watch
+    // subscription isn't torn down by auto-dispose before we delete the puzzle.
+    container.listen(provider, (_, __) {});
+    await container.read(provider.future);
+    expect(container.read(provider).hasValue, isTrue);
+
+    // The puzzle is removed (Archive delete / clear-all) under the open screen.
+    exists.add(false);
+    await pumpEventQueue();
+
+    final state = container.read(provider);
+    expect(state.hasError, isTrue);
+    expect(state.error, isA<PuzzleNotFoundError>());
   });
 
   test('backspace clears current cell before retreating within the word',
@@ -633,10 +663,13 @@ ProviderContainer _containerFor(
   Puzzle puzzle,
   Grid<CellProgress> progress, {
   bool skipFilledCells = false,
+  Stream<bool>? puzzleExistsStream,
 }) {
   return ProviderContainer(
     overrides: [
-      importRepositoryProvider.overrideWithValue(_FakeImportRepository(puzzle)),
+      importRepositoryProvider.overrideWithValue(
+        _FakeImportRepository(puzzle, existsStream: puzzleExistsStream),
+      ),
       solveRepositoryProvider.overrideWithValue(_FakeSolveRepository(progress)),
       statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
       appSettingsProvider.overrideWithValue(
@@ -955,9 +988,11 @@ Grid<CellProgress> _twoWordAlmostCompleteProgress() {
 }
 
 final class _FakeImportRepository implements ImportRepository {
-  const _FakeImportRepository(this.puzzle);
+  _FakeImportRepository(this.puzzle, {Stream<bool>? existsStream})
+      : _existsStream = existsStream;
 
   final Puzzle puzzle;
+  final Stream<bool>? _existsStream;
 
   @override
   Future<void> deletePuzzle(String id) async {}
@@ -971,6 +1006,10 @@ final class _FakeImportRepository implements ImportRepository {
 
   @override
   Future<Puzzle?> getPuzzle(String id) async => id == puzzle.id ? puzzle : null;
+
+  @override
+  Stream<bool> watchPuzzleExists(String id) =>
+      _existsStream ?? Stream.value(id == puzzle.id);
 
   @override
   Future<ImportJobResult> importBytes(

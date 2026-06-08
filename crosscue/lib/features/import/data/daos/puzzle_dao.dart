@@ -40,6 +40,17 @@ class PuzzleDao extends DatabaseAccessor<AppDatabase> with _$PuzzleDaoMixin {
         .map((rows) => rows.map(_rowToMetadata).toList());
   }
 
+  /// Emits `true` while puzzle [id] exists and `false` once it is deleted.
+  /// Drives reactive teardown of an open solve screen when its puzzle is
+  /// removed (Archive delete, "Clear all data", or a re-import).
+  Stream<bool> watchPuzzleExists(String id) {
+    return (selectOnly(puzzlesTable)
+          ..addColumns([puzzlesTable.id])
+          ..where(puzzlesTable.id.equals(id)))
+        .watch()
+        .map((rows) => rows.isNotEmpty);
+  }
+
   /// Returns a single puzzle's metadata, or null if not found.
   Future<PuzzleMetadata?> getMetadata(String id) async {
     final row = await (select(puzzlesTable)..where((t) => t.id.equals(id)))

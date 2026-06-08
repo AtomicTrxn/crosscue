@@ -79,6 +79,10 @@ class _FakeImportRepository implements ImportRepository {
   Future<Puzzle?> getPuzzle(String id) async => null;
 
   @override
+  Stream<bool> watchPuzzleExists(String id) =>
+      Stream.value(stored.any((m) => m.id == id));
+
+  @override
   Future<void> deletePuzzle(String id) async {
     stored.removeWhere((m) => m.id == id);
   }
