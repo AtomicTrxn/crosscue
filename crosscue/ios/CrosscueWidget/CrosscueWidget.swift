@@ -105,12 +105,18 @@ struct CrosscueProvider: TimelineProvider {
 
 // MARK: - Views
 
-/// Deep link a widget tap into the app: `crosscue://widget?route=<encoded>`.
+/// Deep link a widget tap into the app using the **path** form
+/// `crosscue://<go_router path>` (e.g. `crosscue:///solve/<id>`).
+///
+/// Flutter's built-in deep linking (`FlutterDeepLinkingEnabled`, already used
+/// for the `/join/...` invite Universal Links) routes the incoming URL's *path*
+/// straight into go_router. The previous `crosscue://widget?route=<encoded>`
+/// form hid the destination in a query param, which that mechanism ignores — so
+/// taps fell through to the home tab. `route` is already a percent-encoded
+/// go_router path (see `home_widget_service.dart`), so it drops in verbatim.
 private func widgetDeepLink(_ route: String?) -> URL? {
-  guard let route, !route.isEmpty,
-        let encoded = route.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed)
-  else { return URL(string: "crosscue://widget") }
-  return URL(string: "crosscue://widget?route=\(encoded)")
+  guard let route, !route.isEmpty else { return nil }
+  return URL(string: "crosscue://\(route)")
 }
 
 struct CrosscueWidgetView: View {

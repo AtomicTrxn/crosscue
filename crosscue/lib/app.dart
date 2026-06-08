@@ -113,11 +113,12 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
         await orchestrator.enableSilently();
         await orchestrator.syncNow();
       }
-      // Push current streak + today's puzzle to the Home/Lock-screen widget,
-      // and wire widget taps to deep-link into the app. Both no-op until the
-      // widget extension + App Group are configured (ios-widget-setup.md).
+      // Push current streak + today's puzzle to the Home/Lock-screen widget.
+      // No-op until the widget extension + App Group are configured
+      // (ios-widget-setup.md). Widget taps deep-link via the widget's path-form
+      // `crosscue://<route>` URL, which FlutterDeepLinkingEnabled routes into
+      // go_router — no app-side wiring needed (see CrosscueWidget.widgetDeepLink).
       unawaited(ref.read(homeWidgetServiceProvider).refresh());
-      _initWidgetDeepLinks();
       // Route a pending iOS App Intent (Shortcuts/Siri/Spotlight) if one is
       // waiting from a cold launch. No-op otherwise.
       unawaited(_consumePendingIntentRoute(ref));
@@ -148,32 +149,6 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
     final tomorrow = DateTime.utc(now.year, now.month, now.day + 1);
     final delay = tomorrow.difference(now);
     return delay.isNegative ? Duration.zero : delay;
-  }
-
-  /// Routes a Home/Lock-screen widget tap into the app. The widget encodes its
-  /// target as `crosscue://widget?route=<encoded go_router path>`; we forward
-  /// that path to the router. Safe no-op when nothing launched us from a widget.
-  void _initWidgetDeepLinks() {
-    void go(Uri? uri) {
-      if (uri == null) return;
-      final route = uri.queryParameters['route'];
-      if (route == null || route.isEmpty) return;
-      ref.read(appRouterProvider).go(route);
-    }
-
-    unawaited(() async {
-      try {
-        // The App Group id must be set before querying widget launches,
-        // otherwise home_widget throws "AppGroupId not set".
-        await HomeWidget.setAppGroupId(HomeWidgetService.appGroupId);
-        // Cold launch from a widget tap.
-        go(await HomeWidget.initiallyLaunchedFromHomeWidget());
-        // Taps while the app is already running.
-        HomeWidget.widgetClicked.listen(go);
-      } on Object {
-        // Widget extension / App Group not configured — nothing to route.
-      }
-    }());
   }
 
   void _installCrashHandlers() {
