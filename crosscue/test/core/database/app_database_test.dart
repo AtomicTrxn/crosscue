@@ -100,7 +100,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 1');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       // Open with AppDatabase — should trigger onUpgrade(m, 1, 2)
@@ -148,7 +148,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 1');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));
@@ -214,7 +214,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 2');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       // Open with AppDatabase — should trigger onUpgrade(m, 2, 3).
@@ -261,7 +261,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 2');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));
@@ -399,7 +399,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 3');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));
@@ -517,7 +517,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 4');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));
@@ -663,7 +663,7 @@ void main() {
         );
         rawDb.execute('PRAGMA user_version = 5');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));
@@ -714,7 +714,7 @@ void main() {
         ''');
         rawDb.execute('PRAGMA user_version = 6');
       } finally {
-        rawDb.dispose();
+        rawDb.close();
       }
 
       final db = AppDatabase(NativeDatabase(file));

@@ -26,14 +26,10 @@ dependencies:
   go_router: ^17.0.0
 
   # Local persistence
-  # Deferred at 2.31.x: 2.33.x requires the coordinated sqlite3 3.x migration
-  # and currently conflicts with the Riverpod generator / Flutter meta pin.
-  drift: ^2.20.0
-  # Deferred at 0.2.x while drift stays on the current generator-compatible line.
-  drift_flutter: ^0.2.0
-  # Deferred at 0.5.x: 0.6.0+eol belongs to the sqlite3 3.x migration and
-  # currently cannot be taken independently with the existing generator stack.
-  sqlite3_flutter_libs: ^0.5.0
+  # On the sqlite3 3.x line (taken with the Flutter 3.44 toolchain bump, #128).
+  drift: ^2.33.0
+  drift_flutter: ^0.3.0
+  sqlite3_flutter_libs: ^0.6.0
   path_provider: ^2.1.0
   path: ^1.9.0
 
@@ -98,16 +94,17 @@ dev_dependencies:
   # Code generation
   build_runner: ^2.4.0
   freezed: ^3.2.5
-  # Deferred with the Drift runtime: 2.33.x currently collides with the
-  # Riverpod generator / Flutter meta constraint set.
-  drift_dev: ^2.20.0
+  drift_dev: ^2.33.0
+  # drift_dev 2.33 requires analyzer ^12, which currently only riverpod_generator
+  # 4.0.4-dev.x supports — so pub resolves this codegen tool to a prerelease.
+  # This is a build-time dev_dependency only: the shipped app stays on stable
+  # flutter_riverpod / riverpod_annotation. Pin back to a stable line once
+  # riverpod_generator cuts an analyzer-12 release.
   riverpod_generator: ^4.0.3
 
   # Direct sqlite3 access in migration tests (transitive via drift_dev but must
   # be declared explicitly to satisfy depend_on_referenced_packages lint).
-  # Deferred at 2.x: drift_flutter 0.2.x requires sqlite3 2.x; moving to 3.x
-  # belongs with the coordinated Drift / generator-stack upgrade.
-  sqlite3: ^2.9.4
+  sqlite3: ^3.3.2
 
   # Drives the elapsed-notifier timer tests under a fake clock so we can
   # assert "3s passed and SolveNotifier.state didn't tick" without sleeping.
