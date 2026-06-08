@@ -120,6 +120,15 @@ void main() {
         );
       }
     });
+
+    test('entryCount sums entries across all namespaces (#207)', () {
+      expect(SyncManifest.empty().entryCount, 0);
+      final manifest = SyncManifest.empty()
+          .withEntry(SyncNamespace.puzzles, 'puzzles/a.json', entry())
+          .withEntry(SyncNamespace.puzzles, 'puzzles/b.json', entry())
+          .withEntry(SyncNamespace.sessions, 'sessions/a.json', entry());
+      expect(manifest.entryCount, 3);
+    });
   });
 
   group('SyncManifestStore', () {
@@ -170,6 +179,18 @@ void main() {
 
       expect(result.requiresFallback, isFalse);
       expect(result.manifest, isNotNull);
+    });
+
+    test('write returns the encoded byte length and stores the manifest (#207)',
+        () async {
+      final manifest = SyncManifest.empty();
+      final store = <String, String>{};
+      final transport = FakeSyncTransport(store: store);
+
+      final bytes = await const SyncManifestStore().write(transport, manifest);
+
+      expect(bytes, manifest.encode().length);
+      expect(store[SyncManifest.manifestKey], manifest.encode());
     });
   });
 }

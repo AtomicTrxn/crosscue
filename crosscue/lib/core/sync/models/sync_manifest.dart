@@ -35,9 +35,24 @@ class SyncManifest {
   /// [SyncNamespace.prefix] so namespace `list()` calls never return it.
   static const String manifestKey = 'manifest/v1.json';
 
+  /// Soft threshold for [entryCount] above which the single-blob manifest is
+  /// worth sharding per namespace (e.g. `manifest/puzzles.json`) or compacting.
+  ///
+  /// The manifest is one JSON document read once per sync and rewritten on
+  /// every write-pass, so a very large blob erodes the incremental-sync win for
+  /// big libraries. ~2000 entries (≈ a few hundred KB of JSON) is a
+  /// conservative point to revisit — purely a watch line; crossing it changes
+  /// no behavior. The orchestrator logs when it's exceeded (issue #207).
+  static const int softEntryWarningThreshold = 2000;
+
   final int schemaVersion;
   final DateTime updatedAt;
   final Map<SyncNamespace, Map<String, SyncManifestEntry>> namespaces;
+
+  /// Total entries across all namespaces — one per remote blob. The manifest's
+  /// unbounded-growth signal; see [softEntryWarningThreshold] (#207).
+  int get entryCount =>
+      namespaces.values.fold(0, (sum, entries) => sum + entries.length);
 
   /// All entries for [namespace], keyed by sync key. Empty map when absent.
   Map<String, SyncManifestEntry> entriesFor(SyncNamespace namespace) =>
