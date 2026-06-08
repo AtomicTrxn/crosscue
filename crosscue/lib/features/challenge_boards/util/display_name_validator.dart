@@ -1,4 +1,4 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 
 /// Crosscue · Display-name validation.
 ///

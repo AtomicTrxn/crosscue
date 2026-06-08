@@ -1,4 +1,4 @@
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Crosscue · Challenge Boards palette helpers.

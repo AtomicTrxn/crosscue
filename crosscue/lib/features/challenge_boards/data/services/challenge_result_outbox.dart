@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
 
 class ChallengeResultOutbox {

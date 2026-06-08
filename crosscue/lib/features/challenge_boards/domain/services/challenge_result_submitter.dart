@@ -1,6 +1,6 @@
 import 'package:crosscue/features/challenge_boards/data/services/challenge_result_outbox.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_result_repository.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
 
 class ChallengeResultSubmitter {
   ChallengeResultSubmitter({

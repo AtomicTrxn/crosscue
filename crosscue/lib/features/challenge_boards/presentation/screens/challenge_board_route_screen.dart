@@ -1,8 +1,8 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
-import 'package:crosscue/features/challenge_boards/screens/board_detail_screen.dart';
-import 'package:crosscue/features/challenge_boards/sheets/board_sheets.dart';
-import 'package:crosscue/features/challenge_boards/sheets/confirm_dialogs.dart';
+import 'package:crosscue/features/challenge_boards/presentation/screens/board_detail_screen.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/confirm_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

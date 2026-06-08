@@ -1,10 +1,10 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/atoms.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_row.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/cb_card.dart';
 import 'package:crosscue/features/challenge_boards/util/utc_week.dart';
-import 'package:crosscue/features/challenge_boards/widgets/atoms.dart';
-import 'package:crosscue/features/challenge_boards/widgets/board_row.dart';
-import 'package:crosscue/features/challenge_boards/widgets/cb_card.dart';
 import 'package:flutter/material.dart';
 
 /// Weekly Challenge card — the primary surface. Header (eyebrow + reset

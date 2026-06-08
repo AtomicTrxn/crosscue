@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_board_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_profile_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_result_repository.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/sample/sample_data.dart';
 import 'package:flutter/foundation.dart';
 

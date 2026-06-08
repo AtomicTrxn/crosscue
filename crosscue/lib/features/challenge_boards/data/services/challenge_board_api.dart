@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_board_repository.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
 import 'package:dio/dio.dart';
 
 class ChallengeBoardApi {

@@ -1,8 +1,8 @@
-import 'package:crosscue/features/challenge_boards/avatar/avatar_picker_sheet.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/features/challenge_boards/sheets/board_sheets.dart';
-import 'package:crosscue/features/challenge_boards/sheets/confirm_dialogs.dart';
-import 'package:crosscue/features/challenge_boards/sheets/edit_name_sheet.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_picker_sheet.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/confirm_dialogs.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/edit_name_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

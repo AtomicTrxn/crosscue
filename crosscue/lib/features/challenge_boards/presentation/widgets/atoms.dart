@@ -1,6 +1,6 @@
-import 'package:crosscue/features/challenge_boards/challenge_palette.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/challenge_palette.dart';
 import 'package:flutter/material.dart';
 
 /// Section eyebrow: "THIS WEEK" + dim "· UTC".

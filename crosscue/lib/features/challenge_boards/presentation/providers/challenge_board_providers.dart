@@ -5,11 +5,11 @@ import 'package:crosscue/features/challenge_boards/data/services/challenge_api_c
 import 'package:crosscue/features/challenge_boards/data/services/challenge_board_api.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_result_outbox.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_board_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_profile_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_result_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/services/challenge_result_submitter.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _sampleChallengeRepository = SampleChallengeRepository();

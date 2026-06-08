@@ -1,10 +1,10 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/leaderboard_row.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/segmented_control.dart';
 import 'package:crosscue/features/challenge_boards/sample/sample_data.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
 import 'package:crosscue/features/challenge_boards/util/utc_week.dart';
-import 'package:crosscue/features/challenge_boards/widgets/leaderboard_row.dart';
-import 'package:crosscue/features/challenge_boards/widgets/segmented_control.dart';
 import 'package:flutter/material.dart';
 
 /// Board detail — weekly + lifetime leaderboards behind a segmented control.

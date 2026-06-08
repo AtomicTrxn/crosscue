@@ -1,4 +1,4 @@
-import 'package:crosscue/features/challenge_boards/challenge_palette.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/challenge_palette.dart';
 import 'package:flutter/material.dart';
 
 /// Crosscue · Preset avatar silhouettes.

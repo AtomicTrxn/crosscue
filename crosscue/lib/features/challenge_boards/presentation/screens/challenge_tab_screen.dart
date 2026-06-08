@@ -1,11 +1,11 @@
-import 'package:crosscue/features/challenge_boards/avatar/player_avatar.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/atoms.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/player_avatar.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/lifetime_card.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/weekly_card.dart';
 import 'package:crosscue/features/challenge_boards/sample/sample_data.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
-import 'package:crosscue/features/challenge_boards/widgets/atoms.dart';
-import 'package:crosscue/features/challenge_boards/widgets/lifetime_card.dart';
-import 'package:crosscue/features/challenge_boards/widgets/weekly_card.dart';
 import 'package:flutter/material.dart';
 
 /// The Challenge primary tab. Wire [boards] / [lifetime] to your providers;

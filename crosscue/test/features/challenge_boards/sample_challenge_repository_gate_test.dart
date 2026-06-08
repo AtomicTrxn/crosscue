@@ -3,7 +3,7 @@
 // shows the Create / Join empty state instead of fabricated boards/standings.
 
 import 'package:crosscue/features/challenge_boards/data/repositories/sample_challenge_repository.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
