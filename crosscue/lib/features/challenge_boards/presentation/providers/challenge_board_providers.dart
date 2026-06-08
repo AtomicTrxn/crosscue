@@ -1,6 +1,6 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
-import 'package:crosscue/features/challenge_boards/data/repositories/sample_challenge_repository.dart';
+import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/api_challenge_repository.dart';
+import 'package:crosscue/features/challenge_boards/data/repositories/sample_challenge_repository.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_api_config.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_board_api.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
@@ -10,7 +10,6 @@ import 'package:crosscue/features/challenge_boards/domain/repositories/challenge
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_result_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/services/challenge_result_submitter.dart';
 import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _sampleChallengeRepository = SampleChallengeRepository();
@@ -25,7 +24,8 @@ final sampleChallengeRepositoryProvider = Provider<SampleChallengeRepository>(
 
 final challengeIdentityStoreProvider = Provider<ChallengeIdentityStore>((ref) {
   return ChallengeIdentityStore(
-      dao: ref.watch(appDatabaseProvider).appSettingsDao);
+    dao: ref.watch(appDatabaseProvider).appSettingsDao,
+  );
 });
 
 final challengeBoardApiProvider = Provider<ChallengeBoardApi?>((ref) {

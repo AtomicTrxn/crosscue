@@ -1,13 +1,12 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/avatar/player_avatar.dart';
+import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/sample/sample_data.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/widgets/atoms.dart';
+import 'package:crosscue/features/challenge_boards/widgets/lifetime_card.dart';
+import 'package:crosscue/features/challenge_boards/widgets/weekly_card.dart';
 import 'package:flutter/material.dart';
-import '../avatar/player_avatar.dart';
-import '../models/challenge_models.dart';
-import '../sample/sample_data.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../widgets/atoms.dart';
-import '../widgets/lifetime_card.dart';
-import '../widgets/weekly_card.dart';
 
 /// The Challenge primary tab. Wire [boards] / [lifetime] to your providers;
 /// defaults render the sample data so the screen runs standalone.
@@ -36,20 +35,25 @@ class ChallengeTabScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: Column(children: [
-          _Header(
-              me: me, onEditName: onEditName, onCreateOrJoin: onCreateOrJoin),
-          Divider(height: 1, color: AppColors.divider(context)),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: onRefresh ?? () async {},
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
-                children: _body(context),
+        child: Column(
+          children: [
+            _Header(
+              me: me,
+              onEditName: onEditName,
+              onCreateOrJoin: onCreateOrJoin,
+            ),
+            Divider(height: 1, color: AppColors.divider(context)),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: onRefresh ?? () async {},
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+                  children: _body(context),
+                ),
               ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -81,9 +85,11 @@ class ChallengeTabScreen extends StatelessWidget {
           const SizedBox(height: 14),
           LifetimeCard(stats: lifetime),
           const SizedBox(height: 8),
-          FreshnessLine(boards.status == LoadStatus.offline
-              ? 'Last updated ${boards.lastUpdatedLabel ?? 'earlier'}'
-              : 'Updated just now · pull to refresh'),
+          FreshnessLine(
+            boards.status == LoadStatus.offline
+                ? 'Last updated ${boards.lastUpdatedLabel ?? 'earlier'}'
+                : 'Updated just now · pull to refresh',
+          ),
         ];
     }
   }
@@ -99,50 +105,71 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('Challenge',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Challenge',
             style: AppTextStyles.displayMedium
-                .copyWith(fontSize: 26, color: AppColors.onSurface1(context))),
-        Row(children: [
-          // profile / display-name chip → edit name
-          InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: onEditName,
-            child: Container(
-              height: 34,
-              padding: const EdgeInsets.fromLTRB(5, 0, 10, 0),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.divider(context)),
+                .copyWith(fontSize: 26, color: AppColors.onSurface1(context)),
+          ),
+          Row(
+            children: [
+              // profile / display-name chip → edit name
+              InkWell(
                 borderRadius: BorderRadius.circular(999),
+                onTap: onEditName,
+                child: Container(
+                  height: 34,
+                  padding: const EdgeInsets.fromLTRB(5, 0, 10, 0),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.divider(context)),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PlayerAvatarView(
+                        avatar: me.avatar,
+                        name: me.displayName,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        me.displayName,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface1(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                PlayerAvatarView(
-                    avatar: me.avatar, name: me.displayName, size: 24),
-                const SizedBox(width: 7),
-                Text(me.displayName,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface1(context))),
-              ]),
-            ),
+              const SizedBox(width: 8),
+              // create / join
+              InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: onCreateOrJoin,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary(context),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          // create / join
-          InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: onCreateOrJoin,
-            child: Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                  color: AppColors.primary(context), shape: BoxShape.circle),
-              child: Icon(Icons.add,
-                  size: 20, color: Theme.of(context).colorScheme.onPrimary),
-            ),
-          ),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -155,33 +182,46 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       decoration: BoxDecoration(
-          color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(12)),
-      child: Column(children: [
-        Container(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Container(
             width: 48,
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                color: AppColors.incorrect(context).withOpacity(0.14),
-                shape: BoxShape.circle),
-            child: Icon(Icons.error_outline_rounded,
-                size: 24, color: AppColors.incorrect(context))),
-        const SizedBox(height: 14),
-        Text('Couldn’t load your boards',
+              color: AppColors.incorrect(context).withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline_rounded,
+              size: 24,
+              color: AppColors.incorrect(context),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Couldn’t load your boards',
             style: AppTextStyles.titleMedium
-                .copyWith(fontSize: 16, color: AppColors.onSurface1(context))),
-        const SizedBox(height: 6),
-        Text('Check your connection and try again. Your standings are safe.',
+                .copyWith(fontSize: 16, color: AppColors.onSurface1(context)),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Check your connection and try again. Your standings are safe.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.onSurface2(context))),
-        const SizedBox(height: 18),
-        OutlinedButton.icon(
+                .copyWith(color: AppColors.onSurface2(context)),
+          ),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
             onPressed: () => onRetry?.call(),
             icon: const Icon(Icons.refresh_rounded, size: 17),
-            label: const Text('Retry')),
-      ]),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,8 +1,7 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/avatar/silhouette_painter.dart';
+import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import '../models/challenge_models.dart';
-import '../theme/app_colors.dart';
-import 'silhouette_painter.dart';
 
 /// Crosscue · Player avatar widget.
 ///

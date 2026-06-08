@@ -1,8 +1,7 @@
-// ignore_for_file: always_use_package_imports, directives_ordering, require_trailing_commas, deprecated_member_use, prefer_const_constructors, unused_import, unnecessary_import, avoid_dynamic_calls
+import 'package:crosscue/features/challenge_boards/challenge_palette.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
-import '../challenge_palette.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
 
 /// Section eyebrow: "THIS WEEK" + dim "· UTC".
 class Eyebrow extends StatelessWidget {
@@ -17,15 +16,20 @@ class Eyebrow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        Text(label.toUpperCase(),
-            style: AppTextStyles.labelCaps
-                .copyWith(color: AppColors.onSurface2(context))),
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.labelCaps
+              .copyWith(color: AppColors.onSurface2(context)),
+        ),
         if (suffix != null) ...[
           const SizedBox(width: 5),
-          Text(suffix!,
-              style: AppTextStyles.caption.copyWith(
-                  color: AppColors.onSurface3(context),
-                  fontWeight: FontWeight.w600)),
+          Text(
+            suffix!,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.onSurface3(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ],
     );
@@ -37,8 +41,12 @@ class RankChip extends StatelessWidget {
   final int rank;
   final int? outOf;
   final bool first;
-  const RankChip(
-      {super.key, required this.rank, this.outOf, this.first = false});
+  const RankChip({
+    super.key,
+    required this.rank,
+    this.outOf,
+    this.first = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,25 +61,31 @@ class RankChip extends StatelessWidget {
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text('#$rank',
-                style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.1)
-                    .copyWith(color: fg)),
-            if (outOf != null)
-              Text(' /$outOf',
-                  style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: fg.withOpacity(0.65))),
-          ]),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            '#$rank',
+            style: const TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ).copyWith(color: fg),
+          ),
+          if (outOf != null)
+            Text(
+              ' /$outOf',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: fg.withValues(alpha: 0.65),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -81,34 +95,43 @@ class Metric extends StatelessWidget {
   final String value;
   final String label;
   final bool accent;
-  const Metric(
-      {super.key,
-      required this.value,
-      required this.label,
-      this.accent = false});
+  const Metric({
+    super.key,
+    required this.value,
+    required this.label,
+    this.accent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(value,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
           style: const TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                  height: 1)
-              .copyWith(color: AppColors.onSurface1(context))),
-      const SizedBox(height: 3),
-      Text(label.toUpperCase(),
+            fontFamily: 'Roboto',
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.4,
+            height: 1,
+          ).copyWith(color: AppColors.onSurface1(context)),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label.toUpperCase(),
           style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.7,
-              color: accent
-                  ? AppColors.primary(context)
-                  : AppColors.onSurface3(context))),
-    ]);
+            fontFamily: 'Roboto',
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.7,
+            color: accent
+                ? AppColors.primary(context)
+                : AppColors.onSurface3(context),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -120,27 +143,37 @@ class FreshnessLine extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Center(
-            child: Text(text,
-                style: AppTextStyles.caption.copyWith(
-                    color: AppColors.onSurface3(context),
-                    fontWeight: FontWeight.w500))),
+          child: Text(
+            text,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.onSurface3(context),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       );
 }
 
 /// Skeleton placeholder block.
 class Skeleton extends StatelessWidget {
   final double width, height, radius;
-  const Skeleton(
-      {super.key, required this.width, this.height = 12, this.radius = 6});
+  const Skeleton({
+    super.key,
+    required this.width,
+    this.height = 12,
+    this.radius = 6,
+  });
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-            color: dark ? const Color(0xFF1B2030) : const Color(0xFFECEEF1),
-            borderRadius: BorderRadius.circular(radius)));
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF1B2030) : const Color(0xFFECEEF1),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
   }
 }
 
@@ -153,12 +186,13 @@ class StatusBanner extends StatelessWidget {
   final IconData icon;
   final String text;
   final Widget? action;
-  const StatusBanner(
-      {super.key,
-      required this.tone,
-      required this.icon,
-      required this.text,
-      this.action});
+  const StatusBanner({
+    super.key,
+    required this.tone,
+    required this.icon,
+    required this.text,
+    this.action,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,18 +219,24 @@ class StatusBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(children: [
-        Icon(icon, size: 18, color: fg),
-        const SizedBox(width: 10),
-        Expanded(
-            child: Text(text,
-                style: AppTextStyles.bodySmall.copyWith(
-                    color: tone == BannerTone.offline
-                        ? AppColors.onSurface2(context)
-                        : fg,
-                    fontWeight: FontWeight.w500))),
-        if (action != null) action!,
-      ]),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: fg),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: tone == BannerTone.offline
+                    ? AppColors.onSurface2(context)
+                    : fg,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (action != null) action!,
+        ],
+      ),
     );
   }
 }
