@@ -38,6 +38,11 @@ class SolveNotifier extends _$SolveNotifier {
 
   Timer? _saveDebounce;
 
+  /// Set once the backing puzzle is deleted out from under an open screen.
+  /// Stops further saves and short-circuits the [flushOnDispose] backstop so we
+  /// never try to persist a session whose parent row is already gone.
+  bool _puzzleRemoved = false;
+
   /// Captured once in [build] so the teardown flush can persist without
   /// touching `ref` (unsafe inside `onDispose`). The repo provider is
   /// keepAlive, so this reference stays valid for the notifier's lifetime.
@@ -110,6 +115,16 @@ class SolveNotifier extends _$SolveNotifier {
 
     final puzzle = await importRepo.getPuzzle(Uri.decodeComponent(puzzleId));
     if (puzzle == null) throw PuzzleNotFoundError(puzzleId);
+
+    // React if the puzzle is deleted while this screen is open (Archive
+    // removal, "Clear all data", or a re-import). The cascade tears down the
+    // session + cell rows, so keep autosaving would be a no-op at best (guarded
+    // in SolveSessionDao) and the user would be editing a session that can
+    // never persist. Surface the same not-found state a cold load shows.
+    final existsSub = importRepo.watchPuzzleExists(puzzle.id).listen((exists) {
+      if (!exists) _handlePuzzleRemoved();
+    });
+    ref.onDispose(existsSub.cancel);
 
     final session = await solveRepo.createOrResumeSession(puzzle);
     final stats = await ref.read(statsRepositoryProvider).getStats();
@@ -603,6 +618,19 @@ class SolveNotifier extends _$SolveNotifier {
     await _saveNow();
   }
 
+  /// Invoked when the backing puzzle is deleted while this screen is open.
+  /// Stops the autosave + timer and flips to the same [PuzzleNotFoundError]
+  /// state a cold load surfaces, so SolveScreen shows "this puzzle no longer
+  /// exists" instead of letting the user edit a session that can never persist.
+  /// Idempotent — the existence stream can emit more than once.
+  void _handlePuzzleRemoved() {
+    if (_puzzleRemoved) return;
+    _puzzleRemoved = true;
+    _saveDebounce?.cancel();
+    ref.read(solveElapsedSecondsProvider(puzzleId).notifier).stop();
+    state = AsyncError(PuzzleNotFoundError(puzzleId), StackTrace.current);
+  }
+
   /// Teardown backstop, invoked from [build]'s `onDispose`. Owning this on the
   /// notifier (not the widget) means the guarantee survives any disposal path,
   /// and it reads only captured fields (`_latestState`, `_solveRepo`,
@@ -620,6 +648,7 @@ class SolveNotifier extends _$SolveNotifier {
   /// `solve_completion_roundtrip_test`). Force-quit of a terminal session is
   /// covered by the `detached` lifecycle handler in SolveScreen.
   Future<void> flushOnDispose() async {
+    if (_puzzleRemoved) return; // parent is gone — nothing to persist.
     final s = _latestState;
     if (s == null || s.sessionId == null) return;
     if (s.status.isTerminal || s.isPaused) return;

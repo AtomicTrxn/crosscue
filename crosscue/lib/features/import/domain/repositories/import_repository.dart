@@ -35,6 +35,10 @@ abstract class ImportRepository {
   /// Returns the full [Puzzle] for [id], or `null` if not found.
   Future<Puzzle?> getPuzzle(String id);
 
+  /// Emits `true` while [id] exists and `false` once it is deleted. Lets an
+  /// open solve screen react when its puzzle is removed out from under it.
+  Stream<bool> watchPuzzleExists(String id);
+
   /// Permanently deletes [id] and all dependent rows.
   Future<void> deletePuzzle(String id);
 }
