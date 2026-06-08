@@ -344,5 +344,34 @@ void main() {
       final rows = await db.solveSessionDao.loadCellProgress(sessionId);
       expect(rows.first.isPencil, isTrue);
     });
+
+    test(
+      'no-ops without throwing when the parent session was deleted '
+      '(orphan-guard regression)',
+      () async {
+        // Reproduces the FOREIGN KEY(787) crash: an open solve screen's
+        // debounced autosave fires after its puzzle is removed (e.g. from the
+        // Archive), which cascades the session away. saveCellProgress must
+        // no-op rather than throw and silently drop the write.
+        await insertPuzzle();
+        final sessionId = await db.solveSessionDao.createSession('test:puzzle');
+        await db.solveSessionDao
+            .saveCellProgress(sessionId, grid(letter: 'E'), 3, 3);
+
+        // Delete the puzzle — cascades away the session and its cell rows.
+        await (db.delete(db.puzzlesTable)
+              ..where((t) => t.id.equals('test:puzzle')))
+            .go();
+
+        // The in-flight autosave still holds the now-orphaned sessionId.
+        await expectLater(
+          db.solveSessionDao
+              .saveCellProgress(sessionId, grid(letter: 'X'), 3, 3),
+          completes,
+        );
+        // And it wrote nothing for the vanished session.
+        expect(await db.solveSessionDao.loadCellProgress(sessionId), isEmpty);
+      },
+    );
   });
 }

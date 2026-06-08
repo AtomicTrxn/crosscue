@@ -182,6 +182,18 @@ class SolveSessionDao extends DatabaseAccessor<AppDatabase>
     }
 
     await transaction(() async {
+      // The parent session can be deleted out from under an open solve screen
+      // — e.g. the puzzle is removed from the Archive (or wiped), cascading the
+      // session away — while a debounced autosave is still in flight. Guard the
+      // delete-then-insert so a vanished parent is a no-op instead of a FOREIGN
+      // KEY violation that silently drops the write and logs an unhandled error.
+      final parent = await (selectOnly(solveSessionsTable)
+            ..addColumns([solveSessionsTable.id])
+            ..where(solveSessionsTable.id.equals(sessionId))
+            ..limit(1))
+          .getSingleOrNull();
+      if (parent == null) return;
+
       await (delete(cellProgressTable)
             ..where((t) => t.sessionId.equals(sessionId)))
           .go();
