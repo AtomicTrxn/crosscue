@@ -1,4 +1,5 @@
 import 'package:crosscue/core/domain/models/enums.dart';
+import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/theme/app_theme.dart';
 import 'package:crosscue/core/theme/design_tokens.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
@@ -48,7 +49,14 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     return AppBar(
       toolbarHeight: CrosscueSpacing.appBarHeightSolve,
-      leading: BackButton(onPressed: () => context.pop()),
+      // Pop back to wherever we came from, or fall back to Home when the solve
+      // screen is the navigation root — e.g. opened straight from the widget
+      // deep link (`crosscue:///solve/<id>`), where there's nothing to pop to
+      // and a bare `context.pop()` would silently no-op (#114).
+      leading: BackButton(
+        onPressed: () =>
+            context.canPop() ? context.pop() : context.go(Routes.home),
+      ),
       centerTitle: true,
       title: sourceLabel != null
           ? Column(

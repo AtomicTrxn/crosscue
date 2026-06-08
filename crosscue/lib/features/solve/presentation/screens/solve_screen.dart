@@ -319,7 +319,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.canPop()
+                        ? context.pop()
+                        : context.go(Routes.home),
                     child: const Text('Go back'),
                   ),
                 ],
@@ -337,134 +339,144 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
             solveState.status == PuzzleStatus.solvedWithReveal ||
             solveState.status == PuzzleStatus.revealed;
 
-        return Scaffold(
-          // Keep layout stable when the soft keyboard appears.
-          // The hidden TextField driving input is off-screen at (-200,-200);
-          // the grid never reflects when the OS keyboard slides up.
-          resizeToAvoidBottomInset: false,
-          appBar: SolveAppBar(
-            puzzleId: widget.puzzleId,
-            title: puzzle.metadata.title,
-            solveState: solveState,
-            isComplete: isComplete,
-          ),
-          body: LayoutBuilder(
-            builder: (context, constraints) => Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Grid — capped at 55% of body height so CluePanel and
-                    // keyboard always have room. CrosswordGrid's internal
-                    // LayoutBuilder sizes cells by min(width/cols, height/rows)
-                    // so it renders correctly within any tight height bound.
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * 0.55,
-                      ),
-                      child: CrosswordGrid(
-                        puzzleId: widget.puzzleId,
-                        solveState: solveState,
-                        onGridFocusSelected: (focus) =>
-                            _setSelectorsFromFocus(solveState, focus),
-                      ),
-                    ),
-
-                    // Clue display — Across (top) + Down (bottom) at the
-                    // focused cell, both full. Active is highlighted with ‹ ›
-                    // arrows; tap the other to switch. Expanded with no flex
-                    // competitors so it takes exactly the space between grid and
-                    // keyboard, leaving zero free space that could float the
-                    // keyboard up.
-                    Expanded(
-                      child: CluePanel(
-                        activeClue: selectedActiveClue,
-                        crossClue: selectedCrossClue,
-                        onSelectClue: (clue) =>
-                            _onClueSelected(solveState, clue, hapticsEnabled),
-                        onPrev: () => _stepClue(
-                          solveState,
-                          selectedActiveClue,
-                          -1,
-                          hapticsEnabled,
+        return PopScope(
+          // When the solve screen is the navigation root (opened straight from
+          // the widget deep link), there's nothing to pop to. Let the system
+          // back gesture / Android hardware back route to Home instead of
+          // trapping the user — mirrors the AppBar back button (#114).
+          canPop: context.canPop(),
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) context.go(Routes.home);
+          },
+          child: Scaffold(
+            // Keep layout stable when the soft keyboard appears.
+            // The hidden TextField driving input is off-screen at (-200,-200);
+            // the grid never reflects when the OS keyboard slides up.
+            resizeToAvoidBottomInset: false,
+            appBar: SolveAppBar(
+              puzzleId: widget.puzzleId,
+              title: puzzle.metadata.title,
+              solveState: solveState,
+              isComplete: isComplete,
+            ),
+            body: LayoutBuilder(
+              builder: (context, constraints) => Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Grid — capped at 55% of body height so CluePanel and
+                      // keyboard always have room. CrosswordGrid's internal
+                      // LayoutBuilder sizes cells by min(width/cols, height/rows)
+                      // so it renders correctly within any tight height bound.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * 0.55,
                         ),
-                        onNext: () => _stepClue(
-                          solveState,
-                          selectedActiveClue,
-                          1,
-                          hapticsEnabled,
-                        ),
-                      ),
-                    ),
-
-                    // Custom QWERTY keyboard
-                    if (!isComplete)
-                      CrosswordKeyboard(
-                        isSmallPuzzle:
-                            puzzle.sizeBucket == PuzzleSizeBucket.mini,
-                        hapticsEnabled: hapticsEnabled,
-                        soundsEnabled: soundsEnabled,
-                        onFeedbackSound: () =>
-                            _playFeedbackSound(soundsEnabled: soundsEnabled),
-                        onLetter: (l) {
-                          final wordComplete = ref
-                              .read(solveProvider(widget.puzzleId).notifier)
-                              .inputLetter(l);
-                          if (wordComplete && hapticsEnabled) {
-                            HapticFeedback.mediumImpact();
-                          }
-                          if (wordComplete) {
-                            _playFeedbackSound(soundsEnabled: soundsEnabled);
-                          }
-                        },
-                        onBackspace: () => ref
-                            .read(solveProvider(widget.puzzleId).notifier)
-                            .backspace(),
-                        onCheckWord: () {
-                          final result = ref
-                              .read(solveProvider(widget.puzzleId).notifier)
-                              .checkWord();
-                          if (result.shouldVibrate && hapticsEnabled) {
-                            HapticFeedback.vibrate();
-                          }
-                          if (result == CheckResult.allCorrect) {
-                            _playFeedbackSound(soundsEnabled: soundsEnabled);
-                          }
-                        },
-                        onRebus: () => _openRebusDialog(
-                          context: context,
+                        child: CrosswordGrid(
+                          puzzleId: widget.puzzleId,
                           solveState: solveState,
+                          onGridFocusSelected: (focus) =>
+                              _setSelectorsFromFocus(solveState, focus),
+                        ),
+                      ),
+
+                      // Clue display — Across (top) + Down (bottom) at the
+                      // focused cell, both full. Active is highlighted with ‹ ›
+                      // arrows; tap the other to switch. Expanded with no flex
+                      // competitors so it takes exactly the space between grid and
+                      // keyboard, leaving zero free space that could float the
+                      // keyboard up.
+                      Expanded(
+                        child: CluePanel(
+                          activeClue: selectedActiveClue,
+                          crossClue: selectedCrossClue,
+                          onSelectClue: (clue) =>
+                              _onClueSelected(solveState, clue, hapticsEnabled),
+                          onPrev: () => _stepClue(
+                            solveState,
+                            selectedActiveClue,
+                            -1,
+                            hapticsEnabled,
+                          ),
+                          onNext: () => _stepClue(
+                            solveState,
+                            selectedActiveClue,
+                            1,
+                            hapticsEnabled,
+                          ),
+                        ),
+                      ),
+
+                      // Custom QWERTY keyboard
+                      if (!isComplete)
+                        CrosswordKeyboard(
+                          isSmallPuzzle:
+                              puzzle.sizeBucket == PuzzleSizeBucket.mini,
                           hapticsEnabled: hapticsEnabled,
                           soundsEnabled: soundsEnabled,
+                          onFeedbackSound: () =>
+                              _playFeedbackSound(soundsEnabled: soundsEnabled),
+                          onLetter: (l) {
+                            final wordComplete = ref
+                                .read(solveProvider(widget.puzzleId).notifier)
+                                .inputLetter(l);
+                            if (wordComplete && hapticsEnabled) {
+                              HapticFeedback.mediumImpact();
+                            }
+                            if (wordComplete) {
+                              _playFeedbackSound(soundsEnabled: soundsEnabled);
+                            }
+                          },
+                          onBackspace: () => ref
+                              .read(solveProvider(widget.puzzleId).notifier)
+                              .backspace(),
+                          onCheckWord: () {
+                            final result = ref
+                                .read(solveProvider(widget.puzzleId).notifier)
+                                .checkWord();
+                            if (result.shouldVibrate && hapticsEnabled) {
+                              HapticFeedback.vibrate();
+                            }
+                            if (result == CheckResult.allCorrect) {
+                              _playFeedbackSound(soundsEnabled: soundsEnabled);
+                            }
+                          },
+                          onRebus: () => _openRebusDialog(
+                            context: context,
+                            solveState: solveState,
+                            hapticsEnabled: hapticsEnabled,
+                            soundsEnabled: soundsEnabled,
+                          ),
                         ),
-                      ),
 
-                    // Bottom safe-area padding
-                    SizedBox(height: MediaQuery.of(context).padding.bottom),
-                  ],
-                ),
-
-                // Pause overlay — shown when paused and puzzle not yet complete
-                if (solveState.isPaused && !isComplete)
-                  PauseOverlay(
-                    onResume: () => ref
-                        .read(solveProvider(widget.puzzleId).notifier)
-                        .resume(),
+                      // Bottom safe-area padding
+                      SizedBox(height: MediaQuery.of(context).padding.bottom),
+                    ],
                   ),
 
-                // Confetti overlay — triggered on puzzle complete
-                if (!MediaQuery.of(context).disableAnimations)
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: ConfettiWidget(
-                      confettiController: _confettiController,
-                      blastDirectionality: BlastDirectionality.explosive,
-                      numberOfParticles: 20,
-                      gravity: 0.3,
-                      colors: CrosscueColors.confettiPalette,
+                  // Pause overlay — shown when paused and puzzle not yet complete
+                  if (solveState.isPaused && !isComplete)
+                    PauseOverlay(
+                      onResume: () => ref
+                          .read(solveProvider(widget.puzzleId).notifier)
+                          .resume(),
                     ),
-                  ),
-              ],
+
+                  // Confetti overlay — triggered on puzzle complete
+                  if (!MediaQuery.of(context).disableAnimations)
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: ConfettiWidget(
+                        confettiController: _confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        numberOfParticles: 20,
+                        gravity: 0.3,
+                        colors: CrosscueColors.confettiPalette,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
