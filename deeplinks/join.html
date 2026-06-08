@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+  Web fallback for Crosscue challenge-board invite links.
+  Served at https://crosscue.app/join/<boardId>?token=<secret> for visitors
+  who don't have the app installed (installed apps open natively via App Links /
+  Universal Links and never load this page). See deeplinks/README.md (#203).
+
+  This is a static placeholder: the boardId/token stay in the URL so the visitor
+  can retry after installing. No secret is rendered into visible text.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Join a Crosscue challenge board</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0; min-height: 100vh; display: grid; place-items: center;
+        font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+        background: #f5f5f7; color: #1d1d1f;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #000; color: #f5f5f7; }
+      }
+      main { max-width: 28rem; padding: 2rem 1.5rem; text-align: center; }
+      h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
+      p { line-height: 1.5; opacity: .85; }
+      .stores { display: flex; gap: .75rem; justify-content: center;
+                flex-wrap: wrap; margin-top: 1.5rem; }
+      .stores a {
+        text-decoration: none; padding: .7rem 1.1rem; border-radius: .7rem;
+        background: #0071e3; color: #fff; font-weight: 600;
+      }
+      .hint { margin-top: 1.25rem; font-size: .85rem; opacity: .7; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You've been invited to a Crosscue board</h1>
+      <p>
+        Crosscue is a clean, offline-first crossword app. Install it, then open
+        this invite link again to join your friend's challenge board.
+      </p>
+      <div class="stores">
+        <a href="https://apps.apple.com/app/crosscue">App Store</a>
+        <a href="https://play.google.com/store/apps/details?id=dev.tomhess.crosscue">Google Play</a>
+      </div>
+      <p class="hint">
+        Already installed? Make sure you're on the latest version, then tap the
+        invite link again.
+      </p>
+    </main>
+  </body>
+</html>

@@ -10,16 +10,42 @@ import 'package:crosscue/features/challenge_boards/presentation/providers/challe
 import 'package:crosscue/features/challenge_boards/screens/challenge_tab_screen.dart';
 import 'package:crosscue/features/challenge_boards/sheets/board_sheets.dart';
 import 'package:crosscue/features/challenge_boards/sheets/edit_name_sheet.dart';
+import 'package:crosscue/features/challenge_boards/util/invite_link.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class ChallengeBoardsScreen extends ConsumerWidget {
-  const ChallengeBoardsScreen({super.key});
+class ChallengeBoardsScreen extends ConsumerStatefulWidget {
+  const ChallengeBoardsScreen({super.key, this.pendingInvite});
+
+  /// When set (an invite deep link routed here), the join flow auto-launches
+  /// for this invite on first build. See `util/invite_link.dart`.
+  final InviteLink? pendingInvite;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChallengeBoardsScreen> createState() =>
+      _ChallengeBoardsScreenState();
+}
+
+class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final invite = widget.pendingInvite;
+    if (invite != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(
+            _previewAndJoin(context, ref, invite.toShareUri().toString()),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final boards = ref.watch(challengeBoardsProvider);
     final profile = ref.watch(challengeProfileProvider);
     final lifetime = ref.watch(challengeLifetimeProvider);
@@ -154,12 +180,23 @@ class ChallengeBoardsScreen extends ConsumerWidget {
   Future<void> _joinBoard(BuildContext context, WidgetRef ref) async {
     final link = await showJoinSheet(context);
     if (link == null || link.trim().isEmpty) return;
+    if (!context.mounted) return;
+    await _previewAndJoin(context, ref, link.trim());
+  }
+
+  /// Shared preview → confirm → join, used both by the "Join with link" sheet
+  /// and by an invite deep link that pre-supplies [link].
+  Future<void> _previewAndJoin(
+    BuildContext context,
+    WidgetRef ref,
+    String link,
+  ) async {
     final repo = ref.read(challengeBoardRepositoryProvider);
-    final preview = await repo.previewInvite(link.trim());
+    final preview = await repo.previewInvite(link);
     if (!context.mounted) return;
     final shouldJoin = await showInviteSheet(context, preview);
     if (shouldJoin != true) return;
-    final board = await repo.joinInvite(link.trim());
+    final board = await repo.joinInvite(link);
     ref.invalidate(challengeBoardsProvider);
     ref.invalidate(challengeLifetimeProvider);
     if (context.mounted && board != null) {

@@ -4,6 +4,11 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- Forward Universal Links (Associated Domains: applinks:crosscue.app) to
+	     the Flutter engine / go_router. Invite links land on /join/<boardId>.
+	     See deeplinks/README.md (issue #203). -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

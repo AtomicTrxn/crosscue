@@ -3,6 +3,7 @@ import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_board_route_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_boards_screen.dart';
+import 'package:crosscue/features/challenge_boards/util/invite_link.dart';
 import 'package:crosscue/features/home/presentation/screens/home_screen.dart';
 import 'package:crosscue/features/import/presentation/screens/import_screen.dart';
 import 'package:crosscue/features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -56,6 +57,14 @@ GoRouter appRouter(Ref ref) {
           return SolveScreen(puzzleId: puzzleId);
         },
       ),
+      // Public invite deep link. App Links / Universal Links deliver
+      // `https://crosscue.app/join/<boardId>?token=...`; go_router matches the
+      // path and we redirect into the Challenge join surface (or the Challenge
+      // tab for a malformed link). See `deeplinks/README.md`.
+      GoRoute(
+        path: Routes.inviteJoin,
+        redirect: (context, state) => inviteDeepLinkRedirect(state.uri),
+      ),
 
       // 4-tab shell
       StatefulShellRoute.indexedStack(
@@ -83,7 +92,18 @@ GoRouter appRouter(Ref ref) {
                   ),
                   GoRoute(
                     path: 'join',
-                    builder: (context, state) => const ChallengeBoardsScreen(),
+                    builder: (context, state) {
+                      final params = state.uri.queryParameters;
+                      final boardId = params['board'];
+                      final token = params['token'];
+                      final invite = (boardId != null &&
+                              boardId.isNotEmpty &&
+                              token != null &&
+                              token.isNotEmpty)
+                          ? InviteLink(boardId: boardId, token: token)
+                          : null;
+                      return ChallengeBoardsScreen(pendingInvite: invite);
+                    },
                   ),
                 ],
               ),

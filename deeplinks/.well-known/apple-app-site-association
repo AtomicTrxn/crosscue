@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "ZS9BL7472D.dev.tomhess.crosscue",
+        "paths": ["/join/*"]
+      }
+    ]
+  }
+}

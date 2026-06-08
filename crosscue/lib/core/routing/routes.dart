@@ -17,6 +17,11 @@ abstract final class Routes {
   static const challengeJoin = '/challenge/join';
   static const solve = '/solve/:puzzleId';
 
+  /// Public invite deep link (App Links / Universal Links land here):
+  /// `https://crosscue.app/join/<boardId>?token=<secret>`. Redirects into
+  /// [challengeJoin]. See `deeplinks/README.md`.
+  static const inviteJoin = '/join/:boardId';
+
   /// Build the solve route for a specific puzzle ID.
   static String solveFor(String puzzleId) => '/solve/$puzzleId';
 
