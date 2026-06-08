@@ -15,13 +15,20 @@ class SampleChallengeRepository extends ChangeNotifier
         ChallengeResultRepository {
   SampleChallengeRepository()
       : _me = SampleData.me,
-        _boards = List<Board>.from(SampleData.boards);
+        // Start with no boards. This repository is the fallback used whenever
+        // no challenge backend is configured (the default release build — see
+        // issue #198), so it must not present fabricated boards/standings as
+        // real. The Challenge tab then shows its genuine empty state with the
+        // Create / Join CTA (WeeklyEmpty), and create/join still work locally.
+        // SampleData.boards is retained for tests/design demos.
+        _boards = <Board>[];
 
   Player _me;
   final List<Board> _boards;
   int _nextBoard = 6;
 
-  LifetimeStats get lifetimeStats => SampleData.lifetime;
+  /// Neutral until the user has real challenge results from a backend.
+  LifetimeStats get lifetimeStats => SampleData.lifetimeEmpty;
 
   @override
   Future<List<Board>> listBoards() async => List<Board>.unmodifiable(_boards);

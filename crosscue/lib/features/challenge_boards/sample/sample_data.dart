@@ -59,6 +59,17 @@ abstract final class SampleData {
     weeksCounted: 0,
   );
 
+  /// Neutral lifetime for the no-backend (sample) gate: nothing recorded yet,
+  /// so nothing to rank. Used instead of [lifetime] so the shipped Challenge
+  /// tab never shows fabricated lifetime standings. See issue #198.
+  static const lifetimeEmpty = LifetimeStats(
+    avgClean: '—',
+    cleanSolves: 0,
+    bestClean: '—',
+    rankingStatus: 'Solve 5 clean puzzles to unlock lifetime ranking',
+    weeksCounted: 0,
+  );
+
   static const weeklyLeaderboard = <LeaderboardEntry>[
     LeaderboardEntry(
         rank: 1,
