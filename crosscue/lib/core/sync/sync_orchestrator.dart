@@ -16,6 +16,7 @@ import 'package:crosscue/core/sync/sync_manifest_store.dart';
 import 'package:crosscue/core/sync/transport/no_op_sync_transport.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:crosscue/core/utils/uuid.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 /// Top-level facade exposed to the app. Owns the per-namespace adapters,
 /// drives push-then-pull sync passes, and broadcasts lifecycle state to
@@ -171,15 +172,14 @@ class SyncOrchestrator {
       // manifest we read. A no-op incremental pass writes nothing.
       final anyWrites = writtenByNs.values.any((m) => m.isNotEmpty);
       if (fallback || anyWrites) {
-        await manifestStore.write(
-          transport,
-          _composeManifest(
-            fallback: fallback,
-            previous: manifest,
-            seenByNs: seenByNs,
-            writtenByNs: writtenByNs,
-          ),
+        final next = _composeManifest(
+          fallback: fallback,
+          previous: manifest,
+          seenByNs: seenByNs,
+          writtenByNs: writtenByNs,
         );
+        final bytes = await manifestStore.write(transport, next);
+        _logManifestSize(next.entryCount, bytes);
       }
     } on SyncTransportException catch (e) {
       // Typed transport failure → a SyncError with the right retry semantics.
@@ -270,6 +270,22 @@ class SyncOrchestrator {
       updatedAt: DateTime.now().toUtc(),
       namespaces: namespaces,
     );
+  }
+
+  /// Surfaces manifest growth for beta observation (#207). The manifest is a
+  /// single JSON blob read once per sync and rewritten on any write-pass, so
+  /// its size is a Drive-cost signal. Crossing
+  /// [SyncManifest.softEntryWarningThreshold] is the cue to shard it per
+  /// namespace or compact it — this only logs; it changes no behavior.
+  void _logManifestSize(int entryCount, int bytes) {
+    if (entryCount > SyncManifest.softEntryWarningThreshold) {
+      debugPrint(
+        '[sync] manifest large: $entryCount entries, $bytes B — consider '
+        'sharding per namespace or compacting (#207)',
+      );
+    } else {
+      debugPrint('[sync] manifest: $entryCount entries, $bytes B');
+    }
   }
 
   /// Reads or generates the stable per-install device id. Stored in

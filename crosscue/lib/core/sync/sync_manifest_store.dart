@@ -43,7 +43,11 @@ class SyncManifestStore {
     return SyncManifestReadResult.found(manifest);
   }
 
-  Future<void> write(SyncTransport transport, SyncManifest manifest) {
-    return transport.write(SyncManifest.manifestKey, manifest.encode());
+  /// Writes the manifest and returns the encoded payload size in bytes, so the
+  /// caller can surface manifest growth without encoding twice (#207).
+  Future<int> write(SyncTransport transport, SyncManifest manifest) async {
+    final encoded = manifest.encode();
+    await transport.write(SyncManifest.manifestKey, encoded);
+    return encoded.length;
   }
 }
