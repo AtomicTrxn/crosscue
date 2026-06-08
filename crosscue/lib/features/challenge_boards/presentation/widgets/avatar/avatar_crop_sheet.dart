@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/features/challenge_boards/sheets/board_sheets.dart'
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart'
     show showCbSheet;
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
 import 'package:crosscue/features/challenge_boards/util/avatar_normalizer.dart';
 import 'package:flutter/material.dart';
 

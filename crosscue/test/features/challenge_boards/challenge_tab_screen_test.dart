@@ -1,6 +1,6 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_tab_screen.dart';
 import 'package:crosscue/features/challenge_boards/sample/sample_data.dart';
-import 'package:crosscue/features/challenge_boards/screens/challenge_tab_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

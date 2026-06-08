@@ -1,7 +1,7 @@
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_board_api.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,6 +1,6 @@
 import 'package:crosscue/core/domain/models/enums.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/util/utc_week.dart';
 
 const challengeEligibleSourceId = 'crosshare_daily_mini';

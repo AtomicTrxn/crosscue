@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:crosscue/core/routing/routes.dart';
-import 'package:crosscue/features/challenge_boards/avatar/avatar_picker_sheet.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/api_challenge_repository.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
-import 'package:crosscue/features/challenge_boards/screens/challenge_tab_screen.dart';
-import 'package:crosscue/features/challenge_boards/sheets/board_sheets.dart';
-import 'package:crosscue/features/challenge_boards/sheets/edit_name_sheet.dart';
+import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_tab_screen.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_picker_sheet.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/edit_name_sheet.dart';
 import 'package:crosscue/features/challenge_boards/util/invite_link.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

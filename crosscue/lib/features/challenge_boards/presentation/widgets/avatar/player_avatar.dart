@@ -1,6 +1,6 @@
-import 'package:crosscue/features/challenge_boards/avatar/silhouette_painter.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/silhouette_painter.dart';
 import 'package:flutter/material.dart';
 
 /// Crosscue · Player avatar widget.

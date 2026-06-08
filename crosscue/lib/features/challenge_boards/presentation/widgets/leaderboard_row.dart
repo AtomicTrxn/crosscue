@@ -1,7 +1,7 @@
-import 'package:crosscue/features/challenge_boards/avatar/player_avatar.dart';
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/player_avatar.dart';
 import 'package:flutter/material.dart';
 
 /// A single leaderboard row in board detail. The signed-in player's row is

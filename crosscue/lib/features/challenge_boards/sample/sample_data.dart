@@ -1,4 +1,4 @@
-import 'package:crosscue/features/challenge_boards/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 
 /// Sample data mirroring the HTML mockups. Replace with real providers.
 abstract final class SampleData {
