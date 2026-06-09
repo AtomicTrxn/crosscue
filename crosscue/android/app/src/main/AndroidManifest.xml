@@ -49,6 +49,20 @@
                 android:name="flutter_deeplinking_enabled"
                 android:value="true"/>
         </activity>
+
+        <!-- Home-screen widget (#204): streak + today's puzzle, parity with the
+             iOS WidgetKit widget. Reads the same shared-prefs payload home_widget
+             writes; the app pushes updates via HomeWidget.updateWidget. -->
+        <receiver
+            android:name=".CrosscueWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/crosscue_widget_info"/>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

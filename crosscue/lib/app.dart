@@ -113,12 +113,13 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
         await orchestrator.enableSilently();
         await orchestrator.syncNow();
       }
-      // Push current streak + today's puzzle to the Home/Lock-screen widget.
-      // No-op until the widget extension + App Group are configured
-      // (ios-widget-setup.md). Widget taps deep-link via the widget's path-form
-      // `crosscue://<route>` URL, which FlutterDeepLinkingEnabled routes into
-      // go_router — no app-side wiring needed (see CrosscueWidget.widgetDeepLink).
+      // Push current streak + today's puzzle to the home-screen widgets (#114
+      // iOS, #204 Android). Inert until a widget is placed. iOS widget taps
+      // deep-link via the widget's path-form `crosscue://<route>` URL, which
+      // FlutterDeepLinkingEnabled routes with no app-side wiring; Android taps
+      // arrive via home_widget's click stream — see _initAndroidWidgetTaps.
       unawaited(ref.read(homeWidgetServiceProvider).refresh());
+      _initAndroidWidgetTaps();
       // Route a pending iOS App Intent (Shortcuts/Siri/Spotlight) if one is
       // waiting from a cold launch. No-op otherwise.
       unawaited(_consumePendingIntentRoute(ref));
@@ -149,6 +150,34 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
     final tomorrow = DateTime.utc(now.year, now.month, now.day + 1);
     final delay = tomorrow.difference(now);
     return delay.isNegative ? Duration.zero : delay;
+  }
+
+  /// Routes Android home-screen widget (#204) taps into the app. home_widget
+  /// launches MainActivity carrying `crosscue://<go_router path>` (e.g.
+  /// `crosscue:///solve/<id>`); we forward that path to the router. iOS taps go
+  /// through the widget's `widgetURL` + FlutterDeepLinkingEnabled instead
+  /// (home_widget's click stream doesn't fire under the iOS scene lifecycle), so
+  /// this is effectively Android-only and a harmless no-op elsewhere.
+  void _initAndroidWidgetTaps() {
+    void go(Uri? uri) {
+      if (uri == null) return;
+      final location =
+          uri.query.isEmpty ? uri.path : '${uri.path}?${uri.query}';
+      // An empty / root path is the no-puzzle tap — just open the app.
+      if (location.isEmpty || location == '/') return;
+      ref.read(appRouterProvider).go(location);
+    }
+
+    unawaited(() async {
+      try {
+        // Cold launch from a widget tap.
+        go(await HomeWidget.initiallyLaunchedFromHomeWidget());
+        // Taps while the app is already running.
+        HomeWidget.widgetClicked.listen(go);
+      } on Object {
+        // No widget placed / platform without one — nothing to route.
+      }
+    }());
   }
 
   void _installCrashHandlers() {
