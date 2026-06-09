@@ -2,6 +2,14 @@ export interface Env {
   DB: D1Database;
   PUBLIC_APP_URL: string;
   APP_ENV: string;
+  // Cloudflare Rate Limiting bindings. Optional so local/test runs without the
+  // bindings configured skip limiting rather than crashing.
+  RL_IDENTITY?: RateLimiter;
+  RL_WRITE?: RateLimiter;
+}
+
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 type JsonValue =
@@ -74,9 +82,11 @@ export default {
       const route = `${request.method} ${url.pathname}`;
 
       if (route === "POST /players/bootstrap") {
+        await enforceRateLimit(env.RL_IDENTITY, clientIp(request));
         return json(await bootstrapPlayer(request, env), requestId);
       }
       if (route === "POST /players/restore") {
+        await enforceRateLimit(env.RL_IDENTITY, clientIp(request));
         return json(await restorePlayer(request, env), requestId);
       }
 
@@ -108,9 +118,11 @@ export default {
         return json(await previewInvite(request, env, auth), requestId);
       }
       if (route === "POST /invites/join") {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await joinInvite(request, env, auth), requestId);
       }
       if (route === "POST /results") {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await submitResult(request, env, auth), requestId, 202);
       }
 
@@ -133,6 +145,7 @@ export default {
         /^\/boards\/([^/]+)\/invite\/regenerate$/,
       );
       if (request.method === "POST" && regenMatch) {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await regenerateInvite(env, auth, regenMatch[1]), requestId);
       }
 
@@ -747,6 +760,27 @@ async function regenerateInvite(
   return { inviteLink: inviteUrl(env, board.id, secret), expiresAt: expires };
 }
 
+function clientIp(request: Request): string {
+  return request.headers.get("cf-connecting-ip") ?? "unknown";
+}
+
+// Abuse-dampening only. Caps (5 boards/player, 20 players/board) are still
+// enforced transactionally; rate limiting just slows brute-force/spam.
+async function enforceRateLimit(
+  limiter: RateLimiter | undefined,
+  key: string,
+): Promise<void> {
+  if (!limiter) return;
+  const { success } = await limiter.limit({ key });
+  if (!success) {
+    throw new ApiError(
+      429,
+      "rate_limited",
+      "Too many requests. Please try again shortly.",
+    );
+  }
+}
+
 async function requireAuth(request: Request, env: Env): Promise<Auth> {
   const auth = request.headers.get("authorization") ?? "";
   const token = auth.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -1115,7 +1149,69 @@ function validateDisplayName(raw: unknown): string {
       "Use letters, numbers, spaces, underscores, or hyphens.",
     );
   }
+  if (isUnsafeDisplayName(value)) {
+    throw new ApiError(
+      400,
+      "invalid_display_name",
+      "Please choose a different display name.",
+    );
+  }
   return value;
+}
+
+// Reserved handles that would impersonate the app/staff, and a starter
+// profanity/slur blocklist. This list is intentionally small and meant to be
+// maintained; there is no platform API that makes gaming-handle safety
+// automatic, so the server owns this check (clients must not be trusted).
+const reservedDisplayNames = new Set([
+  "admin",
+  "administrator",
+  "moderator",
+  "mod",
+  "crosscue",
+  "support",
+  "staff",
+  "system",
+  "official",
+  "owner",
+  "root",
+  "null",
+  "undefined",
+]);
+
+const blockedNameFragments = [
+  "fuck",
+  "shit",
+  "cunt",
+  "bitch",
+  "nigger",
+  "nigga",
+  "faggot",
+  "fag",
+  "retard",
+  "rape",
+  "nazi",
+];
+
+/// Normalizes a candidate name to defeat common evasions (case, separators,
+/// and leetspeak) before checking the reserved and blocked lists.
+function isUnsafeDisplayName(value: string): boolean {
+  const normalized = value
+    .toLowerCase()
+    .replaceAll("0", "o")
+    .replaceAll("1", "i")
+    .replaceAll("3", "e")
+    .replaceAll("4", "a")
+    .replaceAll("5", "s")
+    .replaceAll("7", "t")
+    .replaceAll("@", "a")
+    .replaceAll("$", "s")
+    .replace(/[^a-z]/gu, "");
+  if (normalized.length === 0) return false;
+  if (reservedDisplayNames.has(normalized)) return true;
+  return blockedNameFragments.some((fragment) =>
+    normalized.includes(fragment),
+  );
 }
 
 function validateBoardName(raw: unknown): string {

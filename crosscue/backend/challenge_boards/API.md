@@ -18,6 +18,12 @@ Errors:
 }
 ```
 
+Identity creation (`/players/bootstrap`, `/players/restore`) and board writes
+(`/invites/join`, `/results`, invite regeneration) are rate-limited. Over the
+limit returns `429` with code `rate_limited`. Display names are validated
+server-side for length (10), allowed characters, reserved handles, and a
+profanity/slur blocklist; rejections return `400 invalid_display_name`.
+
 ## Player
 
 `POST /players/bootstrap`

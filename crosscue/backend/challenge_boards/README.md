@@ -15,15 +15,19 @@ the first result-submission path:
 - weekly and lifetime aggregates based on submitted clean solves;
 - player recovery bundle: bootstrap/restore/rotate of an anonymous identity;
 - privacy deletion via `DELETE /players/me`;
-- daily scheduled retention purge of `board_events` (14-day UTC window).
+- daily scheduled retention purge of `board_events` (14-day UTC window);
+- abuse-dampening rate limits on identity creation and board writes;
+- server-side display-name safety (reserved names + profanity/slur blocklist).
 
 Lifetime stats are computed live from retained `challenge_results` (no
 `player_board_stats` rollover in v1), so result rows are intentionally NOT
 purged; only the audit-only `board_events` table is on a retention cron.
 
+The rate-limit blocklist for display names is a small starter list in
+`src/index.ts` and is meant to be maintained over time.
+
 Out of scope for this slice: native deep links, production binary avatar
-storage, rate limiting, server-side display-name profanity filtering,
-realtime/live-board infrastructure, and paid tiers.
+storage, realtime/live-board infrastructure, and paid tiers.
 
 ## Local Setup
 

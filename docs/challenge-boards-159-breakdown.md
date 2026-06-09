@@ -82,14 +82,18 @@ feeds no ranking.
 
 ## Workstream D — API hardening
 
-- **D1. Rate limiting** — Cloudflare Rate Limiting binding on bootstrap, restore, join, invite
-  regenerate, result submission. Abuse-dampening only; caps stay transactional.
-- **D2. Server-side display-name safety** — normalized profanity/slur/reserved-name checks in
-  addition to length/charset (client-only today).
-- **D3. (Optional) `GET /boards/:id/events`** — events are written but not exposed; include only
-  if product wants an activity feed in v1.
-- **D4. Canonical-source policy** — confirm honor-system `source_id` match is acceptable for v1
-  (no `challenge_puzzles` registry / checksum). Document the decision; reject mismatched sources.
+- **D1. Rate limiting** — DONE. Two Cloudflare Rate Limiting bindings: `RL_IDENTITY` (IP-keyed,
+  15/60s) on bootstrap/restore, `RL_WRITE` (player-keyed, 60/60s) on join/results/invite-regenerate.
+  Bindings are optional in `Env` so local/test runs without them skip limiting; over-limit returns
+  `429 rate_limited`. Caps remain transactional.
+- **D2. Server-side display-name safety** — DONE. `validateDisplayName` now normalizes
+  case/separators/leetspeak and rejects a reserved-handle set + profanity/slur starter blocklist
+  (`400 invalid_display_name`). The list lives in `src/index.ts` and is meant to be maintained.
+- Tests: reserved/blocked/leetspeak names rejected (clean name passes); fake limiter → 429.
+- **D3. (Optional, TODO) `GET /boards/:id/events`** — events are written but not exposed; include
+  only if product wants an activity feed in v1.
+- **D4. (TODO) Canonical-source policy** — confirm honor-system `source_id` match is acceptable for
+  v1 (no `challenge_puzzles` registry / checksum). Document the decision; reject mismatched sources.
 
 ## Workstream E — Infra & provisioning (deploy gate)
 

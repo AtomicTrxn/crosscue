@@ -330,6 +330,35 @@ test('scheduled purge removes board events older than 14 days', async () => {
   );
 });
 
+test('display names with reserved or blocked words are rejected', async () => {
+  const app = await createApp();
+  for (const name of ['admin', 'Cr0sscue', 'fuck', 'sh1t']) {
+    const error = await app.fetchJson('/players/bootstrap', {
+      method: 'POST',
+      body: { displayName: name },
+      status: 400,
+    });
+    assert.equal(error.error.code, 'invalid_display_name', name);
+  }
+  // A clean name still works.
+  const ok = await app.bootstrap('Maya');
+  assert.equal(ok.player.displayName, 'Maya');
+});
+
+test('rate limiter blocks requests over the limit', async () => {
+  const app = await createApp();
+  app.env.RL_IDENTITY = { async limit() {
+    return { success: false };
+  } };
+
+  const error = await app.fetchJson('/players/bootstrap', {
+    method: 'POST',
+    body: { displayName: 'Maya' },
+    status: 429,
+  });
+  assert.equal(error.error.code, 'rate_limited');
+});
+
 function currentUtcDateOnly() {
   return new Date().toISOString().slice(0, 10);
 }

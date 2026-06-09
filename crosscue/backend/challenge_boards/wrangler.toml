@@ -16,6 +16,18 @@ database_name = "crosscue_challenge_boards_local"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
+# Abuse-dampening rate limits (#159 workstream D). RL_IDENTITY is keyed by IP
+# for anonymous player creation; RL_WRITE is keyed by player id for board writes.
+[[ratelimit]]
+binding = "RL_IDENTITY"
+namespace_id = "1001"
+simple = { limit = 15, period = 60 }
+
+[[ratelimit]]
+binding = "RL_WRITE"
+namespace_id = "1002"
+simple = { limit = 60, period = 60 }
+
 [env.staging]
 name = "crosscue-challenge-boards-staging"
 vars = { APP_ENV = "staging", PUBLIC_APP_URL = "https://crosscue.app" }
@@ -29,6 +41,16 @@ database_name = "crosscue_challenge_boards_staging"
 database_id = "11111111-1111-1111-1111-111111111111"
 migrations_dir = "migrations"
 
+[[env.staging.ratelimit]]
+binding = "RL_IDENTITY"
+namespace_id = "2001"
+simple = { limit = 15, period = 60 }
+
+[[env.staging.ratelimit]]
+binding = "RL_WRITE"
+namespace_id = "2002"
+simple = { limit = 60, period = 60 }
+
 [env.production]
 name = "crosscue-challenge-boards"
 vars = { APP_ENV = "production", PUBLIC_APP_URL = "https://crosscue.app" }
@@ -41,3 +63,13 @@ binding = "DB"
 database_name = "crosscue_challenge_boards_prod"
 database_id = "22222222-2222-2222-2222-222222222222"
 migrations_dir = "migrations"
+
+[[env.production.ratelimit]]
+binding = "RL_IDENTITY"
+namespace_id = "3001"
+simple = { limit = 15, period = 60 }
+
+[[env.production.ratelimit]]
+binding = "RL_WRITE"
+namespace_id = "3002"
+simple = { limit = 60, period = 60 }
