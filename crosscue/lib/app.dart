@@ -152,15 +152,37 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
     return delay.isNegative ? Duration.zero : delay;
   }
 
-  /// Routes Android home-screen widget (#204) taps into the app. home_widget
-  /// launches MainActivity carrying `crosscue://<go_router path>` (e.g.
-  /// `crosscue:///solve/<id>`); we forward that path to the router. iOS taps go
-  /// through the widget's `widgetURL` + FlutterDeepLinkingEnabled instead
-  /// (home_widget's click stream doesn't fire under the iOS scene lifecycle), so
+  /// Routes Android home-screen widget (#204) and App Shortcut (#205) taps into
+  /// the app. Both launch MainActivity via home_widget's launch intent, so they
+  /// arrive on the same `widgetClicked` / `initiallyLaunchedFromHomeWidget`
+  /// stream:
+  ///   - widget tap  → `crosscue://<go_router path>` (e.g. `/solve/<id>`)
+  ///   - shortcut    → `crosscue://intent/<token>` (today / continue / stats),
+  ///                   resolved the same way the iOS App Intents are.
+  ///
+  /// iOS uses its own surfaces instead (the widget's `widgetURL` +
+  /// FlutterDeepLinkingEnabled; App Intents via the pending-route token), since
+  /// home_widget's click stream doesn't fire under the iOS scene lifecycle — so
   /// this is effectively Android-only and a harmless no-op elsewhere.
   void _initAndroidWidgetTaps() {
     void go(Uri? uri) {
       if (uri == null) return;
+      // App Shortcut (#205): resolve the semantic token, then navigate.
+      if (uri.host == 'intent') {
+        final token = uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
+        if (token.isEmpty) return;
+        unawaited(() async {
+          final route = await resolveAppIntentRoute(
+            token,
+            archive: ref.read(archiveRepositoryProvider),
+          );
+          if (route != null && route.isNotEmpty) {
+            ref.read(appRouterProvider).go(route);
+          }
+        }());
+        return;
+      }
+      // Widget tap (#204): the URI path is a literal go_router location.
       final location =
           uri.query.isEmpty ? uri.path : '${uri.path}?${uri.query}';
       // An empty / root path is the no-puzzle tap — just open the app.
@@ -170,7 +192,7 @@ class _CrosscueAppState extends ConsumerState<CrosscueApp> {
 
     unawaited(() async {
       try {
-        // Cold launch from a widget tap.
+        // Cold launch from a widget / shortcut tap.
         go(await HomeWidget.initiallyLaunchedFromHomeWidget());
         // Taps while the app is already running.
         HomeWidget.widgetClicked.listen(go);
