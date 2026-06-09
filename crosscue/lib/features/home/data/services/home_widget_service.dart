@@ -34,8 +34,9 @@ enum TodayStatus {
   final String wire;
 }
 
-/// Builds the versioned payload the iOS WidgetKit extension reads from the
-/// shared App Group container.
+/// Builds the versioned payload the home-screen widgets read: the iOS WidgetKit
+/// extension (from the App Group container) and the Android `AppWidgetProvider`
+/// (from `home_widget`'s shared preferences).
 ///
 /// **Additive by design** (see issue #114): the `leaderboard` slot is `null`
 /// today and becomes `{rank, total, percentile}` once #111's implementation
@@ -68,8 +69,9 @@ Map<String, Object?> buildHomeWidgetPayload({
 ///
 /// Safe to call before the widget extension + App Group are configured (see
 /// `docs/architecture/ios-widget-setup.md`): every failure is swallowed, so the
-/// app behaves identically whether or not the widget exists yet. No-op on
-/// platforms without a widget (Android Glance parity is a separate issue).
+/// app behaves identically whether or not the widget exists yet. Drives both the
+/// iOS WidgetKit widget (#114) and the Android home-screen widget (#204), which
+/// read the same payload; inert on platforms/builds without one placed.
 class HomeWidgetService {
   HomeWidgetService({
     required StatsRepository stats,
@@ -88,6 +90,11 @@ class HomeWidgetService {
   /// The WidgetKit widget kind — the `iOSName` passed to `updateWidget`, and
   /// the struct name in the Swift extension.
   static const String iOSWidgetName = 'CrosscueWidget';
+
+  /// Fully-qualified Android `AppWidgetProvider` (#204), passed to the same
+  /// `updateWidget` call so the Android home-screen widget refreshes too.
+  static const String androidWidgetProvider =
+      'dev.tomhess.crosscue.CrosscueWidgetProvider';
 
   /// Key the JSON payload is stored under in the App Group container.
   static const String dataKey = 'crosscue_widget_v1';
@@ -114,7 +121,10 @@ class HomeWidgetService {
       );
       await HomeWidget.setAppGroupId(appGroupId);
       await HomeWidget.saveWidgetData<String>(dataKey, jsonEncode(payload));
-      await HomeWidget.updateWidget(iOSName: iOSWidgetName);
+      await HomeWidget.updateWidget(
+        iOSName: iOSWidgetName,
+        qualifiedAndroidName: androidWidgetProvider,
+      );
     } on Object {
       // Inert until the widget extension + App Group are configured. This is
       // the documented "ships safely before platform setup" behavior.

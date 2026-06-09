@@ -2,4 +2,12 @@
 <resources>
     <color name="splash_bg">#0A2A6E</color>
     <color name="ic_launcher_background">#0D1A30</color>
+
+    <!-- Home-screen widget (#204). Light values; dark overrides in values-night.
+         crosscue_brand matches CrosscueColors.primary / the iOS widget brand. -->
+    <color name="crosscue_brand">#1565C0</color>
+    <color name="crosscue_widget_bg">#F5F6F8</color>
+    <color name="crosscue_widget_text">#0D1A30</color>
+    <color name="crosscue_widget_subtle">#5B6472</color>
+    <color name="crosscue_widget_solved">#2E7D32</color>
 </resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark-mode overrides for the home-screen widget (#204). crosscue_brand
+     matches CrosscueColors.primaryLight (the iOS widget's dark brand). -->
+<resources>
+    <color name="crosscue_brand">#7EB8F7</color>
+    <color name="crosscue_widget_bg">#1A2030</color>
+    <color name="crosscue_widget_text">#ECEFF4</color>
+    <color name="crosscue_widget_subtle">#9AA3B2</color>
+    <color name="crosscue_widget_solved">#81C784</color>
+</resources>
