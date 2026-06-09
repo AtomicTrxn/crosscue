@@ -26,4 +26,8 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
           updatedAt: DateTime.now().toUtc(),
         ),
       );
+
+  /// Removes the row for [key] if present.
+  Future<void> removeValue(String key) =>
+      (delete(appSettingsTable)..where((t) => t.key.equals(key))).go();
 }

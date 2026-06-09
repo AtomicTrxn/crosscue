@@ -4,4 +4,7 @@ abstract interface class ChallengeProfileRepository {
   Future<Player> getProfile();
   Future<Player> updateDisplayName(String displayName);
   Future<Player> updateAvatar(PlayerAvatar avatar);
+
+  /// Rotates the recovery secret, invalidating older recovery bundles.
+  Future<void> rotateRecovery();
 }

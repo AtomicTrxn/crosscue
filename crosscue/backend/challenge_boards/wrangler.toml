@@ -6,6 +6,10 @@ compatibility_date = "2026-06-01"
 APP_ENV = "local"
 PUBLIC_APP_URL = "https://crosscue.app"
 
+# Daily UTC board_events retention purge (#159 workstream C).
+[triggers]
+crons = ["7 3 * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "crosscue_challenge_boards_local"
@@ -16,6 +20,9 @@ migrations_dir = "migrations"
 name = "crosscue-challenge-boards-staging"
 vars = { APP_ENV = "staging", PUBLIC_APP_URL = "https://crosscue.app" }
 
+[env.staging.triggers]
+crons = ["7 3 * * *"]
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "crosscue_challenge_boards_staging"
@@ -25,6 +32,9 @@ migrations_dir = "migrations"
 [env.production]
 name = "crosscue-challenge-boards"
 vars = { APP_ENV = "production", PUBLIC_APP_URL = "https://crosscue.app" }
+
+[env.production.triggers]
+crons = ["7 3 * * *"]
 
 [[env.production.d1_databases]]
 binding = "DB"

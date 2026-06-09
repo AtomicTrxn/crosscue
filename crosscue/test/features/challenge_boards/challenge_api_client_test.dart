@@ -51,6 +51,109 @@ void main() {
     expect(identity?.authToken, 'token-1');
   });
 
+  test('bootstrap persists the recovery secret', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: store,
+      baseUrl: 'https://api.crosscue.test',
+    );
+
+    await api.bootstrap();
+
+    final bundle = await store.readRecoveryBundle();
+    expect(bundle?.playerId, 'player-1');
+    expect(bundle?.recoverySecret, 'recovery-1');
+  });
+
+  test('restores from the recovery bundle instead of bootstrapping', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: store,
+      baseUrl: 'https://api.crosscue.test',
+    );
+
+    // A recovery bundle exists (e.g. synced after a device restore) but there
+    // is no auth token locally.
+    await db.appSettingsDao.setValue('challenge_player_id', 'player-1');
+    await db.appSettingsDao.setValue('challenge_recovery_secret', 'recovery-1');
+
+    await api.listBoards();
+
+    expect(adapter.bootstrapCalls, 0, reason: 'should restore, not bootstrap');
+    expect(adapter.restoreCalls, 1);
+    expect(adapter.lastRestoreBody?['playerId'], 'player-1');
+    expect(adapter.seenAuthHeader, 'Bearer token-restored');
+    expect((await store.read())?.authToken, 'token-restored');
+  });
+
+  test('rotateRecovery stores the new secret', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: store,
+      baseUrl: 'https://api.crosscue.test',
+    );
+    await store.write(
+      const ChallengeIdentity(
+        playerId: 'player-1',
+        authToken: 'token-1',
+        recoverySecret: 'recovery-1',
+      ),
+    );
+
+    await api.rotateRecovery();
+
+    expect((await store.readRecoveryBundle())?.recoverySecret, 'recovery-2');
+  });
+
+  test('deleteAccount deletes the server player and clears identity', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: store,
+      baseUrl: 'https://api.crosscue.test',
+    );
+    await store.write(
+      const ChallengeIdentity(
+        playerId: 'player-1',
+        authToken: 'token-1',
+        recoverySecret: 'recovery-1',
+      ),
+    );
+
+    await api.deleteAccount();
+
+    expect(adapter.deleteCalls, 1);
+    expect(adapter.seenAuthHeader, 'Bearer token-1');
+    expect(await store.read(), isNull);
+    expect(await store.readRecoveryBundle(), isNull);
+  });
+
+  test('deleteAccount is a no-op without an identity', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      baseUrl: 'https://api.crosscue.test',
+    );
+
+    await api.deleteAccount();
+
+    expect(adapter.deleteCalls, 0);
+    expect(adapter.bootstrapCalls, 0, reason: 'must not bootstrap to delete');
+  });
+
   test('API client submits challenge results with auth', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
@@ -88,6 +191,17 @@ void main() {
 class _FakeChallengeAdapter implements HttpClientAdapter {
   String? seenAuthHeader;
   Map<String, Object?>? lastResultBody;
+  Map<String, Object?>? lastRestoreBody;
+  int bootstrapCalls = 0;
+  int restoreCalls = 0;
+  int deleteCalls = 0;
+
+  static const _player = {
+    'id': 'player-1',
+    'displayName': 'Maya',
+    'isMe': true,
+    'avatar': {'kind': 'silhouette', 'silhouetteLook': 1, 'photoUrl': null},
+  };
 
   @override
   Future<ResponseBody> fetch(
@@ -97,18 +211,31 @@ class _FakeChallengeAdapter implements HttpClientAdapter {
   ) async {
     final path = options.uri.path;
     if (path == '/players/bootstrap') {
+      bootstrapCalls++;
       return _json({
-        'player': {
-          'id': 'player-1',
-          'displayName': 'Maya',
-          'isMe': true,
-          'avatar': {
-            'kind': 'silhouette',
-            'silhouetteLook': 1,
-            'photoUrl': null,
-          },
-        },
+        'player': _player,
         'authToken': 'token-1',
+        'recoverySecret': 'recovery-1',
+      });
+    }
+
+    if (path == '/players/me' && options.method == 'DELETE') {
+      deleteCalls++;
+      seenAuthHeader = options.headers['authorization'] as String?;
+      return _json({'ok': true});
+    }
+
+    if (path == '/players/restore') {
+      restoreCalls++;
+      lastRestoreBody = options.data as Map<String, Object?>;
+      return _json({'player': _player, 'authToken': 'token-restored'});
+    }
+
+    if (path == '/players/recovery/rotate') {
+      seenAuthHeader = options.headers['authorization'] as String?;
+      return _json({
+        'recoverySecret': 'recovery-2',
+        'rotatedAt': '2026-06-09T00:00:00.000Z',
       });
     }
 

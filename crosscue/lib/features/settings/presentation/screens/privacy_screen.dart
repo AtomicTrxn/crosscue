@@ -3,6 +3,7 @@ import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/sync/sync_service_copy.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
+import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/sync_providers.dart';
 import 'package:crosscue/features/settings/presentation/widgets/settings_rows.dart';
@@ -100,6 +101,12 @@ class PrivacyScreen extends ConsumerWidget {
     );
     if (confirmed != true) return;
 
+    // Delete the server-side challenge-board player first, while the auth token
+    // still exists locally. If it can't be reached, let the user decide whether
+    // to wipe this device anyway.
+    if (!context.mounted) return;
+    if (!await _deleteChallengeAccount(context, ref)) return;
+
     // If the user opted into cloud sync, decide what happens to the cloud copy
     // and turn sync off first — otherwise a background sync pass would just
     // re-pull the cloud back onto this freshly-wiped device.
@@ -118,6 +125,56 @@ class PrivacyScreen extends ConsumerWidget {
     await resetAllSettings(ref);
 
     if (context.mounted) context.go(Routes.home);
+  }
+
+  /// Deletes the Challenge Boards server account, if one exists. Returns true
+  /// when it is safe to proceed with the local wipe (deleted, nothing to
+  /// delete, or the user chose to continue despite a failure), false to abort.
+  Future<bool> _deleteChallengeAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final api = ref.read(challengeBoardApiProvider);
+    if (api == null) return true; // Challenge Boards backend not configured.
+    try {
+      await api.deleteAccount();
+      return true;
+    } catch (_) {
+      if (!context.mounted) return false;
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          final primary = Theme.of(ctx).colorScheme.primary;
+          return AlertDialog(
+            title: const Text('Could not delete friend-board account'),
+            content: const Text(
+              "We couldn't reach the Challenge Boards server to delete your "
+              'player account and board participation. You can clear this '
+              'device anyway and retry deletion later, or cancel.',
+            ),
+            actions: [
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: primary,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: ctx.crosscueActionDestructive,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Clear anyway'),
+              ),
+            ],
+          );
+        },
+      );
+      return proceed ?? false;
+    }
   }
 
   /// Asks whether to also delete the cloud copy. Returns null on cancel,

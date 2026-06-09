@@ -195,5 +195,8 @@ class SampleChallengeRepository extends ChangeNotifier
   }
 
   @override
+  Future<void> rotateRecovery() async {}
+
+  @override
   Future<void> submitSolveResult(ChallengeSolveSubmission submission) async {}
 }

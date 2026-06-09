@@ -28,9 +28,49 @@ class ChallengeBoardApi {
     final player = _player(data['player'], isMe: true);
     final token = data['authToken'] as String;
     await _identityStore.write(
-      ChallengeIdentity(playerId: player.id, authToken: token),
+      ChallengeIdentity(
+        playerId: player.id,
+        authToken: token,
+        recoverySecret: data['recoverySecret'] as String?,
+      ),
     );
     return player;
+  }
+
+  /// Exchanges a stored recovery bundle for a fresh auth token, restoring an
+  /// existing anonymous player instead of creating a new one.
+  Future<Player> restore(ChallengeRecoveryBundle bundle) async {
+    final response = await _dio.post<Object?>(
+      '$_baseUrl/players/restore',
+      data: {
+        'playerId': bundle.playerId,
+        'recoverySecret': bundle.recoverySecret,
+      },
+    );
+    final data = _dataMap(response);
+    final player = _player(data['player'], isMe: true);
+    final token = data['authToken'] as String;
+    await _identityStore.write(
+      ChallengeIdentity(
+        playerId: player.id,
+        authToken: token,
+        recoverySecret: bundle.recoverySecret,
+      ),
+    );
+    return player;
+  }
+
+  /// Rotates the server-side recovery secret and persists the new value,
+  /// invalidating older recovery bundles.
+  Future<void> rotateRecovery() async {
+    final response = await _dio.post<Object?>(
+      '$_baseUrl/players/recovery/rotate',
+      options: await _authOptions(),
+    );
+    final secret = _dataMap(response)['recoverySecret'] as String?;
+    if (secret != null) {
+      await _identityStore.writeRecoverySecret(secret);
+    }
   }
 
   Future<Player> getProfile() async {
@@ -155,10 +195,31 @@ class ChallengeBoardApi {
     );
   }
 
+  /// Deletes the server-side player and clears the local identity. No-op when
+  /// no identity exists; never bootstraps a player just to delete it.
+  Future<void> deleteAccount() async {
+    final identity = await _identityStore.read();
+    if (identity == null) return;
+    await _dio.delete<Object?>(
+      '$_baseUrl/players/me',
+      options: Options(
+        headers: {'authorization': 'Bearer ${identity.authToken}'},
+      ),
+    );
+    await _identityStore.clear();
+  }
+
   Future<Options> _authOptions() async {
     var identity = await _identityStore.read();
     if (identity == null) {
-      await bootstrap();
+      // No usable auth token. Restore an existing player from the recovery
+      // bundle (e.g. after a device restore) before bootstrapping a new one.
+      final bundle = await _identityStore.readRecoveryBundle();
+      if (bundle != null) {
+        await restore(bundle);
+      } else {
+        await bootstrap();
+      }
       identity = await _identityStore.read();
     }
     final token = identity?.authToken;
