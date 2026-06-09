@@ -29,6 +29,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- App Shortcuts (#205): long-press launcher icon → today / continue
+                 / stats. Parity with the iOS App Intents (#115). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
             <!-- Challenge-board invite App Links (issue #203 / #159):
                  https://crosscue.app/join/<boardId>?token=...
                  autoVerify requires the matching assetlinks.json hosted at

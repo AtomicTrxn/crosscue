@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android App Shortcuts (#205) — long-press the launcher icon. Parity with the
+     iOS App Intents (#115): today's puzzle / continue / stats. Each launches
+     MainActivity with crosscue://intent/<token>; MainActivity stashes the token
+     for Flutter's resolveAppIntentRoute. Order = launcher display order. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="today"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_today"
+        android:shortcutShortLabel="@string/shortcut_today_short"
+        android:shortcutLongLabel="@string/shortcut_today_long">
+        <intent
+            android:action="es.antonborri.home_widget.action.LAUNCH"
+            android:targetPackage="dev.tomhess.crosscue"
+            android:targetClass="dev.tomhess.crosscue.MainActivity"
+            android:data="crosscue://intent/today" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="continue"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_continue"
+        android:shortcutShortLabel="@string/shortcut_continue_short"
+        android:shortcutLongLabel="@string/shortcut_continue_long">
+        <intent
+            android:action="es.antonborri.home_widget.action.LAUNCH"
+            android:targetPackage="dev.tomhess.crosscue"
+            android:targetClass="dev.tomhess.crosscue.MainActivity"
+            android:data="crosscue://intent/continue" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="stats"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_stats"
+        android:shortcutShortLabel="@string/shortcut_stats_short"
+        android:shortcutLongLabel="@string/shortcut_stats_long">
+        <intent
+            android:action="es.antonborri.home_widget.action.LAUNCH"
+            android:targetPackage="dev.tomhess.crosscue"
+            android:targetClass="dev.tomhess.crosscue.MainActivity"
+            android:data="crosscue://intent/stats" />
+    </shortcut>
+</shortcuts>

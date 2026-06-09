@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="crosscue_widget_description">Your current streak and today\'s puzzle.</string>
+
+    <!-- App Shortcuts (#205): long-press the launcher icon. -->
+    <string name="shortcut_today_short">Today</string>
+    <string name="shortcut_today_long">Today\'s puzzle</string>
+    <string name="shortcut_continue_short">Continue</string>
+    <string name="shortcut_continue_long">Continue solving</string>
+    <string name="shortcut_stats_short">Stats</string>
+    <string name="shortcut_stats_long">View stats</string>
 </resources>
