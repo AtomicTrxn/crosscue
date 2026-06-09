@@ -8,12 +8,45 @@ part of 'solve_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+/// boundaries, autosave/persistence, and completion. The interactive surface is
+/// grouped by responsibility into part-file mixins applied below:
+///
+///   * [_SolveNavigation]   — tap / direction / focus movement
+///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+///   * [_SolveCheckReveal]  — check + reveal actions
+///
+/// Each mixin re-declares the private orchestration members it leans on
+/// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+/// their single concrete implementation. See #183.
 
 @ProviderFor(SolveNotifier)
 final solveProvider = SolveNotifierFamily._();
 
+/// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+/// boundaries, autosave/persistence, and completion. The interactive surface is
+/// grouped by responsibility into part-file mixins applied below:
+///
+///   * [_SolveNavigation]   — tap / direction / focus movement
+///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+///   * [_SolveCheckReveal]  — check + reveal actions
+///
+/// Each mixin re-declares the private orchestration members it leans on
+/// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+/// their single concrete implementation. See #183.
 final class SolveNotifierProvider
     extends $AsyncNotifierProvider<SolveNotifier, SolveState> {
+  /// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+  /// boundaries, autosave/persistence, and completion. The interactive surface is
+  /// grouped by responsibility into part-file mixins applied below:
+  ///
+  ///   * [_SolveNavigation]   — tap / direction / focus movement
+  ///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+  ///   * [_SolveCheckReveal]  — check + reveal actions
+  ///
+  /// Each mixin re-declares the private orchestration members it leans on
+  /// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+  /// their single concrete implementation. See #183.
   SolveNotifierProvider._(
       {required SolveNotifierFamily super.from, required String super.argument})
       : super(
@@ -49,7 +82,19 @@ final class SolveNotifierProvider
   }
 }
 
-String _$solveNotifierHash() => r'6383d75137bf8de1fd32ff6be1dbb3382943e364';
+String _$solveNotifierHash() => r'018eca40977298d9db5af0aa1e2c6d4d9f0db549';
+
+/// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+/// boundaries, autosave/persistence, and completion. The interactive surface is
+/// grouped by responsibility into part-file mixins applied below:
+///
+///   * [_SolveNavigation]   — tap / direction / focus movement
+///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+///   * [_SolveCheckReveal]  — check + reveal actions
+///
+/// Each mixin re-declares the private orchestration members it leans on
+/// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+/// their single concrete implementation. See #183.
 
 final class SolveNotifierFamily extends $Family
     with
@@ -64,6 +109,18 @@ final class SolveNotifierFamily extends $Family
           isAutoDispose: true,
         );
 
+  /// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+  /// boundaries, autosave/persistence, and completion. The interactive surface is
+  /// grouped by responsibility into part-file mixins applied below:
+  ///
+  ///   * [_SolveNavigation]   — tap / direction / focus movement
+  ///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+  ///   * [_SolveCheckReveal]  — check + reveal actions
+  ///
+  /// Each mixin re-declares the private orchestration members it leans on
+  /// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+  /// their single concrete implementation. See #183.
+
   SolveNotifierProvider call(
     String puzzleId,
   ) =>
@@ -72,6 +129,18 @@ final class SolveNotifierFamily extends $Family
   @override
   String toString() => r'solveProvider';
 }
+
+/// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
+/// boundaries, autosave/persistence, and completion. The interactive surface is
+/// grouped by responsibility into part-file mixins applied below:
+///
+///   * [_SolveNavigation]   — tap / direction / focus movement
+///   * [_SolveInput]        — keyboard letter / rebus / backspace entry
+///   * [_SolveCheckReveal]  — check + reveal actions
+///
+/// Each mixin re-declares the private orchestration members it leans on
+/// (`_s`, `_scheduleSave`, `_checkCompletion`, …) as abstract; this class is
+/// their single concrete implementation. See #183.
 
 abstract class _$SolveNotifier extends $AsyncNotifier<SolveState> {
   late final _$args = ref.$arg as String;
