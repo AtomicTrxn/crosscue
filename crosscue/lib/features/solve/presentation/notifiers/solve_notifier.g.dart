@@ -82,7 +82,7 @@ final class SolveNotifierProvider
   }
 }
 
-String _$solveNotifierHash() => r'018eca40977298d9db5af0aa1e2c6d4d9f0db549';
+String _$solveNotifierHash() => r'6798865c2b710c522ac97b10bed8c1fc424440ec';
 
 /// Owns the solve session lifecycle: load/resume in [build], the elapsed-clock
 /// boundaries, autosave/persistence, and completion. The interactive surface is
