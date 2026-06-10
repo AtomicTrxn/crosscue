@@ -264,6 +264,114 @@ test('non-clean completions are never clean-ranking eligible', async () => {
   assert.equal(detail.weekly[0].cleanSolves, 0);
 });
 
+test('rotated invite links reveal no board details on preview', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  const staleLink = created.inviteLink;
+  await app.fetchJson(`/boards/${created.board.id}/invite/regenerate`, {
+    method: 'POST',
+    token: maya.authToken,
+  });
+
+  const preview = await app.fetchJson('/invites/preview', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: staleLink },
+  });
+
+  assert.equal(preview.invite.result, 'invalidOrExpired');
+  assert.equal(preview.invite.boardName, '');
+  assert.equal(preview.invite.playerCount, 0);
+});
+
+test('future-dated and impossible-date submissions are rejected', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  const futureCompleted = await app.submitResult(maya.authToken, {
+    completedAt: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+  });
+  assert.equal(futureCompleted.accepted, false);
+  assert.equal(futureCompleted.reason, 'implausible_completed_at');
+
+  const impossibleDate = await app.fetchJson('/results', {
+    method: 'POST',
+    token: maya.authToken,
+    status: 400,
+    body: {
+      sourceId: 'crosshare_daily_mini',
+      sourcePuzzleId: '2026-13-99',
+      completedAt: new Date().toISOString(),
+      elapsedMs: 90000,
+      completionType: 'clean',
+      cleanSolveEligible: true,
+      publishedOn: '2026-13-99',
+    },
+  });
+  assert.equal(impossibleDate.error.code, 'published_on');
+});
+
+test('avatar uploads must be PNG bytes', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  // 1x1 transparent PNG.
+  const png =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8' +
+    'z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+  const ok = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: png },
+  });
+  assert.equal(ok.player.avatar.kind, 'photo');
+  assert.ok(ok.player.avatar.photoUrl.startsWith('data:image/png;base64,'));
+
+  const notPng = Buffer.from('<svg onload=alert(1)>').toString('base64');
+  const rejected = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    status: 400,
+    body: { kind: 'photo', photoPngBase64: notPng },
+  });
+  assert.equal(rejected.error.code, 'invalid_avatar');
+});
+
+test('last_seen_at is refreshed at most hourly', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const readLastSeen = () =>
+    app.env.DB.db
+      .prepare('select last_seen_at from players where id = ?')
+      .get(maya.player.id).last_seen_at;
+
+  // Fresh bootstrap: within the refresh window, requests do not write.
+  const initial = readLastSeen();
+  await app.fetchJson('/players/me', { token: maya.authToken });
+  assert.equal(readLastSeen(), initial);
+
+  // Stale value: the next authenticated request refreshes it.
+  const stale = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  app.env.DB.db
+    .prepare('update players set last_seen_at = ? where id = ?')
+    .run(stale, maya.player.id);
+  await app.fetchJson('/players/me', { token: maya.authToken });
+  assert.notEqual(readLastSeen(), stale);
+});
+
 test('player restore exchanges recovery secret for a fresh token', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');

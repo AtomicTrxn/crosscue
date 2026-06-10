@@ -519,15 +519,17 @@ async function previewInvite(
   const body = await readBody(request);
   const invite = parseInviteLink(body.inviteLink);
   const board = await env.DB.prepare(
-    `select id, name, source_id, ranking_mode, invite_expires_at, invite_version, deleted_at
+    `select id, name, source_id, ranking_mode, invite_expires_at,
+            invite_version, invite_code_hash, deleted_at
      from boards
      where id = ?`,
   )
     .bind(invite.boardId)
-    .first<BoardRow>();
+    .first<BoardRow & { invite_code_hash: string }>();
   if (!board || board.deleted_at || !board.invite_expires_at) {
     return { invite: invitePreview("boardDeleted", "Board deleted", 0, 0) };
   }
+  // Members may see their own board regardless of the link's validity.
   if (await isActiveMember(env, auth.player.id, board.id)) {
     return {
       invite: invitePreview(
@@ -537,6 +539,16 @@ async function previewInvite(
         daysUntil(board.invite_expires_at),
       ),
     };
+  }
+  // Verify the secret before disclosing anything else about the board: a
+  // rotated or guessed link must not reveal the current name or member count.
+  const tokenMatches = (await sha256(invite.token)) === board.invite_code_hash;
+  if (!tokenMatches) {
+    return { invite: invitePreview("invalidOrExpired", "", 0, 0) };
+  }
+  // An expired-but-genuine link may still show the name: the inviter shared it.
+  if (new Date(board.invite_expires_at).getTime() < Date.now()) {
+    return { invite: invitePreview("invalidOrExpired", board.name, 0, 0) };
   }
   if (await activeBoardCount(env, auth.player.id) >= maxBoardsPerPlayer) {
     return {
@@ -559,14 +571,13 @@ async function previewInvite(
       ),
     };
   }
-  if (new Date(board.invite_expires_at).getTime() < Date.now()) {
-    return { invite: invitePreview("invalidOrExpired", board.name, 0, 0) };
-  }
-  const valid = await verifyInvite(env, invite.boardId, invite.token);
   return {
-    invite: valid
-      ? invitePreview("valid", board.name, memberCount, daysUntil(board.invite_expires_at))
-      : invitePreview("invalidOrExpired", board.name, 0, 0),
+    invite: invitePreview(
+      "valid",
+      board.name,
+      memberCount,
+      daysUntil(board.invite_expires_at),
+    ),
   };
 }
 
@@ -659,6 +670,13 @@ async function submitResult(
 
   if (elapsedMs < minPlausibleElapsedMs) {
     return { accepted: false, reason: "implausible_elapsed_ms" };
+  }
+
+  // Allow a day of clock skew, but a completion claimed further in the
+  // future is a client bug or forgery. Past timestamps stay accepted: the
+  // offline outbox legitimately delivers results late.
+  if (Date.parse(completedAt) > Date.now() + 86_400_000) {
+    return { accepted: false, reason: "implausible_completed_at" };
   }
 
   const hasBoardForSource = await env.DB.prepare(
@@ -774,8 +792,10 @@ function clientIp(request: Request): string {
   return request.headers.get("cf-connecting-ip") ?? "unknown";
 }
 
-// Abuse-dampening only. Caps (5 boards/player, 20 players/board) are still
-// enforced transactionally; rate limiting just slows brute-force/spam.
+// Abuse-dampening only. Caps (5 boards/player, 20 players/board) are enforced
+// with check-then-insert reads, so concurrent joins can briefly overshoot by
+// one — an accepted v1 trade-off (D1 has no row locking inside a request).
+// Rate limiting just slows brute-force/spam.
 async function enforceRateLimit(
   limiter: RateLimiter | undefined,
   key: string,
@@ -791,6 +811,10 @@ async function enforceRateLimit(
   }
 }
 
+// last_seen_at only needs day-level resolution; refreshing it at most hourly
+// avoids one D1 write per authenticated request.
+const lastSeenRefreshMs = 60 * 60 * 1000;
+
 async function requireAuth(request: Request, env: Env): Promise<Auth> {
   const auth = request.headers.get("authorization") ?? "";
   const token = auth.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -798,16 +822,19 @@ async function requireAuth(request: Request, env: Env): Promise<Auth> {
   const tokenHash = await sha256(token);
   const player = await env.DB.prepare(
     `select id, display_name, avatar_kind, avatar_silhouette_look,
-            avatar_photo_url
+            avatar_photo_url, last_seen_at
      from players
      where auth_token_hash = ? and deleted_at is null`,
   )
     .bind(tokenHash)
-    .first<PlayerRow>();
+    .first<PlayerRow & { last_seen_at: string | null }>();
   if (!player) throw new ApiError(401, "unauthorized", "Invalid auth token.");
-  await env.DB.prepare("update players set last_seen_at = ? where id = ?")
-    .bind(utcNow(), player.id)
-    .run();
+  const lastSeen = player.last_seen_at ? Date.parse(player.last_seen_at) : 0;
+  if (!Number.isFinite(lastSeen) || Date.now() - lastSeen > lastSeenRefreshMs) {
+    await env.DB.prepare("update players set last_seen_at = ? where id = ?")
+      .bind(utcNow(), player.id)
+      .run();
+  }
   return { player, tokenHash };
 }
 
@@ -1266,8 +1293,14 @@ function validateIsoDateTime(raw: unknown, code: string): string {
 }
 
 function validateDateOnly(raw: string, code: string): string {
+  // Shape, then a round-trip so impossible dates (2026-13-99, 2026-02-30)
+  // are rejected rather than stored and string-compared against week ranges.
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(raw)) {
     throw new ApiError(400, code, "Expected YYYY-MM-DD.");
+  }
+  const parsed = new Date(`${raw}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed.getTime()) || dateOnly(parsed) !== raw) {
+    throw new ApiError(400, code, "Expected a real calendar date.");
   }
   return raw;
 }
@@ -1303,6 +1336,8 @@ function validateRankingMode(raw: unknown): RankingMode {
   return "average_time";
 }
 
+const pngMagicBytes = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
 function dataUrlForAvatar(rawBase64: string): string {
   if (rawBase64.length > 500_000) {
     throw new ApiError(
@@ -1313,6 +1348,21 @@ function dataUrlForAvatar(rawBase64: string): string {
   }
   if (!/^[A-Za-z0-9+/=]+$/u.test(rawBase64)) {
     throw new ApiError(400, "invalid_avatar", "Avatar image is invalid.");
+  }
+  // The stored value is served back to every board member as image/png, so
+  // require the payload to actually start like one rather than persisting
+  // arbitrary bytes.
+  let bytes: Uint8Array;
+  try {
+    bytes = Uint8Array.from(atob(rawBase64), (c) => c.charCodeAt(0));
+  } catch {
+    throw new ApiError(400, "invalid_avatar", "Avatar image is invalid.");
+  }
+  if (
+    bytes.length < pngMagicBytes.length ||
+    pngMagicBytes.some((expected, i) => bytes[i] !== expected)
+  ) {
+    throw new ApiError(400, "invalid_avatar", "Avatar must be a PNG image.");
   }
   return `data:image/png;base64,${rawBase64}`;
 }
