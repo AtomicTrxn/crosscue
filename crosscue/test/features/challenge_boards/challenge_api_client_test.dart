@@ -9,17 +9,24 @@ import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/in_memory_secure_store.dart';
+
 void main() {
   late AppDatabase db;
+  late InMemorySecureKeyValueStore secureStore;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    secureStore = InMemorySecureKeyValueStore();
   });
 
   tearDown(() => db.close());
 
   test('identity store persists player id and auth token', () async {
-    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
 
     await store.write(
       const ChallengeIdentity(playerId: 'player-1', authToken: 'token-1'),
@@ -30,12 +37,71 @@ void main() {
     expect(identity?.authToken, 'token-1');
   });
 
+  test('auth token lives in secure storage, never in app settings', () async {
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
+
+    await store.write(
+      const ChallengeIdentity(
+        playerId: 'player-1',
+        authToken: 'token-1',
+        recoverySecret: 'recovery-1',
+      ),
+    );
+
+    expect(secureStore.values[ChallengeIdentityStore.authTokenKey], 'token-1');
+    expect(
+      await db.appSettingsDao.getValue(ChallengeIdentityStore.authTokenKey),
+      isNull,
+    );
+    // The recovery bundle stays in app settings so it survives OS backup
+    // and syncs to the user's own cloud (docs/privacy.md).
+    expect(
+      await db.appSettingsDao
+          .getValue(ChallengeIdentityStore.recoverySecretKey),
+      isNotNull,
+    );
+
+    await store.clear();
+    expect(secureStore.values, isEmpty);
+    expect(await store.read(), isNull);
+  });
+
+  test('legacy plain-text token rows migrate to secure storage', () async {
+    await db.appSettingsDao
+        .setValue(ChallengeIdentityStore.playerIdKey, 'player-1');
+    await db.appSettingsDao
+        .setValue(ChallengeIdentityStore.authTokenKey, 'legacy-token');
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
+
+    final identity = await store.read();
+
+    expect(identity?.authToken, 'legacy-token');
+    expect(
+      secureStore.values[ChallengeIdentityStore.authTokenKey],
+      'legacy-token',
+    );
+    expect(
+      await db.appSettingsDao.getValue(ChallengeIdentityStore.authTokenKey),
+      isNull,
+      reason: 'the plain-text row must not outlive the migration',
+    );
+  });
+
   test('API client bootstraps before authenticated board list', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
     final api = ChallengeBoardApi(
       dio: dio,
-      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: secureStore,
+      ),
       baseUrl: 'https://api.crosscue.test',
     );
 
@@ -45,8 +111,10 @@ void main() {
     expect(summary.lifetime.cleanSolves, 0);
     expect(adapter.seenAuthHeader, 'Bearer token-1');
 
-    final identity =
-        await ChallengeIdentityStore(dao: db.appSettingsDao).read();
+    final identity = await ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    ).read();
     expect(identity?.playerId, 'player-1');
     expect(identity?.authToken, 'token-1');
   });
@@ -54,7 +122,10 @@ void main() {
   test('bootstrap persists the recovery secret', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
-    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
     final api = ChallengeBoardApi(
       dio: dio,
       identityStore: store,
@@ -71,7 +142,10 @@ void main() {
   test('restores from the recovery bundle instead of bootstrapping', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
-    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
     final api = ChallengeBoardApi(
       dio: dio,
       identityStore: store,
@@ -95,7 +169,10 @@ void main() {
   test('rotateRecovery stores the new secret', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
-    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
     final api = ChallengeBoardApi(
       dio: dio,
       identityStore: store,
@@ -117,7 +194,10 @@ void main() {
   test('deleteAccount deletes the server player and clears identity', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
-    final store = ChallengeIdentityStore(dao: db.appSettingsDao);
+    final store = ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    );
     final api = ChallengeBoardApi(
       dio: dio,
       identityStore: store,
@@ -144,7 +224,10 @@ void main() {
     final dio = Dio()..httpClientAdapter = adapter;
     final api = ChallengeBoardApi(
       dio: dio,
-      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: secureStore,
+      ),
       baseUrl: 'https://api.crosscue.test',
     );
 
@@ -159,11 +242,17 @@ void main() {
     final dio = Dio()..httpClientAdapter = adapter;
     final api = ChallengeBoardApi(
       dio: dio,
-      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: secureStore,
+      ),
       baseUrl: 'https://api.crosscue.test',
     );
 
-    await ChallengeIdentityStore(dao: db.appSettingsDao).write(
+    await ChallengeIdentityStore(
+      dao: db.appSettingsDao,
+      secureStore: secureStore,
+    ).write(
       const ChallengeIdentity(playerId: 'player-1', authToken: 'token-1'),
     );
 

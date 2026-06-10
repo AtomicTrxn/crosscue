@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ backup/transfer rules. Mirrors backup_rules.xml: exclude the
+     Keystore-encrypted secure prefs (Challenge Boards auth token) from cloud
+     backup and device-to-device transfer; the ciphertext is undecryptable
+     off-device. The recovery bundle in the app database carries identity. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="crosscue_secure_prefs.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="crosscue_secure_prefs.xml" />
+    </device-transfer>
+</data-extraction-rules>

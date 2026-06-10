@@ -49,6 +49,9 @@ dependencies:
   # @immutable et al. in domain models (which must not import Flutter)
   meta: ^1.16.0
 
+  # Challenge Boards auth token at rest (Keychain / Android Keystore-backed)
+  flutter_secure_storage: ^9.2.0
+
   # Date formatting (streak date strings, .ipuz date parsing)
   intl: ^0.20.0
 
