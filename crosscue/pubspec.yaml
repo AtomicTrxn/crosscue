@@ -46,6 +46,9 @@ dependencies:
   # Puzzle ID generation
   crypto: ^3.0.0
 
+  # @immutable et al. in domain models (which must not import Flutter)
+  meta: ^1.16.0
+
   # Date formatting (streak date strings, .ipuz date parsing)
   intl: ^0.20.0
 

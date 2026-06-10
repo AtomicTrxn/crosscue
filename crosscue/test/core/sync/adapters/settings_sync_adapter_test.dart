@@ -119,17 +119,26 @@ void main() {
       );
     });
 
-    test('challenge identity and outbox keys never leave the device', () async {
+    test('challenge auth token and outbox never leave the device', () async {
       // The exclusion list duplicates the feature-owned key literals because
-      // core must not import feature code; this pins them together.
+      // core must not import feature code; this pins them together. The
+      // recovery bundle (player id + recovery secret) intentionally DOES
+      // sync — the privacy policy documents it living in the user's own
+      // cloud app-data area so identity survives device restore.
       expect(
         SettingsSyncAdapter.excludedKeys,
         containsAll(<String>{
-          ChallengeIdentityStore.playerIdKey,
           ChallengeIdentityStore.authTokenKey,
-          ChallengeIdentityStore.recoverySecretKey,
           ChallengeResultOutbox.storageKey,
         }),
+      );
+      expect(
+        SettingsSyncAdapter.excludedKeys,
+        isNot(contains(ChallengeIdentityStore.playerIdKey)),
+      );
+      expect(
+        SettingsSyncAdapter.excludedKeys,
+        isNot(contains(ChallengeIdentityStore.recoverySecretKey)),
       );
 
       final cloud = <String, String>{};
@@ -140,14 +149,25 @@ void main() {
         key: ChallengeIdentityStore.authTokenKey,
         valueJson: '"secret-token"',
       );
+      await insertSetting(
+        db,
+        key: ChallengeIdentityStore.recoverySecretKey,
+        valueJson: '"recovery-secret"',
+      );
       await insertSetting(db, key: 'haptics_enabled', valueJson: 'true');
 
       final pushed = await SettingsSyncAdapter(db)
           .push(FakeSyncTransport(store: cloud), deviceA);
 
-      expect(pushed.pushed, 1);
-      expect(cloud.keys, ['settings/haptics_enabled.json']);
-      expect(cloud.values.single, isNot(contains('secret-token')));
+      expect(pushed.pushed, 2);
+      expect(
+        cloud.keys,
+        unorderedEquals([
+          'settings/haptics_enabled.json',
+          'settings/challenge_recovery_secret.json',
+        ]),
+      );
+      expect(cloud.values.join(), isNot(contains('secret-token')));
     });
 
     test('excluded blobs uploaded by older versions are deleted on pull',

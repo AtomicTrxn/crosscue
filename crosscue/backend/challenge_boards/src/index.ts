@@ -139,11 +139,6 @@ export default {
         return json(await leaveBoard(env, auth, leaveMatch[1]), requestId);
       }
 
-      const inviteMatch = url.pathname.match(/^\/boards\/([^/]+)\/invite$/);
-      if (request.method === "GET" && inviteMatch) {
-        return json(await getInviteLink(env, auth, inviteMatch[1]), requestId);
-      }
-
       const regenMatch = url.pathname.match(
         /^\/boards\/([^/]+)\/invite\/regenerate$/,
       );
@@ -751,18 +746,6 @@ async function leaveBoard(
   }
 
   return { ok: true, boardDeleted: remaining === 0 };
-}
-
-async function getInviteLink(
-  env: Env,
-  auth: Auth,
-  boardId: string,
-): Promise<JsonValue> {
-  await requireActiveBoardMember(env, auth.player.id, boardId);
-  return {
-    inviteLink: inviteUrl(env, boardId, "current-secret-not-readable"),
-    needsRegeneration: true,
-  };
 }
 
 async function regenerateInvite(

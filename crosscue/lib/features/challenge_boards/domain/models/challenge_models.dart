@@ -1,4 +1,6 @@
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
 
 /// Crosscue · Challenge Boards — domain models.
 ///

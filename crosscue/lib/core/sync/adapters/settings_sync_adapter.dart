@@ -6,8 +6,10 @@ import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/transport/sync_transport.dart';
 import 'package:drift/drift.dart';
 
-/// Settings are keyed by string. Merge rule: LWW per key by `updatedAt`,
-/// with `(updatedAt, deviceId)` as tiebreak.
+/// Settings are keyed by string. Merge rule: LWW per key by `syncVersion`,
+/// then `updatedAt`. Local rows do not record their origin device, so an
+/// exact (version, timestamp) tie cannot use a true device-id tiebreak; see
+/// `_shouldTakeRemote` for the stable rule applied instead.
 ///
 /// `device_id` itself is intentionally excluded — it's device-local and
 /// must never be synced.
@@ -19,19 +21,22 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
   /// Keys excluded from sync. Device-local identifiers, secrets, and any
   /// "set once per install" flags belong on the device, not in the cloud.
   ///
-  /// The challenge_* keys are the Challenge Boards identity and submission
-  /// queue (see `ChallengeIdentityStore` / `ChallengeResultOutbox`; literals
-  /// duplicated here because core must not import feature code — a test
-  /// cross-checks them). The server keeps a single auth token per player, so
-  /// syncing it across devices both exposes a bearer secret to cloud storage
-  /// and lets a stale copy clobber a freshly rotated token; a synced outbox
-  /// would let another device re-submit pending results.
+  /// The challenge_* keys belong to Challenge Boards (literals duplicated
+  /// here because core must not import feature code — a test cross-checks
+  /// them against `ChallengeIdentityStore` / `ChallengeResultOutbox`):
+  ///
+  /// - The auth token never syncs: the server keeps a single token per
+  ///   player, so a stale cloud copy could clobber a freshly rotated one,
+  ///   and a bearer secret does not belong in cloud storage.
+  /// - The outbox never syncs: another device could re-submit it.
+  /// - The recovery bundle (player id + recovery secret) DOES sync, by
+  ///   design: the privacy policy documents that it lives in the user's own
+  ///   cloud app-data area so an anonymous identity survives device
+  ///   restore (docs/privacy.md, "Optional Challenge Boards").
   static const Set<String> excludedKeys = {
     'device_id',
     'has_seen_onboarding',
-    'challenge_player_id',
     'challenge_auth_token',
-    'challenge_recovery_secret',
     'challenge_result_outbox_v1',
   };
 
@@ -188,6 +193,11 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
         local.valueJson == valueJson;
   }
 
+  /// LWW by (syncVersion, updatedAt). On an exact tie the local row wins
+  /// unless the remote blob's deviceId sorts after the constant `'local'` —
+  /// an arbitrary but stable rule, kept only so both sides converge: settings
+  /// rows don't record their origin device, so a true per-device tiebreak
+  /// would need a schema change that the equal-content tie doesn't justify.
   bool _shouldTakeRemote(AppSettingRow local, SyncBlob remote) {
     if (local.syncVersion > remote.syncVersion) return false;
     if (local.syncVersion < remote.syncVersion) {
