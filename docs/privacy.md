@@ -1,6 +1,6 @@
 # Privacy Policy for Crosscue
 
-**Effective date:** June 2, 2026
+**Effective date:** June 9, 2026
 
 Crosscue is an offline-first crossword app for iOS and Android. This Privacy
 Policy explains what information Crosscue stores, what information it does not
@@ -8,9 +8,9 @@ collect, and the choices available to you.
 
 ## Summary
 
-- Crosscue does not require an account.
+- Crosscue does not require an account to solve puzzles.
 - Crosscue does not include advertising or analytics.
-- Crosscue does not collect or transmit personal information to the developer.
+- Crosscue does not collect your name, email, contacts, or location.
 - Puzzle data, solve progress, settings, and optional crash logs are stored
   locally on your device.
 - If you choose to download puzzles from an online puzzle source, your device
@@ -19,6 +19,12 @@ collect, and the choices available to you.
   stored in your own private cloud account — iCloud on iOS, Google Drive on
   Android — so they follow you across your devices. This data is never sent to
   the developer.
+- If you choose to use **Challenge Boards** (optional private friend
+  leaderboards), a limited set of data — an anonymous player identity, your
+  chosen display name, which boards you join, and the time/outcome of your
+  solves — is stored on a Crosscue-operated server so friends can compare
+  results. This feature is off until you create or join a board, and you can
+  delete this data at any time. See "Optional Challenge Boards" below.
 
 ## Information stored on your device
 
@@ -85,6 +91,54 @@ When sync is on:
   the copy on your device; you can also choose **"Turn off and remove cloud
   copy"** to delete Crosscue's data from your iCloud or Google Drive account.
 
+## Optional Challenge Boards (private friend leaderboards)
+
+Crosscue offers an optional **Challenge Boards** feature: small, invite-only
+boards where you and friends compare daily-puzzle results. Unlike sync, this
+feature uses a server operated by the Crosscue developer (hosted on Cloudflare),
+because comparing results between different people requires a shared service. It
+is **off until you create or join a board**, and there is no public or global
+leaderboard.
+
+When you use Challenge Boards, the following is stored on the Crosscue server:
+
+- an **anonymous player identity** (a random id and access token) created for
+  you automatically — it is not tied to your name, email, or any account;
+- your chosen **display name** (up to 10 characters);
+- which **boards** you are a member of, and board names you create;
+- **invite metadata** — only a hash of each board's invite secret, an invite
+  version, and its expiry time;
+- **solve result metadata** for eligible daily puzzles: the puzzle's source and
+  date, your elapsed time, completion type (clean or assisted), and timestamps;
+- compact **lifetime aggregate stats** (such as your average and best clean
+  solve time per board);
+- a small amount of internal board activity used to operate the feature.
+
+Crosscue does **not** store your puzzle answers, guesses, clue text, or puzzle
+contents on the server for Challenge Boards.
+
+To let your anonymous player identity survive a device restore, Crosscue stores
+a small **recovery bundle** in your own private cloud account (the same iCloud or
+Google Drive app-data area used by sync). The server keeps only a hash of the
+recovery secret, never the secret itself. This recovery works within the same
+cloud (iPhone-to-iPhone via iCloud, Android-to-Android via Google Drive); it
+does not move your identity between iOS and Android.
+
+Time and leaderboards use **UTC**: weekly boards run Monday through Sunday UTC,
+and labels indicate the UTC boundary.
+
+**Retention.** Recent solve results are retained to compute weekly and lifetime
+standings; internal board activity records are kept for a short window (about 14
+days) and then purged automatically. When everyone leaves a board, it is
+deleted.
+
+**Deleting your Challenge Boards data.** Using `Settings -> Privacy & Data ->
+Clear all data` deletes your server-side player record, board memberships, and
+solve results in addition to wiping this device. If the server cannot be reached
+at that moment, the app tells you and lets you retry. As with most online
+services, copies may persist briefly in the provider's routine backups before
+they age out.
+
 ## Exporting and importing data
 
 Crosscue lets you export solve statistics as a local backup file and import a
@@ -104,7 +158,9 @@ You can delete Crosscue data from within the app by using:
 
 This removes puzzles, progress, statistics, and settings stored by Crosscue on
 the device. If you have used sync, see "Optional sync" above for removing the
-copy stored in your iCloud or Google Drive account.
+copy stored in your iCloud or Google Drive account. If you have used Challenge
+Boards, this action also deletes your server-side player record and board
+participation, as described in "Optional Challenge Boards" above.
 
 ## Children's privacy
 
