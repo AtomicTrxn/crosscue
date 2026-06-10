@@ -6,6 +6,11 @@ compatibility_date = "2026-06-01"
 APP_ENV = "local"
 PUBLIC_APP_URL = "https://crosscue.app"
 
+# Workers Logs/Traces (#159 workstream E4). Logs are structured JSON and never
+# include tokens, recovery/invite secrets, or full invite URLs.
+[observability]
+enabled = true
+
 # Daily UTC board_events retention purge (#159 workstream C).
 [triggers]
 crons = ["7 3 * * *"]
@@ -18,19 +23,24 @@ migrations_dir = "migrations"
 
 # Abuse-dampening rate limits (#159 workstream D). RL_IDENTITY is keyed by IP
 # for anonymous player creation; RL_WRITE is keyed by player id for board writes.
-[[ratelimit]]
-binding = "RL_IDENTITY"
+[[unsafe.bindings]]
+name = "RL_IDENTITY"
+type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 15, period = 60 }
 
-[[ratelimit]]
-binding = "RL_WRITE"
+[[unsafe.bindings]]
+name = "RL_WRITE"
+type = "ratelimit"
 namespace_id = "1002"
 simple = { limit = 60, period = 60 }
 
 [env.staging]
 name = "crosscue-challenge-boards-staging"
 vars = { APP_ENV = "staging", PUBLIC_APP_URL = "https://crosscue.app" }
+
+[env.staging.observability]
+enabled = true
 
 [env.staging.triggers]
 crons = ["7 3 * * *"]
@@ -41,19 +51,29 @@ database_name = "crosscue_challenge_boards_staging"
 database_id = "11111111-1111-1111-1111-111111111111"
 migrations_dir = "migrations"
 
-[[env.staging.ratelimit]]
-binding = "RL_IDENTITY"
+[[env.staging.unsafe.bindings]]
+name = "RL_IDENTITY"
+type = "ratelimit"
 namespace_id = "2001"
 simple = { limit = 15, period = 60 }
 
-[[env.staging.ratelimit]]
-binding = "RL_WRITE"
+[[env.staging.unsafe.bindings]]
+name = "RL_WRITE"
+type = "ratelimit"
 namespace_id = "2002"
 simple = { limit = 60, period = 60 }
 
 [env.production]
 name = "crosscue-challenge-boards"
 vars = { APP_ENV = "production", PUBLIC_APP_URL = "https://crosscue.app" }
+# Custom domain (#159 workstream E2). Requires the crosscue.app zone in this
+# Cloudflare account. Uncomment to serve the API on api.crosscue.app; until then
+# the Worker is reachable at its *.workers.dev URL. Invite links stay on
+# crosscue.app/join/... regardless.
+# routes = [{ pattern = "api.crosscue.app", custom_domain = true }]
+
+[env.production.observability]
+enabled = true
 
 [env.production.triggers]
 crons = ["7 3 * * *"]
@@ -64,12 +84,14 @@ database_name = "crosscue_challenge_boards_prod"
 database_id = "22222222-2222-2222-2222-222222222222"
 migrations_dir = "migrations"
 
-[[env.production.ratelimit]]
-binding = "RL_IDENTITY"
+[[env.production.unsafe.bindings]]
+name = "RL_IDENTITY"
+type = "ratelimit"
 namespace_id = "3001"
 simple = { limit = 15, period = 60 }
 
-[[env.production.ratelimit]]
-binding = "RL_WRITE"
+[[env.production.unsafe.bindings]]
+name = "RL_WRITE"
+type = "ratelimit"
 namespace_id = "3002"
 simple = { limit = 60, period = 60 }
