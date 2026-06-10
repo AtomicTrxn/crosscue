@@ -2,6 +2,7 @@ import 'package:crosscue/features/challenge_boards/domain/models/challenge_model
 import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
 import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/atoms.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/cb_card.dart';
 import 'package:flutter/material.dart';
 
@@ -22,10 +23,17 @@ class LifetimeCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Eyebrow('Lifetime', suffix: '· completed weeks'),
-              Icon(
-                Icons.info_outline_rounded,
-                size: 16,
-                color: AppColors.onSurface3(context),
+              IconButton(
+                onPressed: () => _showLifetimeInfo(context),
+                tooltip: 'About lifetime stats',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                icon: Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: AppColors.onSurface3(context),
+                ),
               ),
             ],
           ),
@@ -36,6 +44,38 @@ class LifetimeCard extends StatelessWidget {
             _Triad(stats: stats),
         ],
       ),
+    );
+  }
+
+  Future<void> _showLifetimeInfo(BuildContext context) {
+    return showCbSheet<void>(
+      context,
+      title: 'Lifetime stats',
+      builder: (ctx) {
+        final body = AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.onSurface2(ctx),
+          height: 1.4,
+        );
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lifetime stats cover every clean Daily Mini solve you have '
+              'submitted — solves with no checks, hints, or reveals.',
+              style: body,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Solve 5 clean puzzles to unlock your lifetime ranking. '
+              'Weeks are counted as completed Monday-to-Sunday UTC weeks '
+              'containing at least one clean solve.',
+              style: body,
+            ),
+            const SizedBox(height: 20),
+          ],
+        );
+      },
     );
   }
 }

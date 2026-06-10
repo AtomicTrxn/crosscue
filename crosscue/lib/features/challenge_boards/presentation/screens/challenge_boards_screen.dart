@@ -111,7 +111,7 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
             ? PlayerAvatar.photoBytes(avatarChoice.photoBytes)
             : PlayerAvatar.silhouette(avatarChoice.look ?? 1);
         await ref.read(challengeProfileRepositoryProvider).updateAvatar(avatar);
-        ref.invalidate(challengeProfileProvider);
+        _invalidateProfileEverywhere(ref);
         return avatar;
       },
     );
@@ -119,7 +119,17 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     await ref
         .read(challengeProfileRepositoryProvider)
         .updateDisplayName(choice);
+    _invalidateProfileEverywhere(ref);
+  }
+
+  /// Display name and avatar also appear in every board's leaderboard rows
+  /// (the server updates active memberships), so cached board data must be
+  /// refetched along with the profile — otherwise boards viewed before the
+  /// change keep showing the old identity until app restart.
+  void _invalidateProfileEverywhere(WidgetRef ref) {
     ref.invalidate(challengeProfileProvider);
+    ref.invalidate(challengeBoardsProvider);
+    ref.invalidate(challengeBoardDetailProvider);
   }
 
   Future<void> _resetRecovery(WidgetRef ref) async {
