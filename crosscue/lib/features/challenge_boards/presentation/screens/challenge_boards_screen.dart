@@ -8,6 +8,7 @@ import 'package:crosscue/features/challenge_boards/presentation/providers/challe
 import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_tab_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_picker_sheet.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/confirm_dialogs.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/edit_name_sheet.dart';
 import 'package:crosscue/features/challenge_boards/util/invite_link.dart';
 import 'package:file_picker/file_picker.dart';
@@ -90,11 +91,15 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     Player? player,
   ) async {
     if (player == null) return;
+    // Recovery rotation only applies when a real backend is configured; in
+    // sample mode the action is hidden.
+    final hasBackend = ref.read(challengeBoardApiProvider) != null;
     final choice = await showEditNameSheet(
       context,
       initial: player.displayName,
       currentAvatar: player.avatar,
       offline: false,
+      onResetRecovery: hasBackend ? () => unawaited(_resetRecovery(ref)) : null,
       onChangeAvatar: () async {
         final avatarChoice = await showAvatarPickerSheet(
           context,
@@ -115,6 +120,24 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
         .read(challengeProfileRepositoryProvider)
         .updateDisplayName(choice);
     ref.invalidate(challengeProfileProvider);
+  }
+
+  Future<void> _resetRecovery(WidgetRef ref) async {
+    final confirmed = await showResetRecoveryDialog(context);
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    String message;
+    try {
+      await ref.read(challengeProfileRepositoryProvider).rotateRecovery();
+      message = 'Recovery code reset';
+    } catch (_) {
+      message = 'Could not reset recovery code. Try again.';
+    }
+    if (!mounted) return;
+    // Close the Profile sheet so the result snackbar is visible.
+    if (navigator.canPop()) navigator.pop();
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _showCreateJoin(BuildContext context, WidgetRef ref) async {

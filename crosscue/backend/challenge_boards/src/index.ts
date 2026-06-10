@@ -2,6 +2,14 @@ export interface Env {
   DB: D1Database;
   PUBLIC_APP_URL: string;
   APP_ENV: string;
+  // Cloudflare Rate Limiting bindings. Optional so local/test runs without the
+  // bindings configured skip limiting rather than crashing.
+  RL_IDENTITY?: RateLimiter;
+  RL_WRITE?: RateLimiter;
+}
+
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 type JsonValue =
@@ -57,7 +65,7 @@ const defaultSourceId = "crosshare_daily_mini";
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET,POST,PATCH,OPTIONS",
+  "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
   "access-control-allow-headers": "authorization,content-type,x-request-id",
 };
 
@@ -74,10 +82,22 @@ export default {
       const route = `${request.method} ${url.pathname}`;
 
       if (route === "POST /players/bootstrap") {
+        await enforceRateLimit(env.RL_IDENTITY, clientIp(request));
         return json(await bootstrapPlayer(request, env), requestId);
+      }
+      if (route === "POST /players/restore") {
+        await enforceRateLimit(env.RL_IDENTITY, clientIp(request));
+        return json(await restorePlayer(request, env), requestId);
       }
 
       const auth = await requireAuth(request, env);
+
+      if (route === "POST /players/recovery/rotate") {
+        return json(await rotateRecovery(env, auth), requestId);
+      }
+      if (route === "DELETE /players/me") {
+        return json(await deletePlayer(env, auth), requestId);
+      }
 
       if (route === "GET /players/me") {
         return json({ player: serializePlayer(auth.player) }, requestId);
@@ -98,9 +118,11 @@ export default {
         return json(await previewInvite(request, env, auth), requestId);
       }
       if (route === "POST /invites/join") {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await joinInvite(request, env, auth), requestId);
       }
       if (route === "POST /results") {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await submitResult(request, env, auth), requestId, 202);
       }
 
@@ -123,6 +145,7 @@ export default {
         /^\/boards\/([^/]+)\/invite\/regenerate$/,
       );
       if (request.method === "POST" && regenMatch) {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
         return json(await regenerateInvite(env, auth, regenMatch[1]), requestId);
       }
 
@@ -135,7 +158,45 @@ export default {
       return problem("internal_error", "Something went wrong.", 500, requestId);
     }
   },
+
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
+    const deleted = await purgeOldBoardEvents(env);
+    console.log(JSON.stringify({ job: "purge_board_events", deleted }));
+  },
 };
+
+const boardEventsRetentionDays = 14;
+const purgeChunkSize = 500;
+
+// Daily retention for the audit-only board_events table. challenge_results is
+// intentionally retained because lifetime leaderboards are computed live from it
+// (no player_board_stats rollover in v1); purging it would shrink lifetime stats.
+async function purgeOldBoardEvents(env: Env): Promise<number> {
+  const cutoff = addDays(utcNow(), -boardEventsRetentionDays);
+  let deleted = 0;
+  for (;;) {
+    const batch = await env.DB.prepare(
+      "select id from board_events where created_at < ? limit ?",
+    )
+      .bind(cutoff, purgeChunkSize)
+      .all<{ id: string }>();
+    const ids = (batch.results ?? []).map((row) => row.id);
+    if (ids.length === 0) break;
+    const placeholders = ids.map(() => "?").join(",");
+    await env.DB.prepare(
+      `delete from board_events where id in (${placeholders})`,
+    )
+      .bind(...ids)
+      .run();
+    deleted += ids.length;
+    if (ids.length < purgeChunkSize) break;
+  }
+  return deleted;
+}
 
 async function bootstrapPlayer(
   request: Request,
@@ -148,18 +209,134 @@ async function bootstrapPlayer(
   const playerId = crypto.randomUUID();
   const token = randomSecret();
   const tokenHash = await sha256(token);
+  const recoverySecret = randomSecret();
+  const recoveryHash = await sha256(recoverySecret);
   const now = utcNow();
 
   await env.DB.prepare(
     `insert into players (
-      id, display_name, auth_token_hash, created_at, last_seen_at
-    ) values (?, ?, ?, ?, ?)`,
+      id, display_name, auth_token_hash, recovery_secret_hash,
+      created_at, last_seen_at
+    ) values (?, ?, ?, ?, ?, ?)`,
   )
-    .bind(playerId, displayName, tokenHash, now, now)
+    .bind(playerId, displayName, tokenHash, recoveryHash, now, now)
+    .run();
+
+  const player = await getPlayerById(env, playerId);
+  return {
+    player: serializePlayer(player),
+    authToken: token,
+    recoverySecret,
+  };
+}
+
+async function restorePlayer(
+  request: Request,
+  env: Env,
+): Promise<JsonValue> {
+  const body = await readBody(request);
+  const playerId = validateRequiredString(body.playerId, "restore_failed", 80);
+  const recoverySecret = validateRequiredString(
+    body.recoverySecret,
+    "restore_failed",
+    200,
+  );
+  const recoveryHash = await sha256(recoverySecret);
+  const match = await env.DB.prepare(
+    `select id from players
+     where id = ? and recovery_secret_hash = ? and deleted_at is null`,
+  )
+    .bind(playerId, recoveryHash)
+    .first<{ id: string }>();
+  if (!match) {
+    throw new ApiError(
+      401,
+      "restore_failed",
+      "Could not restore this player.",
+    );
+  }
+
+  // Issue a fresh auth token and invalidate the previous one.
+  const token = randomSecret();
+  const tokenHash = await sha256(token);
+  const now = utcNow();
+  await env.DB.prepare(
+    "update players set auth_token_hash = ?, last_seen_at = ? where id = ?",
+  )
+    .bind(tokenHash, now, playerId)
     .run();
 
   const player = await getPlayerById(env, playerId);
   return { player: serializePlayer(player), authToken: token };
+}
+
+async function rotateRecovery(env: Env, auth: Auth): Promise<JsonValue> {
+  const recoverySecret = randomSecret();
+  const recoveryHash = await sha256(recoverySecret);
+  const now = utcNow();
+  await env.DB.prepare(
+    `update players
+     set recovery_secret_hash = ?, recovery_secret_rotated_at = ?
+     where id = ?`,
+  )
+    .bind(recoveryHash, now, auth.player.id)
+    .run();
+  return { recoverySecret, rotatedAt: now };
+}
+
+async function deletePlayer(env: Env, auth: Auth): Promise<JsonValue> {
+  const playerId = auth.player.id;
+  const now = utcNow();
+
+  // Leave every active board, recording events and emptying boards as we go.
+  const activeBoards = await env.DB.prepare(
+    "select board_id from memberships where player_id = ? and left_at is null",
+  )
+    .bind(playerId)
+    .all<{ board_id: string }>();
+
+  const leaveStatements: D1PreparedStatement[] = [];
+  for (const { board_id } of activeBoards.results ?? []) {
+    leaveStatements.push(
+      env.DB.prepare(
+        `update memberships
+         set left_at = ?, membership_state = 'left'
+         where board_id = ? and player_id = ? and left_at is null`,
+      ).bind(now, board_id, playerId),
+      eventStatement(env, board_id, playerId, "leave", now),
+    );
+  }
+  if (leaveStatements.length > 0) {
+    await env.DB.batch(leaveStatements);
+  }
+
+  // Auto-delete any board left with no remaining active members.
+  for (const { board_id } of activeBoards.results ?? []) {
+    if ((await activeMemberCount(env, board_id)) === 0) {
+      await env.DB.prepare("update boards set deleted_at = ? where id = ?")
+        .bind(now, board_id)
+        .run();
+    }
+  }
+
+  // Remove the player's solve results and anonymize residual participation data.
+  await env.DB.batch([
+    env.DB.prepare("delete from challenge_results where player_id = ?").bind(
+      playerId,
+    ),
+    env.DB.prepare(
+      "update memberships set display_name = 'Deleted' where player_id = ?",
+    ).bind(playerId),
+    env.DB.prepare(
+      `update players
+       set deleted_at = ?, display_name = 'Deleted',
+           auth_token_hash = '', recovery_secret_hash = null,
+           avatar_photo_url = null
+       where id = ?`,
+    ).bind(now, playerId),
+  ]);
+
+  return { ok: true };
 }
 
 async function updatePlayer(
@@ -583,6 +760,27 @@ async function regenerateInvite(
   return { inviteLink: inviteUrl(env, board.id, secret), expiresAt: expires };
 }
 
+function clientIp(request: Request): string {
+  return request.headers.get("cf-connecting-ip") ?? "unknown";
+}
+
+// Abuse-dampening only. Caps (5 boards/player, 20 players/board) are still
+// enforced transactionally; rate limiting just slows brute-force/spam.
+async function enforceRateLimit(
+  limiter: RateLimiter | undefined,
+  key: string,
+): Promise<void> {
+  if (!limiter) return;
+  const { success } = await limiter.limit({ key });
+  if (!success) {
+    throw new ApiError(
+      429,
+      "rate_limited",
+      "Too many requests. Please try again shortly.",
+    );
+  }
+}
+
 async function requireAuth(request: Request, env: Env): Promise<Auth> {
   const auth = request.headers.get("authorization") ?? "";
   const token = auth.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -951,7 +1149,69 @@ function validateDisplayName(raw: unknown): string {
       "Use letters, numbers, spaces, underscores, or hyphens.",
     );
   }
+  if (isUnsafeDisplayName(value)) {
+    throw new ApiError(
+      400,
+      "invalid_display_name",
+      "Please choose a different display name.",
+    );
+  }
   return value;
+}
+
+// Reserved handles that would impersonate the app/staff, and a starter
+// profanity/slur blocklist. This list is intentionally small and meant to be
+// maintained; there is no platform API that makes gaming-handle safety
+// automatic, so the server owns this check (clients must not be trusted).
+const reservedDisplayNames = new Set([
+  "admin",
+  "administrator",
+  "moderator",
+  "mod",
+  "crosscue",
+  "support",
+  "staff",
+  "system",
+  "official",
+  "owner",
+  "root",
+  "null",
+  "undefined",
+]);
+
+const blockedNameFragments = [
+  "fuck",
+  "shit",
+  "cunt",
+  "bitch",
+  "nigger",
+  "nigga",
+  "faggot",
+  "fag",
+  "retard",
+  "rape",
+  "nazi",
+];
+
+/// Normalizes a candidate name to defeat common evasions (case, separators,
+/// and leetspeak) before checking the reserved and blocked lists.
+function isUnsafeDisplayName(value: string): boolean {
+  const normalized = value
+    .toLowerCase()
+    .replaceAll("0", "o")
+    .replaceAll("1", "i")
+    .replaceAll("3", "e")
+    .replaceAll("4", "a")
+    .replaceAll("5", "s")
+    .replaceAll("7", "t")
+    .replaceAll("@", "a")
+    .replaceAll("$", "s")
+    .replace(/[^a-z]/gu, "");
+  if (normalized.length === 0) return false;
+  if (reservedDisplayNames.has(normalized)) return true;
+  return blockedNameFragments.some((fragment) =>
+    normalized.includes(fragment),
+  );
 }
 
 function validateBoardName(raw: unknown): string {

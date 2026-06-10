@@ -18,6 +18,12 @@ Errors:
 }
 ```
 
+Identity creation (`/players/bootstrap`, `/players/restore`) and board writes
+(`/invites/join`, `/results`, invite regeneration) are rate-limited. Over the
+limit returns `429` with code `rate_limited`. Display names are validated
+server-side for length (10), allowed characters, reserved handles, and a
+profanity/slur blocklist; rejections return `400 invalid_display_name`.
+
 ## Player
 
 `POST /players/bootstrap`
@@ -38,8 +44,57 @@ Response:
     "isMe": true,
     "avatar": { "kind": "initials", "silhouetteLook": 1, "photoUrl": null }
   },
-  "authToken": "..."
+  "authToken": "...",
+  "recoverySecret": "..."
 }
+```
+
+`recoverySecret` is returned only at bootstrap and on rotation. The server stores
+only `hash(recoverySecret)`. The client persists `{ playerId, recoverySecret }` in
+its private app-storage recovery bundle to restore identity after device restore.
+
+`POST /players/restore`
+
+Unauthenticated. Exchanges a recovery bundle for a fresh auth token (the previous
+token is invalidated).
+
+Request:
+
+```json
+{ "playerId": "...", "recoverySecret": "..." }
+```
+
+Response:
+
+```json
+{ "player": { "...": "player" }, "authToken": "..." }
+```
+
+Returns `401 restore_failed` if the player is unknown, deleted, or the secret
+does not match.
+
+`POST /players/recovery/rotate`
+
+Authenticated. Issues a new recovery secret and invalidates older recovery
+bundles.
+
+Response:
+
+```json
+{ "recoverySecret": "...", "rotatedAt": "2026-06-09T00:00:00.000Z" }
+```
+
+`DELETE /players/me`
+
+Authenticated. Leaves all active boards (auto-deleting any board left with no
+members), deletes the player's challenge results, anonymizes residual membership
+rows, and soft-deletes the player record. The auth token and recovery secret are
+revoked.
+
+Response:
+
+```json
+{ "ok": true }
 ```
 
 `GET /players/me`

@@ -52,6 +52,42 @@ void main() {
     expect(find.text('Profile'), findsOneWidget);
   });
 
+  testWidgets('profile sheet shows reset-recovery action when provided',
+      (tester) async {
+    var resetTaps = 0;
+    await tester.pumpWidget(
+      _SheetHarness(
+        onPressed: (context) => showEditNameSheet(
+          context,
+          initial: 'Maya',
+          onResetRecovery: () => resetTaps++,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset recovery code'), findsOneWidget);
+    await tester.tap(find.text('Reset recovery code'));
+    await tester.pumpAndSettle();
+    expect(resetTaps, 1);
+  });
+
+  testWidgets('profile sheet hides reset-recovery action by default',
+      (tester) async {
+    await tester.pumpWidget(
+      _SheetHarness(
+        onPressed: (context) => showEditNameSheet(context, initial: 'Maya'),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset recovery code'), findsNothing);
+  });
+
   testWidgets('avatar picker saves any selected default avatar',
       (tester) async {
     AvatarChoice? result;

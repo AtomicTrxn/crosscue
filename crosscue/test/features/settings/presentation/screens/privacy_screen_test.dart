@@ -3,13 +3,20 @@
 // + FakeSyncTransport (no device / OAuth needed). Verifies the cloud copy is
 // kept by default and only wiped on the explicit second confirm.
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:crosscue/core/database/app_database.dart';
 import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
+import 'package:crosscue/features/challenge_boards/data/services/challenge_board_api.dart';
+import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
+import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
 import 'package:crosscue/features/settings/domain/models/boot_settings.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
 import 'package:crosscue/features/settings/presentation/screens/privacy_screen.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +54,10 @@ void main() {
   Future<int> puzzleCount() async =>
       (await db.select(db.puzzlesTable).get()).length;
 
-  Future<ProviderContainer> pumpPrivacy(WidgetTester tester) async {
+  Future<ProviderContainer> pumpPrivacy(
+    WidgetTester tester, {
+    ChallengeBoardApi? challengeApi,
+  }) async {
     final router = GoRouter(
       initialLocation: Routes.privacySettings,
       routes: [
@@ -68,6 +78,8 @@ void main() {
           bootSettingsProvider.overrideWithValue(BootSettings.defaults),
           syncTransportProvider
               .overrideWithValue(FakeSyncTransport(store: cloud)),
+          if (challengeApi != null)
+            challengeBoardApiProvider.overrideWithValue(challengeApi),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -155,4 +167,58 @@ void main() {
       reason: 'sync left untouched',
     );
   });
+
+  testWidgets('clear all data also deletes the Challenge Boards account',
+      (tester) async {
+    final adapter = _RecordingChallengeAdapter();
+    final api = ChallengeBoardApi(
+      dio: Dio()..httpClientAdapter = adapter,
+      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      baseUrl: 'https://api.crosscue.test',
+    );
+    // Seed a challenge identity so deletion has something to delete.
+    await db.appSettingsDao.setValue('challenge_player_id', 'player-1');
+    await db.appSettingsDao.setValue('challenge_auth_token', 'token-1');
+
+    await pumpPrivacy(tester, challengeApi: api);
+    await insertPuzzle('p1');
+
+    await tapClearThenDeleteEverything(tester);
+
+    expect(adapter.deleteCalls, 1, reason: 'server player deleted');
+    expect(adapter.seenAuthHeader, 'Bearer token-1');
+    expect(await puzzleCount(), 0, reason: 'local data wiped after deletion');
+    expect(
+      await db.appSettingsDao.getValue('challenge_player_id'),
+      isNull,
+      reason: 'local challenge identity cleared',
+    );
+  });
+}
+
+class _RecordingChallengeAdapter implements HttpClientAdapter {
+  int deleteCalls = 0;
+  String? seenAuthHeader;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (options.uri.path == '/players/me' && options.method == 'DELETE') {
+      deleteCalls++;
+      seenAuthHeader = options.headers['authorization'] as String?;
+    }
+    return ResponseBody.fromString(
+      jsonEncode({'ok': true}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -211,6 +211,154 @@ test('non Daily Mini submissions are not accepted', async () => {
   assert.equal(result.reason, 'not_challenge_daily_mini');
 });
 
+test('player restore exchanges recovery secret for a fresh token', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  assert.ok(maya.recoverySecret, 'bootstrap returns a recovery secret');
+
+  const restored = await app.fetchJson('/players/restore', {
+    method: 'POST',
+    body: { playerId: maya.player.id, recoverySecret: maya.recoverySecret },
+  });
+  assert.equal(restored.player.id, maya.player.id);
+  assert.notEqual(restored.authToken, maya.authToken);
+
+  // The fresh token authenticates.
+  const me = await app.fetchJson('/players/me', { token: restored.authToken });
+  assert.equal(me.player.id, maya.player.id);
+
+  // A wrong secret is rejected.
+  await app.fetchJson('/players/restore', {
+    method: 'POST',
+    body: { playerId: maya.player.id, recoverySecret: 'nope' },
+    status: 401,
+  });
+});
+
+test('rotating the recovery secret invalidates the old one', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+
+  const rotated = await app.fetchJson('/players/recovery/rotate', {
+    method: 'POST',
+    token: maya.authToken,
+  });
+  assert.ok(rotated.recoverySecret);
+  assert.notEqual(rotated.recoverySecret, maya.recoverySecret);
+
+  // The old secret no longer restores.
+  await app.fetchJson('/players/restore', {
+    method: 'POST',
+    body: { playerId: maya.player.id, recoverySecret: maya.recoverySecret },
+    status: 401,
+  });
+  // The new secret does.
+  const restored = await app.fetchJson('/players/restore', {
+    method: 'POST',
+    body: { playerId: maya.player.id, recoverySecret: rotated.recoverySecret },
+  });
+  assert.equal(restored.player.id, maya.player.id);
+});
+
+test('deleting a player removes participation and revokes the token', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.submitResult(maya.authToken);
+
+  const deleted = await app.fetchJson('/players/me', {
+    method: 'DELETE',
+    token: maya.authToken,
+  });
+  assert.equal(deleted.ok, true);
+
+  // Token is revoked.
+  await app.fetchJson('/players/me', { token: maya.authToken, status: 401 });
+  // Recovery secret can no longer restore a deleted player.
+  await app.fetchJson('/players/restore', {
+    method: 'POST',
+    body: { playerId: maya.player.id, recoverySecret: maya.recoverySecret },
+    status: 401,
+  });
+  // Sole-member board was auto-deleted, and the result row is gone.
+  const boards = app.env.DB.db
+    .prepare('select deleted_at from boards where id = ?')
+    .get(created.board.id);
+  assert.ok(boards.deleted_at, 'board auto-deleted');
+  const results = app.env.DB.db
+    .prepare('select count(*) as n from challenge_results where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(results.n, 0);
+});
+
+test('scheduled purge removes board events older than 14 days', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  // The board-create event is recent; insert one well outside the window.
+  const old = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  app.env.DB.db
+    .prepare(
+      `insert into board_events (id, board_id, actor_player_id, event_type, created_at)
+       values ('stale', (select id from boards limit 1), ?, 'join', ?)`,
+    )
+    .run(maya.player.id, old);
+
+  const before = app.env.DB.db
+    .prepare('select count(*) as n from board_events')
+    .get().n;
+  assert.ok(before >= 2);
+
+  await app.runScheduled();
+
+  const rows = app.env.DB.db.prepare('select created_at from board_events').all();
+  assert.ok(rows.length >= 1, 'recent events retained');
+  assert.ok(
+    rows.every((r) => r.created_at !== old),
+    'stale event purged',
+  );
+});
+
+test('display names with reserved or blocked words are rejected', async () => {
+  const app = await createApp();
+  for (const name of ['admin', 'Cr0sscue', 'fuck', 'sh1t']) {
+    const error = await app.fetchJson('/players/bootstrap', {
+      method: 'POST',
+      body: { displayName: name },
+      status: 400,
+    });
+    assert.equal(error.error.code, 'invalid_display_name', name);
+  }
+  // A clean name still works.
+  const ok = await app.bootstrap('Maya');
+  assert.equal(ok.player.displayName, 'Maya');
+});
+
+test('rate limiter blocks requests over the limit', async () => {
+  const app = await createApp();
+  app.env.RL_IDENTITY = { async limit() {
+    return { success: false };
+  } };
+
+  const error = await app.fetchJson('/players/bootstrap', {
+    method: 'POST',
+    body: { displayName: 'Maya' },
+    status: 429,
+  });
+  assert.equal(error.error.code, 'rate_limited');
+});
+
 function currentUtcDateOnly() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -223,8 +371,16 @@ function previousUtcWeekDateOnly() {
 
 async function createApp() {
   const db = new DatabaseSync(':memory:');
-  db.exec(readFileSync(new URL('../migrations/0001_core_membership.sql', import.meta.url), 'utf8'));
-  db.exec(readFileSync(new URL('../migrations/0002_challenge_results.sql', import.meta.url), 'utf8'));
+  const migrationsDir = new URL('../migrations/', import.meta.url);
+  for (const file of readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
+    try {
+      db.exec(readFileSync(new URL(file, migrationsDir), 'utf8'));
+    } catch (error) {
+      // Tolerate the known 0001/0003 ranking_mode overlap (a separate migration
+      // bug); fresh schema already defines the column.
+      if (!/duplicate column name/.test(String(error))) throw error;
+    }
+  }
 
   const env = {
     DB: new D1DatabaseShim(db),
@@ -233,6 +389,10 @@ async function createApp() {
   };
 
   return {
+    env,
+    async runScheduled() {
+      await worker.scheduled({ cron: '7 3 * * *' }, env, { waitUntil() {} });
+    },
     async bootstrap(displayName) {
       const data = await this.fetchJson('/players/bootstrap', {
         method: 'POST',

@@ -65,6 +65,9 @@ class ApiChallengeRepository
       _api.updateDisplayName(displayName);
 
   @override
+  Future<void> rotateRecovery() => _api.rotateRecovery();
+
+  @override
   Future<void> submitSolveResult(ChallengeSolveSubmission submission) =>
       _api.submitSolveResult(submission);
 }

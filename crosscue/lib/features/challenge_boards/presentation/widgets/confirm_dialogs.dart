@@ -87,6 +87,17 @@ Future<bool?> showRegenerateDialog(BuildContext context) => _confirm(
       confirmLabel: 'Regenerate',
     );
 
+/// Reset recovery code (rotate the recovery secret).
+Future<bool?> showResetRecoveryDialog(BuildContext context) => _confirm(
+      context,
+      title: 'Reset recovery code?',
+      body:
+          'This creates a new code for restoring your boards on another device. '
+          'Any device still using the old code will need to reconnect. Your '
+          'boards and stats are not affected.',
+      confirmLabel: 'Reset code',
+    );
+
 /// 6 · Leave board (destructive).
 Future<bool?> showLeaveDialog(BuildContext context, String boardName) =>
     _confirm(
