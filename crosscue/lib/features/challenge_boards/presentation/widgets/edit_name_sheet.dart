@@ -16,6 +16,7 @@ Future<String?> showEditNameSheet(
   PlayerAvatar currentAvatar = const PlayerAvatar.initials(),
   bool offline = false,
   Future<PlayerAvatar?> Function()? onChangeAvatar,
+  VoidCallback? onResetRecovery,
 }) {
   final controller = TextEditingController(text: initial);
   var avatar = currentAvatar;
@@ -130,6 +131,19 @@ Future<String?> showEditNameSheet(
                     canSave ? () => Navigator.pop(ctx, raw.trim()) : null,
                 child: const Text('Save'),
               ),
+              if (onResetRecovery != null && !offline)
+                TextButton.icon(
+                  onPressed: onResetRecovery,
+                  icon: Icon(
+                    Icons.key_outlined,
+                    size: 16,
+                    color: AppColors.onSurface2(ctx),
+                  ),
+                  label: Text(
+                    'Reset recovery code',
+                    style: TextStyle(color: AppColors.onSurface2(ctx)),
+                  ),
+                ),
               const SizedBox(height: 4),
               if (offline)
                 Row(

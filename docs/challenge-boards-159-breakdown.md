@@ -44,9 +44,12 @@ recovery secret exists, so identity is lost on reinstall.
   restores from the bundle before bootstrapping a new player. `rotateRecovery` is exposed on
   `ChallengeProfileRepository`. Covered by challenge_api_client_test (bootstrap-persists-secret,
   restore-before-bootstrap, rotation-stores-new-secret).
-- **A5. Flutter rotate UI** — TODO (task #10): surface recovery-secret rotation with a confirm
-  dialog. Optional refinement: move the bundle from `app_settings` to a dedicated challenge-identity
-  sync blob (currently co-located in the synced settings KV, which already survives same-platform
+- **A5. Flutter rotate UI** — DONE. A "Reset recovery code" action in the Profile sheet
+  (`edit_name_sheet`), shown only when a real backend is configured, behind a
+  `showResetRecoveryDialog` confirm; calls `rotateRecovery()`, closes the sheet, and snackbars the
+  result. Covered by challenge_sheets_test (action shown/hidden + invokes callback). Optional
+  refinement still open: move the bundle from `app_settings` to a dedicated challenge-identity sync
+  blob (today it's co-located in the synced settings KV, which already survives same-platform
   restore but co-mingles with settings sync).
 
 ## Workstream B — Privacy & deletion (release gate) — DONE
