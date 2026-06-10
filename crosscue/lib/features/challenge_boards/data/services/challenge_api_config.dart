@@ -67,6 +67,17 @@ class ChallengeApiConfig {
       );
     }
 
+    // Staging/production have no built-in URL yet (the api.crosscue.app
+    // custom domain is not provisioned; see wrangler.toml). Failing fast at
+    // startup beats silently shipping a build that shows sample boards.
+    if (environment == ChallengeApiEnvironment.staging ||
+        environment == ChallengeApiEnvironment.production) {
+      throw StateError(
+        '$environmentDefine=${environment.name} requires $baseUrlDefine '
+        'to be set; refusing to fall back to sample data.',
+      );
+    }
+
     return ChallengeApiConfig(environment: environment, baseUrl: null);
   }
 

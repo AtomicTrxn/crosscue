@@ -58,6 +58,20 @@ void main() {
       expect(production.baseUrl, 'https://api.example.test');
     });
 
+    test('staging and production without a base URL fail fast', () {
+      for (final name in ['staging', 'production']) {
+        expect(
+          () => ChallengeApiConfig.resolve(
+            environmentName: name,
+            baseUrlOverride: '',
+            platform: TargetPlatform.iOS,
+          ),
+          throwsStateError,
+          reason: '$name must not silently fall back to sample data',
+        );
+      }
+    });
+
     test('base URL without an environment is treated as custom API mode', () {
       final config = ChallengeApiConfig.resolve(
         environmentName: 'sample',

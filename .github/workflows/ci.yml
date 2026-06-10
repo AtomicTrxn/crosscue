@@ -74,6 +74,57 @@ jobs:
         if: steps.changes.outputs.app != 'true'
         run: echo "No app-affecting changes; static checks not needed."
 
+  worker-checks:
+    name: Worker checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crosscue/backend/challenge_boards
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4.2.0
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant changes
+        id: changes
+        working-directory: .
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
+            crosscue/backend .github/workflows; then
+            echo "worker=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "worker=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.changes.outputs.worker == 'true'
+        uses: actions/setup-node@v4.4.0
+        with:
+          # Worker tests run TypeScript directly via --experimental-strip-types
+          # (Node 22.6+).
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: crosscue/backend/challenge_boards/package-lock.json
+
+      - name: Install dependencies
+        if: steps.changes.outputs.worker == 'true'
+        run: npm ci
+
+      - name: Test
+        if: steps.changes.outputs.worker == 'true'
+        run: npm test
+
+      - name: Typecheck
+        if: steps.changes.outputs.worker == 'true'
+        run: npm run typecheck
+
+      - name: No worker changes
+        if: steps.changes.outputs.worker != 'true'
+        run: echo "No worker-affecting changes; worker checks not needed."
+
   test:
     name: Test
     runs-on: ubuntu-latest
