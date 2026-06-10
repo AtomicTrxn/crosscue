@@ -525,3 +525,18 @@ facing facade — `state` stream, `currentAccount()`, `enable()` / `disable()` /
 `syncNow()`, `lastSyncedAt`. The `SyncController`
 (`features/settings/presentation/providers/sync_providers.dart`) bridges it to
 the Settings + onboarding UI.
+
+---
+
+## Challenge Boards models — `challenge_boards/domain/models/challenge_models.dart`
+
+Pure data classes for the online friend-leaderboards feature (`Player`,
+`Board`, `BoardDetail`, `LeaderboardEntry`, `LifetimeStats`,
+`ChallengeSolveSubmission`, …). They map to the server's D1 schema rather
+than the local Drift database — the source of truth is the numbered SQL in
+[`crosscue/backend/challenge_boards/migrations/`](crosscue/backend/challenge_boards/migrations/)
+(players, boards, memberships, challenge_results, board_events), and the wire
+shapes are documented in
+[`crosscue/backend/challenge_boards/API.md`](crosscue/backend/challenge_boards/API.md).
+Client-side persistence is limited to the identity (auth token in secure
+storage, recovery bundle in `app_settings`) and the offline result outbox.
