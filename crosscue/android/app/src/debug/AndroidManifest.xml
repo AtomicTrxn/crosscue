@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Debug builds may talk to the local challenge-boards Worker over
+         plain HTTP (CHALLENGE_API_ENV=local). The config only whitelists
+         loopback hosts; release builds never merge this attribute. -->
+    <application android:networkSecurityConfig="@xml/network_security_config" />
 </manifest>
