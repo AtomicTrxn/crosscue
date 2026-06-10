@@ -195,8 +195,8 @@ Run the full pipeline, not individual checks:
 make ci
 ```
 
-`make ci` runs the same checks required by hosted PR CI: static checks plus the
-test suite. Running individual commands (e.g. `flutter analyze` alone) is only
+`make ci` runs the same checks required by hosted PR CI: static checks, the
+Flutter test suite, and the challenge-boards Worker tests + typecheck. Running individual commands (e.g. `flutter analyze` alone) is only
 appropriate when iterating on a specific failure — **always finish with
 `make ci` before pushing**.
 
@@ -360,21 +360,24 @@ Remote: use the repository's configured `origin` URL (`git remote -v`).
 
 ### CI coverage
 
-`.github/workflows/ci.yml` emits two required checks on pull requests
-targeting `main`:
+`.github/workflows/ci.yml` emits three checks on pull requests targeting
+`main`:
 
 ```
 Static checks   format → analyze → generated files
 Test            flutter test
+Worker checks   challenge-boards Worker tests + tsc (backend changes)
 ```
 
-| Check | App-affecting change | Documentation-only change |
-|-------|----------------------|---------------------------|
+| Check | Relevant change | Irrelevant change |
+|-------|-----------------|-------------------|
 | **Static checks** | `flutter pub get` → format → analyze → generated files | reports success without Flutter setup |
 | **Test** | `flutter pub get` → `flutter test` | reports success without Flutter setup |
+| **Worker checks** | `npm ci` → `npm test` → `tsc --noEmit` (Node 22) | reports success without Node setup |
 
-All app checks use Flutter `3.41.9`. CI does not build an APK — release
-artifacts are produced by the release workflow against an explicit tag.
+All app checks use Flutter `3.44.0` (pinned in ci.yml and release.yml). CI
+does not build an APK — release artifacts are produced by the release
+workflow against an explicit tag.
 
 ---
 
@@ -385,12 +388,16 @@ You tag the commit, then run the **Release** workflow against that tag. A
 single dispatch builds both platforms in parallel and publishes one
 GitHub Release with both artifacts attached.
 
+Both store uploads are **opt-in** — `test_flight` and `play_store` both
+default to `false`. The IPA is always built (signing verification) but only
+uploaded when asked.
+
 | `test_flight` | `play_store` | Builds | Publishes |
 |---------------|--------------|--------|-----------|
-| `true` (default) | `false` (default) | Signed APK + signed IPA | GitHub Release w/ both files + IPA to TestFlight |
-| `true` | `true` + `track` | + signed AAB | + AAB to the chosen Play Store track |
-| `false` | `false` | APK only | GitHub Release w/ APK; iOS job skipped |
-| `false` | `true` + `track` | APK + AAB | GitHub Release w/ APK; AAB to Play Store; no IPA |
+| `false` (default) | `false` (default) | Signed APK + signed IPA | GitHub Release w/ APK (IPA build is verification-only) |
+| `true` | `false` | Signed APK + signed IPA | + IPA to TestFlight |
+| `false` | `true` + `track` | + signed AAB | + AAB to the chosen Play Store track |
+| `true` | `true` + `track` | APK + IPA + AAB | TestFlight **and** Play Store — the full both-platform release (`make release-all`) |
 
 ### One-time setup: create a keystore
 
@@ -491,6 +498,12 @@ Then:
 cd crosscue && flutter build apk --release --no-pub
 ```
 
+Note: store builds also pass `--dart-define=CHALLENGE_API_ENV=production`
+and `--dart-define=CHALLENGE_API_BASE_URL=…` (see release.yml). A local
+release build without them runs Challenge Boards in sample mode — fine for
+signing/minification smoke tests, but not representative of the shipped
+challenge experience.
+
 ### Cutting a release
 
 1. **Bump the version on main** via a PR. Edit `crosscue/pubspec.yaml`:
@@ -507,17 +520,19 @@ cd crosscue && flutter build apk --release --no-pub
    ```
    The tag is just a marker — pushing it does **not** trigger a build.
 
-3. **Dispatch the Release workflow** from the GitHub Actions UI (or via
-   `gh workflow run`):
+3. **Dispatch the Release workflow** — use the make aliases from the repo
+   root (they wrap `gh workflow run` with the right flags):
    ```bash
-   # Default: APK + IPA + GitHub Release + TestFlight (Android-only on GH Release):
-   gh workflow run release.yml -f tag=v1.2.3
-
-   # Default + Play Store internal testing:
-   gh workflow run release.yml -f tag=v1.2.3 -f play_store=true -f track=internal
-
-   # Android-only emergency patch (skip iOS):
-   gh workflow run release.yml -f tag=v1.2.3 -f test_flight=false
+   make release-all TAG=v1.2.3            # TestFlight + Play internal — both platforms
+   make release-all TAG=v1.2.3 TRACK=beta # both platforms, different Play track
+   make release-testflight TAG=v1.2.3     # iOS TestFlight only
+   make release-play-internal TAG=v1.2.3  # Play internal only (also -alpha/-beta/-production)
+   make release-github TAG=v1.2.3         # GitHub Release only, no store uploads
+   ```
+   Or dispatch manually — remember both store uploads default **off**:
+   ```bash
+   gh workflow run release.yml -f tag=v1.2.3 \
+     -f test_flight=true -f play_store=true -f track=internal
    ```
 
 The workflow checks out the **tag** (not whatever branch you dispatched
@@ -680,7 +695,7 @@ result is **4+**.
       `maxim-lobanov/setup-xcode@v1`.
 - [x] `APPLE_*` secrets configured (see Release Pipeline § One-time setup).
 - [x] First IPA upload to TestFlight completed via `workflow_dispatch` with
-      `test_flight: true` (the default).
+      `test_flight: true` (note: defaults to `false`; uploads are opt-in).
 - [x] App Store Connect app record exists for bundle `dev.tomhess.crosscue`.
 
 ### Post-launch updates required if scope changes
