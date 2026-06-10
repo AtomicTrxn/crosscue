@@ -288,6 +288,15 @@ Only `sourceId: "crosshare_daily_mini"` with a `publishedOn` Daily Mini date is
 accepted for Challenge Boards. Other puzzle sources are ignored and do not count
 toward weekly or lifetime challenge standings.
 
+Submissions are honor-system in v1 (#159/#228), with two server-side sanity
+checks:
+
+- `elapsedMs` below 3000 (3 seconds) is rejected with reason
+  `implausible_elapsed_ms`.
+- `cleanSolveEligible` is stored as `false` unless `completionType` is
+  `clean`, so assisted or revealed solves can never enter the clean ranking
+  regardless of what the client sends.
+
 `completionType` values:
 
 - `clean`
@@ -307,3 +316,6 @@ If the player has no active board for the submitted source, the response is:
 ```json
 { "accepted": false, "reason": "no_active_source_board" }
 ```
+
+Other soft-reject reasons (also HTTP 202): `not_challenge_daily_mini` for
+ineligible sources and `implausible_elapsed_ms` for times under the floor.
