@@ -373,13 +373,7 @@ async function createApp() {
   const db = new DatabaseSync(':memory:');
   const migrationsDir = new URL('../migrations/', import.meta.url);
   for (const file of readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
-    try {
-      db.exec(readFileSync(new URL(file, migrationsDir), 'utf8'));
-    } catch (error) {
-      // Tolerate the known 0001/0003 ranking_mode overlap (a separate migration
-      // bug); fresh schema already defines the column.
-      if (!/duplicate column name/.test(String(error))) throw error;
-    }
+    db.exec(readFileSync(new URL(file, migrationsDir), 'utf8'));
   }
 
   const env = {

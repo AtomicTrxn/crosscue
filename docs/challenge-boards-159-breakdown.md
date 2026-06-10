@@ -100,11 +100,16 @@ feeds no ranking.
 
 ## Workstream E — Infra & provisioning (deploy gate)
 
-- **E1. D1 databases** — provision real staging + prod databases; replace placeholder zero-UUID
+- **E0. Migration conflict** — DONE. `0003` is now a no-op (`ranking_mode` lives only in `0001`),
+  so a fresh `wrangler d1 migrations apply` against new staging/prod databases applies cleanly. The
+  test harness loads all migrations sequentially with no tolerance, proving the clean apply.
+- **E1. D1 databases** — provision real staging + prod databases; replace placeholder
   `database_id`s in `wrangler.toml`.
 - **E2. Custom domain** — route Worker to `api.crosscue.app`; keep invite links on
   `crosscue.app/join/...`.
-- **E3. Secrets** — set auth/HMAC secrets via `wrangler secret`; nothing secret in `[vars]`.
+- **E3. Secrets** — N/A for current code: the Worker uses only `DB`, `PUBLIC_APP_URL`, and the
+  optional rate-limit bindings (SHA-256 hashing, no server secret). Revisit only if HMAC-salted
+  hashing is added later.
 - **E4. Observability** — enable Workers Logs + Traces with secret/token/invite-URL redaction;
   request-id correlation (already partly present).
 - **E5. Worker-runtime tests** — `@cloudflare/vitest-pool-workers` covering bindings, scheduled
