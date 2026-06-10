@@ -55,6 +55,36 @@ void main() {
     );
   }
 
+  testWidgets('source step gates Continue until a source is chosen',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          bootSettingsProvider.overrideWithValue(BootSettings.defaults),
+          syncTransportProvider.overrideWithValue(
+            FakeSyncTransport(store: <String, String>{}),
+          ),
+        ],
+        child: const MaterialApp(home: OnboardingScreen()),
+      ),
+    );
+    await tester.tap(find.text('Get started'));
+    await tester.pumpAndSettle();
+
+    // No source picked yet: Continue is a no-op and the step stays put.
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Import your own'), findsOneWidget);
+
+    // Choosing a source unlocks the step.
+    await tester.tap(find.text('Import your own'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Turn on $syncServiceName Sync'), findsOneWidget);
+  });
+
   testWidgets('source → Continue lands on the iCloud opt-in step',
       (tester) async {
     await pumpToICloudStep(tester);
