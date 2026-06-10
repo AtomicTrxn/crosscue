@@ -287,6 +287,65 @@ which bridges the `core/sync` orchestrator to the settings + onboarding UI.
 
 ---
 
+## Feature: `challenge_boards`
+
+Private friend leaderboards for daily minis — the app's only online feature,
+backed by the Cloudflare Worker below. Optional: without a configured API the
+tab shows a gated sample experience.
+
+```
+challenge_boards/
+├── domain/
+│   ├── models/challenge_models.dart             # Pure data classes (package:meta, no Flutter)
+│   ├── repositories/…                           # Board / profile / result repository interfaces
+│   └── services/
+│       ├── challenge_solve_submission_mapper.dart  # Completion → submission (eligibility gate)
+│       └── challenge_result_submitter.dart      # Outbox-backed submit-or-queue with flush
+├── data/
+│   ├── repositories/
+│   │   ├── api_challenge_repository.dart        # Real backend (implements all three interfaces)
+│   │   └── sample_challenge_repository.dart     # No-backend sample/gated experience
+│   └── services/
+│       ├── challenge_api_config.dart            # CHALLENGE_API_ENV / CHALLENGE_API_BASE_URL resolution
+│       ├── challenge_board_api.dart             # Dio HTTP client (bootstrap-on-demand auth)
+│       ├── challenge_identity_store.dart        # Token in SecureKeyValueStore; recovery bundle in DB
+│       └── challenge_result_outbox.dart         # Offline result queue (app_settings, never synced)
+├── presentation/…                               # Tab, board detail, sheets, avatar widgets
+└── sample/sample_data.dart                      # Sample-mode fixtures
+```
+
+Identity model: anonymous player, bearer token in platform secure storage
+(device-local by design), recovery bundle in the app database so it survives
+OS backup and syncs via the user's own cloud (see `docs/privacy.md`).
+
+---
+
+## Backend: Challenge Boards Worker
+
+The only server component (`crosscue/backend/challenge_boards/`):
+Cloudflare Workers + D1, split into feature modules with `index.ts` as the
+router:
+
+```
+src/
+├── index.ts          # Routing + scheduled retention job
+├── players.ts        # Bootstrap/restore/profile/avatar/auth/deletion
+├── boards.ts         # Board lifecycle + invite flows
+├── results.ts        # Honor-system result submission (bounded sanity checks)
+├── leaderboards.ts   # Weekly/lifetime aggregation + ranking
+├── membership.ts     # Membership lookups, invite verification, audit events
+├── retention.ts      # 14-day board_events purge (daily cron)
+└── http/util/validation/constants/types.ts     # Shared plumbing
+```
+
+Secrets (auth tokens, recovery secrets, invite codes) are stored only as
+SHA-256 hashes; schema lives in numbered `migrations/`. Trust model and
+endpoint contracts: [`API.md`](crosscue/backend/challenge_boards/API.md);
+environments, migrations, and deploy flow: `DEPLOYMENT.md` ("Backend:
+Challenge Boards Worker").
+
+---
+
 ## Core: Theme System
 
 `lib/core/theme/` owns the app palette and exposes crossword-specific colors

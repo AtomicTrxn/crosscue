@@ -113,3 +113,18 @@ full create → invite → join flow testable on a single machine:
    clipboards sync with the host, so copy/paste crosses emulators.
 
 Both players then submit Daily Mini results against the same board.
+
+## Deploying
+
+Requires `npx wrangler login` against the account that owns the D1 databases.
+Always migrate before deploying, and stage before production:
+
+```sh
+npm run d1:migrate:staging && npx wrangler deploy --env staging
+npm run d1:migrate:prod    && npx wrangler deploy --env production
+```
+
+Deployed URLs, environment table, migration rules, rollback, and log tailing
+live in the repo-level [DEPLOYMENT.md](../../../DEPLOYMENT.md) ("Backend:
+Challenge Boards Worker"). Shipped apps reach production via the
+`CHALLENGE_API_BASE_URL` Actions variable wired into release builds.

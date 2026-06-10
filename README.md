@@ -19,6 +19,7 @@ Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving im
 - **Colorblind mode** — deuteranopia-friendly blue/orange verification colors with `✓` / `✗` symbols, not color alone
 - **Light, dark, and system theme**
 - **Optional iCloud sync (iOS)** — opt in to keep puzzles, progress, and stats in sync across your devices through your own private iCloud account
+- **Optional Challenge Boards** — private, invite-only leaderboards for daily minis with friends; anonymous (no account, a 10-character handle), opt-in, and deletable in-app
 
 ---
 
@@ -31,7 +32,13 @@ network request needed to fetch that puzzle.
 
 Sync is **off by default and account-free**: if you turn on iCloud sync (iOS),
 your data moves directly between your devices and your own private iCloud
-account — it never passes through a Crosscue server (there isn't one).
+account — it never passes through a Crosscue server.
+
+The one server in the picture is the optional **Challenge Boards** feature: if
+you join a board, your solve times and chosen display name go to a minimal
+Crosscue-operated service (a Cloudflare Worker) so friends can compare times.
+It is anonymous, opt-in, and fully deletable from Settings; nothing else the
+app does touches it. Details in the [privacy policy](docs/privacy.md).
 
 ---
 

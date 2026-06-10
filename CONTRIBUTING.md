@@ -35,6 +35,10 @@ cd crosscue && flutter test test/features/import/puz_parser_test.dart
 # Code generation after @freezed / @riverpod / Drift changes
 cd crosscue && dart run build_runner build
 
+# Challenge-boards Worker (Cloudflare): local server, tests, migrations
+cd crosscue/backend/challenge_boards && npm run d1:migrate:local && npm run dev
+cd crosscue/backend/challenge_boards && npm test && npm run typecheck
+
 # Run on emulator
 cd crosscue && flutter run -d <device-id>
 ```

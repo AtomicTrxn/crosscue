@@ -381,6 +381,104 @@ workflow against an explicit tag.
 
 ---
 
+## Backend: Challenge Boards Worker (Cloudflare)
+
+The only server component is the challenge-boards Worker in
+[`crosscue/backend/challenge_boards/`](crosscue/backend/challenge_boards/) —
+Cloudflare Workers + D1 (SQLite), with per-environment rate-limit bindings, a
+daily retention cron, and Workers observability. API reference:
+[`API.md`](crosscue/backend/challenge_boards/API.md); local setup and the
+two-emulator test recipe:
+[`README.md`](crosscue/backend/challenge_boards/README.md).
+
+All commands below run from `crosscue/backend/challenge_boards/`. One-time
+setup: `npx wrangler login` (the account owns the D1 databases and Worker
+routes; check with `npx wrangler whoami`).
+
+### Environments
+
+| Env | Worker | D1 database | URL |
+|-----|--------|-------------|-----|
+| local | `wrangler dev --local` | `.wrangler/state` (disposable) | `http://127.0.0.1:8787` (`10.0.2.2` from the Android emulator) |
+| staging | `crosscue-challenge-boards-staging` | `crosscue_challenge_boards_staging` | `https://crosscue-challenge-boards-staging.tomhess.workers.dev` |
+| production | `crosscue-challenge-boards` | `crosscue_challenge_boards_prod` | `https://crosscue-challenge-boards.tomhess.workers.dev` |
+
+The `api.crosscue.app` custom domain is provisioned by uncommenting the
+`routes` block in `wrangler.toml` once the zone exists in the Cloudflare
+account; shipped apps bind to the URL via the `CHALLENGE_API_BASE_URL`
+Actions variable, so a domain change is a variable update + app release,
+not a code change.
+
+### Local development
+
+```bash
+npm install
+npm run d1:migrate:local   # apply migrations to the local D1
+npm run dev                # serve on http://127.0.0.1:8787
+npm run smoke:local        # end-to-end HTTP smoke test (separate terminal)
+npm test                   # unit tests (in-memory D1 shim)
+npm run typecheck          # tsc --noEmit
+```
+
+`rm -rf .wrangler/state` resets the local database (re-run migrations after).
+Run the app against it with `flutter run --dart-define=CHALLENGE_API_ENV=local`.
+
+### Schema migrations
+
+Migrations are numbered SQL files in `migrations/`, applied in order by
+`wrangler d1 migrations apply` (which tracks what has already run). Rules:
+
+- **Never edit an applied migration** — add a new numbered file.
+- **Migrations must be backward-compatible with the currently deployed
+  Worker** (additive columns/tables), because migrations apply before the
+  new Worker code deploys.
+- Apply order is always **migrate, then deploy**, per environment.
+
+### Deploying
+
+Staging first, verify, then production:
+
+```bash
+npm run d1:migrate:staging
+npx wrangler deploy --env staging
+curl -s https://crosscue-challenge-boards-staging.tomhess.workers.dev/boards
+# expect a structured 401 {"error":{"code":"unauthorized",...}} — router alive
+
+npm run d1:migrate:prod
+npx wrangler deploy --env production
+curl -s https://crosscue-challenge-boards.tomhess.workers.dev/boards
+```
+
+**Ordering with app releases:** deploy the Worker *before* dispatching the
+app release that depends on it, and keep Worker changes compatible with the
+oldest app version still in the field — shipped clients cannot be forced to
+update. Rollback is `git checkout <prior-tag> && npx wrangler deploy --env
+production` (D1 migrations do not auto-revert; write a compensating
+migration if schema must move back).
+
+### Logs and monitoring
+
+```bash
+npx wrangler tail --env production     # live structured JSON logs
+npx wrangler tail --env staging
+```
+
+Logs never include tokens, recovery/invite secrets, or full invite URLs
+(enforced convention; observability is enabled per-env in `wrangler.toml`).
+The daily cron (`7 3 * * *` UTC) purges `board_events` older than 14 days
+and logs a `purge_board_events` line with the deleted count.
+
+### Configuration
+
+No Worker secrets exist: `wrangler.toml` carries only public vars
+(`APP_ENV`, `PUBLIC_APP_URL`), per-env D1 bindings, and the rate-limit
+bindings (`RL_IDENTITY` keyed by IP for anonymous player creation,
+`RL_WRITE` keyed by player id for board writes). Player auth tokens,
+recovery secrets, and invite secrets are stored only as SHA-256 hashes in
+D1.
+
+---
+
 ## Release Pipeline
 
 Releases are dispatch-only — pushing a tag does **not** publish anything.
