@@ -1,5 +1,7 @@
 import 'package:crosscue/core/sync/adapters/settings_sync_adapter.dart';
 import 'package:crosscue/core/sync/transport/fake_sync_transport.dart';
+import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
+import 'package:crosscue/features/challenge_boards/data/services/challenge_result_outbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'sync_adapter_test_helpers.dart';
@@ -114,6 +116,78 @@ void main() {
       expect(
         (await db.select(db.appSettingsTable).get()).map((r) => r.key),
         ['has_seen_onboarding'],
+      );
+    });
+
+    test('challenge identity and outbox keys never leave the device', () async {
+      // The exclusion list duplicates the feature-owned key literals because
+      // core must not import feature code; this pins them together.
+      expect(
+        SettingsSyncAdapter.excludedKeys,
+        containsAll(<String>{
+          ChallengeIdentityStore.playerIdKey,
+          ChallengeIdentityStore.authTokenKey,
+          ChallengeIdentityStore.recoverySecretKey,
+          ChallengeResultOutbox.storageKey,
+        }),
+      );
+
+      final cloud = <String, String>{};
+      final db = newTestDb();
+      addTearDown(db.close);
+      await insertSetting(
+        db,
+        key: ChallengeIdentityStore.authTokenKey,
+        valueJson: '"secret-token"',
+      );
+      await insertSetting(db, key: 'haptics_enabled', valueJson: 'true');
+
+      final pushed = await SettingsSyncAdapter(db)
+          .push(FakeSyncTransport(store: cloud), deviceA);
+
+      expect(pushed.pushed, 1);
+      expect(cloud.keys, ['settings/haptics_enabled.json']);
+      expect(cloud.values.single, isNot(contains('secret-token')));
+    });
+
+    test('excluded blobs uploaded by older versions are deleted on pull',
+        () async {
+      final cloud = <String, String>{
+        'settings/challenge_auth_token.json': encodedBlob(
+          deviceId: deviceA,
+          syncVersion: 1,
+          updatedAt: t1,
+          payload: {
+            'key': ChallengeIdentityStore.authTokenKey,
+            'valueJson': '"stale-cloud-token"',
+          },
+        ),
+        'settings/theme_mode.json': encodedBlob(
+          deviceId: deviceA,
+          syncVersion: 1,
+          updatedAt: t1,
+          payload: const {
+            'key': 'theme_mode',
+            'valueJson': '"dark"',
+          },
+        ),
+      };
+      final db = newTestDb();
+      addTearDown(db.close);
+
+      final outcome = await SettingsSyncAdapter(db).pull(
+        FakeSyncTransport(store: cloud),
+      );
+
+      // The secret blob is gone from the cloud, was not applied locally, and
+      // is absent from the manifest maps; the normal setting still syncs.
+      expect(outcome.pulled, 1);
+      expect(cloud.keys, ['settings/theme_mode.json']);
+      expect(outcome.seen.keys, ['settings/theme_mode.json']);
+      expect(outcome.caughtUp.keys, ['settings/theme_mode.json']);
+      expect(
+        (await db.select(db.appSettingsTable).get()).map((r) => r.key),
+        ['theme_mode'],
       );
     });
 
