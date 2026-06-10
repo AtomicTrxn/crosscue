@@ -102,7 +102,9 @@ jobs:
             --release \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }} \
-            --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }}
+            --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
+            --dart-define=CHALLENGE_API_ENV=production \
+            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
 
       - name: Build release AAB
         if: ${{ inputs.play_store == true }}
@@ -118,7 +120,9 @@ jobs:
             --release \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }} \
-            --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }}
+            --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
+            --dart-define=CHALLENGE_API_ENV=production \
+            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -268,7 +272,9 @@ jobs:
             --no-pub \
             --build-name=${{ steps.version.outputs.name }} \
             --build-number=${{ steps.version.outputs.code }} \
-            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
+            --dart-define=CHALLENGE_API_ENV=production \
+            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
 
       # Auth via an App Store Connect API key (scoped role, individually
       # revocable) instead of an Apple ID + app-specific password. altool
