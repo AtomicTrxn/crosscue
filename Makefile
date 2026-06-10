@@ -7,7 +7,7 @@ DART    := dart
 DIR     := crosscue
 
 .PHONY: ci check static format analyze test generated worker build install-hooks \
-        _require-tag release-github release-testflight \
+        _require-tag release-github release-testflight release-all \
         release-play-internal release-play-alpha release-play-beta release-play-production
 
 ## Match the hosted PR CI checks.
@@ -67,17 +67,26 @@ _require-tag:
 		exit 1; \
 	fi
 
-## Mode 1 — GitHub release only (builds Android + iOS, publishes APK)
+## Mode 1 — GitHub release only (builds Android + iOS, publishes APK;
+## no store uploads — test_flight and play_store both default to false)
 release-github: _require-tag
 	@echo "▶ release-github $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG)
 
-## Mode 3 — TestFlight (also (re)publishes GitHub release with APK)
+## Mode 2 — TestFlight (also (re)publishes GitHub release with APK)
 release-testflight: _require-tag
 	@echo "▶ release-testflight $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG) -f test_flight=true
 
-## Mode 2 — Play Store (also (re)publishes GitHub release with APK + AAB)
+## Mode 4 — both stores in one dispatch: TestFlight + Play (TRACK=internal
+## by default). The everyday "ship to both platforms" command.
+TRACK ?= internal
+release-all: _require-tag
+	@echo "▶ release-all $(TAG) (TestFlight + Play $(TRACK))"
+	gh workflow run release.yml -f tag=$(TAG) -f test_flight=true \
+		-f play_store=true -f track=$(TRACK)
+
+## Mode 3 — Play Store only (also (re)publishes GitHub release with APK + AAB)
 release-play-internal: _require-tag
 	@echo "▶ release-play-internal $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=internal
