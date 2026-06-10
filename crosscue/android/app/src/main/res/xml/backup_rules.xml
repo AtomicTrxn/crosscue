@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android <= 11 auto-backup rules. Everything not excluded is backed up.
+     The secure prefs file holds Keystore-encrypted secrets (Challenge Boards
+     auth token); restoring its ciphertext onto another device is useless and
+     can throw on read, so it is excluded. Identity recovery after a restore
+     uses the recovery bundle in the app database instead. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="crosscue_secure_prefs.xml" />
+</full-backup-content>

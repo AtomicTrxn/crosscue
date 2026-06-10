@@ -23,6 +23,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../helpers/in_memory_secure_store.dart';
+
 void main() {
   late AppDatabase db;
   late Map<String, String> cloud;
@@ -173,7 +175,10 @@ void main() {
     final adapter = _RecordingChallengeAdapter();
     final api = ChallengeBoardApi(
       dio: Dio()..httpClientAdapter = adapter,
-      identityStore: ChallengeIdentityStore(dao: db.appSettingsDao),
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: InMemorySecureKeyValueStore(),
+      ),
       baseUrl: 'https://api.crosscue.test',
     );
     // Seed a challenge identity so deletion has something to delete.

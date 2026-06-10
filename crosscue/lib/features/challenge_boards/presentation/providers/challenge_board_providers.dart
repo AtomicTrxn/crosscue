@@ -1,4 +1,5 @@
 import 'package:crosscue/core/providers/core_providers.dart';
+import 'package:crosscue/core/storage/secure_key_value_store.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/api_challenge_repository.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/sample_challenge_repository.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_api_config.dart';
@@ -22,9 +23,14 @@ final sampleChallengeRepositoryProvider = Provider<SampleChallengeRepository>(
   (ref) => _sampleChallengeRepository,
 );
 
+final secureKeyValueStoreProvider = Provider<SecureKeyValueStore>(
+  (ref) => FlutterSecureKeyValueStore(),
+);
+
 final challengeIdentityStoreProvider = Provider<ChallengeIdentityStore>((ref) {
   return ChallengeIdentityStore(
     dao: ref.watch(appDatabaseProvider).appSettingsDao,
+    secureStore: ref.watch(secureKeyValueStoreProvider),
   );
 });
 

@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/in_memory_secure_store.dart';
+
 const _enabled = bool.fromEnvironment('CHALLENGE_LIVE_API_SMOKE');
 const _baseUrl = String.fromEnvironment('CHALLENGE_API_BASE_URL');
 
@@ -15,7 +17,10 @@ void main() {
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
-      final identityStore = ChallengeIdentityStore(dao: db.appSettingsDao);
+      final identityStore = ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: InMemorySecureKeyValueStore(),
+      );
       final api = ChallengeBoardApi(
         dio: Dio(),
         identityStore: identityStore,
