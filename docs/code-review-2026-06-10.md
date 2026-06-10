@@ -41,7 +41,7 @@ Severity: H = high, M = medium, L = low/hygiene.
 | 15 | L | `deletePlayer` leaves `actor_player_id` in `board_events` for ≤14 days (retention window). | **Closed (#239)** — already covered: privacy.md "Retention" states activity records persist ~14 days before automatic purge |
 | 16 | L | CORS is `*` with `Authorization` allowed — fine for a token-only API; revisit if cookies or a web client appear. | Open — accepted for v1 |
 | 17 | L | Test coverage thin on stats (2 files), archive (1), onboarding (1) relative to UI size (largest hand-written files are stats/onboarding screens, ~650 lines each). | **Improved (#242)** — added archive status-precedence, stats screen-state, and onboarding source-gating tests; treat as ongoing rather than done |
-| 18 | L | Worker is one 1,455-line file; route handlers / validation / queries are natural split points before the next feature. | Open |
+| 18 | L | Worker is one 1,455-line file; route handlers / validation / queries are natural split points before the next feature. | **Fixed (#243)** — split into 12 modules (router, players, boards, results, leaderboards, membership, retention + http/util/validation/constants/types); largest file now ~300 lines |
 
 ## Notably good (keep doing)
 
