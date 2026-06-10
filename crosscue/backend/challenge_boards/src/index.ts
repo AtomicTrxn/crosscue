@@ -406,12 +406,12 @@ async function listBoards(env: Env, auth: Auth): Promise<JsonValue> {
     .bind(auth.player.id)
     .all<BoardRow>();
 
-  const summaries = [];
-  for (const board of boards.results) {
-    const weekly = await boardLeaderboard(env, board, "weekly");
+  const weeklyByBoard = await boardLeaderboards(env, boards.results, "weekly");
+  const summaries = boards.results.map((board) => {
+    const weekly = weeklyByBoard.get(board.id) ?? [];
     const mine = weekly.find((entry) => entry.player.id === auth.player.id);
-    summaries.push(serializeBoardSummary(board, mine));
-  }
+    return serializeBoardSummary(board, mine);
+  });
 
   return {
     boards: summaries,
@@ -911,19 +911,30 @@ async function boardLeaderboard(
   board: BoardRow,
   mode: "weekly" | "lifetime",
 ): Promise<LeaderboardRow[]> {
+  const byBoard = await boardLeaderboards(env, [board], mode);
+  return byBoard.get(board.id) ?? [];
+}
+
+// Aggregates every requested board in one query: listing five boards used to
+// run five full leaderboard aggregations (review finding 14).
+async function boardLeaderboards(
+  env: Env,
+  boards: BoardRow[],
+  mode: "weekly" | "lifetime",
+): Promise<Map<string, LeaderboardRow[]>> {
+  const byBoard = new Map<string, LeaderboardRow[]>();
+  if (boards.length === 0) return byBoard;
   const week = currentUtcWeekRange();
-  const rankingMode = board.ranking_mode ?? "average_time";
-  const params =
-    mode === "weekly"
-      ? [board.id, board.source_id, week.startDate, week.endDate]
-      : [board.id, board.source_id];
   const where =
     mode === "weekly"
       ? "and r.published_on >= ? and r.published_on < ?"
       : "";
+  const weekParams =
+    mode === "weekly" ? [week.startDate, week.endDate] : [];
+  const placeholders = boards.map(() => "?").join(",");
   const rows = await env.DB.prepare(
-    `select p.id, m.display_name, p.avatar_kind, p.avatar_silhouette_look,
-            p.avatar_photo_url,
+    `select m.board_id, p.id, m.display_name, p.avatar_kind,
+            p.avatar_silhouette_look, p.avatar_photo_url,
             coalesce(sum(case
               when r.completion_type = 'clean'
                and r.clean_solve_eligible = 1
@@ -955,16 +966,18 @@ async function boardLeaderboard(
               )
               else null end) as weeksCounted
      from memberships m
+     join boards b on b.id = m.board_id
      join players p on p.id = m.player_id
      left join challenge_results r on r.player_id = m.player_id
-       and r.source_id = ? ${where}
-     where m.board_id = ? and m.left_at is null
-     group by p.id, m.display_name, p.avatar_kind, p.avatar_silhouette_look,
-              p.avatar_photo_url, m.joined_at
-     order by m.joined_at asc`,
+       and r.source_id = b.source_id ${where}
+     where m.board_id in (${placeholders}) and m.left_at is null
+     group by m.board_id, p.id, m.display_name, p.avatar_kind,
+              p.avatar_silhouette_look, p.avatar_photo_url, m.joined_at
+     order by m.board_id, m.joined_at asc`,
   )
-    .bind(params[1], ...params.slice(2), params[0])
+    .bind(...weekParams, ...boards.map((board) => board.id))
     .all<PlayerRow & {
+      board_id: string;
       cleanSolves: number;
       avgCleanMs: number | null;
       bestCleanMs: number | null;
@@ -974,28 +987,35 @@ async function boardLeaderboard(
       assistedCount: number;
     }>();
 
-  const entries: LeaderboardRow[] = rows.results.map((row) => ({
-    player: {
-      id: row.id,
-      display_name: row.display_name,
-      avatar_kind: row.avatar_kind,
-      avatar_silhouette_look: row.avatar_silhouette_look,
-      avatar_photo_url: row.avatar_photo_url,
-    },
-    cleanSolves: Number(row.cleanSolves ?? 0),
-    avgCleanMs: row.avgCleanMs == null ? null : Number(row.avgCleanMs),
-    bestCleanMs: row.bestCleanMs == null ? null : Number(row.bestCleanMs),
-    totalCleanMs: row.totalCleanMs == null ? null : Number(row.totalCleanMs),
-    weeksCounted: Number(row.weeksCounted ?? 0),
-    submittedCount: Number(row.submittedCount ?? 0),
-    assistedCount: Number(row.assistedCount ?? 0),
-  }));
+  for (const board of boards) byBoard.set(board.id, []);
+  for (const row of rows.results) {
+    byBoard.get(row.board_id)?.push({
+      player: {
+        id: row.id,
+        display_name: row.display_name,
+        avatar_kind: row.avatar_kind,
+        avatar_silhouette_look: row.avatar_silhouette_look,
+        avatar_photo_url: row.avatar_photo_url,
+      },
+      cleanSolves: Number(row.cleanSolves ?? 0),
+      avgCleanMs: row.avgCleanMs == null ? null : Number(row.avgCleanMs),
+      bestCleanMs: row.bestCleanMs == null ? null : Number(row.bestCleanMs),
+      totalCleanMs: row.totalCleanMs == null ? null : Number(row.totalCleanMs),
+      weeksCounted: Number(row.weeksCounted ?? 0),
+      submittedCount: Number(row.submittedCount ?? 0),
+      assistedCount: Number(row.assistedCount ?? 0),
+    });
+  }
 
-  entries.sort((a, b) => compareLeaderboardRows(a, b, rankingMode));
-  entries.forEach((entry, index) => {
-    entry.rank = index + 1;
-  });
-  return entries;
+  for (const board of boards) {
+    const entries = byBoard.get(board.id) ?? [];
+    const rankingMode = board.ranking_mode ?? "average_time";
+    entries.sort((a, b) => compareLeaderboardRows(a, b, rankingMode));
+    entries.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+  }
+  return byBoard;
 }
 
 async function lifetimeStats(env: Env, playerId: string): Promise<JsonValue> {
