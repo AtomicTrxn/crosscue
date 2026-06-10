@@ -12,6 +12,8 @@ the first result-submission path:
 - leave board and final-member auto-delete;
 - 5 active boards per player and 20 active players per board.
 - source-level result submission with idempotent upsert;
+- honor-system result trust with bounded sanity checks: an elapsed-time floor
+  and server-side normalization of clean-ranking eligibility (#228);
 - weekly and lifetime aggregates based on submitted clean solves;
 - player recovery bundle: bootstrap/restore/rotate of an anonymous identity;
 - privacy deletion via `DELETE /players/me`;

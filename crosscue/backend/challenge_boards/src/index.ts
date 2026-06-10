@@ -62,6 +62,9 @@ const maxBoardsPerPlayer = 5;
 const maxPlayersPerBoard = 20;
 const inviteExpiryDays = 30;
 const defaultSourceId = "crosshare_daily_mini";
+// Honor-system trust floor (#228): no human solves a Daily Mini this fast, so
+// anything below it is a client bug or a trivially faked time.
+const minPlausibleElapsedMs = 3000;
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -638,7 +641,10 @@ async function submitResult(
   const completedAt = validateIsoDateTime(body.completedAt, "completed_at");
   const elapsedMs = validatePositiveInteger(body.elapsedMs, "elapsed_ms");
   const completionType = validateCompletionType(body.completionType);
-  const cleanSolveEligible = body.cleanSolveEligible === true ? 1 : 0;
+  // Never trust the client flag on its own: a non-clean completion (checked,
+  // hinted, revealed, unsolved) can never be clean-ranking eligible (#228).
+  const cleanSolveEligible =
+    body.cleanSolveEligible === true && completionType === "clean" ? 1 : 0;
   const puzzleTitle =
     typeof body.puzzleTitle === "string" ? body.puzzleTitle.slice(0, 160) : null;
   const publishedOn =
@@ -649,6 +655,10 @@ async function submitResult(
 
   if (sourceId !== defaultSourceId || publishedOn == null) {
     return { accepted: false, reason: "not_challenge_daily_mini" };
+  }
+
+  if (elapsedMs < minPlausibleElapsedMs) {
+    return { accepted: false, reason: "implausible_elapsed_ms" };
   }
 
   const hasBoardForSource = await env.DB.prepare(

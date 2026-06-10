@@ -130,7 +130,7 @@ test('weekly rankings use board time mode and published Daily Mini week', async 
   await app.submitResult(maya.authToken, {
     sourcePuzzleId: 'last-week',
     publishedOn: previousUtcWeekDateOnly(),
-    elapsedMs: 1000,
+    elapsedMs: 45000,
   });
   await app.submitResult(maya.authToken, {
     sourcePuzzleId: 'current-1',
@@ -209,6 +209,59 @@ test('non Daily Mini submissions are not accepted', async () => {
 
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'not_challenge_daily_mini');
+});
+
+test('implausibly fast submissions are rejected and not stored', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  const result = await app.submitResult(maya.authToken, { elapsedMs: 2999 });
+
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'implausible_elapsed_ms');
+  const rows = app.env.DB.db
+    .prepare('select count(*) as n from challenge_results where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(rows.n, 0);
+
+  // The floor boundary itself is accepted.
+  const atFloor = await app.submitResult(maya.authToken, { elapsedMs: 3000 });
+  assert.equal(atFloor.accepted, true);
+});
+
+test('non-clean completions are never clean-ranking eligible', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  // A buggy or dishonest client claims a revealed solve is clean-eligible.
+  await app.submitResult(maya.authToken, {
+    completionType: 'revealed',
+    cleanSolveEligible: true,
+  });
+
+  const stored = app.env.DB.db
+    .prepare(
+      'select clean_solve_eligible from challenge_results where player_id = ?',
+    )
+    .get(maya.player.id);
+  assert.equal(stored.clean_solve_eligible, 0);
+
+  const detail = await app.fetchJson(`/boards/${created.board.id}`, {
+    token: maya.authToken,
+  });
+  assert.equal(detail.weekly[0].cleanSolves, 0);
 });
 
 test('player restore exchanges recovery secret for a fresh token', async () => {
