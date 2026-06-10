@@ -48,7 +48,7 @@ crons = ["7 3 * * *"]
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "crosscue_challenge_boards_staging"
-database_id = "11111111-1111-1111-1111-111111111111"
+database_id = "5160f9a9-af83-441c-b2a4-beae0a7e7f84"
 migrations_dir = "migrations"
 
 [[env.staging.unsafe.bindings]]
@@ -81,7 +81,7 @@ crons = ["7 3 * * *"]
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "crosscue_challenge_boards_prod"
-database_id = "22222222-2222-2222-2222-222222222222"
+database_id = "c4304b19-54c9-438a-bf89-d77936fc29be"
 migrations_dir = "migrations"
 
 [[env.production.unsafe.bindings]]
