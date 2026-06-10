@@ -95,5 +95,21 @@ flutter build ios \
 
 Supported `CHALLENGE_API_ENV` values are `sample`, `local`, `staging`,
 `production`, and `custom`. When `CHALLENGE_API_BASE_URL` is absent for
-`staging` or `production`, the app stays in sample mode until the real Worker
-URL is provided.
+`staging` or `production`, the app fails fast at startup (it never silently
+falls back to sample data; see #236).
+
+### Two-emulator board testing
+
+Both emulators can share one local Worker and one local D1, which makes the
+full create → invite → join flow testable on a single machine:
+
+1. Start the Worker (`npm run d1:migrate:local` once, then `npm run dev`).
+2. Install the app on both simulators with `CHALLENGE_API_ENV=local`. The
+   iOS simulator reaches the Worker via `127.0.0.1`; the Android emulator
+   via `10.0.2.2` (cleartext to these loopback hosts is allowed in debug
+   builds only, via the debug-source-set network security config).
+3. On emulator A: Challenge tab → create a board → copy the invite link.
+4. On emulator B: Challenge tab → join a board → paste the link. Emulator
+   clipboards sync with the host, so copy/paste crosses emulators.
+
+Both players then submit Daily Mini results against the same board.
