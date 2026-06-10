@@ -33,7 +33,7 @@ Severity: H = high, M = medium, L = low/hygiene.
 | 7 | M | `requireAuth` writes `last_seen_at` on every authenticated request — one D1 write per API call. | **Fixed (#237)** — last_seen_at refreshed at most hourly |
 | 8 | M | Date validation is shape-only: `validateDateOnly` accepts `2026-13-99`; `validateIsoDateTime` accepts far-future `completedAt`. | **Fixed (#237)** — round-trip calendar-date check; completedAt >24h in the future soft-rejected |
 | 9 | M | `CHALLENGE_API_ENV=staging|production` silently falls back to sample data unless `CHALLENGE_API_BASE_URL` is also set — a misconfigured release build shows sample boards instead of failing. | **Fixed (#236)** — staging/production without a base URL now throws at startup |
-| 10 | M | GitHub Actions pinned to mutable tags (incl. third-party `r0adkll/upload-google-play`, `softprops/action-gh-release` with signing-secret access). | Open — pin to commit SHAs |
+| 10 | M | GitHub Actions pinned to mutable tags (incl. third-party `r0adkll/upload-google-play`, `softprops/action-gh-release` with signing-secret access). | **Fixed (#238)** — all actions pinned to commit SHAs with version comments |
 | 11 | M | Settings sync LWW tiebreak compares `remote.deviceId` to the literal string `'local'` (`_shouldTakeRemote`), not the documented `(updatedAt, deviceId)` tiebreak. Deterministic but asymmetric. | Open — fix or re-document |
 | 12 | L | `GET /boards/:id/invite` returns a fake URL containing `current-secret-not-readable` alongside `needsRegeneration: true`. | Open — drop the fake link from the contract |
 | 13 | L | Domain models import `flutter/foundation` for `@immutable`, breaching the "domain never imports Flutter" rule; `package:meta` provides the same annotation. | Open |
