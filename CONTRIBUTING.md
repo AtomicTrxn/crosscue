@@ -26,6 +26,7 @@ make format
 make analyze
 make test
 make generated
+make worker
 make build
 
 # Run a single test file
@@ -61,12 +62,14 @@ Important local conventions:
 
 ## CI
 
-Pull requests targeting `main` emit two required checks:
+Pull requests targeting `main` emit three checks:
 
 - `Static checks`: formatting, analysis, and generated-file verification for
   app-affecting changes
 - `Test`: Flutter tests for app-affecting changes
+- `Worker checks`: challenge-boards Worker tests and typecheck for
+  backend-affecting changes (`crosscue/backend/`)
 
 Documentation-only changes still emit those checks, but they finish quickly
-without setting up Flutter. Release builds run separately via the dispatch-only
-`release.yml` workflow against an explicit tag.
+without setting up Flutter or Node. Release builds run separately via the
+dispatch-only `release.yml` workflow against an explicit tag.

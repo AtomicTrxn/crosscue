@@ -6,7 +6,7 @@ FLUTTER := flutter
 DART    := dart
 DIR     := crosscue
 
-.PHONY: ci check static format analyze test generated build install-hooks \
+.PHONY: ci check static format analyze test generated worker build install-hooks \
         _require-tag release-github release-testflight \
         release-play-internal release-play-alpha release-play-beta release-play-production
 
@@ -14,7 +14,7 @@ DIR     := crosscue
 ci: check
 
 ## Run all hosted PR checks.
-check: static test
+check: static test worker
 
 ## Run static checks that share one setup pass in hosted CI.
 static: format analyze generated
@@ -38,6 +38,12 @@ generated:
 	cd $(DIR) && $(DART) run build_runner build
 	cd $(DIR) && git diff --exit-code -- \
 		'*.g.dart' '*.freezed.dart'
+
+## Challenge-boards Worker tests + typecheck (hosted "Worker checks" job).
+worker:
+	@echo "▶ worker tests + typecheck"
+	cd $(DIR)/backend/challenge_boards && npm install --no-audit --no-fund \
+		&& npm test && npm run typecheck
 
 ## Install git hooks (run once after cloning)
 install-hooks:
