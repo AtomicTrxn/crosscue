@@ -127,6 +127,8 @@ Photo uploads may use:
 { "kind": "photo", "photoPngBase64": "..." }
 ```
 
+`photoPngBase64` must decode to PNG bytes (magic-byte checked) and stay
+under the size cap; other content is rejected with `400 invalid_avatar`.
 Binary avatar storage is intentionally provisional in this slice.
 
 ## Boards
@@ -246,6 +248,11 @@ Response result values:
 - `invalidOrExpired`
 - `boardDeleted`
 
+The invite secret is verified before any board details are disclosed: a
+rotated or otherwise invalid link previews as `invalidOrExpired` with an
+empty `boardName` and zero counts. Expired-but-genuine links still show the
+board name.
+
 `POST /invites/join`
 
 Request:
@@ -318,4 +325,6 @@ If the player has no active board for the submitted source, the response is:
 ```
 
 Other soft-reject reasons (also HTTP 202): `not_challenge_daily_mini` for
-ineligible sources and `implausible_elapsed_ms` for times under the floor.
+ineligible sources, `implausible_elapsed_ms` for times under the floor, and
+`implausible_completed_at` for completion timestamps more than a day in the
+future. `publishedOn` must be a real calendar date.
