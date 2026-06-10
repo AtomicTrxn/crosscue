@@ -161,6 +161,44 @@ test('weekly rankings use board time mode and published Daily Mini week', async 
   assert.equal(detail.weekly[1].totalClean, '3:20');
 });
 
+test('board list ranks each board independently in one pass', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  // Board A: Maya solo. Board B (fastest_time): both players.
+  const boardA = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Solo Board' },
+    status: 201,
+  });
+  const boardB = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Race Board', rankingMode: 'fastest_time' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: boardB.inviteLink },
+  });
+
+  await app.submitResult(maya.authToken, { elapsedMs: 90000 });
+  await app.submitResult(noah.authToken, { elapsedMs: 60000 });
+
+  const summary = await app.fetchJson('/boards', { token: maya.authToken });
+  const byName = Object.fromEntries(
+    summary.boards.map((b) => [b.name, b]),
+  );
+
+  assert.equal(byName['Solo Board'].myWeekly.rank, 1);
+  assert.equal(byName['Solo Board'].myWeekly.outOf, 1);
+  assert.equal(byName['Race Board'].myWeekly.rank, 2);
+  assert.equal(byName['Race Board'].myWeekly.outOf, 2);
+  assert.equal(byName['Race Board'].myWeekly.bestClean, '1:30');
+});
+
 test('result submissions are idempotent per player source puzzle', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');
