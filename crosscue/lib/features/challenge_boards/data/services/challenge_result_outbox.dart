@@ -6,12 +6,15 @@ import 'package:crosscue/features/settings/data/daos/app_settings_dao.dart';
 class ChallengeResultOutbox {
   ChallengeResultOutbox({required AppSettingsDao dao}) : _dao = dao;
 
-  static const _key = 'challenge_result_outbox_v1';
+  /// Public so the sync layer's device-local exclusion list can be
+  /// cross-checked in tests: the pending queue must never sync, or another
+  /// device could re-submit it (see SettingsSyncAdapter.excludedKeys).
+  static const storageKey = 'challenge_result_outbox_v1';
 
   final AppSettingsDao _dao;
 
   Future<List<ChallengeSolveSubmission>> read() async {
-    final raw = await _dao.getValue(_key);
+    final raw = await _dao.getValue(storageKey);
     if (raw == null || raw.isEmpty) return const [];
     final decoded = jsonDecode(raw);
     if (decoded is! List) return const [];
@@ -37,7 +40,7 @@ class ChallengeResultOutbox {
 
   Future<void> replace(List<ChallengeSolveSubmission> submissions) {
     return _dao.setValue(
-      _key,
+      storageKey,
       jsonEncode(
         submissions.map((submission) => submission.toJson()).toList(),
       ),

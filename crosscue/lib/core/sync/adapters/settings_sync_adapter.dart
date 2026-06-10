@@ -16,11 +16,23 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
 
   final AppDatabase db;
 
-  /// Keys excluded from sync. Device-local identifiers and any "set once
-  /// per install" flags belong on the device, not in the cloud.
+  /// Keys excluded from sync. Device-local identifiers, secrets, and any
+  /// "set once per install" flags belong on the device, not in the cloud.
+  ///
+  /// The challenge_* keys are the Challenge Boards identity and submission
+  /// queue (see `ChallengeIdentityStore` / `ChallengeResultOutbox`; literals
+  /// duplicated here because core must not import feature code — a test
+  /// cross-checks them). The server keeps a single auth token per player, so
+  /// syncing it across devices both exposes a bearer secret to cloud storage
+  /// and lets a stale copy clobber a freshly rotated token; a synced outbox
+  /// would let another device re-submit pending results.
   static const Set<String> excludedKeys = {
     'device_id',
     'has_seen_onboarding',
+    'challenge_player_id',
+    'challenge_auth_token',
+    'challenge_recovery_secret',
+    'challenge_result_outbox_v1',
   };
 
   @override
@@ -110,11 +122,21 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
 
       final settingKey = blob.payload['key'];
       final valueJson = blob.payload['valueJson'];
-      if (settingKey is! String ||
-          valueJson is! String ||
-          excludedKeys.contains(settingKey)) {
-        // Malformed or device-local key — we've seen it; don't re-read it.
+      if (settingKey is! String || valueJson is! String) {
+        // Malformed blob — we've seen it; don't re-read it.
         caughtUp[transportKey] = entry;
+        continue;
+      }
+      if (excludedKeys.contains(settingKey)) {
+        // Device-local key that an older app version uploaded. Remove the
+        // cloud copy (it may hold a secret); on failure leave it out of
+        // caughtUp so the next pass retries the delete.
+        try {
+          await transport.delete(transportKey);
+          seen.remove(transportKey);
+        } on Exception {
+          // Retried next pass.
+        }
         continue;
       }
 
