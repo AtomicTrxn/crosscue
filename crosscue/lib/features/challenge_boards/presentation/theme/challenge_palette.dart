@@ -59,31 +59,3 @@ abstract final class ChallengePalette {
           ? const Color(0xFF1B2030)
           : const Color(0xFFF1F3F5);
 }
-
-/// One fixed silhouette identity (theme-independent — an avatar looks the
-/// same in light and dark so a chosen look never shifts).
-class SilhouettePalette {
-  final Color bg;
-  final Color fig;
-  final Color accent;
-  const SilhouettePalette(this.bg, this.fig, this.accent);
-}
-
-/// The three preset "looks", indexed 1..3 (see avatar/silhouette_painter.dart).
-const List<SilhouettePalette> kSilhouettePalettes = [
-  SilhouettePalette(
-    Color(0xFFDCEBFF),
-    Color(0xFF1E6FD0),
-    Color(0xFF10538F),
-  ), // 1 · blue · headphones
-  SilhouettePalette(
-    Color(0xFFFFE6C2),
-    Color(0xFFE08900),
-    Color(0xFFA85F00),
-  ), // 2 · warm · cap
-  SilhouettePalette(
-    Color(0xFF16294E),
-    Color(0xFF8FC0FF),
-    Color(0xFFC9DEFF),
-  ), // 3 · navy · top-knot
-];

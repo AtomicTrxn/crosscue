@@ -121,6 +121,10 @@ Request:
 { "kind": "silhouette", "silhouetteLook": 2 }
 ```
 
+`silhouetteLook` selects one of the ten preset looks and is clamped
+server-side to 1..10 (look meanings are append-only; see the client's
+`kPresetAvatars`).
+
 Photo uploads may use:
 
 ```json
