@@ -542,6 +542,7 @@ Go to **GitHub → repo → Settings → Secrets and variables → Actions** and
 | `APPLE_DEVELOPER_CERTIFICATE_BASE64` | `base64 -i path/to/Distribution.p12 \| pbcopy` |
 | `APPLE_DEVELOPER_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` |
 | `APPLE_PROVISIONING_PROFILE_BASE64` | `base64 -i path/to/Crosscue_App_Store.mobileprovision \| pbcopy` |
+| `APPLE_WIDGET_PROVISIONING_PROFILE_BASE64` | App Store profile for the widget extension (`dev.tomhess.crosscue.CrosscueWidget`), named exactly `Crosscue Widget App Store` — the pbxproj Release config and ExportOptions.plist reference it by name |
 | `APPLE_API_KEY` | Base64-encoded App Store Connect API `.p8` private key (`base64 -i AuthKey_XXXX.p8 \| pbcopy`) |
 | `APPLE_API_KEY_ID` | The key's 10-character Key ID (e.g. `ABC123DEF4`) |
 | `APPLE_API_ISSUER_ID` | The Issuer ID (UUID) shown above the keys list in App Store Connect |
@@ -567,9 +568,15 @@ this is merged.
 4. **iOS Distribution certificate** generated and exported as `.p12` with a
    strong password.
 5. **App Store provisioning profile** `Crosscue App Store` issued against the
-   App ID **after** the iCloud capability is enabled. Re-issue (and update
+   App ID **after** all its capabilities are enabled (iCloud, App Groups with
+   `group.dev.tomhess.crosscue`, Associated Domains). Re-issue (and update
    the `APPLE_PROVISIONING_PROFILE_BASE64` secret) any time the App ID's
    capability set changes.
+5b. **Widget App ID + profile**: register `dev.tomhess.crosscue.CrosscueWidget`
+   with the App Groups capability (same group), then issue an App Store
+   profile named exactly `Crosscue Widget App Store` and store it as
+   `APPLE_WIDGET_PROVISIONING_PROFILE_BASE64`. The widget extension's Release
+   config signs manually against this profile name.
 6. **App Store Connect API key** at
    https://appstoreconnect.apple.com/access/integrations/api → Team Keys.
    Create a key with the **App Manager** role, download the `.p8` once (it is

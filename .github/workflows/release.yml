@@ -222,15 +222,18 @@ jobs:
             -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
 
-      - name: Install provisioning profile
+      - name: Install provisioning profiles
         env:
           PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          WIDGET_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
         working-directory: .
         run: |
           PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILE_DIR"
           echo "$PROFILE_BASE64" | base64 --decode \
             > "$PROFILE_DIR/release.mobileprovision"
+          echo "$WIDGET_PROFILE_BASE64" | base64 --decode \
+            > "$PROFILE_DIR/widget.mobileprovision"
 
       # Flutter's auto-generated ExportOptions.plist uses automatic signing,
       # which fails on CI (no Apple ID) and can't tell xcodebuild that the
@@ -256,6 +259,8 @@ jobs:
               <dict>
                   <key>dev.tomhess.crosscue</key>
                   <string>Crosscue App Store</string>
+                  <key>dev.tomhess.crosscue.CrosscueWidget</key>
+                  <string>Crosscue Widget App Store</string>
               </dict>
               <key>uploadSymbols</key>
               <true/>
