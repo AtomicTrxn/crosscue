@@ -41,6 +41,10 @@ class ApiChallengeRepository
   Future<void> leaveBoard(String boardId) => _api.leaveBoard(boardId);
 
   @override
+  Future<void> removeMember(String boardId, String playerId) =>
+      _api.removeMember(boardId, playerId);
+
+  @override
   Future<List<Board>> listBoards() async {
     final summary = await _api.listBoards();
     return summary.boards;

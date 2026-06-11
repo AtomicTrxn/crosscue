@@ -37,6 +37,7 @@ export type BoardRow = {
   ranking_mode?: RankingMode;
   invite_expires_at: string;
   invite_version: number;
+  owner_player_id?: string | null;
   player_count?: number;
   deleted_at?: string | null;
 };

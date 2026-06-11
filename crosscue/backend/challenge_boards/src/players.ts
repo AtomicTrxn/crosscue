@@ -1,7 +1,7 @@
 // Player identity: bootstrap, restore, profile, avatar, auth, deletion.
 
 import { ApiError, readBody } from "./http.ts";
-import { activeMemberCount, eventStatement } from "./membership.ts";
+import { activeMemberCount, eventStatement, transferOwnershipIfDeparting } from "./membership.ts";
 import type { Auth, Env, JsonValue, PlayerRow } from "./types.ts";
 import { randomSecret, sha256, utcNow } from "./util.ts";
 import { dataUrlForAvatar, validateDisplayName, validateRequiredString } from "./validation.ts";
@@ -171,12 +171,15 @@ export async function deletePlayer(env: Env, auth: Auth): Promise<JsonValue> {
     await env.DB.batch(leaveStatements);
   }
 
-  // Auto-delete any board left with no remaining active members.
+  // Auto-delete any board left with no remaining active members; otherwise
+  // pass ownership down if the departing player owned the board.
   for (const { board_id } of activeBoards.results ?? []) {
     if ((await activeMemberCount(env, board_id)) === 0) {
       await env.DB.prepare("update boards set deleted_at = ? where id = ?")
         .bind(now, board_id)
         .run();
+    } else {
+      await transferOwnershipIfDeparting(env, board_id, playerId, now);
     }
   }
 

@@ -98,6 +98,21 @@ Future<bool?> showResetRecoveryDialog(BuildContext context) => _confirm(
       confirmLabel: 'Reset code',
     );
 
+/// Remove a member (destructive, owner-only).
+Future<bool?> showRemoveMemberDialog(
+  BuildContext context, {
+  required String playerName,
+  required String boardName,
+}) =>
+    _confirm(
+      context,
+      title: 'Remove $playerName?',
+      body:
+          '$playerName will be removed from $boardName. They can rejoin with a valid invite link — regenerate the link to keep them out.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    );
+
 /// 6 · Leave board (destructive).
 Future<bool?> showLeaveDialog(BuildContext context, String boardName) =>
     _confirm(

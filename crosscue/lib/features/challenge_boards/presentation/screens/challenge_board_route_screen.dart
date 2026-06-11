@@ -27,6 +27,9 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
         onShare: () => _share(context, ref, data.board),
         onRegenerate: () => _regenerate(context, ref, data.board),
         onLeave: () => _leave(context, ref, data.board),
+        ownerPlayerId: data.board.ownerPlayerId,
+        onRemoveMember: (player) =>
+            _removeMember(context, ref, data.board, player),
       ),
       error: (_, __) => Scaffold(
         appBar: AppBar(title: const Text('Challenge board')),
@@ -37,6 +40,25 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
         body: const Center(child: CircularProgressIndicator()),
       ),
     );
+  }
+
+  Future<void> _removeMember(
+    BuildContext context,
+    WidgetRef ref,
+    Board board,
+    Player player,
+  ) async {
+    final confirmed = await showRemoveMemberDialog(
+      context,
+      playerName: player.displayName,
+      boardName: board.name,
+    );
+    if (confirmed != true) return;
+    await ref
+        .read(challengeBoardRepositoryProvider)
+        .removeMember(board.id, player.id);
+    ref.invalidate(challengeBoardDetailProvider(board.id));
+    ref.invalidate(challengeBoardsProvider);
   }
 
   Future<void> _share(BuildContext context, WidgetRef ref, Board board) async {

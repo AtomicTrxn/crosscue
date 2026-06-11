@@ -149,6 +149,7 @@ Response:
       "name": "Friday Crew",
       "playerCount": 8,
       "rankingMode": "average_time",
+      "ownerPlayerId": "...",
       "myWeekly": {
         "rank": 1,
         "outOf": 8,
@@ -224,6 +225,29 @@ Response:
 ```json
 { "ok": true, "boardDeleted": false }
 ```
+
+When the departing player owns the board and members remain, ownership
+passes to the earliest-joined active member (ties broken by player id);
+an `owner_changed` event is recorded. Rejoining resets a player's join
+order, so a returning ex-owner queues at the back of the succession line.
+The same succession runs when an owner deletes their account.
+
+`DELETE /boards/:id/members/:playerId`
+
+Owner-only: removes an active member from the board. The target's results
+rows are retained but stop counting for this board (same as leaving); their
+membership is closed with state `removed`.
+
+Response:
+
+```json
+{ "ok": true }
+```
+
+Errors: `403 not_owner` (requester does not own the board),
+`400 cannot_remove_self` (owners leave instead), `404 member_not_found`
+(target is not an active member). A removed player can rejoin with a
+still-valid invite link — regenerate the invite to lock them out.
 
 `POST /boards/:id/invite/regenerate`
 

@@ -10,6 +10,7 @@ import {
   listBoards,
   previewInvite,
   regenerateInvite,
+  removeMember,
 } from "./boards.ts";
 import {
   ApiError,
@@ -93,6 +94,17 @@ export default {
       const boardMatch = url.pathname.match(/^\/boards\/([^/]+)$/);
       if (request.method === "GET" && boardMatch) {
         return json(await getBoardDetail(env, auth, boardMatch[1]), requestId);
+      }
+
+      const removeMatch = url.pathname.match(
+        /^\/boards\/([^/]+)\/members\/([^/]+)$/,
+      );
+      if (request.method === "DELETE" && removeMatch) {
+        await enforceRateLimit(env.RL_WRITE, auth.player.id);
+        return json(
+          await removeMember(env, auth, removeMatch[1], removeMatch[2]),
+          requestId,
+        );
       }
 
       const leaveMatch = url.pathname.match(/^\/boards\/([^/]+)\/leave$/);

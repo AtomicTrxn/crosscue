@@ -24,6 +24,7 @@ class SampleChallengeRepository extends ChangeNotifier
 
   Player _me;
   final List<Board> _boards;
+  final Map<String, Set<String>> _removedByBoard = {};
   int _nextBoard = 6;
 
   /// Neutral until the user has real challenge results from a backend.
@@ -38,7 +39,9 @@ class SampleChallengeRepository extends ChangeNotifier
       (board) => board.id == boardId,
       orElse: () => _boards.first,
     );
+    final removed = _removedByBoard[board.id] ?? const <String>{};
     final weekly = SampleData.weeklyLeaderboard
+        .where((entry) => !removed.contains(entry.player.id))
         .map(
           (entry) => entry.player.isMe
               ? LeaderboardEntry(
@@ -61,6 +64,7 @@ class SampleChallengeRepository extends ChangeNotifier
       name: draft.name,
       playerCount: 1,
       rankingMode: draft.rankingMode,
+      ownerPlayerId: _me.id,
       myWeekly: const Standing(
         rank: 1,
         outOf: 1,
@@ -106,6 +110,12 @@ class SampleChallengeRepository extends ChangeNotifier
   @override
   Future<void> leaveBoard(String boardId) async {
     _boards.removeWhere((board) => board.id == boardId);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> removeMember(String boardId, String playerId) async {
+    (_removedByBoard[boardId] ??= <String>{}).add(playerId);
     notifyListeners();
   }
 

@@ -3,14 +3,14 @@
 import { defaultSourceId, inviteExpiryDays, maxBoardsPerPlayer, maxPlayersPerBoard } from "./constants.ts";
 import { ApiError, readBody } from "./http.ts";
 import { boardLeaderboard, boardLeaderboards, lifetimeStats, serializeBoardSummary, serializeLeaderboardEntry } from "./leaderboards.ts";
-import { activeBoardCount, activeMemberCount, eventStatement, invitePreview, inviteUrl, isActiveMember, requireActiveBoardMember, verifyInvite } from "./membership.ts";
+import { activeBoardCount, activeMemberCount, eventStatement, invitePreview, inviteUrl, isActiveMember, requireActiveBoardMember, transferOwnershipIfDeparting, verifyInvite } from "./membership.ts";
 import type { Auth, BoardRow, Env, JsonValue } from "./types.ts";
 import { addDays, daysUntil, randomSecret, sha256, utcNow } from "./util.ts";
 import { parseInviteLink, validateBoardName, validateRankingMode } from "./validation.ts";
 
 export async function listBoards(env: Env, auth: Auth): Promise<JsonValue> {
   const boards = await env.DB.prepare(
-    `select b.id, b.name, b.source_id, b.ranking_mode,
+    `select b.id, b.name, b.source_id, b.ranking_mode, b.owner_player_id,
             b.invite_expires_at, b.invite_version, count(active.player_id) as player_count
      from boards b
      join memberships mine on mine.board_id = b.id
@@ -65,8 +65,8 @@ export async function createBoard(
       `insert into boards (
         id, name, source_id, ranking_mode, invite_code_hash, invite_expires_at,
         invite_rotated_at, invite_rotated_by_player_id, created_by_player_id,
-        created_at
-      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        owner_player_id, created_at
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(
       boardId,
       name,
@@ -75,6 +75,7 @@ export async function createBoard(
       inviteHash,
       expires,
       now,
+      auth.player.id,
       auth.player.id,
       auth.player.id,
       now,
@@ -96,6 +97,7 @@ export async function createBoard(
         ranking_mode: rankingMode,
         invite_expires_at: expires,
         invite_version: 1,
+        owner_player_id: auth.player.id,
         player_count: 1,
       },
     ),
@@ -218,7 +220,8 @@ export async function joinInvite(
   }
 
   const board = await env.DB.prepare(
-    `select id, name, source_id, ranking_mode, invite_expires_at, invite_version
+    `select id, name, source_id, ranking_mode, owner_player_id,
+            invite_expires_at, invite_version
      from boards
      where id = ? and deleted_at is null`,
   )
@@ -271,9 +274,53 @@ export async function leaveBoard(
     await env.DB.prepare("update boards set deleted_at = ? where id = ?")
       .bind(now, boardId)
       .run();
+  } else {
+    await transferOwnershipIfDeparting(env, boardId, auth.player.id, now);
   }
 
   return { ok: true, boardDeleted: remaining === 0 };
+}
+
+// Owner-only. Removal mirrors leaving for the target: results rows are kept,
+// the membership is closed (state 'removed' for the audit trail). A removed
+// player can rejoin with a still-valid invite link; the owner's lockout tool
+// is invite regeneration.
+export async function removeMember(
+  env: Env,
+  auth: Auth,
+  boardId: string,
+  targetPlayerId: string,
+): Promise<JsonValue> {
+  const board = await requireActiveBoardMember(env, auth.player.id, boardId);
+  if (board.owner_player_id !== auth.player.id) {
+    throw new ApiError(
+      403,
+      "not_owner",
+      "Only the board owner can remove players.",
+    );
+  }
+  if (targetPlayerId === auth.player.id) {
+    throw new ApiError(
+      400,
+      "cannot_remove_self",
+      "Leave the board instead of removing yourself.",
+    );
+  }
+  if (!(await isActiveMember(env, targetPlayerId, boardId))) {
+    throw new ApiError(404, "member_not_found", "Player is not on this board.");
+  }
+
+  const now = utcNow();
+  await env.DB.batch([
+    env.DB.prepare(
+      `update memberships
+       set left_at = ?, membership_state = 'removed'
+       where board_id = ? and player_id = ? and left_at is null`,
+    ).bind(now, boardId, targetPlayerId),
+    eventStatement(env, boardId, targetPlayerId, "member_removed", now),
+  ]);
+
+  return { ok: true };
 }
 
 export async function regenerateInvite(

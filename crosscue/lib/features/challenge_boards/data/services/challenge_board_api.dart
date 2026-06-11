@@ -170,6 +170,13 @@ class ChallengeBoardApi {
     return _board(_dataMap(response)['board']);
   }
 
+  Future<void> removeMember(String boardId, String playerId) async {
+    await _dio.delete<Object?>(
+      '$_baseUrl/boards/$boardId/members/$playerId',
+      options: await _authOptions(),
+    );
+  }
+
   Future<void> leaveBoard(String boardId) async {
     await _dio.post<Object?>(
       '$_baseUrl/boards/$boardId/leave',
@@ -249,6 +256,7 @@ class ChallengeBoardApi {
       name: data['name'] as String,
       playerCount: (data['playerCount'] as num).toInt(),
       rankingMode: ChallengeRankingMode.fromApi(data['rankingMode']),
+      ownerPlayerId: data['ownerPlayerId'] as String?,
       myWeekly: _standing(data['myWeekly']),
     );
   }

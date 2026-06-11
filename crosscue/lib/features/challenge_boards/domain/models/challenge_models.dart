@@ -132,6 +132,10 @@ class Board {
   final int playerCount;
   final ChallengeRankingMode rankingMode;
 
+  /// Current owner (creator until they depart; then earliest-joined active
+  /// member, passing down join order). Null in sample fixtures.
+  final String? ownerPlayerId;
+
   /// The signed-in player's standing this UTC week.
   final Standing myWeekly;
   const Board({
@@ -140,6 +144,7 @@ class Board {
     required this.playerCount,
     required this.myWeekly,
     this.rankingMode = ChallengeRankingMode.averageTime,
+    this.ownerPlayerId,
   });
 }
 

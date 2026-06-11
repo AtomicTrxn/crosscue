@@ -10,7 +10,7 @@ export async function requireActiveBoardMember(
   boardId: string,
 ): Promise<BoardRow> {
   const board = await env.DB.prepare(
-    `select b.id, b.name, b.source_id, b.ranking_mode,
+    `select b.id, b.name, b.source_id, b.ranking_mode, b.owner_player_id,
             b.invite_expires_at, b.invite_version, count(active.player_id) as player_count
      from boards b
      join memberships mine on mine.board_id = b.id
@@ -88,6 +88,41 @@ export function eventStatement(
       id, board_id, actor_player_id, event_type, created_at
     ) values (?, ?, ?, ?, ?)`,
   ).bind(crypto.randomUUID(), boardId, actorPlayerId, eventType, now);
+}
+
+// Ownership passes to the earliest-joined active member when the owner
+// departs (leave or account deletion). Call after the departing player's
+// membership is marked left. No-op when the departing player was not the
+// owner, or when no active members remain (the board is auto-deleted then).
+// Rejoining resets joined_at, so a returning ex-owner queues at the back.
+export async function transferOwnershipIfDeparting(
+  env: Env,
+  boardId: string,
+  departingPlayerId: string,
+  now: string,
+): Promise<void> {
+  const board = await env.DB.prepare(
+    "select owner_player_id from boards where id = ? and deleted_at is null",
+  )
+    .bind(boardId)
+    .first<{ owner_player_id: string | null }>();
+  if (!board || board.owner_player_id !== departingPlayerId) return;
+  const next = await env.DB.prepare(
+    `select player_id from memberships
+     where board_id = ? and left_at is null
+     order by joined_at, player_id
+     limit 1`,
+  )
+    .bind(boardId)
+    .first<{ player_id: string }>();
+  if (!next) return;
+  await env.DB.batch([
+    env.DB.prepare("update boards set owner_player_id = ? where id = ?").bind(
+      next.player_id,
+      boardId,
+    ),
+    eventStatement(env, boardId, next.player_id, "owner_changed", now),
+  ]);
 }
 
 export function inviteUrl(env: Env, boardId: string, secret: string): string {
