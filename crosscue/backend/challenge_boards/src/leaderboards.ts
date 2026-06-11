@@ -195,6 +195,7 @@ export function serializeBoardSummary(
     name: board.name,
     playerCount: count,
     rankingMode: board.ranking_mode ?? "average_time",
+    ownerPlayerId: board.owner_player_id ?? null,
     myWeekly: {
       rank: standing?.rank ?? count,
       outOf: count,

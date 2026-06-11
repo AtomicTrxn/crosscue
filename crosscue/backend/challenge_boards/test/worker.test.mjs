@@ -429,6 +429,138 @@ test('last_seen_at is refreshed at most hourly', async () => {
   assert.notEqual(readLastSeen(), stale);
 });
 
+test('owner can remove a member; others cannot', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const zoe = await app.bootstrap('Zoe');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  for (const t of [noah.authToken, zoe.authToken]) {
+    await app.fetchJson('/invites/join', {
+      method: 'POST',
+      token: t,
+      body: { inviteLink: created.inviteLink },
+    });
+  }
+  assert.equal(created.board.ownerPlayerId, maya.player.id);
+
+  // Non-owner cannot remove.
+  const denied = await app.fetchJson(
+    `/boards/${created.board.id}/members/${zoe.player.id}`,
+    { method: 'DELETE', token: noah.authToken, status: 403 },
+  );
+  assert.equal(denied.error.code, 'not_owner');
+
+  // Owner cannot remove themselves.
+  const self = await app.fetchJson(
+    `/boards/${created.board.id}/members/${maya.player.id}`,
+    { method: 'DELETE', token: maya.authToken, status: 400 },
+  );
+  assert.equal(self.error.code, 'cannot_remove_self');
+
+  // Owner removes Noah.
+  const removed = await app.fetchJson(
+    `/boards/${created.board.id}/members/${noah.player.id}`,
+    { method: 'DELETE', token: maya.authToken },
+  );
+  assert.equal(removed.ok, true);
+
+  const state = app.env.DB.db
+    .prepare(
+      'select membership_state from memberships where board_id = ? and player_id = ?',
+    )
+    .get(created.board.id, noah.player.id);
+  assert.equal(state.membership_state, 'removed');
+
+  // Noah no longer sees the board; the leaderboard no longer lists him.
+  await app.fetchJson(`/boards/${created.board.id}`, {
+    token: noah.authToken,
+    status: 404,
+  });
+  const detail = await app.fetchJson(`/boards/${created.board.id}`, {
+    token: maya.authToken,
+  });
+  assert.deepEqual(
+    detail.weekly.map((e) => e.player.displayName).sort(),
+    ['Maya', 'Zoe'],
+  );
+
+  // Removing someone who is not an active member 404s.
+  const again = await app.fetchJson(
+    `/boards/${created.board.id}/members/${noah.player.id}`,
+    { method: 'DELETE', token: maya.authToken, status: 404 },
+  );
+  assert.equal(again.error.code, 'member_not_found');
+
+  // A still-valid invite lets the removed player rejoin.
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+});
+
+test('ownership passes down join order as owners depart', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const zoe = await app.bootstrap('Zoe');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  // Distinct joined_at ordering: Noah joins before Zoe.
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+  app.env.DB.db
+    .prepare(
+      'update memberships set joined_at = ? where board_id = ? and player_id = ?',
+    )
+    .run('2026-06-09T00:00:00.000Z', created.board.id, noah.player.id);
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: zoe.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  // Creator leaves → earliest joiner (Noah) inherits.
+  await app.fetchJson(`/boards/${created.board.id}/leave`, {
+    method: 'POST',
+    token: maya.authToken,
+  });
+  let detail = await app.fetchJson(`/boards/${created.board.id}`, {
+    token: zoe.authToken,
+  });
+  assert.equal(detail.board.ownerPlayerId, noah.player.id);
+  const events = app.env.DB.db
+    .prepare(
+      "select actor_player_id from board_events where event_type = 'owner_changed'",
+    )
+    .all();
+  assert.equal(events.length, 1);
+  assert.equal(events[0].actor_player_id, noah.player.id);
+
+  // Next owner departs via account deletion → Zoe inherits.
+  await app.fetchJson('/players/me', {
+    method: 'DELETE',
+    token: noah.authToken,
+  });
+  detail = await app.fetchJson(`/boards/${created.board.id}`, {
+    token: zoe.authToken,
+  });
+  assert.equal(detail.board.ownerPlayerId, zoe.player.id);
+});
+
 test('player restore exchanges recovery secret for a fresh token', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');

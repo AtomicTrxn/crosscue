@@ -7,6 +7,9 @@ abstract interface class ChallengeBoardRepository {
   Future<InvitePreview> previewInvite(String inviteLink);
   Future<Board?> joinInvite(String inviteLink);
   Future<void> leaveBoard(String boardId);
+
+  /// Owner-only: removes an active member from the board.
+  Future<void> removeMember(String boardId, String playerId);
   Future<String> regenerateInvite(String boardId);
   Future<String> getInviteLink(String boardId);
 }

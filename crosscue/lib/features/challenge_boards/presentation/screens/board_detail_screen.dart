@@ -19,6 +19,11 @@ class BoardDetailScreen extends StatefulWidget {
   final VoidCallback? onRegenerate;
   final VoidCallback? onLeave;
 
+  /// Current board owner; rows show the owner glyph, and when the signed-in
+  /// player is the owner, long-pressing another member offers removal.
+  final String? ownerPlayerId;
+  final Future<void> Function(Player player)? onRemoveMember;
+
   const BoardDetailScreen({
     super.key,
     this.boardName = 'Friday Night Crew',
@@ -30,6 +35,8 @@ class BoardDetailScreen extends StatefulWidget {
     this.onShare,
     this.onRegenerate,
     this.onLeave,
+    this.ownerPlayerId,
+    this.onRemoveMember,
   });
 
   @override
@@ -134,11 +141,27 @@ class _BoardDetailScreenState extends State<BoardDetailScreen> {
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
                 itemCount: rows.length,
-                itemBuilder: (_, i) => LeaderboardRow(
-                  entry: rows[i],
-                  mode: mode,
-                  rankingMode: widget.rankingMode,
-                ),
+                itemBuilder: (_, i) {
+                  final entry = rows[i];
+                  final iAmOwner = widget.ownerPlayerId != null &&
+                      widget.weekly.any(
+                        (e) =>
+                            e.player.isMe &&
+                            e.player.id == widget.ownerPlayerId,
+                      );
+                  final removable = iAmOwner &&
+                      !entry.player.isMe &&
+                      widget.onRemoveMember != null;
+                  return LeaderboardRow(
+                    entry: entry,
+                    mode: mode,
+                    rankingMode: widget.rankingMode,
+                    isOwner: entry.player.id == widget.ownerPlayerId,
+                    onLongPress: removable
+                        ? () => widget.onRemoveMember!(entry.player)
+                        : null,
+                  );
+                },
               ),
             ),
           ),

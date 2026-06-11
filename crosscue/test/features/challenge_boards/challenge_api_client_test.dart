@@ -237,6 +237,26 @@ void main() {
     expect(adapter.bootstrapCalls, 0, reason: 'must not bootstrap to delete');
   });
 
+  test('board list carries the owner id; removeMember issues DELETE', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: secureStore,
+      ),
+      baseUrl: 'https://api.crosscue.test',
+    );
+
+    final summary = await api.listBoards();
+    expect(summary.boards.single.ownerPlayerId, 'player-1');
+
+    await api.removeMember('board-1', 'player-2');
+    expect(adapter.removedMemberPath, '/boards/board-1/members/player-2');
+    expect(adapter.seenAuthHeader, 'Bearer token-1');
+  });
+
   test('API client submits challenge results with auth', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
@@ -284,6 +304,7 @@ class _FakeChallengeAdapter implements HttpClientAdapter {
   int bootstrapCalls = 0;
   int restoreCalls = 0;
   int deleteCalls = 0;
+  String? removedMemberPath;
 
   static const _player = {
     'id': 'player-1',
@@ -306,6 +327,12 @@ class _FakeChallengeAdapter implements HttpClientAdapter {
         'authToken': 'token-1',
         'recoverySecret': 'recovery-1',
       });
+    }
+
+    if (path.contains('/members/') && options.method == 'DELETE') {
+      removedMemberPath = path;
+      seenAuthHeader = options.headers['authorization'] as String?;
+      return _json({'ok': true});
     }
 
     if (path == '/players/me' && options.method == 'DELETE') {
@@ -336,6 +363,7 @@ class _FakeChallengeAdapter implements HttpClientAdapter {
             'id': 'board-1',
             'name': 'Friday Crew',
             'playerCount': 1,
+            'ownerPlayerId': 'player-1',
             'myWeekly': {
               'rank': 1,
               'outOf': 1,
