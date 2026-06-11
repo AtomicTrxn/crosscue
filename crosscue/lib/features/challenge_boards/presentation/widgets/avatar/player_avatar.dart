@@ -1,13 +1,13 @@
 import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
-import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/silhouette_painter.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/preset_avatars.dart';
 import 'package:flutter/material.dart';
 
 /// Crosscue · Player avatar widget.
 ///
 /// Renders, by [PlayerAvatar.kind]:
 ///   • initials  → tinted disc with the player's initials
-///   • silhouette → one of the three preset looks
+///   • silhouette → one of the preset looks (see kPresetAvatars)
 ///   • photo      → the player's normalized circular image
 class PlayerAvatarView extends StatelessWidget {
   final PlayerAvatar avatar;
@@ -24,7 +24,7 @@ class PlayerAvatarView extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (avatar.kind) {
       case AvatarKind.silhouette:
-        return Silhouette(look: avatar.silhouetteLook, size: size);
+        return PresetAvatar(look: avatar.silhouetteLook, size: size);
       case AvatarKind.photo:
         return ClipOval(
           child: SizedBox.square(

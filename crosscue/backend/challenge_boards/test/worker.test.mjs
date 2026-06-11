@@ -362,6 +362,25 @@ test('future-dated and impossible-date submissions are rejected', async () => {
   assert.equal(impossibleDate.error.code, 'published_on');
 });
 
+test('silhouette looks accept the full preset range and clamp beyond it', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+
+  const ten = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'silhouette', silhouetteLook: 10 },
+  });
+  assert.equal(ten.player.avatar.silhouetteLook, 10);
+
+  const clamped = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'silhouette', silhouetteLook: 11 },
+  });
+  assert.equal(clamped.player.avatar.silhouetteLook, 10);
+});
+
 test('avatar uploads must be PNG bytes', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');

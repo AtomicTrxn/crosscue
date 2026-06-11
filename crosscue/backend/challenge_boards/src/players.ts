@@ -236,7 +236,7 @@ export async function updateAvatar(
         : "initials";
   const look =
     typeof body.silhouetteLook === "number"
-      ? Math.min(3, Math.max(1, Math.trunc(body.silhouetteLook)))
+      ? Math.min(10, Math.max(1, Math.trunc(body.silhouetteLook)))
       : 1;
   const photoUrl =
     kind === "photo" && typeof body.photoPngBase64 === "string"

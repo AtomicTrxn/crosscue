@@ -33,7 +33,7 @@ enum ChallengeRankingMode {
 class PlayerAvatar {
   final AvatarKind kind;
 
-  /// 1..3 when [kind] is silhouette.
+  /// 1..10 when [kind] is silhouette (see kPresetAvatars).
   final int silhouetteLook;
 
   /// Local/remote image reference when [kind] is photo (already normalized).

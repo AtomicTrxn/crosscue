@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:crosscue/features/challenge_boards/presentation/theme/app_colors.dart';
 import 'package:crosscue/features/challenge_boards/presentation/theme/app_text_styles.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_crop_sheet.dart';
-import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/silhouette_painter.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/preset_avatars.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart'
     show showCbSheet;
 import 'package:crosscue/features/challenge_boards/util/avatar_normalizer.dart';
@@ -13,13 +13,15 @@ import 'package:flutter/material.dart';
 /// The result of the avatar flow: either a chosen preset look or normalized
 /// photo bytes the caller should upload.
 class AvatarChoice {
-  final int? look; // 1..3 when a preset is chosen
+  final int? look; // 1..kPresetAvatars.length when a preset is chosen
   final Uint8List? photoBytes; // normalized PNG when a photo is used
   const AvatarChoice.look(this.look) : photoBytes = null;
   const AvatarChoice.photo(this.photoBytes) : look = null;
 }
 
-/// Avatar picker: preview + three preset silhouettes + add-photo tile.
+/// Avatar picker: preview on top, a scrollable grid of the preset looks with
+/// the add-photo tile at the end, and fixed Save/Cancel actions. The sheet
+/// occupies roughly half the screen.
 ///
 /// [pickImageBytes] should open the system picker and return raw image bytes
 /// (e.g. via `image_picker` → `XFile.readAsBytes()`). Wired by the caller so
@@ -29,13 +31,25 @@ Future<AvatarChoice?> showAvatarPickerSheet(
   int selected = 1,
   Future<Uint8List?> Function()? pickImageBytes,
 }) {
-  var sel = selected.clamp(1, 3);
+  var sel = selected.clamp(1, kPresetAvatars.length);
   return showCbSheet<AvatarChoice>(
     context,
     title: 'Choose your avatar',
     builder: (ctx) {
       return StatefulBuilder(
         builder: (ctx, setState) {
+          Future<void> addPhoto() async {
+            final bytes = await pickImageBytes?.call();
+            if (bytes == null) return;
+            final ui.Image src =
+                await AvatarNormalizer.decodeImageFromBytes(bytes);
+            if (!ctx.mounted) return;
+            final png = await showAvatarCropSheet(ctx, source: src);
+            if (png != null && ctx.mounted) {
+              Navigator.pop(ctx, AvatarChoice.photo(png));
+            }
+          }
+
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,40 +68,46 @@ Future<AvatarChoice?> showAvatarPickerSheet(
                       ),
                     ],
                   ),
-                  child: Silhouette(look: sel, size: 96),
+                  child: PresetAvatar(look: sel, size: 84),
                 ),
               ),
-              const SizedBox(height: 18),
-              // options
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  for (int look = 1; look <= 3; look++)
-                    _Option(
-                      key: ValueKey('avatar-look-$look'),
-                      selected: sel == look,
-                      onTap: () => setState(() => sel = look),
-                      child: Silhouette(look: look, size: 54),
-                    ),
-                  _Option(
-                    key: const ValueKey('avatar-add-photo'),
-                    label: 'Add',
-                    onTap: () async {
-                      final bytes = await pickImageBytes?.call();
-                      if (bytes == null) return;
-                      final ui.Image src =
-                          await AvatarNormalizer.decodeImageFromBytes(bytes);
-                      if (!ctx.mounted) return;
-                      final png = await showAvatarCropSheet(ctx, source: src);
-                      if (png != null && ctx.mounted) {
-                        Navigator.pop(ctx, AvatarChoice.photo(png));
-                      }
-                    },
-                    child: _AddTile(),
+              const SizedBox(height: 16),
+              // Scrollable looks with the add-photo tile at the end. About
+              // two and a half rows: the cut row signals scrollability, and
+              // the fixed height keeps the sheet near half the screen
+              // without collapsing on short viewports.
+              SizedBox(
+                height: 200,
+                child: GridView(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisExtent: 84,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 10,
                   ),
-                ],
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  children: [
+                    for (int look = 1; look <= kPresetAvatars.length; look++)
+                      Center(
+                        child: _Option(
+                          key: ValueKey('avatar-look-$look'),
+                          selected: sel == look,
+                          onTap: () => setState(() => sel = look),
+                          child: PresetAvatar(look: look, size: 54),
+                        ),
+                      ),
+                    Center(
+                      child: _Option(
+                        key: const ValueKey('avatar-add-photo'),
+                        label: 'Add',
+                        onTap: addPhoto,
+                        child: _AddTile(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -108,7 +128,7 @@ Future<AvatarChoice?> showAvatarPickerSheet(
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, AvatarChoice.look(sel)),
                 child: const Text('Save avatar'),
@@ -190,7 +210,7 @@ class _Option extends StatelessWidget {
             ),
           ),
           if (label != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               label!,
               style: AppTextStyles.caption.copyWith(

@@ -1,5 +1,6 @@
 import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_picker_sheet.dart';
+import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/preset_avatars.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/confirm_dialogs.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/edit_name_sheet.dart';
@@ -108,6 +109,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(result?.look, 3);
+  });
+
+  test('the preset catalog carries the ten chosen looks in order', () {
+    expect(
+      kPresetAvatars.map((spec) => spec.label).toList(),
+      [
+        'Sushi',
+        'Ravioli',
+        'Rainbow',
+        'Party hat',
+        'Lollipop',
+        'Ferris wheel',
+        'Cat',
+        'Dog',
+        'Rabbit',
+        'Penguin',
+      ],
+    );
+  });
+
+  testWidgets('avatar picker scrolls to the last preset and saves it',
+      (tester) async {
+    AvatarChoice? result;
+    await tester.pumpWidget(
+      _SheetHarness(
+        onPressed: (context) async {
+          result = await showAvatarPickerSheet(context, selected: 1);
+          return result;
+        },
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    const lastLook = ValueKey('avatar-look-10');
+    // Scroll the grid to its end (its max extent is well under one viewport)
+    // so the last row is fully hittable, not just first-pixel visible.
+    await tester.drag(find.byType(GridView), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(lastLook));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save avatar'));
+    await tester.pumpAndSettle();
+
+    expect(result?.look, 10);
+  });
+
+  testWidgets('avatar picker keeps the add-photo tile after the presets',
+      (tester) async {
+    await tester.pumpWidget(
+      _SheetHarness(
+        onPressed: (context) async => showAvatarPickerSheet(context),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(GridView), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('avatar-add-photo')), findsOneWidget);
   });
 
   testWidgets('invite sheet renders full, member, limit, and invalid states',
