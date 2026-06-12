@@ -33,8 +33,10 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Crosscue uses the camera only if you choose to take a new photo for your challenge board avatar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Crosscue needs access to your photo library only if you choose to import a crossword puzzle file (.puz or .ipuz) from there.</string>
+	<string>Crosscue needs access to your photo library only if you choose a photo for your challenge board avatar or import a crossword puzzle file (.puz or .ipuz) from there.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
