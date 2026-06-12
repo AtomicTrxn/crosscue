@@ -780,6 +780,14 @@ Crosscue current-release answers:
       a release APK (`flutter build apk --release`) and install it on a
       device before tagging a release — minification can break plugin
       reflection in ways debug builds will not catch.
+- [x] **Material Components override (#266):** `build.gradle.kts` forces
+      `com.google.android.material:material` to 1.12+ because `dynamic_color`
+      pins 1.7.0, whose datepicker uses `Window.setStatusBarColor` /
+      `setNavigationBarColor` — deprecated in Android 15 and flagged as a
+      Play Console advisory on every release. Do **not** remove the override
+      in a dependency pass until `dynamic_color` ships a newer Material pin;
+      after any change here, re-check the advisory on the next AAB upload
+      (it only refreshes per uploaded release).
 
 ### Release pipeline
 - [x] `.github/workflows/release.yml` builds a signed AAB and uploads to the
@@ -945,6 +953,23 @@ final ext = file.extension?.toLowerCase() ?? '';
 if (!{'puz', 'ipuz'}.contains(ext)) { ... }
 ```
 Always wrap `pickFiles` in try/catch for `PlatformException`.
+
+### Release build fails: `package dev.flutter.plugins.integration_test does not exist`
+
+`GeneratedPluginRegistrant.java` (not committed; generated under
+`android/app/src/main/java/io/flutter/plugins/`) can go stale after a local
+integration-test or debug run and still register the `integration_test`
+dev-dependency plugin, which is excluded from release builds — so
+`assembleRelease` fails at `compileReleaseJavaWithJavac`. Fix: delete the
+stale file and rebuild; the tool regenerates it with the correct release
+plugin set:
+
+```bash
+rm crosscue/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+cd crosscue && flutter build apk --release --no-pub
+```
+
+CI is unaffected (clean checkouts regenerate it fresh).
 
 ### Dark-mode QA checklist
 
