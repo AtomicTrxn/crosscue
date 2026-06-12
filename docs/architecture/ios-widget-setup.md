@@ -2,8 +2,9 @@
 
 > **Status:** Living — setup runbook + payload schema (the payload is
 > contract #5 in [`compatibility.md`](compatibility.md)). Background-refresh
-> decision: [ADR-0011](decisions/0011-widget-background-refresh.md); Android
-> parity: [ADR-0015](decisions/0015-platform-parity-policy.md) / P1.
+> decision: [ADR-0011](decisions/0011-widget-background-refresh.md). The
+> Android counterpart shipped in #223 (`CrosscueWidgetProvider.kt` +
+> `res/layout/crosscue_widget.xml`), reading the same payload.
 
 The WidgetKit widget for streak + today's puzzle ([#114](https://github.com/AtomicTrxn/crosscue/issues/114)).
 Like the iCloud and Google Drive setups, the **code ships first and stays
@@ -145,8 +146,10 @@ when (or whether) it fires from the user's usage pattern; see the caveat in
 - **Background refresh is best-effort:** the task above is polish, not a
   guarantee — iOS may throttle it for low-engagement users. The reliable
   freshness path remains the in-app on-open refresh.
-- **Android Glance parity** is intentionally out of scope (separate issue), as
-  are Live Activities and the `accessoryCircular`/`accessoryInline` families.
+- **The Android widget exists** (#223 — `CrosscueWidgetProvider.kt`, reading
+  the same `crosscue_widget_v1` payload via `home_widget` shared prefs).
+  Live Activities and the `accessoryCircular`/`accessoryInline` families
+  remain out of scope.
 - The leaderboard row is added as a follow-on once the leaderboard implementation
   lands — by populating the existing `leaderboard` slot, not by changing the
   widget contract.

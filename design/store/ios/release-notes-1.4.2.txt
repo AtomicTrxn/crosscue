@@ -1,0 +1,10 @@
+Our biggest update yet.
+
+• Challenge Boards — private, invite-only leaderboards for the daily mini. Create a board, share an invite link, and compare solve times with friends on weekly and all-time standings. Completely optional and anonymous: pick a short handle and an avatar (ten new looks, or use your own photo) — no account, ever — and you can delete everything in-app whenever you like.
+• Home Screen & Lock Screen widgets — your streak and today's puzzle at a glance; tap to start solving.
+• Siri, Shortcuts & Spotlight — "open today's puzzle," check your stats, or continue your last solve.
+• VoiceOver support across the solve screen — grid, keyboard, clues, and timer.
+• Crosshare puzzles now credit their author, with a link to the original.
+• Faster iCloud sync, plus fixes for widget taps and solve-screen navigation.
+
+As always: offline-first, no accounts, no ads, no tracking.
