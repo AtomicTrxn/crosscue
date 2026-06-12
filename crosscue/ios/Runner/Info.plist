@@ -33,6 +33,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Crosscue never requests or records your location. A photo-picker component used for board avatars references location APIs to read photo metadata, which requires this notice.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Crosscue uses the camera only if you choose to take a new photo for your challenge board avatar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
