@@ -33,5 +33,5 @@ ADRs are immutable once Accepted except for status changes — a reversal is a
 | [0012](0012-challenge-boards-live-compute.md) | Challenge Boards v1: live-compute lifetime + bounded retention | Accepted |
 | [0013](0013-no-monetization.md) | No monetization; entitlement scaffolding removed | Accepted |
 | [0014](0014-reminders-deferred.md) | Reminders deferred; scaffolding removed | Accepted |
-| [0015](0015-platform-parity-policy.md) | Platform parity policy: parity-by-default | Proposed |
-| [0016](0016-mixed-version-sync-policy.md) | Mixed-version sync compatibility policy | Proposed |
+| [0015](0015-platform-parity-policy.md) | Platform parity required across all app targets | Accepted |
+| [0016](0016-mixed-version-sync-policy.md) | Mixed-version sync compatibility policy | Accepted |

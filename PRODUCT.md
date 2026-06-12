@@ -43,9 +43,10 @@ an ADR explaining why, before it ships.
    (the legal guardrail in `CONVENTIONS.md` is binding), attribute authors,
    and follow solver conventions (rebus behavior, no spoiling theme squares).
 
-5. **Quality over breadth.** Mechanics match or beat the big apps
-   (focus model, rebus, check/reveal semantics, accessibility). A feature
-   ships polished on the platforms it ships on — see the parity policy
+5. **Quality over breadth, on every target.** Mechanics match or beat the
+   big apps (focus model, rebus, check/reveal semantics, accessibility), and
+   a user-visible feature ships only when it works on **all app targets** —
+   currently iOS and Android. Platform parity is required, not aspirational
    ([ADR-0015](docs/architecture/decisions/0015-platform-parity-policy.md)).
 
 ## Roadmap themes

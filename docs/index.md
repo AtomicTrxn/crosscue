@@ -16,8 +16,9 @@ record for shipped/superseded work).
 
 ## Product & policy
 
-- [Privacy Policy](privacy.md) — **source of truth** for the published
-  `privacy.html` filed with both stores (regeneration rule: DEPLOYMENT.md
+- [Privacy Policy](privacy.md) — **is** the published `privacy.html` filed
+  with both stores: GitHub Pages builds `main:/docs` via Jekyll and serves it
+  automatically (verify the live page after policy changes — DEPLOYMENT.md
   store checklists)
 - [Product vision & principles](../PRODUCT.md) — why the app exists, the
   online-feature rule, roadmap themes, non-goals
