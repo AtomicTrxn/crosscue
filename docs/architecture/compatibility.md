@@ -77,12 +77,16 @@ result source). A Crosshare markup change degrades all three at once.
   and flushes later; a download outage means *no new eligible puzzle*, which
   boards experience as a quiet day, not an error.
 
-**Risk-reduction tasks (tracked, not yet built):**
+**Risk-reduction tasks:**
 
-1. Scheduled CI canary (weekly cron) running the live fetch/parse against
-   crosshare.org, opening an issue on failure.
+1. ✅ **Scheduled CI canary** (#257): `.github/workflows/crosshare-canary.yml`
+   runs `crosscue/tool/crosshare_canary.dart` against the live site weekly
+   (Mondays 06:17 UTC, also dispatchable) — month listing + newest-mini
+   download + parse. On failure it opens (or comments on) a deduplicated
+   "Crosshare canary failing" issue. The degradation rendering is locked by
+   `test/features/home/presentation/widgets/past_puzzles_section_test.dart`.
 2. Ask Crosshare about a stable feed/API (license approval already on file —
-   `CONVENTIONS.md` source table).
+   `CONVENTIONS.md` source table). *(owner action, untracked)*
 3. Longer term: a Worker-side canonical puzzle-id registry (D4 in
    [`../challenge-boards-159-breakdown.md`](../challenge-boards-159-breakdown.md))
    to decouple board eligibility from client-side scraping success.
