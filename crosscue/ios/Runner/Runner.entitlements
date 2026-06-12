@@ -5,6 +5,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:crosscue.app</string>
+		<string>applinks:crosscue.pages.dev</string>
 	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>

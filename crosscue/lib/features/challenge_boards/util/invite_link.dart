@@ -1,16 +1,23 @@
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:flutter/foundation.dart';
 
-/// Public host that serves Crosscue challenge-board invite links.
-const String inviteLinkHost = 'crosscue.app';
+/// Public hosts that serve Crosscue challenge-board invite links.
+///
+/// The first entry is the canonical host used when generating share URLs
+/// (Cloudflare Pages, live today); every entry is accepted on parse. The
+/// `crosscue.app` apex is kept so links keep working if/when the domain is
+/// registered later. This list is the single place client-side hosts are
+/// defined — update it here if the Pages project name ever changes.
+const List<String> kInviteLinkHosts = ['crosscue.pages.dev', 'crosscue.app'];
 
 /// First path segment of an invite link (`/join/<boardId>`).
 const String inviteLinkPathSegment = 'join';
 
 /// A parsed challenge-board invite.
 ///
-/// Invite URLs look like `https://crosscue.app/join/<boardId>?token=<secret>`
-/// (see issue #159). They reach the app two ways, both handled by [tryParse]:
+/// Invite URLs look like
+/// `https://crosscue.pages.dev/join/<boardId>?token=<secret>` (see issue
+/// #159). They reach the app two ways, both handled by [tryParse]:
 ///   * as the full public URL via App Links / Universal Links, and
 ///   * as the bare `/join/<boardId>?token=...` path, since go_router strips the
 ///     scheme/host from platform deep links before matching.
@@ -24,16 +31,18 @@ class InviteLink {
   /// The canonical shareable URL for this invite.
   Uri toShareUri() => Uri(
         scheme: 'https',
-        host: inviteLinkHost,
+        host: kInviteLinkHosts.first,
         pathSegments: [inviteLinkPathSegment, boardId],
         queryParameters: {'token': token},
       );
 
   /// Parses [uri] into an [InviteLink], or returns null when it is not a
   /// well-formed invite. Accepts both the full public URL and the bare in-app
-  /// path; if a host is present it must be [inviteLinkHost].
+  /// path; if a host is present it must be one of [kInviteLinkHosts].
   static InviteLink? tryParse(Uri uri) {
-    if (uri.host.isNotEmpty && uri.host != inviteLinkHost) return null;
+    if (uri.host.isNotEmpty && !kInviteLinkHosts.contains(uri.host)) {
+      return null;
+    }
 
     final segments = uri.pathSegments;
     if (segments.length != 2) return null;

@@ -4,7 +4,9 @@ compatibility_date = "2026-06-01"
 
 [vars]
 APP_ENV = "local"
-PUBLIC_APP_URL = "https://crosscue.app"
+# Host that serves invite links (Cloudflare Pages project `crosscue`). If that
+# project name is ever taken/renamed, update PUBLIC_APP_URL in all three envs.
+PUBLIC_APP_URL = "https://crosscue.pages.dev"
 
 # Workers Logs/Traces (#159 workstream E4). Logs are structured JSON and never
 # include tokens, recovery/invite secrets, or full invite URLs.
@@ -37,7 +39,7 @@ simple = { limit = 60, period = 60 }
 
 [env.staging]
 name = "crosscue-challenge-boards-staging"
-vars = { APP_ENV = "staging", PUBLIC_APP_URL = "https://crosscue.app" }
+vars = { APP_ENV = "staging", PUBLIC_APP_URL = "https://crosscue.pages.dev" }
 
 [env.staging.observability]
 enabled = true
@@ -65,11 +67,13 @@ simple = { limit = 60, period = 60 }
 
 [env.production]
 name = "crosscue-challenge-boards"
-vars = { APP_ENV = "production", PUBLIC_APP_URL = "https://crosscue.app" }
+vars = { APP_ENV = "production", PUBLIC_APP_URL = "https://crosscue.pages.dev" }
 # Custom domain (#159 workstream E2). Requires the crosscue.app zone in this
-# Cloudflare account. Uncomment to serve the API on api.crosscue.app; until then
-# the Worker is reachable at its *.workers.dev URL. Invite links stay on
-# crosscue.app/join/... regardless.
+# Cloudflare account — the apex was never registered, so this stays commented
+# out. Uncomment to serve the API on api.crosscue.app if/when the domain is
+# added; until then the Worker is reachable at its *.workers.dev URL. Invite
+# links are generated on crosscue.pages.dev/join/... today (Cloudflare Pages);
+# crosscue.app/join/... links remain accepted and can take over later.
 # routes = [{ pattern = "api.crosscue.app", custom_domain = true }]
 
 [env.production.observability]

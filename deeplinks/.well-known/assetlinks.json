@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "dev.tomhess.crosscue",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256_FINGERPRINT"
+        "6E:E3:A3:59:21:42:C5:2E:F6:5C:F7:5C:D3:6C:15:D2:F4:7B:72:3F:6D:20:43:54:DA:C5:3C:57:C3:41:1D:1D",
+        "E9:EA:C1:3A:35:58:F1:7D:E2:93:AC:C0:BC:20:6D:F8:3D:F5:69:DC:A0:F0:15:FE:C1:31:81:D9:73:48:1B:4D"
       ]
     }
   }

@@ -4,9 +4,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('InviteLink.tryParse', () {
-    test('parses the full public invite URL', () {
+    test('parses the full public invite URL on every supported host', () {
+      expect(kInviteLinkHosts, contains('crosscue.pages.dev'));
+      expect(kInviteLinkHosts, contains('crosscue.app'));
+      for (final host in kInviteLinkHosts) {
+        final invite = InviteLink.tryParse(
+          Uri.parse('https://$host/join/board-123?token=abc123'),
+        );
+        expect(invite, isNotNull, reason: 'host $host should parse');
+        expect(invite!.boardId, 'board-123');
+        expect(invite.token, 'abc123');
+      }
+    });
+
+    test('parses the live Cloudflare Pages host', () {
       final invite = InviteLink.tryParse(
-        Uri.parse('https://crosscue.app/join/board-123?token=abc123'),
+        Uri.parse('https://crosscue.pages.dev/join/board-123?token=abc123'),
       );
       expect(invite, isNotNull);
       expect(invite!.boardId, 'board-123');
@@ -33,6 +46,13 @@ void main() {
         InviteLink.tryParse(Uri.parse('https://evil.example/join/b?token=t')),
         isNull,
       );
+      // Lookalike pages.dev projects are foreign hosts too.
+      expect(
+        InviteLink.tryParse(
+          Uri.parse('https://crosscue-evil.pages.dev/join/b?token=t'),
+        ),
+        isNull,
+      );
     });
 
     test('rejects a missing or empty token', () {
@@ -50,6 +70,11 @@ void main() {
       const invite = InviteLink(boardId: 'b1', token: 't1');
       final parsed = InviteLink.tryParse(invite.toShareUri());
       expect(parsed, invite);
+    });
+
+    test('toShareUri uses the canonical (Pages) host', () {
+      const invite = InviteLink(boardId: 'b1', token: 't1');
+      expect(invite.toShareUri().host, 'crosscue.pages.dev');
     });
 
     test('toString redacts the token', () {

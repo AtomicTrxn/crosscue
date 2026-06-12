@@ -18,6 +18,10 @@ test('invite preview, join, leave, and deleted-board preview flow', async () => 
     body: { name: 'Friday Crew' },
     status: 201,
   });
+  assert.ok(
+    created.inviteLink.startsWith(`${app.env.PUBLIC_APP_URL}/join/`),
+    `invite link should be generated on PUBLIC_APP_URL: ${created.inviteLink}`,
+  );
 
   const validPreview = await app.fetchJson('/invites/preview', {
     method: 'POST',
@@ -327,6 +331,39 @@ test('rotated invite links reveal no board details on preview', async () => {
   assert.equal(preview.invite.result, 'invalidOrExpired');
   assert.equal(preview.invite.boardName, '');
   assert.equal(preview.invite.playerCount, 0);
+});
+
+test('legacy crosscue.app-hosted invite links are still accepted', async () => {
+  // Links are generated on crosscue.pages.dev today, but the apex-host shape
+  // must keep working (parseInviteLink is host-agnostic by design).
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  const legacyLink = created.inviteLink.replace(
+    'https://crosscue.pages.dev/',
+    'https://crosscue.app/',
+  );
+  assert.notEqual(legacyLink, created.inviteLink);
+
+  const preview = await app.fetchJson('/invites/preview', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: legacyLink },
+  });
+  assert.equal(preview.invite.result, 'valid');
+
+  const joined = await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: legacyLink },
+  });
+  assert.equal(joined.board.playerCount, 2);
 });
 
 test('future-dated and impossible-date submissions are rejected', async () => {
@@ -728,7 +765,7 @@ async function createApp() {
 
   const env = {
     DB: new D1DatabaseShim(db),
-    PUBLIC_APP_URL: 'https://crosscue.app',
+    PUBLIC_APP_URL: 'https://crosscue.pages.dev',
     APP_ENV: 'test',
   };
 

@@ -1,0 +1,4 @@
+# Apple requires the AASA to be served as application/json directly (no
+# redirect); the file is extensionless so Pages won't infer the type itself.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
