@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <!--
   Web fallback for Crosscue challenge-board invite links.
-  Served at https://crosscue.app/join/<boardId>?token=<secret> for visitors
-  who don't have the app installed (installed apps open natively via App Links /
-  Universal Links and never load this page). See deeplinks/README.md (#203).
+  Served at https://crosscue.pages.dev/join/<boardId>?token=<secret> (and on
+  the crosscue.app apex if it is added later) for visitors who don't have the
+  app installed (installed apps open natively via App Links / Universal Links
+  and never load this page). The /join/* URLs reach this page via the 200
+  rewrite in _redirects. See deeplinks/README.md (#203).
 
   This is a static placeholder: the boardId/token stay in the URL so the visitor
   can retry after installing. No secret is rendered into visible text.

@@ -37,9 +37,12 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts"/>
             <!-- Challenge-board invite App Links (issue #203 / #159):
-                 https://crosscue.app/join/<boardId>?token=...
+                 https://crosscue.pages.dev/join/<boardId>?token=... (live,
+                 Cloudflare Pages) and https://crosscue.app/join/... (apex,
+                 may be added later). Android merges the <data> elements within
+                 the filter, so the scheme/pathPrefix apply to both hosts.
                  autoVerify requires the matching assetlinks.json hosted at
-                 https://crosscue.app/.well-known/assetlinks.json — see
+                 https://<host>/.well-known/assetlinks.json — see
                  deeplinks/README.md. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
@@ -49,6 +52,7 @@
                     android:scheme="https"
                     android:host="crosscue.app"
                     android:pathPrefix="/join"/>
+                <data android:host="crosscue.pages.dev"/>
             </intent-filter>
             <!-- Let the Flutter engine forward verified deep links to go_router
                  instead of only the cold-start intent. -->
