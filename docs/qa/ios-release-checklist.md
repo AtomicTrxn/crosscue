@@ -1,5 +1,8 @@
 # iOS Release QA Checklist
 
+> **Status:** Living. Android counterpart:
+> [`android-release-checklist.md`](android-release-checklist.md).
+
 Run this once per public-facing iOS release (TestFlight external, App Store) on
 both an iPhone and an iPad. Takes ~15 minutes per device once the build is
 installed.

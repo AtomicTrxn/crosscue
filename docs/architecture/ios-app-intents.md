@@ -1,5 +1,9 @@
 # iOS App Intents (Shortcuts / Spotlight / Siri)
 
+> **Status:** Living — as-built reference + verification runbook. Android
+> parity (App Shortcuts) is tracked under
+> [ADR-0015](decisions/0015-platform-parity-policy.md) / P2.
+
 Three intents shipped in #115, no third-party packages (iOS 16 App Intents).
 
 | Intent | Token written | Resolves to |

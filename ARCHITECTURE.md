@@ -17,7 +17,6 @@ lib/
 │   ├── database/                    # Drift DB definition + all tables
 │   ├── domain/models/               # ALL shared domain models: Puzzle, Clue, Grid, SolutionCell,
 │   │                                #   enums, PuzzleMetadata (solve-only models stay in features/solve)
-│   ├── entitlement/                 # License / paywall stubs (all features free)
 │   ├── providers/                   # App-wide Riverpod providers
 │   ├── routing/                     # go_router config + route constants
 │   ├── sync/                        # SyncOrchestrator + per-namespace adapters + transports
@@ -32,6 +31,7 @@ lib/
     ├── archive/                     # Solved puzzles history with sort/filter/delete
     ├── stats/                       # Solve statistics (streaks, times, personal bests)
     ├── settings/                    # App settings screen (theme, haptics, clear data)
+    ├── challenge_boards/            # Private friend leaderboards (the only online feature)
     └── onboarding/                  # 4-step first-launch flow (welcome, source, sync, fetch)
 ```
 
@@ -442,21 +442,25 @@ core/routing/
 └── app_shell.dart   # StatefulShellRoute (4-tab bottom nav)
 ```
 
-**Route hierarchy:**
+**Route hierarchy** (shell tabs: Home · Challenge · Stats · Settings):
 
 | Route | Type | Screen |
 |-------|------|--------|
 | `/` | Shell tab (Home) | `HomeScreen` |
-| `/archive` | Shell tab | `ArchiveScreen` |
+| `/challenge` | Shell tab | Challenge Boards tab |
+| `/challenge/board/:boardId` | Nested under `/challenge` | Board detail |
+| `/challenge/join` | Nested under `/challenge` | Invite preview → join flow |
 | `/stats` | Shell tab | `StatsScreen` |
 | `/settings` | Shell tab | `SettingsScreen` |
 | `/settings/sources` | Nested under `/settings` | `SourceManagementScreen` |
 | `/settings/sources/crosshare` | Nested under `/settings/sources` | `CrosshareSettingsScreen` |
 | `/settings/privacy` | Nested under `/settings` | `PrivacyScreen` |
 | `/settings/sync` | Nested under `/settings` | `SyncSettingsScreen` |
+| `/archive` | Full-page (no shell) | `ArchiveScreen` — reached from Settings |
 | `/onboarding` | Full-page (no shell) | `OnboardingScreen` |
 | `/import` | Full-page (no shell) | `ImportScreen` |
 | `/solve/:puzzleId` | Full-page (no shell) | `SolveScreen` |
+| `/join/:boardId` | Deep-link entry | Forwards to `/challenge/join` (invite links — see `deeplinks/README.md`) |
 
 Navigate to solve: `context.push(Routes.solveFor(Uri.encodeComponent(puzzle.id)))`
 `SolveNotifier` receives: `Uri.decodeComponent(puzzleId)` before DB lookup.
@@ -522,77 +526,49 @@ not exhaustive, to avoid going stale.
 
 ---
 
-## Recent Architectural Decisions
+## Architectural Decisions
 
-- **Crosshare source approval (v1.1, May 2026)**: Crosshare Daily Mini approved
-  as `openLicense`. The source is gated behind the `SourceRegistry` legal guardrail;
-  see `source_registry.dart` and `CONVENTIONS.md` "Source approval documentation".
+Decisions are recorded as ADRs in
+[`docs/architecture/decisions/`](docs/architecture/decisions/README.md) — one
+file per decision with status, context, and consequences. **Do not add
+decision bullets to this file**; write an ADR and link it here in one line.
 
-- **Settings nested routes (v1.1, May 2026)**: Sub-pages under `/settings/sources`,
-  `/settings/sources/crosshare`, and `/settings/privacy` are nested `GoRoute` entries
-  inside the Settings shell branch. Always use absolute `Routes` constants when navigating.
+| ADR | Decision |
+|-----|----------|
+| [0001](docs/architecture/decisions/0001-cell-progress-delete-then-insert.md) | Cell-progress autosave is delete-then-insert |
+| [0002](docs/architecture/decisions/0002-clue-math-single-source.md) | All clue-cell math lives in `ClueProgressCalculator` |
+| [0003](docs/architecture/decisions/0003-shared-settings-row-widgets.md) | Shared settings row widget library |
+| [0004](docs/architecture/decisions/0004-plain-sealed-error-types.md) | Typed load errors are plain sealed classes |
+| [0005](docs/architecture/decisions/0005-runtime-app-version.md) | App version read at runtime, never hardcoded |
+| [0006](docs/architecture/decisions/0006-crosshare-source-approval.md) | Crosshare Daily Mini approved as `openLicense` |
+| [0007](docs/architecture/decisions/0007-settings-nested-routes.md) | Settings sub-pages are nested `GoRoute`s |
+| [0008](docs/architecture/decisions/0008-completion-data-authority.md) | Completion data: hybrid model with named authorities |
+| [0009](docs/architecture/decisions/0009-sync-architecture-and-rollout.md) | Sync: 3-layer orchestrator, per-namespace merge, opt-in rollout |
+| [0010](docs/architecture/decisions/0010-rebus-entry-ux.md) | Rebus entry: NYT-aligned surfaces + first-letter acceptance |
+| [0011](docs/architecture/decisions/0011-widget-background-refresh.md) | Widget background refresh is best-effort, not an observer |
+| [0012](docs/architecture/decisions/0012-challenge-boards-live-compute.md) | Challenge Boards v1: live-compute lifetime + bounded retention |
+| [0013](docs/architecture/decisions/0013-no-monetization.md) | No monetization; entitlement scaffolding removed |
+| [0014](docs/architecture/decisions/0014-reminders-deferred.md) | Reminders deferred; scaffolding removed |
+| [0015](docs/architecture/decisions/0015-platform-parity-policy.md) | Platform parity policy: parity-by-default *(Proposed)* |
+| [0016](docs/architecture/decisions/0016-mixed-version-sync-policy.md) | Mixed-version sync compatibility policy *(Proposed)* |
 
-- **Cell-progress orphan fix (Sprint 1)**: `saveCellProgress` deletes-then-inserts
-  to avoid stale rows when a user backtracks or resets a cell.
+Cross-version contracts (DB schema, sync envelope, Worker API, widget
+payload) are tracked in
+[`docs/architecture/compatibility.md`](docs/architecture/compatibility.md).
 
-- **Clue math consolidation (Sprint 4)**: All clue-cell iteration and word-completion
-  logic lives in `features/solve/domain/services/clue_progress_calculator.dart`.
-  Do not duplicate `_clueCells` / `_isWordComplete` helpers in widgets or notifiers.
+---
 
-- **Settings widget library (Sprint 4)**: Shared row widgets (`SettingsSwitchRow`,
-  `SettingsNavRow`, `SettingsSectionHeader`, `SettingsRowDivider`) live in
-  `features/settings/presentation/widgets/settings_rows.dart`. Use them in all
-  settings-adjacent screens to keep visual consistency.
+## Performance Budgets
 
-- **Freeze-sealed error types (Sprint 4)**: `SolveLoadError` and its subtypes are
-  plain sealed classes in `solve/domain/models/solve_errors.dart`. Presentation
-  switches on error type via `switch (e) { PuzzleNotFoundError() => ..., ... }`.
+Review targets, not measured CI gates. Some are enforced by construction
+(marked ⚙); the rest are aspirational until profiled — treat a change that
+plausibly regresses one as a finding that needs measurement before merge.
 
-- **Runtime app version (Sprint 5)**: `appVersionProvider` in `core_providers.dart`
-  reads the version from `PackageInfo.fromPlatform()`. Never hardcode a version string.
-
-- **Completion data authority (Sprint E, May 2026)**: Hybrid model with named
-  authorities — `SolveState` owns the live solve, `puzzle_completions` owns
-  completion history (stats, streaks, PBs), `solve_sessions` is the resumable
-  session cache for Archive and resume. See
-  [`docs/architecture/completion-authority.md`](docs/architecture/completion-authority.md)
-  for the rules, the round-trip mapping between `PuzzleStatus` and
-  `CompletionType`, the five named divergence windows, and the planned
-  code tightenings.
-
-- **Sync foundation (G5, May 2026)**: Cross-device sync of puzzles,
-  solve sessions, completion history, and a settings allowlist. Local-only
-  build still default; schema v5 adds sync-readiness columns. Per-namespace
-  adapters own merge rules (content-addressable union for puzzles,
-  client-uuid union for completions, LWW + best-progress for sessions, LWW
-  for settings) behind a platform-pluggable `SyncTransport`. See
-  [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md).
-  Sync ships **opt-in (off by default)** — enabled from the onboarding sync
-  step or Settings; there is no default-on flip. The remaining work is
-  operational platform setup (iCloud entitlement / Google Drive OAuth) plus a
-  two-device soak, documented in the sync setup guides under
-  `docs/architecture/`.
-
-- **Sync transports + UI shipped (May–Jun 2026)**: The iCloud transport
-  (`ICloudSyncTransport`, #9 Phase 2) and the Settings + onboarding opt-in UI
-  (#142) shipped, followed by the Google Drive transport
-  (`GoogleDriveSyncTransport`, #145) and Android sign-in wiring (#157). The
-  transport interface gained `signIn()` + `supportsInteractiveSignIn` so the
-  orchestrator's `enable()` can drive an interactive Google prompt while iCloud
-  stays ambient. User-facing copy is platform-generic via
-  `core/sync/sync_service_copy.dart` ("iCloud" on iOS, "Google Drive" on
-  Android). iCloud is live; Android sync stays inert until the Google Cloud
-  OAuth clients exist (see
-  [`docs/architecture/sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)).
-
-- **Widget background refresh (#175, Jun 2026)**: Best-effort daily refresh of
-  the home-screen widget's "today" tile for users who don't open the app —
-  iOS `BGAppRefreshTask` + Android WorkManager via the `workmanager` plugin and
-  a single Dart callback (`core/background/widget_refresh_scheduler.dart`). The
-  headless callback stands up its own `ProviderContainer` and runs the existing
-  `attemptIfNeeded()` + `HomeWidgetService.refresh()`; it reads settings via the
-  repository, never the boot-throwing `bootSettingsProvider`. Scheduled
-  post-first-frame (no cold-start impact), idempotent, and a no-op off-device.
-  Explicitly *not* an observer (the two-observer rule still holds — it runs in a
-  separate isolate). Best-effort by design: iOS controls actual cadence. Setup +
-  caveats in [`docs/architecture/ios-widget-setup.md`](docs/architecture/ios-widget-setup.md).
+| Surface | Budget |
+|---------|--------|
+| Cold start | Nothing new on the launch critical path; background scheduling (widget refresh, sync triggers) runs post-first-frame only ⚙ |
+| Solve input | Keystroke → cell repaint within one frame (~16 ms); the per-second timer tick rebuilds only the timer text (`SolveElapsedSeconds`), never the grid ⚙ |
+| Grid rendering | One `CustomPainter.paint()` pass per frame; no per-cell widgets at any size up to 21×21 ⚙ (see CONVENTIONS.md → Grid Rendering) |
+| Import | 5 MB file cap enforced in parsers ⚙; parse + persist completes without blocking the UI |
+| Incremental sync (unchanged library) | One manifest GET; entity blobs fetched only when the manifest shows a newer remote version ⚙ |
+| Worker leaderboards | One batched aggregation per request — no per-board N+1 (#241) ⚙; keep board-detail payloads mobile-sized (avatar by-reference delivery still open, #237) |

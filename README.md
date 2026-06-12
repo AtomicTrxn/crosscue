@@ -78,10 +78,13 @@ notes.
 
 | Doc | What's inside |
 |-----|---------------|
+| [PRODUCT.md](PRODUCT.md) | Vision, product principles (incl. the online-feature rule), roadmap themes, non-goals |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Commands, architecture summary, and contributor workflow |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, new-feature checklist |
-| [MODELS.md](MODELS.md) | Every domain model, field list, and DB mapping |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, performance budgets, new-feature checklist |
+| [MODELS.md](MODELS.md) | Model semantics and invariants, ID formats, DB mapping |
 | [CONVENTIONS.md](CONVENTIONS.md) | Hard coding rules — Freezed, Riverpod, Drift, routing, legal source guardrail |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, log capture, release pipeline, Play Store checklist |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, log capture, release pipeline, backup/restore, store checklists |
+| [SECURITY.md](SECURITY.md) | Vulnerability disclosure policy |
+| [docs/index.md](docs/index.md) | Index of everything else: ADRs, design docs, runbooks, QA checklists, reviews |
 | [Crosscue Color Guide](design/Crosscue%20Color%20Guide.html) | Current color system reference for light mode, dark mode, and accessibility palettes |
 | [Privacy Policy](https://atomictrxn.github.io/crosscue/privacy.html) | Public privacy policy for Play Store submission |

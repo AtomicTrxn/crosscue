@@ -1,5 +1,8 @@
 # Google Drive sync — one-time setup (Android)
 
+> **Status:** Living — Google Cloud Console runbook; Android sync stays inert
+> until these steps are done.
+
 The Android counterpart to [`sync-icloud-setup.md`](sync-icloud-setup.md).
 `GoogleDriveSyncTransport` (`core/sync/transport/google_drive_sync_transport.dart`)
 stores blobs in the app's hidden **AppData** folder via the Drive API. Until

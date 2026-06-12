@@ -6,11 +6,13 @@ Before writing code, read these docs in order:
 
 | Doc | What it covers |
 |-----|---------------|
+| [PRODUCT.md](PRODUCT.md) | What the app is for — principles a feature must satisfy before it's worth building |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, new-feature checklist |
 | [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues) | Open, planned, and deferred work |
-| [MODELS.md](MODELS.md) | Domain models, field lists, database mappings, ID formats |
+| [MODELS.md](MODELS.md) | Model semantics and invariants, database mappings, ID formats |
 | [CONVENTIONS.md](CONVENTIONS.md) | Project coding rules |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Build, run, install, release, and debugging notes |
+| [ADRs](docs/architecture/decisions/README.md) | Architecture decision records — significant decisions add an ADR, not a doc bullet |
 
 ## Commands
 

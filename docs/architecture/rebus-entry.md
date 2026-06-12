@@ -1,10 +1,11 @@
 # Rebus Entry (G6) — Implementation Plan
 
+> **Status:** Historical — shipped; this is the plan of record, not edited
+> further. Decision record: [ADR-0010](decisions/0010-rebus-entry-ux.md).
 > Tracks [#8 (G6)](https://github.com/AtomicTrxn/crosscue/issues/8): _Rebus entry — editable multi-letter cells._
-> Companion doc to `ARCHITECTURE.md`. **Status: shipped** — this is the
-> historical plan of record. The feature is live (Rebus key + long-press +
-> `Esc`, first-letter acceptance, autoshrink rendering); see "Feature: solve"
-> in `ARCHITECTURE.md` for the as-built summary.
+> Companion doc to `ARCHITECTURE.md`. The feature is live (Rebus key +
+> long-press + `Esc`, first-letter acceptance, autoshrink rendering); see
+> "Feature: solve" in `ARCHITECTURE.md` for the as-built summary.
 
 ## 1. Goal
 

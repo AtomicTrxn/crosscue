@@ -1,5 +1,8 @@
 # Codebase Review — 2026-06-10
 
+> **Status:** Living tracker — the Status column is updated as findings land;
+> flips to Historical when all findings close.
+
 Full review of coding style, architecture, logic, security, cloud usage, and
 maintainability. This file tracks each finding to resolution; update the
 Status column as items land (reference the PR).

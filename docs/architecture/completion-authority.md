@@ -1,5 +1,7 @@
 # Completion data authority
 
+> **Status:** Living — updated when the rules below change. Decision record:
+> [ADR-0008](decisions/0008-completion-data-authority.md).
 > Closes [#59 (E5)](https://github.com/AtomicTrxn/crosscue/issues/59).
 > Companion doc to `ARCHITECTURE.md`. Updated when the rules below change.
 
