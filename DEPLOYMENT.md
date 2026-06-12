@@ -733,11 +733,13 @@ Human review is required before publishing — this is not legal advice.
 - [x] In-app `Settings → Privacy & Data → Privacy policy` opens the public
       URL via `url_launcher` (see [privacy_screen.dart](crosscue/lib/features/settings/presentation/screens/privacy_screen.dart)).
 - [x] Privacy policy URL filed in Play Console → App Content → Privacy Policy.
-- [ ] **Every release where `docs/privacy.md` changed:** regenerate the
-      published `privacy.html` from it before submitting.
-      [`docs/privacy.md`](docs/privacy.md) is the **source of truth**; the
-      GitHub Pages copy is a derived artifact and the two must never diverge
-      (they are the same legal document filed with both stores).
+- [ ] **Every release where `docs/privacy.md` changed:** verify the live
+      page picked up the change before submitting.
+      [`docs/privacy.md`](docs/privacy.md) is the **single source** — GitHub
+      Pages builds from `main:/docs` (Jekyll), publishing it as
+      `privacy.html` automatically when the change merges to main. There is
+      no separate copy to update; just confirm the published page renders
+      the new effective date.
 
 ### Play Console — Data Safety form
 Crosscue current-release answers:
@@ -806,9 +808,10 @@ Human review is required before publishing — this is not legal advice.
 - [x] Published at `https://atomictrxn.github.io/crosscue/privacy.html`.
 - [x] In-app Settings → Privacy & Data → Privacy policy opens it via `url_launcher`.
 - [x] URL filed in App Store Connect → App Privacy.
-- [ ] **Every release where `docs/privacy.md` changed:** regenerate the
-      published `privacy.html` from it before submitting (same rule as the
-      Play checklist — `docs/privacy.md` is the source of truth).
+- [ ] **Every release where `docs/privacy.md` changed:** verify the live
+      page picked up the change before submitting (same rule as the Play
+      checklist — GitHub Pages publishes `docs/privacy.md` automatically on
+      merge to main).
 
 ### App Store Connect — App Privacy form
 Crosscue current-release answers (mirrors Play Console):

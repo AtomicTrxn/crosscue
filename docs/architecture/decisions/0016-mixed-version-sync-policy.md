@@ -1,7 +1,8 @@
 # ADR-0016 — Mixed-version sync compatibility policy
 
-**Status:** Proposed (awaiting owner sign-off; implementation is a tracked
-code task) · **Date:** 2026-06-11
+**Status:** Accepted · **Date:** 2026-06-11 — the rule-3 behavior
+(stop-pushing + update notice) is implemented via a tracked GitHub issue and
+is a prerequisite for any `currentSchemaVersion` bump
 
 ## Context
 

@@ -1,36 +1,47 @@
-# ADR-0015 — Platform parity policy: parity-by-default
+# ADR-0015 — Platform parity policy: parity required across all app targets
 
-**Status:** Proposed (awaiting owner sign-off) · **Date:** 2026-06-11
+**Status:** Accepted · **Date:** 2026-06-11 (decided by owner; the original
+draft proposed a weaker "parity-by-default with a lag window" — rejected in
+favor of required parity)
 
 ## Context
 
 iOS has accumulated user-visible features Android lacks: the WidgetKit
 home/lock-screen widget (P1), App Intents / Shortcuts / Siri (P2), and a
-branded share sheet (P3). Nothing states whether iOS-first is deliberate, so
-each gap reads as an accident and there is no clock on closing any of them.
+branded share sheet (P3). Nothing stated whether iOS-first was deliberate, so
+each gap read as an accident with no clock on closing it.
 
 ## Decision
 
-**Parity-by-default**, with a defined exception path:
+**Platform parity is required.** All app targets — currently **iOS and
+Android** — stay in parity:
 
-1. A user-visible feature ships on **both platforms together** unless its
-   surface is platform-specific (WidgetKit, App Intents, Live Activities,
-   Material You, Quick Settings tiles, …).
-2. When a platform-specific surface ships first, a **parity issue is filed at
-   ship time** describing the closest equivalent (e.g., Glance widget, App
-   Shortcuts) with a target of **≤ 2 minor releases** lag. Missing the target
-   needs an explicit note on the issue, not silence.
-3. **Cosmetic enrichments** (e.g., the branded iOS share preview vs. plain
-   `share_plus`) are exempt from the clock but still tracked.
-4. Features intentionally exclusive to one platform forever must be listed in
-   `PRODUCT.md` non-goals (none exist today; sync *backends* differ by design
-   but the sync feature itself has parity).
+1. A user-visible feature ships only when it works on **every app target**.
+   No staggered releases, no "iOS-first with a parity issue filed."
+2. When a feature uses a platform-specific surface (WidgetKit, App Intents,
+   Live Activities, Material You, …), its closest equivalent on the other
+   platform (Glance widget, App Shortcuts, …) ships **in the same release**.
+   If no reasonable equivalent exists, the feature waits or is redesigned —
+   it does not ship one-sided.
+3. The bar is **functional parity**: platform-native polish on top of a
+   function both platforms have (e.g., the branded iOS share preview vs.
+   plain `share_plus` — P3) is acceptable, but the function itself must
+   exist everywhere.
+4. Implementation may differ per platform by design (iCloud vs. Google Drive
+   sync backends) as long as the user-facing feature is equivalent.
+5. New app targets (desktop, web, …) join the parity set only via a new ADR
+   that supersedes this one; until then "all app targets" means iOS +
+   Android.
 
 ## Consequences
 
-- P1 (Android Glance widget — the WorkManager plumbing already runs and
-  pushes to nothing) and P2 (Android App Shortcuts for the same three
-  intents) become scheduled debt with the policy clock started at this ADR's
-  acceptance.
-- "Which platform do we build for first?" becomes a checklist answer instead
-  of a per-feature debate.
+- **P1 (Android home-screen widget)** and **P2 (Android App Shortcuts for
+  the three intents)** are now policy violations, not optional polish —
+  they are the standing parity debt to close, and no new feature may widen
+  the gap. The WorkManager plumbing for P1 already runs on Android and
+  currently pushes to nothing.
+- Feature planning budgets both platforms from the start; "which platform
+  first?" is no longer a question.
+- Every feature release runs **both** QA checklists
+  (`docs/qa/ios-release-checklist.md` and
+  `docs/qa/android-release-checklist.md`).

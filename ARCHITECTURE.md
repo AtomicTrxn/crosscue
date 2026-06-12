@@ -549,8 +549,8 @@ decision bullets to this file**; write an ADR and link it here in one line.
 | [0012](docs/architecture/decisions/0012-challenge-boards-live-compute.md) | Challenge Boards v1: live-compute lifetime + bounded retention |
 | [0013](docs/architecture/decisions/0013-no-monetization.md) | No monetization; entitlement scaffolding removed |
 | [0014](docs/architecture/decisions/0014-reminders-deferred.md) | Reminders deferred; scaffolding removed |
-| [0015](docs/architecture/decisions/0015-platform-parity-policy.md) | Platform parity policy: parity-by-default *(Proposed)* |
-| [0016](docs/architecture/decisions/0016-mixed-version-sync-policy.md) | Mixed-version sync compatibility policy *(Proposed)* |
+| [0015](docs/architecture/decisions/0015-platform-parity-policy.md) | Platform parity required across all app targets |
+| [0016](docs/architecture/decisions/0016-mixed-version-sync-policy.md) | Mixed-version sync compatibility policy |
 
 Cross-version contracts (DB schema, sync envelope, Worker API, widget
 payload) are tracked in
