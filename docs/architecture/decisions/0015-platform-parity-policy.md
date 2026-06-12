@@ -35,11 +35,12 @@ Android** — stay in parity:
 
 ## Consequences
 
-- **P1 (Android home-screen widget)** and **P2 (Android App Shortcuts for
-  the three intents)** are now policy violations, not optional polish —
-  they are the standing parity debt to close, and no new feature may widen
-  the gap. The WorkManager plumbing for P1 already runs on Android and
-  currently pushes to nothing.
+- **P1 and P2 are already closed** (correction 2026-06-12: the Android
+  home-screen widget shipped in #223 and Android App Shortcuts in #225,
+  both in the v1.4 cycle — the context above described the 2026-06-07
+  snapshot). P3, the branded iOS share preview, is permitted cosmetic
+  polish under rule 3. No standing parity debt exists at acceptance time;
+  the policy's job is to keep it that way.
 - Feature planning budgets both platforms from the start; "which platform
   first?" is no longer a question.
 - Every feature release runs **both** QA checklists

@@ -57,7 +57,7 @@ Issues should serve a theme; themes are priorities, not dates.
 |---|---|---|
 | **Solver depth** | Mechanics that reward daily use: pencil mode, better clue navigation, puzzle-format coverage (`.jpz` decision pending) | `EntryMode.pencil` reserved enum |
 | **Social** | Challenge Boards productionization and follow-ons (activity feed, more sources) | #159 workstreams, deep links |
-| **Platform parity** | Android widget + App Shortcuts; keeping the two stores equivalent | P1/P2 from the 2026-06-07 analysis |
+| **Platform parity** | Keeping the two stores equivalent (required — ADR-0015); Android widget + App Shortcuts shipped in v1.4 (#223/#225) | — |
 | **Content sources** | New legally-cleared puzzle feeds; resilience of existing ones | Crosshare canary, source registry |
 | **Retention / habit** | Streak mechanics; local-only reminders if revisited ([ADR-0014](docs/architecture/decisions/0014-reminders-deferred.md)) | — |
 | **Trust & operations** | Privacy posture, server hardening, backup/restore, compatibility guarantees | `docs/architecture/compatibility.md`, threat model |

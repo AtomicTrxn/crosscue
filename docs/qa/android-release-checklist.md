@@ -128,10 +128,19 @@ Android CI leg is tracked work (design review 2026-06-11 §5.4).
   separate procedure — `sync-icloud-setup.md` Step 5 pattern)
 - [ ] While inert (no OAuth clients): the toggle fails gracefully, no crash
 
-## 13. Home-screen widget
+## 13. Home-screen widget & App Shortcuts
 
-- [ ] **N/A — no Android widget exists yet** (parity debt, ADR-0015 / P1).
-  When the Glance widget ships, mirror iOS checklist §11 here.
+The Android widget (`CrosscueWidgetProvider`, #223) and App Shortcuts (#225)
+shipped in v1.4 — parity with iOS per ADR-0015.
+
+- [ ] Add the Crosscue widget to the home screen → shows current streak +
+  today's puzzle; empty library renders a sane placeholder, no crash
+- [ ] Tap the widget → app opens to today's puzzle
+- [ ] On-open refresh: open the app on a new day → the tile updates
+- [ ] (Best-effort, may not fire) WorkManager background refresh overnight —
+  a stale tile after a long gap is OS throttling, not a regression
+- [ ] Long-press the launcher icon → three shortcuts (today's puzzle, stats,
+  continue) appear and land on the right screens from cold and warm start
 
 ---
 
