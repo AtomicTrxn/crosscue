@@ -8,6 +8,11 @@ export interface Env {
   // bindings configured skip limiting rather than crashing.
   RL_IDENTITY?: RateLimiter;
   RL_WRITE?: RateLimiter;
+  // Force-upgrade lever (#256): minimum supported client version ("X.Y.Z").
+  // Optional — unset (local/tests/default) disables enforcement entirely.
+  // Setting it also cuts off app versions that predate the X-Crosscue-Client
+  // header; that is the intended lever, enable deliberately.
+  MIN_SUPPORTED_CLIENT?: string;
 }
 
 export interface RateLimiter {

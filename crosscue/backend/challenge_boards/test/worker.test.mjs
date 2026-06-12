@@ -746,6 +746,44 @@ test('rate limiter blocks requests over the limit', async () => {
   assert.equal(error.error.code, 'rate_limited');
 });
 
+test('minimum-client gate rejects old, missing, and garbage versions (#256)', async () => {
+  // Unset minimum (the default everywhere today) → no enforcement, even
+  // without the header — all currently fielded clients keep working.
+  const open = await createApp();
+  await open.bootstrap('Maya');
+
+  const gated = await createApp({ MIN_SUPPORTED_CLIENT: '1.4.3' });
+  const expectTooOld = async (headers) => {
+    const error = await gated.fetchJson('/players/bootstrap', {
+      method: 'POST',
+      body: { displayName: 'Maya' },
+      status: 426,
+      headers,
+    });
+    assert.equal(error.error.code, 'client_too_old');
+  };
+  await expectTooOld(undefined); // pre-header clients
+  await expectTooOld({ 'x-crosscue-client': 'ios/1.4.2' }); // older patch
+  await expectTooOld({ 'x-crosscue-client': 'ios/1.3.9' }); // older minor
+  await expectTooOld({ 'x-crosscue-client': 'garbage' }); // unparsable
+
+  // Equal and newer versions pass, on any route.
+  const maya = await gated.fetchJson('/players/bootstrap', {
+    method: 'POST',
+    body: { displayName: 'Maya' },
+    headers: { 'x-crosscue-client': 'ios/1.4.3' },
+  });
+  await gated.fetchJson('/boards', {
+    token: maya.authToken,
+    headers: { 'x-crosscue-client': 'android/2.0.0' },
+  });
+
+  // A malformed minimum must never take the API down — enforcement is
+  // silently skipped rather than rejecting everyone.
+  const misconfigured = await createApp({ MIN_SUPPORTED_CLIENT: 'oops' });
+  await misconfigured.bootstrap('Maya');
+});
+
 function currentUtcDateOnly() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -756,7 +794,7 @@ function previousUtcWeekDateOnly() {
   return date.toISOString().slice(0, 10);
 }
 
-async function createApp() {
+async function createApp(envOverrides = {}) {
   const db = new DatabaseSync(':memory:');
   const migrationsDir = new URL('../migrations/', import.meta.url);
   for (const file of readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
@@ -767,6 +805,7 @@ async function createApp() {
     DB: new D1DatabaseShim(db),
     PUBLIC_APP_URL: 'https://crosscue.pages.dev',
     APP_ENV: 'test',
+    ...envOverrides,
   };
 
   return {
@@ -802,6 +841,9 @@ async function createApp() {
     async fetchJson(path, options = {}) {
       const headers = new Headers({ 'content-type': 'application/json' });
       if (options.token) headers.set('authorization', `Bearer ${options.token}`);
+      for (const [name, value] of Object.entries(options.headers ?? {})) {
+        headers.set(name, value);
+      }
       const response = await worker.fetch(
         new Request(`${apiBase}${path}`, {
           method: options.method ?? 'GET',

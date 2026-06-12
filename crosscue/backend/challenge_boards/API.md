@@ -24,6 +24,34 @@ limit returns `429` with code `rate_limited`. Display names are validated
 server-side for length (10), allowed characters, reserved handles, and a
 profanity/slur blocklist; rejections return `400 invalid_display_name`.
 
+## Client identity & minimum version (#256)
+
+Clients send their identity on **every** request (shipped since app v1.4.3):
+
+```http
+X-Crosscue-Client: <platform>/<semver>     # e.g. ios/1.4.3, android/1.4.3
+```
+
+When the Worker's optional `MIN_SUPPORTED_CLIENT` var (`wrangler.toml`,
+format `X.Y.Z`) is set, any request whose header semver is missing,
+unparsable, or lower than the minimum is rejected — on every route,
+including identity creation — with:
+
+```http
+426 Upgrade Required
+```
+
+```json
+{ "error": { "code": "client_too_old", "message": "…", "requestId": "…" } }
+```
+
+The app renders this as a persistent "Update Crosscue" state on the
+Challenge tab (everything offline is unaffected), and the result outbox
+holds entries rather than dropping them. Unset (the default in every
+environment) means no enforcement. Setting the var also cuts off app
+versions that predate the header (< v1.4.3) — that is the intended
+force-upgrade/kill-switch lever; enable deliberately, staging first.
+
 ## Player
 
 `POST /players/bootstrap`

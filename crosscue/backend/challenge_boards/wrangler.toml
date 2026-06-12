@@ -7,6 +7,13 @@ APP_ENV = "local"
 # Host that serves invite links (Cloudflare Pages project `crosscue`). If that
 # project name is ever taken/renamed, update PUBLIC_APP_URL in all three envs.
 PUBLIC_APP_URL = "https://crosscue.pages.dev"
+# Force-upgrade lever (#256): set to reject clients below this version with a
+# structured 426 client_too_old (the app shows "update Crosscue" on the
+# Challenge tab). Unset = no enforcement. WARNING: enabling it also cuts off
+# app versions that predate the X-Crosscue-Client header (< v1.4.3) — that is
+# the intended lever; enable per env by adding MIN_SUPPORTED_CLIENT to its
+# vars, staging first.
+# MIN_SUPPORTED_CLIENT = "1.4.3"
 
 # Workers Logs/Traces (#159 workstream E4). Logs are structured JSON and never
 # include tokens, recovery/invite secrets, or full invite URLs.

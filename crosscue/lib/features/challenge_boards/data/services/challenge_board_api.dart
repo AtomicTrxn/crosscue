@@ -11,18 +11,41 @@ class ChallengeBoardApi {
     required Dio dio,
     required ChallengeIdentityStore identityStore,
     required String baseUrl,
+    String? clientIdentity,
   })  : _dio = dio,
         _identityStore = identityStore,
-        _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), '');
+        _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
+        _clientIdentity = clientIdentity;
 
   final Dio _dio;
   final ChallengeIdentityStore _identityStore;
   final String _baseUrl;
 
+  /// `<platform>/<semver>` identity sent as [clientHeaderName] on every
+  /// request so the Worker's minimum-client gate can act on it (#256).
+  final String? _clientIdentity;
+
+  /// Wire header for the Worker's force-upgrade lever (#256).
+  static const clientHeaderName = 'x-crosscue-client';
+
+  /// True when [error] is the Worker's structured 426 `client_too_old`
+  /// response — the UI should ask the user to update Crosscue rather than
+  /// offer a retry (#256).
+  static bool isClientTooOld(Object error) =>
+      error is DioException && error.response?.statusCode == 426;
+
+  Map<String, String> get _clientHeaders => switch (_clientIdentity) {
+        null => const {},
+        final identity => {clientHeaderName: identity},
+      };
+
+  Options _clientOptions() => Options(headers: {..._clientHeaders});
+
   Future<Player> bootstrap({String displayName = 'Player'}) async {
     final response = await _dio.post<Object?>(
       '$_baseUrl/players/bootstrap',
       data: {'displayName': displayName},
+      options: _clientOptions(),
     );
     final data = _dataMap(response);
     final player = _player(data['player'], isMe: true);
@@ -46,6 +69,7 @@ class ChallengeBoardApi {
         'playerId': bundle.playerId,
         'recoverySecret': bundle.recoverySecret,
       },
+      options: _clientOptions(),
     );
     final data = _dataMap(response);
     final player = _player(data['player'], isMe: true);
@@ -210,7 +234,10 @@ class ChallengeBoardApi {
     await _dio.delete<Object?>(
       '$_baseUrl/players/me',
       options: Options(
-        headers: {'authorization': 'Bearer ${identity.authToken}'},
+        headers: {
+          'authorization': 'Bearer ${identity.authToken}',
+          ..._clientHeaders,
+        },
       ),
     );
     await _identityStore.clear();
@@ -233,7 +260,9 @@ class ChallengeBoardApi {
     if (token == null) {
       throw const ChallengeApiException('missing_identity');
     }
-    return Options(headers: {'authorization': 'Bearer $token'});
+    return Options(
+      headers: {'authorization': 'Bearer $token', ..._clientHeaders},
+    );
   }
 
   Map<String, Object?> _dataMap(Response<Object?> response) {
