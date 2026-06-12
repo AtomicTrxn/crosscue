@@ -49,7 +49,7 @@ What Pages serves:
 - `join.html` → rendered for `https://crosscue.pages.dev/join/*` requests
   **from browsers without the app** (installed apps intercept the URL before
   the page loads). **`_redirects`** contains a single 200 rewrite
-  (`/join/* /join.html 200`) so any `/join/<boardId>` URL serves the fallback
+  (`/join/* /join 200`) so any `/join/<boardId>` URL serves the fallback
   page while the `boardId`/`token` stay in the URL — the visitor can retry the
   same link after installing.
 
