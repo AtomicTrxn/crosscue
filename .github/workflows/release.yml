@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Check out tag
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
 
@@ -68,14 +68,14 @@ jobs:
           echo "tag=$TAG"      >> "$GITHUB_OUTPUT"
 
       - name: Set up Java
-        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@44ac965b96f18d999802d4b807e3256d5a3f9fa1 # v2.16.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
@@ -125,7 +125,7 @@ jobs:
             --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: crosscue-android-${{ steps.version.outputs.name }}
           path: crosscue/build/app/outputs/flutter-apk/app-release.apk
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload AAB artifact
         if: ${{ inputs.play_store == true }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: crosscue-android-aab-${{ steps.version.outputs.name }}
           path: crosscue/build/app/outputs/bundle/release/app-release.aab
@@ -161,7 +161,7 @@ jobs:
 
     steps:
       - name: Check out tag
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
 
@@ -185,7 +185,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@44ac965b96f18d999802d4b807e3256d5a3f9fa1 # v2.16.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
@@ -316,14 +316,14 @@ jobs:
 
     steps:
       - name: Download Android artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: crosscue-android-*
           path: artifacts
           merge-multiple: true
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@a6c7483a42ee9d5daced968f6c217562cd680f7f # v2.0.0
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ inputs.tag }}
           name: Crosscue ${{ inputs.tag }}
