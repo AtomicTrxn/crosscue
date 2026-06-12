@@ -1,90 +1,142 @@
 # Crosscue
 
-**Your crossword puzzles. Your device. No strings attached.**
+**A crossword app for people who want the puzzle, not the strings attached.**
 
-Crosscue is a crossword solver for iOS and Android — built for people who want a clean, capable solver that stays out of their way. No subscription. No account. Your puzzles and progress live on your device.
-
----
-
-## What It Does
-
-Import a `.puz` or `.ipuz` file from anywhere on your phone and start solving immediately. Crosscue also lets you download supported daily minis directly in the app. Crosscue handles the rest:
-
-- **Full interactive grid** — tap a cell to start, tap again to flip direction, swipe or use arrow keys to move
-- **Physical and on-screen keyboard** — works with Bluetooth keyboards and the soft keyboard alike
-- **Check & reveal** — check a letter, word, or the full grid; reveal when you're stuck; mistakes are tracked separately from reveals
-- **Auto-save** — close the app mid-solve and pick up exactly where you left off, timer included
-- **Rebus support** — multi-letter entries parsed and displayed correctly
-- **Archive & stats** — every completed puzzle recorded with time, date, and solve method; streaks tracked per local calendar date
-- **Colorblind mode** — deuteranopia-friendly blue/orange verification colors with `✓` / `✗` symbols, not color alone
-- **Light, dark, and system theme**
-- **Optional iCloud sync (iOS)** — opt in to keep puzzles, progress, and stats in sync across your devices through your own private iCloud account
-- **Optional Challenge Boards** — private, invite-only leaderboards for daily minis with friends; anonymous (no account, a 10-character handle), opt-in, and deletable in-app
+Crosscue is a fast, privacy-first crossword solver for iOS and Android. Import
+your own `.puz` or `.ipuz` files, grab supported daily minis, chase your
+streak, compare times with friends, and keep solving even when the network is
+gone. No account. No ads. No analytics. Your puzzles stay yours.
 
 ---
 
-## Offline by Design
+## Why It Exists
 
-Crosscue stores puzzles, progress, history, and stats locally in a SQLite
-database on your device. There is no account, advertising, or analytics. When
-you choose to download a puzzle from an online source, the app makes the
-network request needed to fetch that puzzle.
+Most crossword apps make you bring a subscription, an account, or a tolerance
+for tracking. Crosscue tries to be the opposite: a serious solver that feels
+light, capable, and a little playful.
 
-Sync is **off by default and account-free**: if you turn on iCloud sync (iOS),
-your data moves directly between your devices and your own private iCloud
-account — it never passes through a Crosscue server.
+It is built for the daily mini person, the Sunday-puzzle person, the
+Bluetooth-keyboard person, and the "please just let me solve in peace" person.
 
-The one server in the picture is the optional **Challenge Boards** feature: if
-you join a board, your solve times and chosen display name go to a minimal
-Crosscue-operated service (a Cloudflare Worker) so friends can compare times.
-It is anonymous, opt-in, and fully deletable from Settings; nothing else the
-app does touches it. Details in the [privacy policy](docs/privacy.md).
+## What You Can Do
 
----
+- **Solve real crossword files**: import `.puz` and `.ipuz` puzzles from your
+  device, files app, messages, or wherever your puzzles live.
+- **Download supported daily minis**: Crosshare daily minis can be pulled right
+  into the app, with author credit and source links.
+- **Use a proper crossword grid**: tap to move, tap again to switch direction,
+  swipe, type on-screen, or plug in a hardware keyboard.
+- **Check or reveal without losing the thread**: check a letter, word, or full
+  grid; reveal when you want help; keep mistakes and reveals distinct.
+- **Pick up exactly where you left off**: autosave preserves grid progress,
+  focus, and timer state.
+- **Solve rebus puzzles**: multi-letter cells are parsed, displayed, entered,
+  and saved correctly.
+- **Track the habit**: archive, stats, streaks, completion history, best times,
+  and shareable results are all local-first.
+- **Make it readable**: light, dark, system theme, colorblind-friendly
+  verification colors, and VoiceOver support across the solve screen.
+- **Glance and jump back in**: Home/Lock-screen widgets show your streak and
+  today's puzzle; shortcuts can open today's puzzle, stats, or your last solve.
+- **Sync only if you ask**: iOS uses your private iCloud container; Android uses
+  your Google Drive AppData space. Crosscue does not run a sync server.
+- **Challenge friends privately**: optional invite-only Challenge Boards let a
+  small group compare daily-mini times with pseudonymous handles and avatars.
 
-## Status
+## Privacy, Plainly
 
-**Available on iOS and Android.** Core solving, importing, persistence, archive, stats, settings, and onboarding are feature-complete on both platforms. Active development is tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
+Crosscue's default mode is offline. Puzzles, progress, stats, settings, and
+history live in a local SQLite database on your device.
 
----
+Network access happens only for things you choose:
+
+- downloading a puzzle from an online source,
+- enabling cloud sync through your own iCloud or Google account,
+- joining an optional Challenge Board.
+
+Challenge Boards are the one Crosscue-operated online service. They are
+private, invite-only, pseudonymous, and deletable in-app. They store only the
+board data needed to compare times with friends. The rest of the app keeps
+working if you never touch them.
+
+Read the public [privacy policy](https://atomictrxn.github.io/crosscue/privacy.html)
+or the source doc at [docs/privacy.md](docs/privacy.md).
+
+## Current State
+
+Crosscue is actively developed and available on iOS and Android builds.
+
+Core solving, import, archive, stats, settings, widgets, shortcuts, optional
+sync, and Challenge Boards are implemented. The project is now mostly in the
+"make it sturdier, smoother, and store-ready" phase: release QA, platform
+polish, backend hardening, dependency updates, and follow-on features are
+tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
+
+Current app version in source: `1.4.2+10402`.
 
 ## Get Started
 
 ### iOS
 
-Install via TestFlight (beta) — invite available on request — or wait for the
-App Store release.
+Install via TestFlight while the App Store release is being prepared, or build
+locally with Flutter and Xcode.
 
 ### Android
 
-Sideload the latest APK from [Releases](../../releases), or join the Play
-Store closed test (public production listing pending).
+Sideload a debug or release APK, use the Play closed test when available, or
+build locally with Flutter and Android Studio tooling.
 
-### Build from source
+### Build From Source
 
 ```bash
 cd crosscue
 flutter pub get
-flutter run                    # uses whichever device/simulator is connected
-flutter run -d <device-id>     # explicit device — see `flutter devices`
+flutter run
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for iOS-specific simulator + build + signing
-notes.
+Pick an explicit device when you have more than one attached:
 
----
+```bash
+flutter devices
+flutter run -d <device-id>
+```
+
+Run the main verification pipeline from the repo root:
+
+```bash
+make ci
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for signing, simulator/device installs,
+release builds, log capture, and store-checklist details.
+
+## Project Map
+
+```text
+crosscue/                         Flutter app
+crosscue/backend/challenge_boards Cloudflare Worker for Challenge Boards
+deeplinks/                        Universal/App Links hosting files
+docs/                             ADRs, QA checklists, runbooks, reviews
+design/                           Store assets and color references
+```
 
 ## Developer Docs
 
 | Doc | What's inside |
 |-----|---------------|
-| [PRODUCT.md](PRODUCT.md) | Vision, product principles (incl. the online-feature rule), roadmap themes, non-goals |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Commands, architecture summary, and contributor workflow |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, performance budgets, new-feature checklist |
-| [MODELS.md](MODELS.md) | Model semantics and invariants, ID formats, DB mapping |
-| [CONVENTIONS.md](CONVENTIONS.md) | Hard coding rules — Freezed, Riverpod, Drift, routing, legal source guardrail |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, log capture, release pipeline, backup/restore, store checklists |
+| [PRODUCT.md](PRODUCT.md) | Vision, product principles, roadmap themes, non-goals |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Commands, architecture summary, contributor workflow |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Layer rules, feature structure, data flow, performance budgets |
+| [MODELS.md](MODELS.md) | Model semantics, invariants, ID formats, DB mapping |
+| [CONVENTIONS.md](CONVENTIONS.md) | Coding rules for Freezed, Riverpod, Drift, routing, source licensing |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Build, install, release, signing, backup/restore, store checklists |
 | [SECURITY.md](SECURITY.md) | Vulnerability disclosure policy |
-| [docs/index.md](docs/index.md) | Index of everything else: ADRs, design docs, runbooks, QA checklists, reviews |
-| [Crosscue Color Guide](design/Crosscue%20Color%20Guide.html) | Current color system reference for light mode, dark mode, and accessibility palettes |
-| [Privacy Policy](https://atomictrxn.github.io/crosscue/privacy.html) | Public privacy policy for Play Store submission |
+| [docs/index.md](docs/index.md) | Index for ADRs, design docs, runbooks, QA, reviews, policies |
+| [Crosscue Color Guide](design/Crosscue%20Color%20Guide.html) | Current color system reference |
+| [Challenge Boards Worker](crosscue/backend/challenge_boards/README.md) | Backend setup and local development |
+
+## The Vibe
+
+Crosscue is opinionated in a quiet way: offline first, privacy first, solve
+quality first. It wants to be the app you can open every morning without
+negotiating with anything except the clues.
