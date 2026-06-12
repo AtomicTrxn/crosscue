@@ -16,6 +16,7 @@ import {
   ApiError,
   clientIp,
   corsHeaders,
+  enforceMinClient,
   enforceRateLimit,
   json,
   problem,
@@ -43,6 +44,10 @@ export default {
     const requestId =
       request.headers.get("x-request-id") ?? crypto.randomUUID();
     try {
+      // Force-upgrade lever (#256) — gates every route, including identity
+      // creation, when MIN_SUPPORTED_CLIENT is configured.
+      enforceMinClient(request, env.MIN_SUPPORTED_CLIENT);
+
       const url = new URL(request.url);
       const route = `${request.method} ${url.pathname}`;
 

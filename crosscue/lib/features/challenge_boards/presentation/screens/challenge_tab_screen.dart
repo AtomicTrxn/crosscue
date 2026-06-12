@@ -63,7 +63,22 @@ class ChallengeTabScreen extends StatelessWidget {
       case LoadStatus.loading:
         return const [WeeklyLoading()];
       case LoadStatus.error:
-        return [_ErrorCard(onRetry: onRefresh)];
+        // requiresUpdate: the Worker rejected this app version (426, #256) —
+        // retrying can't help, only updating the app can. Persistent by
+        // nature: every reload re-yields this state until the app updates.
+        return [
+          if (boards.requiresUpdate)
+            const _ErrorCard(
+              icon: Icons.system_update_alt_rounded,
+              title: 'Update Crosscue to keep competing',
+              message: 'This version of the app is no longer supported by '
+                  'Challenge Boards. Your boards and results are safe — '
+                  'update Crosscue to see them.',
+              showRetry: false,
+            )
+          else
+            _ErrorCard(onRetry: onRefresh),
+        ];
       case LoadStatus.offline:
       case LoadStatus.data:
         final list = boards.data ?? const <Board>[];
@@ -176,7 +191,20 @@ class _Header extends StatelessWidget {
 
 class _ErrorCard extends StatelessWidget {
   final Future<void> Function()? onRetry;
-  const _ErrorCard({this.onRetry});
+  final IconData icon;
+  final String title;
+  final String message;
+
+  /// Hidden on the client-too-old card (#256) — retrying can't help there.
+  final bool showRetry;
+  const _ErrorCard({
+    this.onRetry,
+    this.icon = Icons.error_outline_rounded,
+    this.title = 'Couldn’t load your boards',
+    this.message =
+        'Check your connection and try again. Your standings are safe.',
+    this.showRetry = true,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -196,30 +224,33 @@ class _ErrorCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.error_outline_rounded,
+              icon,
               size: 24,
               color: AppColors.incorrect(context),
             ),
           ),
           const SizedBox(height: 14),
           Text(
-            'Couldn’t load your boards',
+            title,
+            textAlign: TextAlign.center,
             style: AppTextStyles.titleMedium
                 .copyWith(fontSize: 16, color: AppColors.onSurface1(context)),
           ),
           const SizedBox(height: 6),
           Text(
-            'Check your connection and try again. Your standings are safe.',
+            message,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium
                 .copyWith(color: AppColors.onSurface2(context)),
           ),
-          const SizedBox(height: 18),
-          OutlinedButton.icon(
-            onPressed: () => onRetry?.call(),
-            icon: const Icon(Icons.refresh_rounded, size: 17),
-            label: const Text('Retry'),
-          ),
+          if (showRetry) ...[
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: () => onRetry?.call(),
+              icon: const Icon(Icons.refresh_rounded, size: 17),
+              label: const Text('Retry'),
+            ),
+          ],
         ],
       ),
     );

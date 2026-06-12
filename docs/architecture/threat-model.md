@@ -50,6 +50,7 @@ table is a known trade-off, not a gap.
 | Offensive/impersonating handles | Server-side display-name validation: reserved handles + blocklist + normalization (D2) |
 | Secret leakage via logs | Structured JSON logs with an explicit no-secrets/no-invite-URL convention |
 | Supply-chain via mutable action tags | All GitHub Actions pinned to commit SHAs (#238) |
+| Abusive or broken legacy clients that can't otherwise be retired | `X-Crosscue-Client` header + optional `MIN_SUPPORTED_CLIENT` var → structured `426 client_too_old` force-upgrade lever on every route (#256) |
 | Malicious puzzle files | 5 MB parser cap, typed `Result` error paths, checksum dedupe; parsers never execute content |
 
 ## Accepted risks (deliberate)
@@ -67,11 +68,8 @@ table is a known trade-off, not a gap.
 
 ## Known gaps (not accepted — tracked)
 
-- **No minimum-client / force-upgrade lever** on the Worker API — see
-  [`compatibility.md`](compatibility.md) and design-review §3.2. Until it
-  exists, abusive or broken old clients can't be retired.
 - **Avatar storage** is provisional: base64 PNGs in D1, returned inline
-  (partially fixed #237; R2 / by-reference delivery still open).
+  (partially fixed #237; R2 / by-reference delivery still open — #268).
 - **Alerting is pull-based** (`wrangler tail`) — see DEPLOYMENT.md
   "Monitoring & alerting" for the planned push signals.
 

@@ -53,7 +53,8 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     return ChallengeTabScreen(
       boards: boards.when(
         data: (data) => Loadable.data(data),
-        error: (_, __) => const Loadable.error(),
+        error: (error, _) =>
+            Loadable.error(requiresUpdate: isClientTooOldError(error)),
         loading: () => const Loadable.loading(),
       ),
       me: profile.when(

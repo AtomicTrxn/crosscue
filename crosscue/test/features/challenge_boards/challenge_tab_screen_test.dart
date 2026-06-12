@@ -57,6 +57,21 @@ void main() {
       ),
     );
     expect(find.text('Couldn’t load your boards'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+
+    // 426 client_too_old (#256): update prompt instead of a retry — retrying
+    // can't help, only updating the app can.
+    await tester.pumpWidget(
+      const _Harness(
+        child: ChallengeTabScreen(
+          boards: Loadable.error(requiresUpdate: true),
+          lifetime: SampleData.lifetime,
+          me: SampleData.me,
+        ),
+      ),
+    );
+    expect(find.text('Update Crosscue to keep competing'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
 
     await tester.pumpWidget(
       const _Harness(

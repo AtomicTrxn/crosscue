@@ -15,7 +15,7 @@ compatible with what.
 | 1 | **Local DB schema** (Drift) | **v7** (`app_database.dart` → `schemaVersion`) | The app | The same app | Migrations are additive and run forward-only on upgrade; each historical step has a migration test | Increment `schemaVersion`, add migration + test (checklist in `app_database.dart`) |
 | 2 | **Sync blob envelope** | **schema 1** (`SyncBlob.currentSchemaVersion`) | Every synced device | Every synced device | Readers ignore unknown payload fields; blobs with a *newer* schema are skipped (`decode()` → null). Prefer additive payload fields over schema bumps — see ADR-0016 for the mixed-version policy | Bump `currentSchemaVersion` only under ADR-0016's flag-day rules |
 | 3 | **Worker D1 schema** | migrations **0001–0006** | Worker deploys | Deployed Worker | Migrations must be backward-compatible with the **currently deployed** Worker (additive), because migrate runs before deploy; never edit an applied migration | New numbered SQL file; `migrate → deploy`, staging before prod (DEPLOYMENT.md) |
-| 4 | **Worker HTTP API** | unversioned paths (contract: `API.md`) | Worker | Every shipped app version | Worker changes must stay compatible with the **oldest app version still in the field** — there is currently **no force-upgrade lever** (gap; see below) | Additive request/response changes only; removals require the min-client mechanism first |
+| 4 | **Worker HTTP API** | unversioned paths (contract: `API.md`) | Worker | Every shipped app version | Worker changes must stay compatible with the **oldest app version still in the field**, unless that version is deliberately retired via the min-client lever (see below) | Additive request/response changes by default; removals require raising `MIN_SUPPORTED_CLIENT` first |
 | 5 | **Widget payload** | `crosscue_widget_v1`, `"version": 1` | App (`HomeWidgetService`) | iOS widget extension + Android `CrosscueWidgetProvider` (#223) — either may be older than the app, or newer after a partial update | Additive only: new optional keys/rows; never repurpose `version` for additive fields | New key name (`_v2`) only for breaking shape changes |
 
 Related but unversioned: the app↔extension App Group route token
@@ -39,21 +39,25 @@ These are the guarantees to preserve when changing anything above:
 4. **App + older widget extension** (or vice versa): the widget renders
    whatever optional rows it understands; absent/extra keys are not errors.
 
-## Known gap — no minimum-client lever (planned)
+## Minimum-client lever (#256 — shipped)
 
-The Worker cannot currently distinguish client versions or retire old ones:
-clients send no version identifier and there is no `client_too_old` response.
-Plan (design review 2026-06-11 §3.2, small code task):
+Contract #4's "support the oldest fielded client" rule now has a deliberate
+escape hatch:
 
-- Client sends `X-Crosscue-Client: <platform>/<semver>` on every request.
-- Worker config gains `MIN_SUPPORTED_CLIENT` (Wrangler var, no schema change)
-  and a structured `426 client_too_old` response.
-- The app renders that as a friendly "update Crosscue" state on the Challenge
-  tab only — everything offline is unaffected (the degradability principle,
-  `PRODUCT.md`).
+- The app sends `X-Crosscue-Client: <platform>/<semver>` on every Challenge
+  Boards request (since v1.4.3).
+- The Worker's optional `MIN_SUPPORTED_CLIENT` var (per-env in
+  `wrangler.toml`; unset everywhere by default = no enforcement) rejects
+  missing/unparsable/lower versions with a structured `426 client_too_old`
+  on every route.
+- The app renders 426 as a persistent "Update Crosscue" card on the
+  Challenge tab; everything offline is unaffected (the degradability
+  principle, `PRODUCT.md`), and queued results are held, not dropped.
 
-Until this lands, **treat contract #4's "support the oldest fielded client"
-rule as absolute.**
+**Rules for using it:** raising the minimum is a deliberate, logged decision
+— staging first, release-notes mention, and remember it also cuts off app
+versions that predate the header (< v1.4.3). Until the dual-host/v1.4.3
+generation dominates the field, leave it unset.
 
 ## External dependency: Crosshare (single point of failure)
 

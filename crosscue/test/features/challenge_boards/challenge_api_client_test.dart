@@ -119,6 +119,49 @@ void main() {
     expect(identity?.authToken, 'token-1');
   });
 
+  test('client identity header rides every request (#256)', () async {
+    final adapter = _FakeChallengeAdapter();
+    final dio = Dio()..httpClientAdapter = adapter;
+    final api = ChallengeBoardApi(
+      dio: dio,
+      identityStore: ChallengeIdentityStore(
+        dao: db.appSettingsDao,
+        secureStore: secureStore,
+      ),
+      baseUrl: 'https://api.crosscue.test',
+      clientIdentity: 'ios/1.4.3',
+    );
+
+    // Unauthenticated bootstrap carries it…
+    await api.bootstrap();
+    expect(adapter.seenClientHeader, 'ios/1.4.3');
+
+    adapter.seenClientHeader = null;
+    // …and so does an authenticated call.
+    await api.listBoards();
+    expect(adapter.seenClientHeader, 'ios/1.4.3');
+  });
+
+  test('isClientTooOld recognizes only the 426 response', () {
+    DioException withStatus(int status) => DioException(
+          requestOptions: RequestOptions(path: '/boards'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/boards'),
+            statusCode: status,
+          ),
+        );
+
+    expect(ChallengeBoardApi.isClientTooOld(withStatus(426)), isTrue);
+    expect(ChallengeBoardApi.isClientTooOld(withStatus(401)), isFalse);
+    expect(
+      ChallengeBoardApi.isClientTooOld(
+        DioException(requestOptions: RequestOptions(path: '/boards')),
+      ),
+      isFalse,
+    );
+    expect(ChallengeBoardApi.isClientTooOld(ArgumentError('nope')), isFalse);
+  });
+
   test('bootstrap persists the recovery secret', () async {
     final adapter = _FakeChallengeAdapter();
     final dio = Dio()..httpClientAdapter = adapter;
@@ -299,6 +342,7 @@ void main() {
 
 class _FakeChallengeAdapter implements HttpClientAdapter {
   String? seenAuthHeader;
+  String? seenClientHeader;
   Map<String, Object?>? lastResultBody;
   Map<String, Object?>? lastRestoreBody;
   int bootstrapCalls = 0;
@@ -320,6 +364,8 @@ class _FakeChallengeAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     final path = options.uri.path;
+    seenClientHeader =
+        options.headers[ChallengeBoardApi.clientHeaderName] as String?;
     if (path == '/players/bootstrap') {
       bootstrapCalls++;
       return _json({

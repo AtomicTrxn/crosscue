@@ -11,6 +11,7 @@ import 'package:crosscue/features/challenge_boards/domain/repositories/challenge
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_profile_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/repositories/challenge_result_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/services/challenge_result_submitter.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _sampleChallengeRepository = SampleChallengeRepository();
@@ -38,12 +39,27 @@ final challengeBoardApiProvider = Provider<ChallengeBoardApi?>((ref) {
   final config = ref.watch(challengeApiConfigProvider);
   final baseUrl = config.baseUrl;
   if (baseUrl == null) return null;
+  // X-Crosscue-Client identity for the Worker's minimum-client gate (#256).
+  // appVersion resolves async at startup; until it does, requests carry
+  // "<platform>/unknown", which the Worker only rejects once
+  // MIN_SUPPORTED_CLIENT is deliberately configured. The provider rebuilds
+  // with the real version as soon as it's available.
+  final version = switch (ref.watch(appVersionProvider)) {
+    AsyncData(:final value) => value.replaceFirst(RegExp(r'^v'), ''),
+    _ => 'unknown',
+  };
   return ChallengeBoardApi(
     dio: ref.watch(dioProvider),
     identityStore: ref.watch(challengeIdentityStoreProvider),
     baseUrl: baseUrl,
+    clientIdentity: '${defaultTargetPlatform.name.toLowerCase()}/$version',
   );
 });
+
+/// True when [error] is the server's "this app version is too old" rejection
+/// (HTTP 426) — surfaces as an update prompt instead of a generic failure.
+bool isClientTooOldError(Object error) =>
+    ChallengeBoardApi.isClientTooOld(error);
 
 final apiChallengeRepositoryProvider = Provider<ApiChallengeRepository?>((ref) {
   final api = ref.watch(challengeBoardApiProvider);

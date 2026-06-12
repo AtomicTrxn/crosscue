@@ -309,18 +309,25 @@ class Loadable<T> {
 
   /// For offline: how stale the cached [data] is, pre-formatted ("2h ago").
   final String? lastUpdatedLabel;
+
+  /// True when the server rejected this app version as too old (HTTP 426,
+  /// #256) — the UI should ask the user to update Crosscue, not retry.
+  final bool requiresUpdate;
   const Loadable.loading()
       : status = LoadStatus.loading,
         data = null,
-        lastUpdatedLabel = null;
+        lastUpdatedLabel = null,
+        requiresUpdate = false;
   const Loadable.data(this.data, {this.lastUpdatedLabel})
-      : status = LoadStatus.data;
-  const Loadable.error()
+      : status = LoadStatus.data,
+        requiresUpdate = false;
+  const Loadable.error({this.requiresUpdate = false})
       : status = LoadStatus.error,
         data = null,
         lastUpdatedLabel = null;
   const Loadable.offline(this.data, {this.lastUpdatedLabel})
-      : status = LoadStatus.offline;
+      : status = LoadStatus.offline,
+        requiresUpdate = false;
 
   bool get isEmpty => data == null || (data is List && (data as List).isEmpty);
 }
