@@ -63,12 +63,16 @@ so old `pages.dev` invites keep working alongside apex ones; flip the Worker's
 
 ## ⚠️ Before this works on devices
 
-1. **Android — fill the signing fingerprint.** Replace
-   `REPLACE_WITH_PLAY_APP_SIGNING_SHA256_FINGERPRINT` in `assetlinks.json` with
-   the **SHA-256** of the cert that actually signs the shipped app:
-   - Play App Signing: Play Console → *Release → Setup → App signing* → SHA-256.
-   - Local keystore: `keytool -list -v -keystore <ks> -alias <alias>` → SHA256.
-   You may list multiple fingerprints (e.g. upload + Play signing).
+1. **Android — signing fingerprints: ✅ filled (2026-06-12).** `assetlinks.json`
+   lists both SHA-256 fingerprints (public by design — no secret material):
+   - `6E:E3:…:1D:1D` — **Play App Signing key** (Google-managed; verifies
+     Play-delivered installs). Source: Play Console → search "App signing" →
+     *App signing key certificate*.
+   - `E9:EA:…:1B:4D` — **upload key** (verifies sideloaded GitHub-release
+     APKs, which are signed with the upload keystore).
+   Re-extract any time with `keytool -printcert -file <cert.der>` against the
+   certs downloadable from that same Play Console page. If the upload key is
+   ever rotated or Play's signing key changes, update the array and redeploy.
 
 2. **iOS — provisioning.** The Associated Domains entitlement
    (`applinks:crosscue.app` + `applinks:crosscue.pages.dev`) requires the App
