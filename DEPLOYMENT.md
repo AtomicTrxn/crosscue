@@ -468,6 +468,63 @@ Logs never include tokens, recovery/invite secrets, or full invite URLs
 The daily cron (`7 3 * * *` UTC) purges `board_events` older than 14 days
 and logs a `purge_board_events` line with the deleted count.
 
+### Backups & restore (D1 Time Travel)
+
+D1 keeps automatic point-in-time history ("Time Travel") — there is no
+backup *job* to run, but restores are manual and **destructive to current
+state**, so know the procedure before needing it:
+
+```bash
+# From crosscue/backend/challenge_boards/
+
+# 1. Inspect the current restore point (bookmark) for a database
+npx wrangler d1 time-travel info crosscue_challenge_boards_prod
+
+# 2. Capture a bookmark BEFORE risky work (migration, bulk fix)
+npx wrangler d1 time-travel info crosscue_challenge_boards_prod  # save the bookmark id
+
+# 3. Restore to a timestamp or bookmark
+npx wrangler d1 time-travel restore crosscue_challenge_boards_prod \
+  --timestamp="2026-06-10T00:00:00Z"        # or --bookmark=<id>
+```
+
+Rules:
+
+- **Rehearse on staging first** — restore `crosscue_challenge_boards_staging`
+  and run the smoke test against it before ever touching prod.
+- **Restore window:** Time Travel retains roughly 30 days on paid plans
+  (7 on free) — confirm the account's plan before assuming a date is
+  reachable.
+- **Coordinate with Worker versions:** restoring the DB to before a schema
+  migration while the deployed Worker expects the new schema will break the
+  API. Restore order is: roll the Worker back to the matching tag
+  (see "Deploying" → rollback), then restore the database, then re-apply
+  forward migrations as compensating files if needed.
+- **A restore loses writes** made after the restore point (results submitted,
+  boards created). For surgical fixes prefer a compensating SQL migration
+  over a restore.
+- Capture a bookmark as step one of any manual prod data surgery.
+
+### Alerting
+
+`wrangler tail` is pull-based — nobody is watching it between sessions. The
+minimal push signals (state: **partially set up**; treat unchecked items as
+TODO):
+
+- [ ] **Cloudflare notification** on Worker error-rate / exception spike
+      (Cloudflare dashboard → Notifications → Workers). Email is sufficient.
+- [ ] **Crosshare canary**: scheduled weekly GitHub Actions workflow that
+      runs the live fetch/parse and opens an issue on failure — guards the
+      scraper single-point-of-failure
+      (see [`docs/architecture/compatibility.md`](docs/architecture/compatibility.md)).
+- [ ] **Retention-cron heartbeat**: periodic check that the daily
+      `purge_board_events` log line is present (a missing cron is silent
+      unbounded growth).
+- [x] **Store-side crash signal**: Play Console → Quality (ANRs/crashes) and
+      App Store Connect crash reports, reviewed as part of each release's
+      post-rollout monitoring — the only crash telemetry that exists, since
+      the app deliberately ships no remote crash reporting.
+
 ### Configuration
 
 No Worker secrets exist: `wrangler.toml` carries only public vars
@@ -676,6 +733,11 @@ Human review is required before publishing — this is not legal advice.
 - [x] In-app `Settings → Privacy & Data → Privacy policy` opens the public
       URL via `url_launcher` (see [privacy_screen.dart](crosscue/lib/features/settings/presentation/screens/privacy_screen.dart)).
 - [x] Privacy policy URL filed in Play Console → App Content → Privacy Policy.
+- [ ] **Every release where `docs/privacy.md` changed:** regenerate the
+      published `privacy.html` from it before submitting.
+      [`docs/privacy.md`](docs/privacy.md) is the **source of truth**; the
+      GitHub Pages copy is a derived artifact and the two must never diverge
+      (they are the same legal document filed with both stores).
 
 ### Play Console — Data Safety form
 Crosscue current-release answers:
@@ -744,6 +806,9 @@ Human review is required before publishing — this is not legal advice.
 - [x] Published at `https://atomictrxn.github.io/crosscue/privacy.html`.
 - [x] In-app Settings → Privacy & Data → Privacy policy opens it via `url_launcher`.
 - [x] URL filed in App Store Connect → App Privacy.
+- [ ] **Every release where `docs/privacy.md` changed:** regenerate the
+      published `privacy.html` from it before submitting (same rule as the
+      Play checklist — `docs/privacy.md` is the source of truth).
 
 ### App Store Connect — App Privacy form
 Crosscue current-release answers (mirrors Play Console):

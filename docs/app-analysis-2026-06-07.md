@@ -1,5 +1,9 @@
 # Crosscue — Application Review & Gap Analysis
 
+> **Status:** Snapshot (2026-06-07) — point-in-time; not edited after the
+> fact. Some findings have since been resolved (e.g. F3/F4 scaffolding
+> removed in #211); resolution state lives in issues and living docs.
+
 **Date:** 2026-06-07
 **Reviewed against:** `main` @ `73939ee` (post #197)
 **Method:** Static review of the Flutter app (`crosscue/lib`, `crosscue/test`), native code (`ios/`, `android/`), the challenge-boards Worker backend (`crosscue/backend/challenge_boards`), build/config, and all 5 open GitHub issues. No runtime profiling was performed; findings are code- and config-based.

@@ -1,5 +1,6 @@
 # iCloud sync — one-time iOS setup
 
+> **Status:** Living — Apple-side runbook + verification reference.
 > Reader: developer / release engineer maintaining the sync feature
 > (issue [#9](https://github.com/AtomicTrxn/crosscue/issues/9)). Design:
 > [`sync-design.md`](sync-design.md). Sync is opt-in (off by default); the only

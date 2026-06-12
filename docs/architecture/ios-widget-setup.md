@@ -1,5 +1,10 @@
 # iOS Home/Lock-screen widget — one-time setup
 
+> **Status:** Living — setup runbook + payload schema (the payload is
+> contract #5 in [`compatibility.md`](compatibility.md)). Background-refresh
+> decision: [ADR-0011](decisions/0011-widget-background-refresh.md); Android
+> parity: [ADR-0015](decisions/0015-platform-parity-policy.md) / P1.
+
 The WidgetKit widget for streak + today's puzzle ([#114](https://github.com/AtomicTrxn/crosscue/issues/114)).
 Like the iCloud and Google Drive setups, the **code ships first and stays
 inert** until the one-time Xcode + Apple-portal wiring below is done:

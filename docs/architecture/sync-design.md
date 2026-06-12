@@ -1,5 +1,9 @@
 # Sync Adapter Design (G5 — iCloud / Google Drive)
 
+> **Status:** Living — the as-built sync reference. Decision record:
+> [ADR-0009](decisions/0009-sync-architecture-and-rollout.md); cross-version
+> rules: [`compatibility.md`](compatibility.md) +
+> [ADR-0016](decisions/0016-mixed-version-sync-policy.md).
 > Tracks [#9 (G5)](https://github.com/AtomicTrxn/crosscue/issues/9).
 > Companion doc to `ARCHITECTURE.md`. Sync ships **opt-in (off by default)**;
 > users enable it from the onboarding sync step or Settings — there is no

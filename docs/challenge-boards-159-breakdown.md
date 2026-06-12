@@ -1,5 +1,9 @@
 # Challenge Boards (#159) — implementation breakdown
 
+> **Status:** Living tracker — workstream states are updated as they land;
+> flips to Historical when #159 closes. The locked architecture decision is
+> recorded as [ADR-0012](architecture/decisions/0012-challenge-boards-live-compute.md).
+
 Breakdown of the remaining work to ship private friend challenge boards (v1) per
 [#159](https://github.com/AtomicTrxn/crosscue/issues/159). Much of the design is already
 built; this plan covers only the gaps.

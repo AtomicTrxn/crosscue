@@ -1,5 +1,10 @@
 # Domain Models Reference — Crosscue
 
+> **Status:** Living. This file documents **semantics and invariants** — the
+> things the code can't say about itself. Field lists and signatures live in
+> the source files; when this doc and the code disagree on a *shape*, the code
+> is right and this doc needs a smaller claim, not a bigger transcription.
+
 Shared domain models live under `crosscue/lib/core/domain/models/`.
 Solve-only models (`CellProgress`, `FocusPosition`) live under
 `crosscue/lib/features/solve/domain/models/`.
@@ -7,210 +12,100 @@ Generated files (`.freezed.dart`, `.g.dart`) are never edited by hand.
 
 ---
 
-## `Grid<T>` — `core/domain/models/grid.dart`
+## Core puzzle models
 
-Plain Dart class (NOT Freezed — Freezed's codegen cannot handle generic type parameters).
+### `Grid<T>` — `core/domain/models/grid.dart`
 
-```dart
-class Grid<T> {
-  final int width;
-  final int height;
-  final List<T> cells;           // row-major: index = row * width + col
+Plain Dart class — **not** Freezed (codegen can't handle the generic
+parameter; see CONVENTIONS.md). Invariants:
 
-  T cell(int row, int col)
-  Grid<T> withCell(int row, int col, T value)  // returns new Grid (immutable)
-  Grid<R> map<R>(R Function(int row, int col, T cell) fn)
-  bool inBounds(int row, int col)
+- Cells are stored row-major: `index = row * width + col`.
+- Immutable: `withCell(r, c, v)` returns a **new** `Grid`; nothing mutates
+  in place.
+- Used as `Grid<SolutionCell>` (the answer grid) and `Grid<CellProgress>`
+  (user progress).
 
-  factory Grid.generate(int width, int height, T Function(int row, int col) fn)
-}
-```
+### `SolutionCell` — `core/domain/models/solution_cell.dart`
 
-Used as `Grid<SolutionCell>` (the answer grid) and `Grid<CellProgress>` (user progress).
+One cell of the answer grid (`@freezed abstract class`).
 
----
+- `solution` is the canonical answer: a single letter, or a multi-letter
+  string for rebus cells (`'EST'`), or a `"/"`-delimited bidirectional pair
+  (`'PB/AU'`).
+- `number` is assigned by `PuzParser._assignNumbers()` using standard
+  crossword rules; null for non-clue-start cells.
+- `SolutionCell.black` is a `static const` sentinel — deliberately **not** a
+  factory constructor (that would turn the class into a union; see
+  CONVENTIONS.md).
+- **`accepts(entered)` is the single acceptance rule** for all correctness
+  checks (completion, check actions, clue correctness): exact match, first
+  letter of a rebus, or either side of a bidirectional pair
+  ([ADR-0010](docs/architecture/decisions/0010-rebus-entry-ux.md)). Never
+  compare with string equality.
 
-## `SolutionCell` — `core/domain/models/solution_cell.dart`
+### `CellProgress` — `solve/domain/models/cell_progress.dart`
 
-```dart
-@freezed
-abstract class SolutionCell with _$SolutionCell {
-  const factory SolutionCell({
-    @Default(false) bool isBlack,
-    @Default('') String solution,   // single letter, or multi-letter for rebus
-    int? number,                    // clue number, null if not a clue-start cell
-    @Default(false) bool circled,
-  }) = _SolutionCell;
+One cell of user progress (solve-only).
 
-  static const SolutionCell black = SolutionCell(isBlack: true);
-}
-```
+- `letter` is always uppercase; may be multi-letter for rebus entries (the
+  DB stores it as-is inside the serialized progress grid).
+- Verification states color the **letter**; reveal uses a distinct
+  **background** — the painter owns that mapping (see ARCHITECTURE.md →
+  Theme System).
+- `isPencil` is stored for a future pencil mode; currently always `false`.
+- `CellProgress.blank` is the `static const` sentinel.
 
-`solution` is the canonical answer. For rebus cells it may be `'EST'`, `'TION'`, etc.
-`number` is assigned by `PuzParser._assignNumbers()` using standard crossword rules.
+### `Clue` — `core/domain/models/clue.dart`
 
----
+Answer-cell geometry (the one non-obvious rule):
 
-## `CellProgress` — `solve/domain/models/cell_progress.dart`
-
-```dart
-@freezed
-abstract class CellProgress with _$CellProgress {
-  const factory CellProgress({
-    @Default('') String letter,
-    @Default(CellState.empty) CellState state,
-    @Default(false) bool isPencil,
-  }) = _CellProgress;
-
-  static const CellProgress blank = CellProgress();
-}
-```
-
-`letter` is always uppercase. `state` describes solve status; the painter maps that
-status to the current visual system. Revealed cells use a distinct background,
-while checked-correct and checked-incorrect cells keep the base grid background
-and communicate verification through letter color plus accessibility symbols
-when colorblind mode is enabled.
-`isPencil` is stored for future pencil-mode; currently always `false`.
-
----
-
-## `Clue` — `core/domain/models/clue.dart`
-
-```dart
-@freezed
-abstract class Clue with _$Clue {
-  const factory Clue({
-    required int number,
-    required Direction direction,
-    required String text,
-    required int startRow,
-    required int startCol,
-    required int length,
-  }) = _Clue;
-}
-```
-
-`length` is the number of cells in the answer. The answer cells are:
 - Across: `(startRow, startCol)` … `(startRow, startCol + length - 1)`
 - Down:   `(startRow, startCol)` … `(startRow + length - 1, startCol)`
 
----
+All clue-cell iteration goes through `ClueProgressCalculator`
+([ADR-0002](docs/architecture/decisions/0002-clue-math-single-source.md)) —
+never re-derive this geometry in widgets or notifiers.
 
-## `FocusPosition` — `solve/domain/models/focus_position.dart`
+### `FocusPosition` — `solve/domain/models/focus_position.dart`
 
-```dart
-@freezed
-abstract class FocusPosition with _$FocusPosition {
-  const factory FocusPosition({
-    required int row,
-    required int col,
-    required Direction direction,
-  }) = _FocusPosition;
-}
-```
+Cursor `(row, col, direction)`. Direction toggles on repeated tap of the
+same cell.
 
-Stored in `SolveState.focus`. Direction toggles on repeated tap of same cell.
+### `PuzzleMetadata` — `core/domain/models/puzzle_metadata.dart`
 
----
+Identity semantics (the part that must not drift):
 
-## `PuzzleMetadata` — `core/domain/models/puzzle_metadata.dart`
+- `id` = `'local:' + sha256(canonicalJson).substring(0, 16)` — the stable FK
+  used across the DB and in routing (encode/decode for routes, the id
+  contains `:`).
+- `checksum` = the **full** SHA-256 hex — used for duplicate detection in
+  the DAO, not for identity.
+- `(sourceId, sourcePuzzleId)` links an imported row back to its remote
+  identifier (e.g. a Crosshare slug) so re-fetches match the existing row.
+- `format` is `PuzzleFormat.puz | ipuz | jpz` — note local import currently
+  accepts only `.puz`/`.ipuz`; `jpz` is a declared-but-unimplemented format.
 
-```dart
-@freezed
-abstract class PuzzleMetadata with _$PuzzleMetadata {
-  const factory PuzzleMetadata({
-    required String id,           // 'local:' + 16-char SHA-256 prefix
-    required String sourceId,     // FK to sources table, e.g. 'local_import'
-    required String title,
-    required String author,
-    required String copyright,
-    required PuzzleFormat format, // .puz | .ipuz | .jpz
-    required int width,
-    required int height,
-    required DateTime importedAt,
-    String? sourcePuzzleId,       // remote-source puzzle id (Crosshare slug, etc.)
-    DateTime? publishDate,        // original publication date (from .ipuz date field or .puz notes)
-    String? notes,
-    String? checksum,             // full SHA-256 hex string for duplicate detection
-    String? difficulty,           // e.g. 'Easy', 'Medium', 'Hard' — from .ipuz difficulty field
-  }) = _PuzzleMetadata;
-}
-```
+### `Puzzle` — `core/domain/models/puzzle.dart`
 
-`id` format: `'local:' + sha256(canonicalJson).substring(0, 16)`.
-`checksum` is the **full** SHA-256 — used for duplicate detection in the DAO.
-`sourcePuzzleId` lets `(sourceId, sourcePuzzleId)` link an imported row back to its remote
-identifier (e.g. a Crosshare slug) so the same daily mini can be matched on subsequent
-fetches.
+Metadata + `Grid<SolutionCell>` + clues. The grid holds the full solution
+and is never kept in memory after the session ends — the DB stores it as
+`puzzles.canonicalJson`, reconstructed via `GridSerializer.fromJson` (keeps
+puzzle reads to two queries: puzzle row + clue rows).
 
----
+### `SolveState` — `solve/presentation/notifiers/solve_state.dart`
 
-## `Puzzle` — `core/domain/models/puzzle.dart`
+**Presentation layer only** — lives in `presentation/notifiers/`, not
+`domain/`. Plain immutable class (contains `Grid<T>`, so not Freezed).
+Semantics worth knowing:
 
-```dart
-@freezed
-abstract class Puzzle with _$Puzzle {
-  const factory Puzzle({
-    required PuzzleMetadata metadata,
-    required Grid<SolutionCell> grid,
-    required List<Clue> clues,
-    @Default('') String notes,
-  }) = _Puzzle;
-}
-
-// Convenience accessors (via extension or metadata delegation):
-puzzle.id        // metadata.id
-puzzle.width     // metadata.width
-puzzle.height    // metadata.height
-```
-
-`grid` contains the full solution. Never stored in memory after the session ends —
-the DB holds `canonicalJson` and the grid is reconstructed via `GridSerializer.fromJson`.
-
----
-
-## `SolveState` — `solve/presentation/notifiers/solve_state.dart`
-
-**Presentation layer only** — lives in `presentation/notifiers/`, not in `domain/`.
-Plain immutable class (not Freezed — contains `Grid<T>`).
-
-```dart
-class SolveState {
-  final Puzzle puzzle;
-  final Grid<CellProgress> progress;
-  final FocusPosition focus;
-  final PuzzleStatus status;
-  final int elapsedSeconds;
-  final bool isPaused;
-  final int? sessionId;           // DB row id for autosave; null before first save
-
-  // Check / reveal counters
-  final int checkCount;           // times any check action was triggered
-  final int revealCount;          // times any reveal action was triggered
-  final bool usedCheck;           // true once any check is used
-  final bool usedReveal;          // true once any reveal is used
-  final bool cleanSolveEligible;  // false once reveal is used; disqualifies PB
-
-  // Personal-best context for the completion sheet
-  final int? previousPersonalBestMs;  // clean PB for this puzzle's size bucket, if any
-
-  // Memoised
-  late final List<Clue> sortedClues;  // across-then-down by number; built once per state
-
-  // Derived (computed, not stored):
-  Clue? get activeClue        // clue matching focus cell + direction
-  Clue? get crossClue         // clue in the perpendicular direction
-  List<(int,int)> get activeWordCells
-
-  bool isFocused(int row, int col)
-  bool isWordHighlighted(int row, int col)
-
-  static bool cellInClue(int row, int col, Clue clue)  // public static for cross-file use
-
-  SolveState copyWith({progress, focus, status, elapsedSeconds, isPaused, ...})
-}
-```
+- Owns the **live** solve; only `SolveNotifier` writes it
+  ([ADR-0008](docs/architecture/decisions/0008-completion-data-authority.md)).
+- `cleanSolveEligible` flips false once any reveal is used and disqualifies
+  the personal best.
+- `sortedClues` (across-then-down by number) is memoised — built once per
+  state instance.
+- Active/cross clue and word-highlight membership are **derived** getters,
+  never stored.
 
 ---
 
@@ -229,6 +124,13 @@ class SolveState {
 | `LicenseStatus` | `userImport`, `explicitPermission`, `openLicense`, `needsReview`, `prohibited` | SourcesTable |
 | `CompletionType` | `clean`, `checked`, `hinted`, `revealed` | SolveSessionsTable, PuzzleCompletionsTable |
 
+**The naming trap:** `usedReveal=true` on an otherwise-completed solve maps
+to `CompletionType.hinted` (a reveal *action* was used), while
+`CompletionType.revealed` means the whole puzzle was revealed.
+`SolveRepositoryImpl._statusFromDb` and `SolveNotifier._deriveCompletionType`
+must remain inverses — locked by a round-trip test; full mapping in
+[`docs/architecture/completion-authority.md`](docs/architecture/completion-authority.md).
+
 ---
 
 ## DB ↔ Domain Mapping
@@ -240,303 +142,103 @@ class SolveState {
 | `clues` row | `Clue` | `PuzzleDao._clueRowToClue()` |
 | `solve_sessions` row | `SolveState` fields | `SolveRepositoryImpl.createOrResumeSession()` |
 | `cell_progress` row | `CellProgress` | `SolveSessionDao` (save/load per cell) |
-| join `solve_sessions` + `puzzles` | `CompletedSessionStat` record | `StatsDao.getCompletedSessionsWithPuzzle()` |
+| join `solve_sessions` + `puzzles` | `CompletedSessionStat` record (typedef in `stats_dao.dart`) | `StatsDao.getCompletedSessionsWithPuzzle()` |
 
 ---
 
-## Puzzle ID Format
+## Import models
 
-```
-local:<hex16>
-│      └─ First 16 chars of SHA-256 of canonical JSON:
-│          '{"w":<width>,"h":<height>,"s":"<base64-solution>","t":<json-title>}'
-└─ Source prefix — 'local' for user-imported files
-```
-
-The full SHA-256 (64 hex chars) is stored separately as `checksum` for duplicate detection.
-The `id` (16-char prefix) is the stable foreign key used across the DB and in routing.
-
----
-
-## `ParseError` — `import/domain/models/parse_error.dart`
-
-```dart
-enum ParseError {
-  invalidFormat,      // not a recognised format
-  unsupportedFormat,  // scrambled / locked puzzle
-  missingData,        // incomplete or corrupted file
-  encodingError,      // character encoding failure
-  fileTooLarge,       // file exceeds 5 MB limit
-  checksumMismatch,   // file-level checksum doesn't match content
-  unknown,            // catch-all for unexpected exceptions
-}
-```
-
----
-
-## `ImportJobResult` — `import/data/repositories/import_repository_impl.dart`
-
-Sealed class (prefixed `Job` to avoid collision with UI `ImportState`):
-
-```dart
-sealed class ImportJobResult { ... }
-final class JobSuccess   extends ImportJobResult { final Puzzle puzzle; }
-final class JobDuplicate extends ImportJobResult { }
-final class JobFailure   extends ImportJobResult { final ParseError error; }
-```
-
----
-
-## `ImportState` — `import/presentation/notifiers/import_notifier.dart`
-
-Freezed union (multi-factory → plain `class`, not `abstract class`):
-
-```dart
-@freezed
-class ImportState with _$ImportState {
-  const factory ImportState.idle()                          = ImportIdle;
-  const factory ImportState.loading()                      = ImportLoading;
-  const factory ImportState.success(PuzzleMetadata puzzle) = ImportSuccess;
-  const factory ImportState.duplicate()                    = ImportDuplicate;
-  const factory ImportState.failure(String message)        = ImportFailure;
-}
-```
-
-`ImportNotifier` exposes `state` as `ImportState` and calls
-`ref.invalidate(puzzleListProvider)` after a successful import so the home list
-refreshes automatically.
-
----
+- **`ParseError`** (`import/domain/models/parse_error.dart`) — enum of typed
+  parse failures (invalid/unsupported format, missing data, encoding,
+  the 5 MB `fileTooLarge` guard, checksum mismatch, unknown).
+- **`ImportJobResult`** (`import_repository_impl.dart`) — sealed
+  `JobSuccess | JobDuplicate | JobFailure`. The `Job` prefix exists to avoid
+  a name collision with the UI's `ImportState` variants (see CONVENTIONS.md
+  → Naming).
+- **`ImportState`** (`import_notifier.dart`) — Freezed **union**
+  (multi-factory → plain `class`, not `abstract`):
+  `idle | loading | success | duplicate | failure`. On success the notifier
+  calls `ref.invalidate(puzzleListProvider)` so the home list refreshes.
 
 ## `Result<T, E>` — `core/utils/result.dart`
 
-Lightweight result type used in parsers and repository methods to avoid
-exception-based control flow:
+Sealed `Ok<T, E> | Err<T, E>`; parsers and repository methods return it
+instead of throwing across layer boundaries (CONVENTIONS.md → `Result`
+usage). Consumption pattern:
 
 ```dart
-sealed class Result<T, E> { ... }
-final class Ok<T, E>  extends Result<T, E> { final T value; }
-final class Err<T, E> extends Result<T, E> { final E error; }
-```
-
-Usage pattern:
-```dart
-// Returning a result:
-return Ok(parsedPuzzle);
-return Err(ParseError.invalidFormat);
-
-// Consuming a result:
-final result = await parser.parse(bytes);
+final result = await parser.parse(bytes);   // Result<Puzzle, ParseError>
 switch (result) {
-  case Ok(:final value): // use value
-  case Err(:final error): // handle error
+  case Ok(:final value):  // use value
+  case Err(:final error): // handle typed error
 }
 ```
 
-`PuzzleParser.parse()` returns `Result<Puzzle, ParseError>`.
-`ImportRepositoryImpl.importBytes()` internally maps this to `ImportJobResult`.
+## Archive & stats models
 
----
+- **`ArchiveEntry`** — `PuzzleMetadata` + nullable latest `solve_sessions`
+  row (null → never started), with status helpers and a `sizeLabel`
+  (`Mini` / `15×15` / `21×21` / `N×M`).
+- **`StatsData`** — plain immutable aggregate with an `empty` sentinel.
+  Semantic details that matter: `currentStreak` counts through today *or*
+  yesterday-if-today-unsolved; personal bests are **clean solves only**,
+  bucketed by size (mini ≤ 7×7, 15×15, 21×21); `completionRate` =
+  completed ÷ started. Streak attribution uses `solvedDateLocal` — the date
+  the user solved, not the puzzle's publish date (no back-fill inflation;
+  see ARCHITECTURE.md → Feature: home).
 
-## `ArchiveEntry` — `archive/domain/models/archive_entry.dart`
+## Puzzle sources
 
-Plain Dart class combining puzzle metadata with its latest session status.
-
-```dart
-class ArchiveEntry {
-  final PuzzleMetadata metadata;
-  final SolveSessionRow? latestSession;  // null → never started
-
-  // Convenience helpers:
-  bool get isNotStarted   // latestSession == null
-  bool get isInProgress   // status == inProgress
-  bool get isCompleted    // status == solved || solvedWithHelp
-  bool get isRevealed     // status == revealed
-  bool get isCleanSolve   // completionType == clean
-  String get sizeLabel    // 'Mini' / '15×15' / '21×21' / 'N×M'
-}
-```
-
----
-
-## `StatsData` — `stats/domain/models/stats_data.dart`
-
-Plain immutable class with all aggregated statistics. `StatsData.empty` is the sentinel
-when no puzzles have been solved yet.
-
-```dart
-class StatsData {
-  final int currentStreak;        // days including today (or yesterday if not yet solved today)
-  final int longestStreak;        // longest consecutive-day run ever
-  final int totalSolved;          // completed + revealed
-  final int cleanSolves;          // no check or reveal used
-  final int hintedCheckedSolves;  // check used, reveal not used
-  final int revealedCount;        // at least one reveal used
-  final int? averageElapsedMs;    // null when no completed sessions
-  final int? sevenDayAverageMs;
-  final int? personalBest15x15Ms; // clean solves only, 15×15 grid
-  final int? personalBest21x21Ms;
-  final int? personalBestMiniMs;  // grid ≤ 7×7
-  final double completionRate;    // completed / started
-  final int startedCount;
-
-  static const StatsData empty = StatsData(...);
-}
-```
-
----
-
-## `PuzzleSource` — `import/domain/repositories/puzzle_source.dart`
-
-Abstract interface every puzzle source must implement.
-
-```dart
-abstract class PuzzleSource {
-  String get id;                    // stable id matching sources table
-  String get displayName;
-  LicenseStatus get licenseStatus;  // drives SourceRegistry enforcement
-  bool get enabled;
-  bool get attributionRequired;
-  bool get commercialUseAllowed;
-  bool get rawPayloadRetention;     // false → only canonical JSON retained
-}
-```
-
-`SourceRegistry` enforces that `prohibited` sources can never be registered.
-`needsReview` sources are registered but excluded from `enabledSources`.
-
----
-
-## `SourceRegistry` — `import/data/sources/source_registry.dart`
-
-```dart
-class SourceRegistry {
-  void register(PuzzleSource source)  // throws SourceRegistrationException for prohibited
-  PuzzleSource? getSource(String id)
-  List<PuzzleSource> get allSources          // all registered (including needsReview)
-  List<PuzzleSource> get enabledSources      // cleared (not needsReview/prohibited) + enabled == true
-}
-
-class SourceRegistrationException implements Exception {
-  final String message;  // contains the offending source id
-}
-```
+- **`PuzzleSource`** (`import/domain/repositories/puzzle_source.dart`) — the
+  interface every source implements; `licenseStatus` drives enforcement,
+  `rawPayloadRetention: false` means only canonical JSON is retained.
+- **`SourceRegistry`** — `prohibited` sources **cannot be registered**
+  (`SourceRegistrationException`); `needsReview` sources register but are
+  excluded from `enabledSources`. This is the code half of the legal
+  guardrail in CONVENTIONS.md;
+  [ADR-0006](docs/architecture/decisions/0006-crosshare-source-approval.md)
+  records the one approved online source.
 
 ---
 
 ## Sync models — `core/sync/models/`
 
-Cross-device sync (G5; iCloud on iOS, Google Drive on Android). Design lives in
-[`docs/architecture/sync-design.md`](docs/architecture/sync-design.md); these
-are the model shapes.
+Design: [`docs/architecture/sync-design.md`](docs/architecture/sync-design.md);
+versioning rules: [`docs/architecture/compatibility.md`](docs/architecture/compatibility.md).
+Semantics that callers must respect:
 
-### `SyncState` — `sync_state.dart`
-
-Hand-written **sealed** class (not Freezed) — the orchestrator's lifecycle.
-Switch exhaustively.
-
-```dart
-sealed class SyncState { }
-class SyncDisabled  extends SyncState {}                       // off (default)
-class SyncSignedOut extends SyncState {}                       // on, no account linked yet
-class SyncIdle      extends SyncState { DateTime? lastSyncedAt; }  // on, not syncing
-class SyncRunning   extends SyncState {}                       // a pass is in flight
-class SyncError     extends SyncState { String message; bool transient; }
-```
-
-`transient: true` → orchestrator retries on the next trigger; `false` → user
-must act (re-sign-in, free quota).
-
-### `SyncResult` — `sync_result.dart`
-
-Outcome of one `syncNow()`. `SyncResult.zero` sentinel; `operator +` folds
-per-namespace results.
-
-```dart
-class SyncResult {
-  final int pushed;     // entities written to the transport
-  final int pulled;     // entities applied to the local DB
-  final int conflicts;  // merges the strategy resolved (informational, not errors)
-  final Duration duration;
-}
-```
-
-### `SyncAccount` — `sync_account.dart`
-
-```dart
-class SyncAccount {
-  final SyncProvider provider;   // iCloud | googleDrive | fake
-  final String displayName;      // human label (iCloud name / Google email)
-  final String? id;              // stable provider id; null on iCloud (token rotates)
-}
-
-enum SyncProvider { iCloud, googleDrive, fake }
-```
-
-### `SyncBlob` — `sync_blob.dart`
-
-Envelope wrapped around every namespace payload before it hits the transport
-(see sync-design → Wire format). `encode()` → JSON string; `decode()` returns
-null on malformed bytes **or** a schema newer than `currentSchemaVersion`
-(forward-compat: skip the blob).
-
-```dart
-class SyncBlob {
-  static const int currentSchemaVersion = 1;
-  final int schemaVersion;             // envelope schema
-  final String deviceId;               // originating device at write time
-  final int syncVersion;               // monotonic per-entity version
-  final DateTime updatedAt;            // UTC wall-clock at write
-  final Map<String, Object?> payload;  // namespace-specific JSON
-}
-```
-
-### `SyncNamespace` — `sync_namespace.dart`
-
-```dart
-enum SyncNamespace {
-  puzzles('puzzles/'), sessions('sessions/'),
-  completions('completions/'), settings('settings/');
-  final String prefix;  // blob-key prefix (with trailing slash)
-}
-```
-
-### `SyncTransport` — `core/sync/transport/sync_transport.dart`
-
-The only platform-aware piece. CRUD-on-named-blobs + account management.
-Implementations: `ICloudSyncTransport` (iOS), `GoogleDriveSyncTransport`
-(Android), `NoOpSyncTransport` (web/desktop), `FakeSyncTransport` (tests).
-
-```dart
-abstract class SyncTransport {
-  Future<SyncAccount?> account();          // silent — never prompts
-  Future<SyncAccount?> signIn();           // interactive where needed (Drive); else == account()
-  bool get supportsInteractiveSignIn;      // true only for app-driven sign-in (Drive)
-
-  Future<List<String>> list(String prefix);
-  Future<String?> read(String key);
-  Future<String?> write(String key, String bytes, {String? ifMatch});
-  Future<void> delete(String key);
-}
-```
-
-`SyncOrchestrator` (`core/sync/sync_orchestrator.dart`) is the presentation-
-facing facade — `state` stream, `currentAccount()`, `enable()` / `disable()` /
-`syncNow()`, `lastSyncedAt`. The `SyncController`
-(`features/settings/presentation/providers/sync_providers.dart`) bridges it to
-the Settings + onboarding UI.
+- **`SyncState`** — hand-written sealed class (not Freezed):
+  `SyncDisabled | SyncSignedOut | SyncIdle | SyncRunning | SyncError`.
+  Switch exhaustively. `SyncError.transient: true` → orchestrator retries on
+  the next trigger; `false` → the user must act (re-sign-in, free quota).
+- **`SyncResult`** — `{pushed, pulled, conflicts, duration}` per pass;
+  `conflicts` counts merges the strategy *resolved* (informational, not
+  errors). `SyncResult.zero` + `operator +` fold per-namespace results.
+- **`SyncBlob`** — the envelope around every namespace payload:
+  `{schemaVersion, deviceId, syncVersion, updatedAt, payload}`.
+  `decode()` returns **null** for malformed bytes *or* a schema newer than
+  `currentSchemaVersion` (currently **1**) — callers treat that as "skip".
+  The mixed-version write policy is
+  [ADR-0016](docs/architecture/decisions/0016-mixed-version-sync-policy.md).
+- **`SyncNamespace`** — `puzzles/ | sessions/ | completions/ | settings/`
+  blob-key prefixes; each namespace owns its merge rule (ADR-0009).
+- **`SyncTransport`** (`core/sync/transport/`) — the only platform-aware
+  piece: CRUD on named blobs + `account()` (silent) / `signIn()`
+  (interactive only where `supportsInteractiveSignIn`). Implementations:
+  iCloud (iOS), Google Drive (Android), `NoOp` (other platforms), `Fake`
+  (tests). `SyncOrchestrator` is the presentation-facing facade; the
+  `SyncController` provider bridges it to Settings/onboarding UI.
 
 ---
 
 ## Challenge Boards models — `challenge_boards/domain/models/challenge_models.dart`
 
-Pure data classes for the online friend-leaderboards feature (`Player`,
-`Board`, `BoardDetail`, `LeaderboardEntry`, `LifetimeStats`,
-`ChallengeSolveSubmission`, …). They map to the server's D1 schema rather
-than the local Drift database — the source of truth is the numbered SQL in
-[`crosscue/backend/challenge_boards/migrations/`](crosscue/backend/challenge_boards/migrations/)
-(players, boards, memberships, challenge_results, board_events), and the wire
-shapes are documented in
+Pure data classes (`package:meta`, no Flutter) for the online feature. They
+map to the **server's** D1 schema, not the local Drift database — the source
+of truth is the numbered SQL in
+[`crosscue/backend/challenge_boards/migrations/`](crosscue/backend/challenge_boards/migrations/),
+and the wire shapes are documented in
 [`crosscue/backend/challenge_boards/API.md`](crosscue/backend/challenge_boards/API.md).
 Client-side persistence is limited to the identity (auth token in secure
-storage, recovery bundle in `app_settings`) and the offline result outbox.
+storage, recovery bundle in `app_settings`) and the offline result outbox —
+the sync exclusions for these are deliberate (see threat model → assets).

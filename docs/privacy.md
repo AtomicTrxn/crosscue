@@ -1,3 +1,12 @@
+<!--
+  MAINTAINER NOTE (not part of the policy text): this file is the SOURCE OF
+  TRUTH for the published policy at
+  https://atomictrxn.github.io/crosscue/privacy.html, which is filed with both
+  app stores. Whenever this file changes: bump the effective date AND
+  regenerate the published privacy.html before the next store submission —
+  see DEPLOYMENT.md store checklists. The two must never diverge.
+-->
+
 # Privacy Policy for Crosscue
 
 **Effective date:** June 9, 2026
