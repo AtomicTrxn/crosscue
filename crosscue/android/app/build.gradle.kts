@@ -76,3 +76,13 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Force the transitive Material Components library forward: dynamic_color
+    // 1.8.1 pins material:1.7.0 (2022), whose datepicker still calls the
+    // Window.setStatusBarColor/setNavigationBarColor APIs deprecated in
+    // Android 15, tripping a Play Console advisory on every release (#266).
+    // MDC 1.12+ guards those calls behind SDK checks. Drop this override once
+    // dynamic_color ships a newer Material pin.
+    implementation("com.google.android.material:material:1.12.0")
+}
