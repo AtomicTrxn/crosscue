@@ -221,6 +221,15 @@ class _StatusSection extends StatelessWidget {
           'Sync failed: $message',
           context.crosscueError,
         ),
+      // ADR-0016 mixed-version guard: a newer app version wrote some synced
+      // data; this device keeps pulling what it can read but stops pushing to
+      // those namespaces. Persistent until the app updates, then auto-clears.
+      SyncIdle(:final upgradeRequired) when upgradeRequired.isNotEmpty => (
+          'Update Crosscue to keep syncing — some data was written by a '
+              'newer version of the app. Everything on this device stays '
+              'safe meanwhile.',
+          context.crosscueError,
+        ),
       SyncIdle(:final lastSyncedAt) => (
           lastSyncedAt == null
               ? 'Connected — not synced yet'

@@ -1,8 +1,8 @@
 # ADR-0016 — Mixed-version sync compatibility policy
 
 **Status:** Accepted · **Date:** 2026-06-11 — the rule-3 behavior
-(stop-pushing + update notice) is implemented via a tracked GitHub issue and
-is a prerequisite for any `currentSchemaVersion` bump
+(stop-pushing + update notice) shipped via #258; schema bumps are now
+permitted under the rules below
 
 ## Context
 
@@ -37,8 +37,11 @@ settings) without anyone noticing.
 - Mixed-version households degrade *visibly and recoverably* (update the lag
   device) instead of forking silently — satisfying support-window statement
   #3 in [`../compatibility.md`](../compatibility.md).
-- Code change required: today's behavior implements the skip but not the
-  stop-pushing or the user-facing state. Until that lands, avoid bumping
-  `currentSchemaVersion` at all.
-- Property tests should cover: old-reader-ignores-additive-fields, and
-  newer-blob-observed → namespace push suspended.
+- Implemented (#258): per-namespace push suspension persisted in
+  `app_settings` (`sync_upgrade_required_v1`, sync-excluded — the record is
+  device-local by definition), `SyncIdle.upgradeRequired` drives a
+  persistent "Update Crosscue to keep syncing" status line, and the guard
+  self-clears once `currentSchemaVersion` reaches the observed version.
+- Covered by `test/core/sync/sync_upgrade_guard_test.dart`: suspension +
+  selective pushing, restart persistence, auto-clear after update, and
+  malformed-bytes-don't-suspend.

@@ -40,8 +40,29 @@ class SyncBlob {
         'payload': payload,
       });
 
+  /// When [bytes] is a structurally plausible envelope whose schema is newer
+  /// than this build understands, returns that schema version; otherwise
+  /// null. Distinguishes "written by a newer app version" — which triggers
+  /// the ADR-0016 mixed-version guard (suspend pushes, prompt to update) —
+  /// from malformed bytes, which stay a silent skip.
+  static int? peekNewerSchemaVersion(String bytes) {
+    final Object? json;
+    try {
+      json = jsonDecode(bytes);
+    } on FormatException {
+      return null;
+    }
+    if (json is! Map<String, Object?>) return null;
+    final schemaVersion = json['schemaVersion'];
+    if (schemaVersion is int && schemaVersion > currentSchemaVersion) {
+      return schemaVersion;
+    }
+    return null;
+  }
+
   /// Returns null if [bytes] cannot be decoded or the schema is newer than
-  /// [currentSchemaVersion]. Callers should treat that as "skip this blob."
+  /// [currentSchemaVersion]. Callers should treat that as "skip this blob"
+  /// (and use [peekNewerSchemaVersion] to tell the two cases apart).
   static SyncBlob? decode(String bytes) {
     final Object? json;
     try {
