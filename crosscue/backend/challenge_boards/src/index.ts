@@ -31,6 +31,7 @@ import {
   updateAvatar,
   updatePlayer,
 } from "./players.ts";
+import { serveAvatar } from "./avatars.ts";
 import { submitResult } from "./results.ts";
 import { purgeOldBoardEvents } from "./retention.ts";
 import type { Env } from "./types.ts";
@@ -44,11 +45,20 @@ export default {
     const requestId =
       request.headers.get("x-request-id") ?? crypto.randomUUID();
     try {
+      const url = new URL(request.url);
+
+      // Public avatar reads (#268) — before the min-client gate and auth: it's
+      // plain image content fetched by an <img>/byte loader that carries no
+      // client header or bearer token. No-op (null) for any other path.
+      if (request.method === "GET") {
+        const avatar = await serveAvatar(env.AVATARS, url.pathname);
+        if (avatar) return avatar;
+      }
+
       // Force-upgrade lever (#256) — gates every route, including identity
       // creation, when MIN_SUPPORTED_CLIENT is configured.
       enforceMinClient(request, env.MIN_SUPPORTED_CLIENT);
 
-      const url = new URL(request.url);
       const route = `${request.method} ${url.pathname}`;
 
       if (route === "POST /players/bootstrap") {

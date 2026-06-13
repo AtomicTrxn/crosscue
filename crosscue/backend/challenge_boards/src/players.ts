@@ -1,5 +1,6 @@
 // Player identity: bootstrap, restore, profile, avatar, auth, deletion.
 
+import { deleteAvatarObjects, storeAvatarPhoto } from "./avatars.ts";
 import { ApiError, readBody } from "./http.ts";
 import { activeMemberCount, eventStatement, transferOwnershipIfDeparting } from "./membership.ts";
 import type { Auth, Env, JsonValue, PlayerRow } from "./types.ts";
@@ -200,6 +201,11 @@ export async function deletePlayer(env: Env, auth: Auth): Promise<JsonValue> {
     ).bind(now, playerId),
   ]);
 
+  // Remove any stored avatar objects (no-op when R2 is unbound).
+  if (env.AVATARS) {
+    await deleteAvatarObjects(env.AVATARS, playerId);
+  }
+
   return { ok: true };
 }
 
@@ -241,10 +247,21 @@ export async function updateAvatar(
     typeof body.silhouetteLook === "number"
       ? Math.min(10, Math.max(1, Math.trunc(body.silhouetteLook)))
       : 1;
-  const photoUrl =
-    kind === "photo" && typeof body.photoPngBase64 === "string"
-      ? dataUrlForAvatar(body.photoPngBase64)
-      : null;
+  let photoUrl: string | null = null;
+  if (kind === "photo" && typeof body.photoPngBase64 === "string") {
+    // R2 by-reference when the bucket is bound; inline data URL otherwise.
+    photoUrl = env.AVATARS
+      ? await storeAvatarPhoto(
+          env.AVATARS,
+          request,
+          auth.player.id,
+          body.photoPngBase64,
+        )
+      : dataUrlForAvatar(body.photoPngBase64);
+  } else if (env.AVATARS) {
+    // Switched away from a photo — drop any now-orphaned stored object(s).
+    await deleteAvatarObjects(env.AVATARS, auth.player.id);
+  }
   await env.DB.prepare(
     `update players
      set avatar_kind = ?, avatar_silhouette_look = ?, avatar_photo_url = ?

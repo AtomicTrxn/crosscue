@@ -813,10 +813,11 @@ async function createApp(envOverrides = {}) {
     async runScheduled() {
       await worker.scheduled({ cron: '7 3 * * *' }, env, { waitUntil() {} });
     },
-    async bootstrap(displayName) {
+    async bootstrap(displayName, options = {}) {
       const data = await this.fetchJson('/players/bootstrap', {
         method: 'POST',
         body: { displayName },
+        headers: options.headers,
       });
       return data;
     },
@@ -861,8 +862,193 @@ async function createApp(envOverrides = {}) {
       );
       return data;
     },
+    // Returns the raw Response for non-JSON routes (e.g. GET /avatars/...).
+    async fetchRaw(path, options = {}) {
+      const headers = new Headers();
+      if (options.token) headers.set('authorization', `Bearer ${options.token}`);
+      for (const [name, value] of Object.entries(options.headers ?? {})) {
+        headers.set(name, value);
+      }
+      return worker.fetch(
+        new Request(`${apiBase}${path}`, {
+          method: options.method ?? 'GET',
+          headers,
+        }),
+        env,
+      );
+    },
   };
 }
+
+// Minimal in-memory R2 bucket for the avatar tests. Implements only the
+// surface src/avatars.ts uses: put/get/delete/list.
+class R2BucketShim {
+  constructor() {
+    this.store = new Map(); // key -> Uint8Array
+  }
+
+  async put(key, value) {
+    const bytes =
+      value instanceof Uint8Array
+        ? value
+        : value instanceof ArrayBuffer
+          ? new Uint8Array(value)
+          : new TextEncoder().encode(String(value));
+    this.store.set(key, bytes);
+    return { key };
+  }
+
+  async get(key) {
+    const bytes = this.store.get(key);
+    if (!bytes) return null;
+    return {
+      body: bytes,
+      httpEtag: `"${key}"`,
+      writeHttpMetadata(headers) {
+        headers.set('content-type', 'image/png');
+      },
+    };
+  }
+
+  async delete(keys) {
+    for (const k of Array.isArray(keys) ? keys : [keys]) {
+      this.store.delete(k);
+    }
+  }
+
+  async list({ prefix } = {}) {
+    const objects = [...this.store.keys()]
+      .filter((k) => !prefix || k.startsWith(prefix))
+      .map((key) => ({ key }));
+    return { objects, truncated: false };
+  }
+}
+
+// 1x1 PNGs with distinct bytes → distinct content hashes.
+const PNG_A =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8' +
+  'z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+const PNG_B =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk' +
+  '+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+test('avatar photo stores in R2 and is served by reference (#268)', async () => {
+  const app = await createApp({ AVATARS: new R2BucketShim() });
+  const maya = await app.bootstrap('Maya');
+
+  const updated = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: PNG_A },
+  });
+
+  const url = updated.player.avatar.photoUrl;
+  assert.ok(
+    !url.startsWith('data:'),
+    `expected an https URL, got a data URL: ${url.slice(0, 24)}…`,
+  );
+  assert.match(url, /\/avatars\/[^/]+\/[a-f0-9]+\.png$/);
+
+  // The public route serves the bytes with an immutable long cache.
+  const path = new URL(url).pathname;
+  const res = await app.fetchRaw(path);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'image/png');
+  assert.match(res.headers.get('cache-control'), /immutable/);
+  const served = new Uint8Array(await res.arrayBuffer());
+  const expected = Uint8Array.from(atob(PNG_A), (c) => c.charCodeAt(0));
+  assert.deepEqual(served, expected);
+});
+
+test('replacing a photo deletes the previous R2 object (#268)', async () => {
+  const bucket = new R2BucketShim();
+  const app = await createApp({ AVATARS: bucket });
+  const maya = await app.bootstrap('Maya');
+
+  const first = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: PNG_A },
+  });
+  const second = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: PNG_B },
+  });
+
+  // Exactly one object remains, and the old URL now 404s.
+  assert.equal(bucket.store.size, 1);
+  assert.notEqual(first.player.avatar.photoUrl, second.player.avatar.photoUrl);
+  const oldPath = new URL(first.player.avatar.photoUrl).pathname;
+  const gone = await app.fetchRaw(oldPath);
+  assert.equal(gone.status, 404);
+});
+
+test('switching from photo to silhouette clears the R2 object (#268)', async () => {
+  const bucket = new R2BucketShim();
+  const app = await createApp({ AVATARS: bucket });
+  const maya = await app.bootstrap('Maya');
+
+  await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: PNG_A },
+  });
+  const silhouette = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'silhouette', silhouetteLook: 3 },
+  });
+
+  assert.equal(silhouette.player.avatar.kind, 'silhouette');
+  assert.equal(silhouette.player.avatar.photoUrl, null);
+  assert.equal(bucket.store.size, 0);
+});
+
+test('account deletion removes stored avatar objects (#268)', async () => {
+  const bucket = new R2BucketShim();
+  const app = await createApp({ AVATARS: bucket });
+  const maya = await app.bootstrap('Maya');
+
+  await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { kind: 'photo', photoPngBase64: PNG_A },
+  });
+  assert.equal(bucket.store.size, 1);
+
+  await app.fetchJson('/players/me', {
+    method: 'DELETE',
+    token: maya.authToken,
+  });
+  assert.equal(bucket.store.size, 0);
+});
+
+test('avatar route 404s for a missing object and serves even with a min-client gate (#268)', async () => {
+  const app = await createApp({
+    AVATARS: new R2BucketShim(),
+    MIN_SUPPORTED_CLIENT: '99.0.0',
+  });
+  const maya = await app.bootstrap('Maya', {
+    headers: { 'x-crosscue-client': 'ios/99.0.0' },
+  });
+
+  // Unknown key → 404.
+  const missing = await app.fetchRaw('/avatars/nobody/deadbeef.png');
+  assert.equal(missing.status, 404);
+
+  // A real upload (sending the required client header past the gate)…
+  const updated = await app.fetchJson('/players/me/avatar', {
+    method: 'POST',
+    token: maya.authToken,
+    headers: { 'x-crosscue-client': 'ios/99.0.0' },
+    body: { kind: 'photo', photoPngBase64: PNG_A },
+  });
+  // …is then readable WITHOUT a client header: image fetches are exempt.
+  const path = new URL(updated.player.avatar.photoUrl).pathname;
+  const res = await app.fetchRaw(path);
+  assert.equal(res.status, 200);
+});
 
 class D1DatabaseShim {
   constructor(db) {
