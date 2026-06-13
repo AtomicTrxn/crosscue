@@ -18,11 +18,14 @@ pass when available. ~15 minutes per device once the build is installed.
 
 ## Automated coverage (context)
 
-The Flutter `integration_test` suite currently runs in CI on **iOS only**
-(`integration-test-ios.yml`). Individual tests can be run locally against an
-emulator (`flutter test integration_test/<file>.dart -d <android-device-id>`,
-see DEPLOYMENT.md) — doing so before this manual pass is recommended. An
-Android CI leg is tracked work (design review 2026-06-11 §5.4).
+The Flutter `integration_test` suite runs in CI on **both platforms**, each
+`workflow_dispatch`-only: `integration-test-ios.yml` and
+`integration-test-android.yml` (#261). Dispatch the Android leg before a
+release, or run the whole suite locally against an emulator with
+`scripts/run-android-integration-tests.sh` (see DEPLOYMENT.md → Running on
+Android). A green run covers the seeded solve, rebus, navigation, and
+lifecycle/theme paths; this manual checklist focuses on what an emulator
+can't exercise (real share-sheet import, gestures, store install).
 
 ---
 

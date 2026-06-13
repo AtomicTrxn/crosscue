@@ -241,7 +241,25 @@ open -a Simulator
 flutter test integration_test/seed_and_solve_test.dart -d <udid>
 ```
 
-### Running on Android (single test)
+### Running on Android
+
+`scripts/run-android-integration-tests.sh` is the Android counterpart: it runs
+**every** `integration_test/*_test.dart` against a running device/emulator and
+drops a screenshot per test into `design/qa/android-<git-sha>/`.
+
+```bash
+emulator -avd <avd-name> &                          # start an emulator first
+scripts/run-android-integration-tests.sh            # auto-picks the first ready device
+scripts/run-android-integration-tests.sh emulator-5554  # or an explicit adb serial
+```
+
+The same suite runs on demand in CI via the **Integration tests (Android)**
+workflow (`.github/workflows/integration-test-android.yml`, `workflow_dispatch`
+only — it boots an emulator under KVM, so like the iOS leg it's costly and not
+part of the per-PR gate). It uses `reactivecircus/android-emulator-runner`
+(API 34, x86_64) and uploads the screenshots as an artifact.
+
+Single test by hand:
 
 ```bash
 emulator -avd <avd-name> &
