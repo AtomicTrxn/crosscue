@@ -340,10 +340,18 @@ class ChallengeBoardApi {
     final data = _map(raw);
     final kind = data['kind'] as String?;
     if (kind == 'photo') {
+      // `photoUrl` arrives either as an inline `data:image/png;base64,…`
+      // string (legacy D1 storage — supported forever) or, once the server
+      // half of #268 lands, as an immutable `https:` URL fetched lazily by
+      // the avatar widget. Any other scheme is treated as no photo, so the
+      // UI falls back to initials.
       final photoUrl = data['photoUrl'] as String?;
       final bytes = _dataUrlBytes(photoUrl);
       if (bytes != null) return PlayerAvatar.photoBytes(bytes);
-      return PlayerAvatar.photo(photoUrl);
+      if (photoUrl != null && photoUrl.startsWith('https://')) {
+        return PlayerAvatar.photo(photoUrl);
+      }
+      return const PlayerAvatar.initials();
     }
     if (kind == 'silhouette') {
       return PlayerAvatar.silhouette(
