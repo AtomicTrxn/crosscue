@@ -13,6 +13,10 @@ export interface Env {
   // Setting it also cuts off app versions that predate the X-Crosscue-Client
   // header; that is the intended lever, enable deliberately.
   MIN_SUPPORTED_CLIENT?: string;
+  // Avatar photo storage (#268). Optional — when unbound (local/test/not yet
+  // provisioned) photo avatars fall back to inline data URLs in D1, so the
+  // code ships inert until the bucket exists.
+  AVATARS?: R2Bucket;
 }
 
 export interface RateLimiter {

@@ -28,8 +28,14 @@ purged; only the audit-only `board_events` table is on a retention cron.
 The rate-limit blocklist for display names is a small starter list in
 `src/index.ts` and is meant to be maintained over time.
 
-Out of scope for this slice: native deep links, production binary avatar
-storage, realtime/live-board infrastructure, and paid tiers.
+Avatar photos are stored by reference in an R2 bucket (`AVATARS` binding,
+#268) and served from `GET /avatars/<playerId>/<sha256>.png` with a one-year
+immutable cache. The binding is optional: with no bucket (the default until
+it's provisioned — see the commented `r2_buckets` blocks in `wrangler.toml`)
+photos fall back to inline `data:` URLs in D1, so the Worker runs unchanged.
+
+Out of scope for this slice: native deep links, realtime/live-board
+infrastructure, and paid tiers.
 
 ## Local Setup
 

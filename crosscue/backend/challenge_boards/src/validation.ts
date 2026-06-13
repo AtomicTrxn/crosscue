@@ -189,7 +189,13 @@ export function validateRankingMode(raw: unknown): RankingMode {
 
 export const pngMagicBytes = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
-export function dataUrlForAvatar(rawBase64: string): string {
+/**
+ * Validates an avatar upload and returns the decoded PNG bytes. The bytes are
+ * served back to every board member as image/png (inline today, by-reference
+ * from R2 once that ships), so we enforce the size cap, a base64 charset, and
+ * the PNG magic bytes rather than persisting arbitrary content.
+ */
+export function decodeAvatarPng(rawBase64: string): Uint8Array {
   if (rawBase64.length > 500_000) {
     throw new ApiError(
       413,
@@ -200,9 +206,6 @@ export function dataUrlForAvatar(rawBase64: string): string {
   if (!/^[A-Za-z0-9+/=]+$/u.test(rawBase64)) {
     throw new ApiError(400, "invalid_avatar", "Avatar image is invalid.");
   }
-  // The stored value is served back to every board member as image/png, so
-  // require the payload to actually start like one rather than persisting
-  // arbitrary bytes.
   let bytes: Uint8Array;
   try {
     bytes = Uint8Array.from(atob(rawBase64), (c) => c.charCodeAt(0));
@@ -215,6 +218,11 @@ export function dataUrlForAvatar(rawBase64: string): string {
   ) {
     throw new ApiError(400, "invalid_avatar", "Avatar must be a PNG image.");
   }
+  return bytes;
+}
+
+export function dataUrlForAvatar(rawBase64: string): string {
+  decodeAvatarPng(rawBase64); // validate (throws on bad input)
   return `data:image/png;base64,${rawBase64}`;
 }
 

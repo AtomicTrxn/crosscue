@@ -160,8 +160,25 @@ Photo uploads may use:
 ```
 
 `photoPngBase64` must decode to PNG bytes (magic-byte checked) and stay
-under the size cap; other content is rejected with `400 invalid_avatar`.
-Binary avatar storage is intentionally provisional in this slice.
+under the size cap; other content is rejected with `400 invalid_avatar`
+(or `413 avatar_too_large`).
+
+The returned `avatar.photoUrl` is one of two schemes, and clients must
+render both:
+
+- an inline `data:image/png;base64,…` URL (legacy/no-bucket storage), or
+- an `https:` URL served by this Worker (when the `AVATARS` R2 bucket is
+  bound, #268) — immutable and content-addressed, see below.
+
+`GET /avatars/<playerId>/<sha256>.png`
+
+Public and unauthenticated — plain image bytes, fetched by an image loader
+with no bearer token or client-version header (exempt from the min-client
+gate). Served from R2 with `Cache-Control: public, max-age=31536000,
+immutable` (the key is a content hash, so the bytes never change). Returns
+`404` when the bucket is unbound or the object is missing. Uploading a new
+photo writes a fresh key and deletes the prior object; deleting the player
+removes all of theirs.
 
 ## Boards
 

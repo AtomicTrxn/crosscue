@@ -68,8 +68,10 @@ table is a known trade-off, not a gap.
 
 ## Known gaps (not accepted — tracked)
 
-- **Avatar storage** is provisional: base64 PNGs in D1, returned inline
-  (partially fixed #237; R2 / by-reference delivery still open — #268).
+- **Avatar storage**: R2 by-reference delivery is implemented (#268) but
+  **inert until the `AVATARS` bucket is provisioned** — until then photos are
+  base64 PNGs stored inline in D1 (PNG-validated, #237). Provision the bucket
+  + uncomment the binding to activate.
 - **Alerting is pull-based** (`wrangler tail`) — see DEPLOYMENT.md
   "Monitoring & alerting" for the planned push signals.
 
