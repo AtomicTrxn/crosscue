@@ -529,15 +529,24 @@ Rules:
 minimal push signals (state: **partially set up**; treat unchecked items as
 TODO):
 
-- [ ] **Cloudflare notification** on Worker error-rate / exception spike
-      (Cloudflare dashboard → Notifications → Workers). Email is sufficient.
-- [ ] **Crosshare canary**: scheduled weekly GitHub Actions workflow that
-      runs the live fetch/parse and opens an issue on failure — guards the
-      scraper single-point-of-failure
+- [ ] **Cloudflare notification** on Worker error-rate / exception spike —
+      *owner action* (needs dashboard access): Cloudflare dashboard →
+      **Notifications** → **Add** → **Workers** → "Workers errors", scope it
+      to the `crosscue-challenge-boards` (production) Worker, deliver to
+      email. This is the push signal for 5xx/exception spikes that the
+      heartbeat below doesn't cover. Check this box once configured.
+- [x] **Crosshare canary** (#257): `.github/workflows/crosshare-canary.yml`
+      runs the live fetch/parse weekly and opens an issue on failure — guards
+      the scraper single-point-of-failure
       (see [`docs/architecture/compatibility.md`](docs/architecture/compatibility.md)).
-- [ ] **Retention-cron heartbeat**: periodic check that the daily
-      `purge_board_events` log line is present (a missing cron is silent
-      unbounded growth).
+- [x] **Retention-cron heartbeat** (#262):
+      `.github/workflows/retention-heartbeat.yml` reads `GET /health/retention`
+      weekly (the timestamp the purge cron records in `ops_meta`) and opens an
+      issue if it's older than 48 h — a silently-stopped cron is otherwise
+      invisible (unbounded `board_events` growth). Inert until the Worker is
+      deployed with #262: a null/unreachable endpoint is treated as
+      inconclusive, not an alert. After deploying, dispatch it once to confirm
+      a fresh heartbeat reads green.
 - [x] **Store-side crash signal**: Play Console → Quality (ANRs/crashes) and
       App Store Connect crash reports, reviewed as part of each release's
       post-rollout monitoring — the only crash telemetry that exists, since
