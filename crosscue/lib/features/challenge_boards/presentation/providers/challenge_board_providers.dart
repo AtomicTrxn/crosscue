@@ -2,6 +2,7 @@ import 'package:crosscue/core/providers/core_providers.dart';
 import 'package:crosscue/core/storage/secure_key_value_store.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/api_challenge_repository.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/sample_challenge_repository.dart';
+import 'package:crosscue/features/challenge_boards/data/services/avatar_photo_cache.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_api_config.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_board_api.dart';
 import 'package:crosscue/features/challenge_boards/data/services/challenge_identity_store.dart';
@@ -34,6 +35,12 @@ final challengeIdentityStoreProvider = Provider<ChallengeIdentityStore>((ref) {
     secureStore: ref.watch(secureKeyValueStoreProvider),
   );
 });
+
+/// App-lifetime cache for `https:` avatar photos (#268). Avatar URLs are
+/// immutable/content-hashed, so cached bytes never go stale.
+final avatarPhotoCacheProvider = Provider<AvatarPhotoCache>(
+  (ref) => AvatarPhotoCache(dio: ref.watch(dioProvider)),
+);
 
 final challengeBoardApiProvider = Provider<ChallengeBoardApi?>((ref) {
   final config = ref.watch(challengeApiConfigProvider);
