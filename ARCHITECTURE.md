@@ -46,6 +46,9 @@ lib/
 | **Presentation** | Notifiers, screens, widgets | Domain models + data repositories (via providers) |
 
 > Domain models **never** import Flutter. Presentation **never** directly touches Drift tables.
+> These rules — plus the no-blanket-`ignore_for_file` and feature-local-theme
+> rules — are enforced mechanically by `test/architecture/layer_rules_test.dart`
+> (#259), so a violation fails CI rather than relying on review.
 
 ---
 
