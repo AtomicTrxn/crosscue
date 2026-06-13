@@ -408,3 +408,19 @@ Other soft-reject reasons (also HTTP 202): `not_challenge_daily_mini` for
 ineligible sources, `implausible_elapsed_ms` for times under the floor, and
 `implausible_completed_at` for completion timestamps more than a day in the
 future. `publishedOn` must be a real calendar date.
+
+## Operational
+
+`GET /health/retention`
+
+Public and unauthenticated (exempt from the min-client gate). Liveness for
+the daily `board_events` purge cron (#262): returns the timestamp the
+scheduled handler last recorded.
+
+```json
+{ "lastPurgeAt": "2026-06-13T03:07:00.000Z" }
+```
+
+`lastPurgeAt` is `null` before the cron has run at least once. The
+`retention-heartbeat` GitHub Actions workflow reads this weekly and alerts if
+it falls more than 48 hours behind.

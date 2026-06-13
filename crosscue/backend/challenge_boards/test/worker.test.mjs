@@ -713,6 +713,31 @@ test('scheduled purge removes board events older than 14 days', async () => {
   );
 });
 
+test('retention heartbeat: scheduled run records it; /health/retention exposes it (#262)', async () => {
+  const app = await createApp();
+
+  // Before any run, the endpoint is reachable (public, ungated) and null.
+  const before = await app.fetchJson('/health/retention');
+  assert.equal(before.lastPurgeAt, null);
+
+  await app.runScheduled();
+
+  const after = await app.fetchJson('/health/retention');
+  assert.ok(after.lastPurgeAt, 'heartbeat recorded');
+  assert.ok(
+    !Number.isNaN(Date.parse(after.lastPurgeAt)),
+    'heartbeat is an ISO datetime',
+  );
+});
+
+test('retention heartbeat endpoint is exempt from the min-client gate (#262)', async () => {
+  // A monitoring curl carries no X-Crosscue-Client header; the health check
+  // must not 426 when the force-upgrade lever is armed.
+  const app = await createApp({ MIN_SUPPORTED_CLIENT: '99.0.0' });
+  const res = await app.fetchRaw('/health/retention');
+  assert.equal(res.status, 200);
+});
+
 test('display names with reserved or blocked words are rejected', async () => {
   const app = await createApp();
   for (const name of ['admin', 'Cr0sscue', 'fuck', 'sh1t']) {

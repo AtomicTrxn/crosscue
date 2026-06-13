@@ -1,0 +1,69 @@
+name: Retention heartbeat
+
+# Weekly liveness check for the Worker's daily board_events purge cron (#262).
+# If the cron silently stops, board_events grows unbounded with no error — this
+# catches it by reading the heartbeat the scheduled handler records and exposes
+# at GET /health/retention. Tolerant before the Worker is deployed with #262
+# (null/unreachable → inconclusive, no alert).
+on:
+  schedule:
+    - cron: '23 7 * * 1' # Mondays 07:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  HEALTH_URL: https://crosscue-challenge-boards.tomhess.workers.dev/health/retention
+  STALE_HOURS: 48
+
+jobs:
+  heartbeat:
+    name: Check retention cron liveness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the retention heartbeat
+        id: check
+        run: |
+          set -uo pipefail
+          resp="$(curl -fsS --max-time 20 "$HEALTH_URL")" || {
+            echo "::notice::$HEALTH_URL unreachable — inconclusive (Worker may predate #262, or transient). Not alerting."
+            exit 0
+          }
+          last="$(echo "$resp" | jq -r '.lastPurgeAt // empty')"
+          if [ -z "$last" ]; then
+            echo "::notice::lastPurgeAt is null — the cron has not recorded a run yet (deploy + first cron pending). Not alerting."
+            exit 0
+          fi
+          age_h=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 3600 ))
+          echo "last purge: $last (${age_h}h ago)"
+          if [ "$age_h" -gt "$STALE_HOURS" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "last=$last" >> "$GITHUB_OUTPUT"
+            echo "age_h=$age_h" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the alert issue
+        if: steps.check.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LAST: ${{ steps.check.outputs.last }}
+          AGE_H: ${{ steps.check.outputs.age_h }}
+        run: |
+          title="Retention cron heartbeat is stale"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body="The Challenge Boards retention cron's last recorded run was **${LAST}** (${AGE_H}h ago, threshold ${STALE_HOURS}h). The daily \`purge_board_events\` job may have stopped — \`board_events\` will grow unbounded until it resumes.
+
+          Check: \`npx wrangler tail --env production\` for the \`purge_board_events\` log line, and the \`[triggers] crons\` config in \`wrangler.toml\`. Heartbeat run: ${run_url}"
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still stale as of this run (last ${LAST}, ${AGE_H}h ago): ${run_url}"
+          else
+            gh issue create --title "$title" --label "bug" --label "area: infrastructure" --body "$body"
+          fi
+
+      - name: Fail when stale
+        if: steps.check.outputs.stale == 'true'
+        run: exit 1

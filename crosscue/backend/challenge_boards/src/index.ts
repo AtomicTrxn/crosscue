@@ -33,7 +33,11 @@ import {
 } from "./players.ts";
 import { serveAvatar } from "./avatars.ts";
 import { submitResult } from "./results.ts";
-import { purgeOldBoardEvents } from "./retention.ts";
+import {
+  purgeOldBoardEvents,
+  recordRetentionHeartbeat,
+  retentionHealth,
+} from "./retention.ts";
 import type { Env } from "./types.ts";
 
 export default {
@@ -47,12 +51,16 @@ export default {
     try {
       const url = new URL(request.url);
 
-      // Public avatar reads (#268) — before the min-client gate and auth: it's
-      // plain image content fetched by an <img>/byte loader that carries no
-      // client header or bearer token. No-op (null) for any other path.
+      // Public, ungated reads — before the min-client gate and auth.
       if (request.method === "GET") {
+        // Avatar image bytes (#268): fetched by an <img>/byte loader with no
+        // client header or bearer token. No-op (null) for any other path.
         const avatar = await serveAvatar(env.AVATARS, url.pathname);
         if (avatar) return avatar;
+        // Retention heartbeat (#262): liveness for the daily purge cron.
+        if (url.pathname === "/health/retention") {
+          return json(await retentionHealth(env), requestId);
+        }
       }
 
       // Force-upgrade lever (#256) — gates every route, including identity
@@ -154,6 +162,7 @@ export default {
     _ctx: ExecutionContext,
   ): Promise<void> {
     const deleted = await purgeOldBoardEvents(env);
+    await recordRetentionHeartbeat(env);
     console.log(JSON.stringify({ job: "purge_board_events", deleted }));
   },
 };
