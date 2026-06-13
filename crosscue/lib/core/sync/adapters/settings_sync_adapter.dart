@@ -38,6 +38,11 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
     'has_seen_onboarding',
     'challenge_auth_token',
     'challenge_result_outbox_v1',
+    // ADR-0016 suspension record (SyncOrchestrator.upgradeGuardKey): which
+    // namespaces this DEVICE must stop pushing to because a newer app wrote
+    // them. Device-local by definition — syncing it would suppress pushes on
+    // up-to-date devices too.
+    'sync_upgrade_required_v1',
   };
 
   @override
@@ -110,6 +115,7 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
     final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
     final seen = <String, SyncManifestEntry>{};
+    int? newerSchemaSeen;
     final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     var conflicts = 0;
@@ -120,7 +126,17 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
       final bytes = await transport.read(transportKey);
       if (bytes == null) continue;
       final blob = SyncBlob.decode(bytes);
-      if (blob == null) continue;
+      if (blob == null) {
+        // Written by a newer app version? Flag it for the ADR-0016 guard.
+        // Either way the key stays out of caughtUp so it's retried after the
+        // app updates; malformed bytes remain a silent skip.
+        final newer = SyncBlob.peekNewerSchemaVersion(bytes);
+        if (newer != null &&
+            (newerSchemaSeen == null || newer > newerSchemaSeen)) {
+          newerSchemaSeen = newer;
+        }
+        continue;
+      }
 
       final entry = manifestEntryFor(blob);
       seen[transportKey] = entry;
@@ -176,6 +192,7 @@ class SettingsSyncAdapter extends NamespaceSyncAdapter {
       outcome: NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts),
       seen: seen,
       caughtUp: caughtUp,
+      newerSchemaSeen: newerSchemaSeen,
     );
   }
 

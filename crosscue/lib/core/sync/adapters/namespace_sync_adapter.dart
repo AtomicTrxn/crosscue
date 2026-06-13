@@ -31,11 +31,18 @@ class PullResult {
     this.outcome = NamespaceSyncOutcome.zero,
     this.seen = const {},
     this.caughtUp = const {},
+    this.newerSchemaSeen,
   });
 
   static const PullResult zero = PullResult();
 
   final NamespaceSyncOutcome outcome;
+
+  /// Highest envelope schema version observed that is newer than this build's
+  /// [SyncBlob.currentSchemaVersion], or null when none was. A non-null value
+  /// triggers the ADR-0016 mixed-version guard: the orchestrator suspends
+  /// pushes to this namespace and surfaces an "update Crosscue" notice.
+  final int? newerSchemaSeen;
 
   /// Every remote key we successfully decoded this pass, with the metadata read
   /// from the blob. Used to (re)build the manifest on the fallback path.

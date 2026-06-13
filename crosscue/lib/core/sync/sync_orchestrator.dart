@@ -8,6 +8,7 @@ import 'package:crosscue/core/sync/adapters/puzzles_sync_adapter.dart';
 import 'package:crosscue/core/sync/adapters/sessions_sync_adapter.dart';
 import 'package:crosscue/core/sync/adapters/settings_sync_adapter.dart';
 import 'package:crosscue/core/sync/models/sync_account.dart';
+import 'package:crosscue/core/sync/models/sync_blob.dart';
 import 'package:crosscue/core/sync/models/sync_manifest.dart';
 import 'package:crosscue/core/sync/models/sync_namespace.dart';
 import 'package:crosscue/core/sync/models/sync_result.dart';
@@ -61,7 +62,10 @@ class SyncOrchestrator {
     _setState(
       account == null
           ? const SyncSignedOut()
-          : SyncIdle(lastSyncedAt: _lastSyncedAt),
+          : SyncIdle(
+              lastSyncedAt: _lastSyncedAt,
+              upgradeRequired: await _loadSuspendedNamespaces(),
+            ),
     );
   }
 
@@ -75,7 +79,10 @@ class SyncOrchestrator {
     _setState(
       account == null
           ? const SyncSignedOut()
-          : SyncIdle(lastSyncedAt: _lastSyncedAt),
+          : SyncIdle(
+              lastSyncedAt: _lastSyncedAt,
+              upgradeRequired: await _loadSuspendedNamespaces(),
+            ),
     );
   }
 
@@ -126,6 +133,13 @@ class SyncOrchestrator {
     final start = DateTime.now();
     final deviceId = await _resolveDeviceId();
 
+    // ADR-0016 mixed-version guard: namespaces a newer app version has
+    // written to. We keep pulling what we can read, but stop pushing to
+    // them so this stale device can't clobber newer data via LWW.
+    final guard = await _loadUpgradeGuard();
+    var guardSchema = guard?.schemaVersion;
+    final suspended = <SyncNamespace>{...?guard?.namespaces};
+
     NamespaceSyncOutcome total = NamespaceSyncOutcome.zero;
     try {
       final manifestRead = await manifestStore.read(transport);
@@ -147,10 +161,23 @@ class SyncOrchestrator {
         total += result.outcome;
         seenByNs[adapter.namespace] = result.seen;
         await _advanceCursors(adapter.namespace, result.caughtUp);
+        final newer = result.newerSchemaSeen;
+        if (newer != null) {
+          suspended.add(adapter.namespace);
+          guardSchema =
+              guardSchema == null || newer > guardSchema ? newer : guardSchema;
+        }
+      }
+      if (suspended.isNotEmpty && guardSchema != null) {
+        await _saveUpgradeGuard(guardSchema, suspended);
       }
 
       final writtenByNs = <SyncNamespace, Map<String, SyncManifestEntry>>{};
       for (final adapter in adapters) {
+        // ADR-0016: a newer app version owns this namespace now. Skip the
+        // push (pulls of still-readable blobs continue; the newer blob's
+        // cursor never advanced, so it's retried after the app updates).
+        if (suspended.contains(adapter.namespace)) continue;
         final remoteIndex = fallback
             ? seenByNs[adapter.namespace]!
             : manifest!.entriesFor(adapter.namespace);
@@ -200,7 +227,12 @@ class SyncOrchestrator {
       duration: DateTime.now().difference(start),
     );
     _lastSyncedAt = DateTime.now().toUtc();
-    _setState(SyncIdle(lastSyncedAt: _lastSyncedAt));
+    _setState(
+      SyncIdle(
+        lastSyncedAt: _lastSyncedAt,
+        upgradeRequired: Set.unmodifiable(suspended),
+      ),
+    );
     return result;
   }
 
@@ -286,6 +318,64 @@ class SyncOrchestrator {
     } else {
       debugPrint('[sync] manifest: $entryCount entries, $bytes B');
     }
+  }
+
+  /// app_settings key persisting the ADR-0016 suspension record:
+  /// `{"schemaVersion": <highest newer schema observed>, "namespaces": […]}`.
+  /// Device-local by definition (a newer device must keep pushing!) — listed
+  /// in [SettingsSyncAdapter.excludedKeys].
+  static const String upgradeGuardKey = 'sync_upgrade_required_v1';
+
+  /// Loads the persisted suspension record, auto-clearing it once this build
+  /// understands the schema it warned about (i.e. after the app updates) —
+  /// pushes then resume on the next pass with no user action.
+  Future<({int schemaVersion, Set<SyncNamespace> namespaces})?>
+      _loadUpgradeGuard() async {
+    final raw = await db.appSettingsDao.getValue(upgradeGuardKey);
+    if (raw == null) return null;
+    Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      decoded = null;
+    }
+    if (decoded is! Map<String, Object?>) {
+      await db.appSettingsDao.removeValue(upgradeGuardKey);
+      return null;
+    }
+    final schemaVersion = decoded['schemaVersion'];
+    final names = decoded['namespaces'];
+    if (schemaVersion is! int ||
+        names is! List ||
+        schemaVersion <= SyncBlob.currentSchemaVersion) {
+      await db.appSettingsDao.removeValue(upgradeGuardKey);
+      return null;
+    }
+    final namespaces = <SyncNamespace>{
+      for (final ns in SyncNamespace.values)
+        if (names.contains(ns.name)) ns,
+    };
+    if (namespaces.isEmpty) {
+      await db.appSettingsDao.removeValue(upgradeGuardKey);
+      return null;
+    }
+    return (schemaVersion: schemaVersion, namespaces: namespaces);
+  }
+
+  Future<Set<SyncNamespace>> _loadSuspendedNamespaces() async =>
+      (await _loadUpgradeGuard())?.namespaces ?? const {};
+
+  Future<void> _saveUpgradeGuard(
+    int schemaVersion,
+    Set<SyncNamespace> namespaces,
+  ) async {
+    await db.appSettingsDao.setValue(
+      upgradeGuardKey,
+      jsonEncode({
+        'schemaVersion': schemaVersion,
+        'namespaces': [for (final ns in namespaces) ns.name],
+      }),
+    );
   }
 
   /// Reads or generates the stable per-install device id. Stored in

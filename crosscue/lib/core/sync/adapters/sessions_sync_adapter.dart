@@ -74,6 +74,7 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
     final remoteKeys = onlyKeys ?? await transport.list(namespace.prefix);
 
     final seen = <String, SyncManifestEntry>{};
+    int? newerSchemaSeen;
     final caughtUp = <String, SyncManifestEntry>{};
     var pulled = 0;
     var conflicts = 0;
@@ -84,7 +85,17 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
       final bytes = await transport.read(key);
       if (bytes == null) continue;
       final blob = SyncBlob.decode(bytes);
-      if (blob == null) continue;
+      if (blob == null) {
+        // Written by a newer app version? Flag it for the ADR-0016 guard.
+        // Either way the key stays out of caughtUp so it's retried after the
+        // app updates; malformed bytes remain a silent skip.
+        final newer = SyncBlob.peekNewerSchemaVersion(bytes);
+        if (newer != null &&
+            (newerSchemaSeen == null || newer > newerSchemaSeen)) {
+          newerSchemaSeen = newer;
+        }
+        continue;
+      }
 
       final entry = manifestEntryFor(blob);
       seen[key] = entry;
@@ -119,6 +130,7 @@ class SessionsSyncAdapter extends NamespaceSyncAdapter {
       outcome: NamespaceSyncOutcome(pulled: pulled, conflicts: conflicts),
       seen: seen,
       caughtUp: caughtUp,
+      newerSchemaSeen: newerSchemaSeen,
     );
   }
 
