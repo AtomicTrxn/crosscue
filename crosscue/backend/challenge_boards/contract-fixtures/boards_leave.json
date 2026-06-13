@@ -1,0 +1,14 @@
+{
+  "name": "leave a board",
+  "request": {
+    "method": "POST",
+    "path": "/boards/<string>/leave"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "boardDeleted": false
+    }
+  }
+}

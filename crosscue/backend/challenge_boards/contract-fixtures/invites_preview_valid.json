@@ -1,0 +1,21 @@
+{
+  "name": "preview a valid invite",
+  "request": {
+    "method": "POST",
+    "path": "/invites/preview",
+    "body": {
+      "inviteLink": "<url>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "invite": {
+        "result": "valid",
+        "boardName": "Friday Crew",
+        "playerCount": 1,
+        "daysUntilExpiry": 30
+      }
+    }
+  }
+}

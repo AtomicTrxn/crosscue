@@ -1,0 +1,30 @@
+{
+  "name": "join via invite",
+  "request": {
+    "method": "POST",
+    "path": "/invites/join",
+    "body": {
+      "inviteLink": "<url>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "board": {
+        "id": "<string>",
+        "name": "Friday Crew",
+        "playerCount": 2,
+        "rankingMode": "average_time",
+        "ownerPlayerId": "<string>",
+        "myWeekly": {
+          "rank": 2,
+          "outOf": 2,
+          "cleanSolves": 0,
+          "avgClean": "—",
+          "bestClean": "—",
+          "totalClean": "—"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "rename the signed-in player",
+  "request": {
+    "method": "PATCH",
+    "path": "/players/me",
+    "body": {
+      "displayName": "Maya"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "player": {
+        "id": "<string>",
+        "displayName": "Maya",
+        "isMe": true,
+        "avatar": {
+          "kind": "initials",
+          "silhouetteLook": 1,
+          "photoUrl": null
+        }
+      }
+    }
+  }
+}

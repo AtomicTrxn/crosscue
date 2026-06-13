@@ -1,0 +1,22 @@
+{
+  "name": "result soft-reject: ineligible source",
+  "request": {
+    "method": "POST",
+    "path": "/results",
+    "body": {
+      "sourceId": "local_import",
+      "sourcePuzzleId": "abc",
+      "completedAt": "<iso>",
+      "elapsedMs": 91000,
+      "completionType": "clean",
+      "cleanSolveEligible": true
+    }
+  },
+  "response": {
+    "status": 202,
+    "body": {
+      "accepted": false,
+      "reason": "not_challenge_daily_mini"
+    }
+  }
+}
