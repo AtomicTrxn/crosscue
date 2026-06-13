@@ -1,0 +1,14 @@
+{
+  "name": "regenerate a boards invite link",
+  "request": {
+    "method": "POST",
+    "path": "/boards/<string>/invite/regenerate"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "inviteLink": "<url>",
+      "expiresAt": "<iso>"
+    }
+  }
+}

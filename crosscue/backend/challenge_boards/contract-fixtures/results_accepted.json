@@ -1,0 +1,23 @@
+{
+  "name": "submit an accepted clean result",
+  "request": {
+    "method": "POST",
+    "path": "/results",
+    "body": {
+      "sourceId": "crosshare_daily_mini",
+      "sourcePuzzleId": "2026-06-05",
+      "completedAt": "<iso>",
+      "elapsedMs": 91000,
+      "completionType": "clean",
+      "cleanSolveEligible": true,
+      "puzzleTitle": "Daily Mini",
+      "publishedOn": "2026-06-05"
+    }
+  },
+  "response": {
+    "status": 202,
+    "body": {
+      "accepted": true
+    }
+  }
+}

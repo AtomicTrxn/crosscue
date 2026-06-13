@@ -1,0 +1,14 @@
+{
+  "name": "rotate the recovery secret",
+  "request": {
+    "method": "POST",
+    "path": "/players/recovery/rotate"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "recoverySecret": "<string>",
+      "rotatedAt": "<iso>"
+    }
+  }
+}

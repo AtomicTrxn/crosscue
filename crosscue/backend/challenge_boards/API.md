@@ -1,5 +1,12 @@
 # Challenge Boards API Contract
 
+> The request/response examples here are **executable**: canonical pairs live
+> in [`contract-fixtures/`](contract-fixtures/) and are replayed by both the
+> Worker (`test/contract.test.mjs`) and the Dart client
+> (`crosscue/test/features/challenge_boards/contract_fixtures_test.dart`).
+> Change the wire shape → update `API.md`, the fixture, and re-run `make ci`;
+> a drift on either side fails both suites (#260).
+
 All responses are JSON. Authenticated requests use:
 
 ```http

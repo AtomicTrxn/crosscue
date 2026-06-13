@@ -1,0 +1,13 @@
+{
+  "name": "delete the signed-in player",
+  "request": {
+    "method": "DELETE",
+    "path": "/players/me"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "ok": true
+    }
+  }
+}

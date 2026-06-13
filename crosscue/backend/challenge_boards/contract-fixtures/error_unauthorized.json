@@ -1,0 +1,17 @@
+{
+  "name": "error envelope: missing/invalid token",
+  "request": {
+    "method": "GET",
+    "path": "/boards"
+  },
+  "response": {
+    "status": 401,
+    "body": {
+      "error": {
+        "code": "unauthorized",
+        "message": "<string>",
+        "requestId": "<string>"
+      }
+    }
+  }
+}

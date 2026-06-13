@@ -1,0 +1,20 @@
+{
+  "name": "error envelope: over the rate limit",
+  "request": {
+    "method": "POST",
+    "path": "/players/bootstrap",
+    "body": {
+      "displayName": "Maya"
+    }
+  },
+  "response": {
+    "status": 429,
+    "body": {
+      "error": {
+        "code": "rate_limited",
+        "message": "<string>",
+        "requestId": "<string>"
+      }
+    }
+  }
+}

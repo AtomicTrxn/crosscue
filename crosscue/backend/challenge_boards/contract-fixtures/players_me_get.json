@@ -1,0 +1,22 @@
+{
+  "name": "get the signed-in player",
+  "request": {
+    "method": "GET",
+    "path": "/players/me"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "player": {
+        "id": "<string>",
+        "displayName": "Maya",
+        "isMe": true,
+        "avatar": {
+          "kind": "initials",
+          "silhouetteLook": 1,
+          "photoUrl": null
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "create a board",
+  "request": {
+    "method": "POST",
+    "path": "/boards",
+    "body": {
+      "name": "Friday Crew",
+      "rankingMode": "average_time"
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "board": {
+        "id": "<string>",
+        "name": "Friday Crew",
+        "playerCount": 1,
+        "rankingMode": "average_time",
+        "ownerPlayerId": "<string>",
+        "myWeekly": {
+          "rank": 1,
+          "outOf": 1,
+          "cleanSolves": 0,
+          "avgClean": "—",
+          "bestClean": "—",
+          "totalClean": "—"
+        }
+      },
+      "inviteLink": "<url>"
+    }
+  }
+}

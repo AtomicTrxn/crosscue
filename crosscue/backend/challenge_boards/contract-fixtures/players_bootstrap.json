@@ -1,0 +1,27 @@
+{
+  "name": "bootstrap an anonymous player",
+  "request": {
+    "method": "POST",
+    "path": "/players/bootstrap",
+    "body": {
+      "displayName": "Maya"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "player": {
+        "id": "<string>",
+        "displayName": "Maya",
+        "isMe": true,
+        "avatar": {
+          "kind": "initials",
+          "silhouetteLook": 1,
+          "photoUrl": null
+        }
+      },
+      "authToken": "<string>",
+      "recoverySecret": "<string>"
+    }
+  }
+}

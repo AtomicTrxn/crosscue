@@ -1,0 +1,21 @@
+{
+  "name": "preview a rotated/expired invite",
+  "request": {
+    "method": "POST",
+    "path": "/invites/preview",
+    "body": {
+      "inviteLink": "<url>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "invite": {
+        "result": "invalidOrExpired",
+        "boardName": "",
+        "playerCount": 0,
+        "daysUntilExpiry": 0
+      }
+    }
+  }
+}
