@@ -171,6 +171,11 @@ copy stored in your iCloud or Google Drive account. If you have used Challenge
 Boards, this action also deletes your server-side player record and board
 participation, as described in "Optional Challenge Boards" above.
 
+For a step-by-step guide to deleting every copy of your data — on the device, in
+your own cloud, and on the Challenge Boards server — see the dedicated
+[Delete your Crosscue data](https://atomictrxn.github.io/crosscue/delete-data.html)
+page.
+
 ## Children's privacy
 
 Crosscue is not directed to children under 13, and the app does not knowingly

@@ -20,6 +20,9 @@ record for shipped/superseded work).
   with both stores: GitHub Pages builds `main:/docs` via Jekyll and serves it
   automatically (verify the live page after policy changes — DEPLOYMENT.md
   store checklists)
+- [Delete your Crosscue data](delete-data.md) — **is** the published
+  `delete-data.html`, the dedicated data-deletion page filed as the Play
+  Console "Delete data URL" (same publish/verify rule as the policy)
 - [Product vision & principles](../PRODUCT.md) — why the app exists, the
   online-feature rule, roadmap themes, non-goals
 - [Security policy](../SECURITY.md) — vulnerability disclosure

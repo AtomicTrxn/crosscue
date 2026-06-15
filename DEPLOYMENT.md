@@ -760,13 +760,17 @@ Human review is required before publishing — this is not legal advice.
 - [x] In-app `Settings → Privacy & Data → Privacy policy` opens the public
       URL via `url_launcher` (see [privacy_screen.dart](crosscue/lib/features/settings/presentation/screens/privacy_screen.dart)).
 - [x] Privacy policy URL filed in Play Console → App Content → Privacy Policy.
-- [ ] **Every release where `docs/privacy.md` changed:** verify the live
-      page picked up the change before submitting.
-      [`docs/privacy.md`](docs/privacy.md) is the **single source** — GitHub
-      Pages builds from `main:/docs` (Jekyll), publishing it as
-      `privacy.html` automatically when the change merges to main. There is
-      no separate copy to update; just confirm the published page renders
-      the new effective date.
+- [ ] **Delete data URL filed** in Play Console → Data safety →
+      `https://atomictrxn.github.io/crosscue/delete-data.html` (published from
+      [`docs/delete-data.md`](docs/delete-data.md)).
+- [ ] **Every release where `docs/privacy.md` or `docs/delete-data.md`
+      changed:** verify the live page picked up the change before submitting.
+      [`docs/privacy.md`](docs/privacy.md) and
+      [`docs/delete-data.md`](docs/delete-data.md) are the **single source** for
+      `privacy.html` / `delete-data.html` — GitHub Pages builds from
+      `main:/docs` (Jekyll) and publishes them automatically when the change
+      merges to main. There is no separate copy to update; just confirm the
+      published page renders the new effective date.
 
 ### Play Console — Data Safety form
 
@@ -797,6 +801,7 @@ Three distinct data flows, only one of which is developer collection:
 | Shared with third parties? | No (Cloudflare is processing infrastructure, not a recipient) |
 | Encrypted in transit? | Yes (HTTPS) |
 | Users can request deletion? | Yes — `Settings → Privacy & Data → Clear all data` deletes the server record |
+| **Delete data URL** (required when the above is "Yes") | `https://atomictrxn.github.io/crosscue/delete-data.html` — the dedicated deletion page ([`docs/delete-data.md`](docs/delete-data.md)), not the privacy policy. Google's review wants the deletion steps to be the prominent focus of the linked page. |
 | Required for core function? | No (Challenge Boards is optional) |
 | Used for tracking / ads? | No |
 

@@ -574,4 +574,4 @@ plausibly regresses one as a finding that needs measurement before merge.
 | Grid rendering | One `CustomPainter.paint()` pass per frame; no per-cell widgets at any size up to 21×21 ⚙ (see CONVENTIONS.md → Grid Rendering) |
 | Import | 5 MB file cap enforced in parsers ⚙; parse + persist completes without blocking the UI |
 | Incremental sync (unchanged library) | One manifest GET; entity blobs fetched only when the manifest shows a newer remote version ⚙ |
-| Worker leaderboards | One batched aggregation per request — no per-board N+1 (#241) ⚙; keep board-detail payloads mobile-sized (avatar by-reference delivery still open, #237) |
+| Worker leaderboards | One batched aggregation per request — no per-board N+1 (#241) ⚙; keep board-detail payloads mobile-sized — avatar photos are served by reference from R2 rather than inlined (#268), inert until the `AVATARS` bucket is provisioned (then photos fall back to inline data URLs in D1) |
