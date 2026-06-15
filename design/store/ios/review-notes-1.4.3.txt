@@ -1,0 +1,27 @@
+App Review notes — Crosscue v1.4.3
+(paste into App Store Connect → App Review Information → Notes)
+
+No sign-in or demo account is required. Crosscue is offline-first: import a
+.puz/.ipuz file or download a daily mini in-app, then solve. All core
+features (solving, import, archive, stats, settings) work without an account
+or network connection.
+
+Challenge Boards (optional, in the "Challenge" tab) is anonymous and
+invite-only — no account, just a chosen handle. It lets friends compare
+daily-mini solve times via a private invite link. Because it requires a
+second participant/device to be meaningful, a fresh install shows a
+"create or join a board" empty state; that is expected, not a defect.
+To exercise it: tap "Challenge" → create a board → it produces an invite
+link to share.
+
+Permissions: Camera and Photo Library are used only if you choose a custom
+photo for your Challenge Boards avatar. The app declares a location-usage
+string because a bundled photo-picker component references location APIs to
+read photo metadata — Crosscue never requests or records your location, and
+no location prompt is shown.
+
+Privacy: no ads, no analytics, no tracking. The only data sent to a
+Crosscue-operated server is the optional Challenge Boards data (anonymous
+handle + solve-result metadata), disclosed in the App Privacy section and
+the privacy policy, and deletable in-app via Settings → Privacy & Data →
+Clear all data.

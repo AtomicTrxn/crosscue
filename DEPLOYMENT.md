@@ -769,28 +769,36 @@ Human review is required before publishing — this is not legal advice.
       the new effective date.
 
 ### Play Console — Data Safety form
-Crosscue current-release answers:
+
+> ⚠️ **Must disclose Challenge Boards before the next submission.** The forms
+> below historically read "No data collected," but that is **no longer
+> accurate** now that Challenge Boards ships enabled (the release build injects
+> `CHALLENGE_API_BASE_URL`). The privacy policy already discloses that an
+> anonymous handle + solve-result metadata are "stored on a Crosscue-operated
+> server" — so a "collects no data" label **contradicts the linked policy**,
+> which is a classic store-review flag. Reconcile before submitting. The
+> developer (not lawyer) recommended answers, for owner confirmation:
+
+Three distinct data flows, only one of which is developer collection:
+
+1. **Local/offline play** — nothing leaves the device. Not collected.
+2. **Sync** (iCloud / Google Drive) — goes to the *user's own* cloud
+   (`drive.appdata` / iCloud container), never a Crosscue server. Not
+   developer collection (re-confirm when Drive sync ships, per
+   [`sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)).
+3. **Challenge Boards** (optional, opt-in) — **is** sent to the
+   Crosscue-operated Cloudflare Worker. This must be declared.
 
 | Question | Answer |
 |----------|--------|
-| Data collected? | No |
-| Data types | None collected by Crosscue |
-| Shared with third parties? | No |
-| Encrypted in transit? | Not applicable |
-| Users can request deletion? | Yes |
-| Required for core function? | Not applicable |
-
-> **Re-confirm before Android (Google Drive) sync goes live.** These answers
-> stay accurate while Drive sync is inert: the *developer* collects nothing —
-> synced data goes to the user's own Google Drive AppData folder, never to a
-> Crosscue server (same model already accepted for iCloud). But before Android
-> (Google Drive) sync ships enabled in a public build — i.e. once the Google
-> Cloud OAuth clients are wired (see
-> [`sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)) —
-> deliberately re-review the Data Safety form: confirm Google Play still treats
-> "stored in the
-> user's own Drive via the `drive.appdata` scope" as *not collected/not shared*,
-> and update the answers + privacy policy if that interpretation has changed.
+| Data collected? | **Yes** — only when the user opts into Challenge Boards |
+| Data types | A player handle / anonymous id and chosen display name; gameplay results (solve time, completion type, puzzle source + date) |
+| Data category | App activity / App info & performance; pseudonymous (no name, email, or account) |
+| Shared with third parties? | No (Cloudflare is processing infrastructure, not a recipient) |
+| Encrypted in transit? | Yes (HTTPS) |
+| Users can request deletion? | Yes — `Settings → Privacy & Data → Clear all data` deletes the server record |
+| Required for core function? | No (Challenge Boards is optional) |
+| Used for tracking / ads? | No |
 
 ### App content & targeting
 - [x] Confirmed app is **not** targeted at children under 13 in the store listing.
@@ -849,15 +857,24 @@ Human review is required before publishing — this is not legal advice.
       merge to main).
 
 ### App Store Connect — App Privacy form
-Crosscue current-release answers (mirrors Play Console):
+
+> ⚠️ **Same disclosure as the Data Safety form above — Apple cross-checks the
+> App Privacy "nutrition label" against the linked privacy policy.** The policy
+> says Challenge Boards stores a handle + solve times on a Crosscue server, so
+> the label must not say "no data collected." Recommended answers (owner
+> confirms before submitting):
 
 | Question | Answer |
 |----------|--------|
-| Do you or your third-party partners collect data from this app? | No |
-| Data Types | None |
+| Do you or your third-party partners collect data from this app? | **Yes** — via the optional Challenge Boards feature only |
+| Data Types | **User ID** (anonymous player id + chosen display name); **Gameplay Content / Other Usage Data** (solve time, completion type, puzzle source + date) |
 | Data Used to Track You | None |
-| Data Linked to User | None |
-| Data Not Linked to User | None |
+| Data Linked to User | None — the identity is anonymous/pseudonymous (no name, email, or account) |
+| Data Not Linked to User | User ID, Gameplay Content — purpose: **App Functionality** |
+
+The rest of the app (import, solve, archive, stats, settings, sync to the
+user's own cloud) collects nothing — only Challenge Boards' opt-in server
+data is declared above.
 
 ### Export Compliance
 - [x] `ITSAppUsesNonExemptEncryption = false` in `crosscue/ios/Runner/Info.plist`.
