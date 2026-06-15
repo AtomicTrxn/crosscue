@@ -10,7 +10,6 @@ build/
 
 # Local agent/editor state
 .claude/
-GEMINI.md
 *.save
 
 # Local secrets / signing material
