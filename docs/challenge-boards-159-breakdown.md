@@ -28,6 +28,32 @@ We do NOT build `daily_results` / `player_board_stats` / `processed_lifetime_wee
 rollover cron for v1. The issue's acceptance criteria referencing rollover/`player_board_stats`
 are superseded by this decision and should be amended on the issue.
 
+## Update (2026-06-15) — landed since the snapshot
+
+The snapshot above is preserved as the plan of record; these workstreams have
+since shipped (the per-workstream sections below were written pre-merge):
+
+- **C (retention purge):** shipped — daily UTC cron (`7 3 * * *`) +
+  `src/retention.ts` + migration `0005_board_events_retention.sql`; a heartbeat
+  (`ops_meta`, migration `0007`, `GET /health/retention`) plus a weekly Actions
+  check landed in **#262**.
+- **D (hardening):** rate limits + display-name safety done; the broader
+  result/invite/avatar hardening landed in **#237**. Avatar photos now store
+  **by reference in R2** (#268), inert until the `AVATARS` bucket is provisioned.
+- **D-extra — min-client lever (#256):** `X-Crosscue-Client` header + optional
+  `MIN_SUPPORTED_CLIENT` → `426 client_too_old` force-upgrade lever.
+- **E1/E4 (infra):** real staging + prod D1 `database_id`s are in
+  `wrangler.toml`; Workers observability is enabled per-env.
+- **F1 (deep links):** AASA + `assetlinks.json` are served from **Cloudflare
+  Pages (`crosscue.pages.dev`)**, not `crosscue.app` — the apex was never
+  registered (#269/#270). Both hosts are wired everywhere, so an apex can take
+  over later without breaking already-shared `pages.dev` links. References to
+  `crosscue.app/join/...` in the E2/F1 sections below read as `crosscue.pages.dev`
+  today.
+
+Still open: **E2** custom domain (`api.crosscue.app`, gated on registering the
+apex), and the optional **D3/D4** activity feed / canonical-source registry.
+
 ---
 
 ## Workstream A — Identity recovery (backend + Flutter)

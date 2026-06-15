@@ -72,7 +72,9 @@ sync, and Challenge Boards are implemented. The project is now mostly in the
 polish, backend hardening, dependency updates, and follow-on features are
 tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
 
-Current app version in source: `1.4.2+10402`.
+The current app version lives in [`crosscue/pubspec.yaml`](crosscue/pubspec.yaml)
+(`version:`) — the single source of truth, read at runtime and never hardcoded
+elsewhere ([ADR-0005](docs/architecture/decisions/0005-runtime-app-version.md)).
 
 ## Get Started
 

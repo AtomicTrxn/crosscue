@@ -120,8 +120,9 @@ can't exercise (real share-sheet import, gestures, store install).
   must never show sample boards (#236 makes misconfiguration throw at
   startup; verify it didn't)
 - [ ] Submit an eligible daily-mini result → appears on the board
-- [ ] Invite link tap (`https://crosscue.app/join/...`) from a messaging app
-  → opens the app to the join preview (App Links `autoVerify`); from a
+- [ ] Invite link tap (`https://crosscue.pages.dev/join/...` — the live host;
+  the `crosscue.app` apex is wired but not registered/served) from a messaging
+  app → opens the app to the join preview (App Links `autoVerify`); from a
   browser without the app → `join.html` fallback
 
 ## 12. Sync (only once Google Drive OAuth is live — currently inert)
