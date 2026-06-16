@@ -5,7 +5,7 @@
 Please report security issues **privately** — do not open a public GitHub
 issue for anything exploitable.
 
-- **Email:** `atomhess@gmail.com` (subject line starting with `[SECURITY]`)
+- **Email:** `tomhess@tutamail.com` (subject line starting with `[SECURITY]`)
 - You should receive an acknowledgement within **7 days**. This is a solo
   side project, not a staffed security team — but reports are taken
   seriously and fixes for confirmed issues are prioritized over feature work.
