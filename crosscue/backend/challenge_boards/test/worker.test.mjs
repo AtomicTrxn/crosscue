@@ -725,6 +725,122 @@ test('a mid-batch failure deleting a player rolls back — no partial state', as
   assert.equal(player.display_name, 'Maya');
 });
 
+test('a mid-batch failure creating a board rolls back — no orphan board', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+
+  // Fault-inject the memberships insert so it fails after the boards insert
+  // in the same batch would otherwise have committed.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /insert into memberships/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 500,
+  });
+
+  // No partial state: an orphan board with zero members would be the bug.
+  const board = realDb.db
+    .prepare('select id from boards where name = ?')
+    .get('Friday Crew');
+  assert.equal(board, undefined, 'board row must not exist');
+
+  const membership = realDb.db
+    .prepare('select board_id from memberships where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(membership, undefined, 'membership row must not exist');
+});
+
+test('a mid-batch failure updating a player rolls back — no display-name drift', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  // Fault-inject the memberships update, not the players update. Note the
+  // \s+ (not .*) — the memberships statement is a multi-line template
+  // literal, and `.` does not match newlines.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /update memberships\s+set display_name/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson('/players/me', {
+    method: 'PATCH',
+    token: maya.authToken,
+    body: { displayName: 'Mayaaaa' },
+    status: 500,
+  });
+
+  // No partial state: drift between players.display_name and the
+  // denormalized memberships.display_name copy would be the bug.
+  const player = realDb.db
+    .prepare('select display_name from players where id = ?')
+    .get(maya.player.id);
+  assert.equal(player.display_name, 'Maya');
+
+  const membership = realDb.db
+    .prepare('select display_name from memberships where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(membership.display_name, 'Maya');
+});
+
+test('a mid-batch failure leaving a board rolls back — no partial state', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  // Board creation also writes a board_events row via its own batch, so the
+  // fault must be installed only after all setup is complete — otherwise
+  // the /boards call above would fail too.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /insert into board_events/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson(`/boards/${created.board.id}/leave`, {
+    method: 'POST',
+    token: maya.authToken,
+    status: 500,
+  });
+
+  // No partial state: the membership close must not have survived without
+  // its paired audit event.
+  const membership = realDb.db
+    .prepare(
+      'select left_at, membership_state from memberships where board_id = ? and player_id = ?',
+    )
+    .get(created.board.id, maya.player.id);
+  assert.equal(membership.left_at, null, 'membership must still be active');
+  assert.notEqual(membership.membership_state, 'left');
+
+  const events = realDb.db
+    .prepare(
+      "select count(*) as n from board_events where board_id = ? and event_type = 'leave'",
+    )
+    .get(created.board.id);
+  assert.equal(events.n, 0, 'no leave event should exist');
+});
+
 test('scheduled purge removes board events older than 14 days', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');
