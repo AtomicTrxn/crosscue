@@ -144,6 +144,31 @@ export class R2BucketShim {
   }
 }
 
+// Fault injection for batch-atomicity tests. Wraps a D1 database shim so that
+// any batch() call containing a statement whose SQL matches `sqlPattern` has
+// that one statement swapped for one that throws; every other statement, and
+// the real batch() implementation (with its BEGIN/COMMIT/ROLLBACK wrapping),
+// runs untouched. This only doctors the statements array — it never
+// reimplements batch semantics — so what's actually under test is the real
+// D1DatabaseShim.batch().
+export function withBatchFault(db, sqlPattern, error) {
+  return {
+    prepare: (sql) => db.prepare(sql),
+    batch: (statements) => {
+      const faulted = statements.map((statement) =>
+        sqlPattern.test(statement.sql)
+          ? {
+              run: async () => {
+                throw error ?? new Error(`fault injected: ${statement.sql}`);
+              },
+            }
+          : statement,
+      );
+      return db.batch(faulted);
+    },
+  };
+}
+
 class D1DatabaseShim {
   constructor(db) {
     this.db = db;
@@ -153,14 +178,22 @@ class D1DatabaseShim {
     return new D1PreparedStatementShim(this.db, sql);
   }
 
+  // Real D1 runs a batch as a single transaction: if any statement fails the
+  // whole sequence is rolled back. Mirror that so tests asserting "no partial
+  // state after a failed write" are meaningful rather than vacuous.
   async batch(statements) {
-    return statements.reduce(
-      (promise, statement) => promise.then(async (results) => {
+    this.db.exec('BEGIN');
+    try {
+      const results = [];
+      for (const statement of statements) {
         results.push(await statement.run());
-        return results;
-      }),
-      Promise.resolve([]),
-    );
+      }
+      this.db.exec('COMMIT');
+      return results;
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
   }
 }
 
@@ -179,8 +212,14 @@ class D1PreparedStatementShim {
 
   async run() {
     const statement = this.db.prepare(this.sql);
-    statement.run(...this.params);
-    return { success: true };
+    const result = statement.run(...this.params);
+    return {
+      success: true,
+      meta: {
+        changes: Number(result.changes ?? 0),
+        last_row_id: Number(result.lastInsertRowid ?? 0),
+      },
+    };
   }
 
   async all() {

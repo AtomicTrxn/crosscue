@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createApp, currentUtcDateOnly, R2BucketShim } from './harness.mjs';
+import { createApp, currentUtcDateOnly, R2BucketShim, withBatchFault } from './harness.mjs';
 
 test('invite preview, join, leave, and deleted-board preview flow', async () => {
   const app = await createApp();
@@ -677,6 +677,52 @@ test('deleting a player removes participation and revokes the token', async () =
     .prepare('select count(*) as n from challenge_results where player_id = ?')
     .get(maya.player.id);
   assert.equal(results.n, 0);
+});
+
+test('a mid-batch failure deleting a player rolls back — no partial state', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.submitResult(maya.authToken);
+
+  // Fault-inject the final `update players ... set deleted_at` statement so
+  // it fails after the first two statements in the same batch (delete
+  // challenge_results, anonymize memberships) would otherwise have run.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /update players\s+set deleted_at/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson('/players/me', {
+    method: 'DELETE',
+    token: maya.authToken,
+    status: 500,
+  });
+
+  // No partial state: the whole batch — including the two statements ahead
+  // of the injected failure — must have rolled back together.
+  const results = realDb.db
+    .prepare('select count(*) as n from challenge_results where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(results.n, 1, 'solve result must survive the rolled-back batch');
+
+  const membership = realDb.db
+    .prepare('select display_name from memberships where player_id = ?')
+    .get(maya.player.id);
+  assert.notEqual(membership.display_name, 'Deleted');
+
+  const player = realDb.db
+    .prepare('select deleted_at, display_name from players where id = ?')
+    .get(maya.player.id);
+  assert.equal(player.deleted_at, null);
+  assert.equal(player.display_name, 'Maya');
 });
 
 test('scheduled purge removes board events older than 14 days', async () => {
