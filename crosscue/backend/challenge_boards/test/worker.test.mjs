@@ -841,6 +841,220 @@ test('a mid-batch failure leaving a board rolls back — no partial state', asyn
   assert.equal(events.n, 0, 'no leave event should exist');
 });
 
+test('a mid-batch failure joining a board rolls back — no partial membership', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  // Board creation also writes a board_events row via its own batch, so the
+  // fault must be installed only after all setup is complete — otherwise
+  // the /boards call above would fail too.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /insert into board_events/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+    status: 500,
+  });
+
+  // No partial state: the memberships upsert must not have survived without
+  // its paired audit event.
+  const membership = realDb.db
+    .prepare(
+      'select left_at, membership_state from memberships where board_id = ? and player_id = ?',
+    )
+    .get(created.board.id, noah.player.id);
+  assert.equal(membership, undefined, 'no membership row should exist');
+
+  const events = realDb.db
+    .prepare(
+      "select count(*) as n from board_events where board_id = ? and event_type = 'join'",
+    )
+    .get(created.board.id);
+  assert.equal(events.n, 0, 'no join event should exist');
+});
+
+test('a mid-batch failure removing a member rolls back — no partial state', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  // Fault-inject the board_events insert so it fails after the memberships
+  // update in the same batch would otherwise have committed.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /insert into board_events/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson(
+    `/boards/${created.board.id}/members/${noah.player.id}`,
+    { method: 'DELETE', token: maya.authToken, status: 500 },
+  );
+
+  // No partial state: the membership close must not have survived without
+  // its paired audit event.
+  const membership = realDb.db
+    .prepare(
+      'select left_at, membership_state from memberships where board_id = ? and player_id = ?',
+    )
+    .get(created.board.id, noah.player.id);
+  assert.equal(membership.left_at, null, 'membership must still be active');
+  assert.notEqual(membership.membership_state, 'removed');
+
+  const events = realDb.db
+    .prepare(
+      "select count(*) as n from board_events where board_id = ? and event_type = 'member_removed'",
+    )
+    .get(created.board.id);
+  assert.equal(events.n, 0, 'no member_removed event should exist');
+});
+
+test('a mid-batch failure regenerating an invite rolls back — no partial state', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+
+  const before = app.env.DB.db
+    .prepare(
+      'select invite_code_hash, invite_version from boards where id = ?',
+    )
+    .get(created.board.id);
+
+  // Fault-inject the board_events insert so it fails after the boards
+  // invite-fields update (including invite_version = invite_version + 1) in
+  // the same batch would otherwise have committed.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    /insert into board_events/i,
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson(`/boards/${created.board.id}/invite/regenerate`, {
+    method: 'POST',
+    token: maya.authToken,
+    status: 500,
+  });
+
+  // No partial state: a silently incremented invite_version (or rotated
+  // hash) without the paired audit event would be the bug.
+  const after = realDb.db
+    .prepare(
+      'select invite_code_hash, invite_version from boards where id = ?',
+    )
+    .get(created.board.id);
+  assert.equal(after.invite_code_hash, before.invite_code_hash);
+  assert.equal(after.invite_version, before.invite_version);
+
+  const events = realDb.db
+    .prepare(
+      "select count(*) as n from board_events where board_id = ? and event_type = 'invite_regenerate'",
+    )
+    .get(created.board.id);
+  assert.equal(events.n, 0, 'no invite_regenerate event should exist');
+});
+
+test('a mid-batch failure transferring ownership rolls back the owner-change batch, but the earlier leave batch already committed', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  // leaveBoard writes its own membership-close + 'leave' event batch, then
+  // separately calls transferOwnershipIfDeparting, which writes its own
+  // owner-update + 'owner_changed' event batch. Both events are inserted
+  // with identical SQL — event_type is a bound param, not part of the SQL
+  // text — so a RegExp on `.sql` can't tell a 'leave' insert from an
+  // 'owner_changed' insert. Use the predicate form and match on the bound
+  // param instead, so only the second batch is faulted.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    (statement) =>
+      /insert into board_events/i.test(statement.sql) &&
+      statement.params[3] === 'owner_changed',
+    new Error('simulated d1 failure'),
+  );
+
+  await app.fetchJson(`/boards/${created.board.id}/leave`, {
+    method: 'POST',
+    token: maya.authToken,
+    status: 500,
+  });
+
+  // No partial state in the owner-change batch itself: the board still
+  // records Maya as owner, and no owner_changed event exists.
+  const board = realDb.db
+    .prepare('select owner_player_id from boards where id = ?')
+    .get(created.board.id);
+  assert.equal(board.owner_player_id, maya.player.id);
+
+  const events = realDb.db
+    .prepare(
+      "select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'",
+    )
+    .get(created.board.id);
+  assert.equal(events.n, 0, 'no owner_changed event should exist');
+
+  // But leaveBoard's own batch (membership close + 'leave' event) already
+  // committed before transferOwnershipIfDeparting was even called: D1
+  // batches don't span multiple env.DB.batch() calls, so this route is not
+  // atomic end-to-end. Maya's membership really is closed even though the
+  // board still names her as owner — a genuine pre-existing production
+  // characteristic (not a test artifact, and not something to "fix" here).
+  const membership = realDb.db
+    .prepare(
+      'select left_at, membership_state from memberships where board_id = ? and player_id = ?',
+    )
+    .get(created.board.id, maya.player.id);
+  assert.notEqual(
+    membership.left_at,
+    null,
+    'the earlier leave batch already committed',
+  );
+  assert.equal(membership.membership_state, 'left');
+});
+
 test('scheduled purge removes board events older than 14 days', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');

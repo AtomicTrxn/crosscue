@@ -145,18 +145,32 @@ export class R2BucketShim {
 }
 
 // Fault injection for batch-atomicity tests. Wraps a D1 database shim so that
-// any batch() call containing a statement whose SQL matches `sqlPattern` has
-// that one statement swapped for one that throws; every other statement, and
-// the real batch() implementation (with its BEGIN/COMMIT/ROLLBACK wrapping),
-// runs untouched. This only doctors the statements array — it never
-// reimplements batch semantics — so what's actually under test is the real
+// any batch() call containing a statement matched by `matcher` has that one
+// statement swapped for one that throws; every other statement, and the real
+// batch() implementation (with its BEGIN/COMMIT/ROLLBACK wrapping), runs
+// untouched. This only doctors the statements array — it never reimplements
+// batch semantics — so what's actually under test is the real
 // D1DatabaseShim.batch().
-export function withBatchFault(db, sqlPattern, error) {
+//
+// `matcher` is either a RegExp tested against statement.sql, or a predicate
+// function invoked with the statement (which carries both `.sql` and the
+// bound `.params`) that returns true for the statement to fault. The
+// predicate form exists because some call sites build every statement of a
+// given shape from identical SQL and vary only a bound parameter — e.g.
+// membership.ts's eventStatement() inserts into board_events with the same
+// SQL for every event_type ('join', 'leave', 'owner_changed', ...), passing
+// event_type as a bound param. A RegExp on `.sql` can't tell those event
+// rows apart; a predicate that inspects `statement.params` can.
+export function withBatchFault(db, matcher, error) {
+  const matches =
+    typeof matcher === 'function'
+      ? matcher
+      : (statement) => matcher.test(statement.sql);
   return {
     prepare: (sql) => db.prepare(sql),
     batch: (statements) => {
       const faulted = statements.map((statement) =>
-        sqlPattern.test(statement.sql)
+        matches(statement)
           ? {
               run: async () => {
                 throw error ?? new Error(`fault injected: ${statement.sql}`);
