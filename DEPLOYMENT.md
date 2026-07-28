@@ -857,20 +857,24 @@ checklists pass, publish it explicitly:
 make release-publish-github TAG=v1.2.3
 ```
 
-**Previous rollout snapshot (`v1.4.4`, 2026-07-28 UTC):**
+**Current rollout snapshot (`v1.4.5`, 2026-07-28 UTC):**
 
-- Tag `v1.4.4` and the Cloudflare deployment metadata identify release commit
-  `9eb8deb`; later documentation-only commits may advance `main`.
-- Hosted PR CI was unavailable; the stricter local fallback above passed
-  (661 Flutter tests passed, one skipped; 44 Worker tests passed; analysis,
-  formatting, generated-tree verification, and typecheck passed).
-- Production-configured Android APK/AAB and unsigned iOS release builds
-  compiled as `1.4.4+10404`.
-- The GitHub release is intentionally **draft**. Do not publish it or upload
-  the locally built Android artifacts: without the release keystore
-  configuration they are debug-signed.
-- TestFlight and Play uploads remain pending release signing, real-device QA,
-  and the store-console privacy/submission checks below.
+- Tag `v1.4.5` identifies release commit `9d7ae89`; later documentation-only
+  commits may advance `main`.
+- Hosted PR CI passed (661 Flutter tests passed, one intentional skip; 44
+  Worker tests passed; analysis, formatting, generated-tree verification, and
+  typecheck passed).
+- The complete five-flow integration suite passed on Pixel 8 and iPhone 17
+  Pro simulators. Import/solve and Challenge Boards also passed on Pixel
+  Tablet and iPad Pro 13-inch simulators.
+- Release workflow run `30330871940` built `1.4.5+10405`, rejected any Android
+  debug certificate, uploaded the signed IPA to TestFlight, and uploaded the
+  signed AAB to Play internal testing.
+- Release workflow run `30331453111` repeated the signed artifact gates and
+  published the GitHub release with the signed APK.
+- Store-console privacy answers and the remaining physical-device checks in
+  the platform QA lists still require release-owner confirmation before a
+  production App Store/Play rollout.
 
 **Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
 context in the generated release body rather than overloading the title.
