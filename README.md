@@ -72,10 +72,11 @@ sync, and Challenge Boards are implemented. The project is now mostly in the
 polish, backend hardening, dependency updates, and follow-on features are
 tracked in [GitHub Issues](https://github.com/AtomicTrxn/crosscue/issues).
 
-As of 2026-07-28 UTC, the Challenge Boards Worker is live in staging and
-production with D1 + R2 avatar storage. Both environments passed the
-upload/read/delete smoke gate and their first post-deployment retention cron.
-Multi-statement board/account writes are atomic, and the release workflow
+As of 2026-07-28 UTC, `v1.4.5` is published on GitHub, accepted by TestFlight,
+and uploaded to Play internal testing. The Challenge Boards Worker is live in
+staging and production with D1 + R2 avatar storage; both environments passed
+the upload/read/delete smoke gate and their first post-deployment retention
+cron. Multi-statement board/account writes are atomic, and the release workflow
 validates the version, production configuration, and artifact signing before
 store upload. The operational runbook and cost-monitoring caveat live in
 [DEPLOYMENT.md](DEPLOYMENT.md#backend-challenge-boards-worker-cloudflare).

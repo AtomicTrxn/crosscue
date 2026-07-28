@@ -113,11 +113,12 @@ hand-editing `project.pbxproj` safely.
 4. With an empty library, the widget reads "No puzzle yet" and doesn't crash
    (verifies the optional-row contract, incl. the still-null `leaderboard`).
 
-> **Status: ✅ verified on the iPhone 17 simulator (2026-06).** Target builds +
-> embeds, the app writes the versioned payload to the App Group, and the
-> `systemSmall` widget renders the streak + today's puzzle. Remaining: re-issue
-> the App Store provisioning profile with the App Group capability (+ a widget
-> profile) before a device/TestFlight build — simulator needs no provisioning.
+> **Status: ✅ simulator and release-signing gates verified.** The iPhone 17
+> simulator target builds and embeds, the app writes the versioned payload to
+> the App Group, and the `systemSmall` widget renders the streak + today's
+> puzzle. App and widget App Store profiles with the App Group capability also
+> signed `v1.4.5`, and that IPA was accepted by TestFlight on 2026-07-28.
+> Physical-device widget behavior remains part of the iOS release checklist.
 
 ## Background refresh ([#175](https://github.com/AtomicTrxn/crosscue/issues/175))
 
