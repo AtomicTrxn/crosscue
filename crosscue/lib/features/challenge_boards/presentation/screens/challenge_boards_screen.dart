@@ -68,9 +68,11 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
         loading: () => SampleChallengeFallbacks.lifetime,
       ),
       onRefresh: () async {
-        ref.invalidate(challengeBoardsProvider);
-        ref.invalidate(challengeProfileProvider);
-        ref.invalidate(challengeLifetimeProvider);
+        await Future.wait([
+          ref.refresh(challengeBoardsProvider.future),
+          ref.refresh(challengeProfileProvider.future),
+          ref.refresh(challengeLifetimeProvider.future),
+        ]);
       },
       onEditName: () => _editName(
         context,

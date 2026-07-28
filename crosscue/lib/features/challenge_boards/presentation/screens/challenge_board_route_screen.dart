@@ -22,8 +22,10 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
         rankingMode: data.board.rankingMode,
         weekly: data.weekly,
         lifetime: data.lifetime,
-        onRefresh: () async =>
-            ref.invalidate(challengeBoardDetailProvider(boardId)),
+        onRefresh: () async {
+          final _ =
+              await ref.refresh(challengeBoardDetailProvider(boardId).future);
+        },
         onShare: () => _share(context, ref, data.board),
         onRegenerate: () => _regenerate(context, ref, data.board),
         onLeave: () => _leave(context, ref, data.board),

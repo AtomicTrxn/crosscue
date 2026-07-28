@@ -80,12 +80,40 @@ void main() {
     expect(repository.submitted, hasLength(1));
     expect(await outbox.read(), isEmpty);
   });
+
+  test('submission queued during a flush is not overwritten', () async {
+    final repository = _SlowResultRepository();
+    await outbox.add(_submission());
+    final submitter = ChallengeResultSubmitter(
+      repository: repository,
+      outbox: outbox,
+      enabled: true,
+    );
+
+    final firstFlush = submitter.flush();
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.started, 1);
+
+    final secondSubmission = _submission(sourcePuzzleId: '2026-06-06');
+    final enqueueDuringFlush = submitter.submitOrQueue(secondSubmission);
+    repository.complete();
+    await Future.wait([firstFlush, enqueueDuringFlush]);
+
+    expect(
+      repository.submitted.map((item) => item.sourcePuzzleId),
+      ['2026-06-05', '2026-06-06'],
+    );
+    expect(await outbox.read(), isEmpty);
+  });
 }
 
-ChallengeSolveSubmission _submission({int elapsedMs = 100000}) {
+ChallengeSolveSubmission _submission({
+  int elapsedMs = 100000,
+  String sourcePuzzleId = '2026-06-05',
+}) {
   return ChallengeSolveSubmission(
     sourceId: 'crosshare_daily_mini',
-    sourcePuzzleId: '2026-06-05',
+    sourcePuzzleId: sourcePuzzleId,
     completedAtUtc: DateTime.utc(2026, 6, 5, 12),
     elapsedMs: elapsedMs,
     completionType: ChallengeCompletionType.clean,
