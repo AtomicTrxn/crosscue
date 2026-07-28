@@ -39,7 +39,7 @@ since shipped (the per-workstream sections below were written pre-merge):
   check landed in **#262**.
 - **D (hardening):** rate limits + display-name safety done; the broader
   result/invite/avatar hardening landed in **#237**. Avatar photos now store
-  **by reference in R2** (#268), inert until the `AVATARS` bucket is provisioned.
+  **by reference in R2** (#268).
 - **D-extra — min-client lever (#256):** `X-Crosscue-Client` header + optional
   `MIN_SUPPORTED_CLIENT` → `426 client_too_old` force-upgrade lever.
 - **E1/E4 (infra):** real staging + prod D1 `database_id`s are in
@@ -53,6 +53,28 @@ since shipped (the per-workstream sections below were written pre-merge):
 
 Still open: **E2** custom domain (`api.crosscue.app`, gated on registering the
 apex), and the optional **D3/D4** activity feed / canonical-source registry.
+
+## Update (2026-07-27) — productionization gaps closed
+
+- R2 is enabled on the Cloudflare account. `crosscue-avatars-staging` and
+  `crosscue-avatars` are provisioned, bound, and deployed; both remote
+  upload/read/delete smokes passed and cleaned up their objects.
+- Migration `0007_ops_meta.sql` is applied in staging and production.
+- Multi-statement Worker transitions now commit through atomic D1 batches.
+  Fault-injection tests cover every batch shape and multi-board account
+  deletion rollback.
+- The Flutter result outbox preserves submissions enqueued during a concurrent
+  flush instead of overwriting them.
+- Every Challenge Boards network action now maps failures to safe, actionable
+  UI feedback; raw server messages are never shown.
+- The Release workflow refuses to build either platform without a non-empty
+  HTTPS `CHALLENGE_API_BASE_URL`.
+- R2 has no hard spend-cap toggle. A `$1 USD` account-wide
+  `R2 overage warning` alert is active, but alerts are informational only.
+
+The remaining infrastructure follow-up is still **E2**, the optional
+`api.crosscue.app` custom domain. The `workers.dev` production URL remains the
+configured and verified API origin.
 
 ---
 
@@ -118,7 +140,8 @@ feeds no ranking.
 - **D1. Rate limiting** — DONE. Two Cloudflare Rate Limiting bindings: `RL_IDENTITY` (IP-keyed,
   15/60s) on bootstrap/restore, `RL_WRITE` (player-keyed, 60/60s) on join/results/invite-regenerate.
   Bindings are optional in `Env` so local/test runs without them skip limiting; over-limit returns
-  `429 rate_limited`. Caps remain transactional.
+  `429 rate_limited`. Board-size caps remain deliberate check-then-insert
+  guards; a concurrent join can briefly overshoot by one in v1.
 - **D2. Server-side display-name safety** — DONE. `validateDisplayName` now normalizes
   case/separators/leetspeak and rejects a reserved-handle set + profanity/slur starter blocklist
   (`400 invalid_display_name`). The list lives in `src/index.ts` and is meant to be maintained.
@@ -133,15 +156,17 @@ feeds no ranking.
 - **E0. Migration conflict** — DONE. `0003` is now a no-op (`ranking_mode` lives only in `0001`),
   so a fresh `wrangler d1 migrations apply` against new staging/prod databases applies cleanly. The
   test harness loads all migrations sequentially with no tolerance, proving the clean apply.
-- **E1. D1 databases** — provision real staging + prod databases; replace placeholder
-  `database_id`s in `wrangler.toml`.
-- **E2. Custom domain** — route Worker to `api.crosscue.app`; keep invite links on
-  `crosscue.app/join/...`.
-- **E3. Secrets** — N/A for current code: the Worker uses only `DB`, `PUBLIC_APP_URL`, and the
-  optional rate-limit bindings (SHA-256 hashing, no server secret). Revisit only if HMAC-salted
-  hashing is added later.
-- **E4. Observability** — enable Workers Logs + Traces with secret/token/invite-URL redaction;
-  request-id correlation (already partly present).
+- **E1. D1 databases + R2 buckets — DONE.** Real staging/prod D1 ids and R2
+  bucket bindings are in `wrangler.toml`; migration `0007` is applied and both
+  environments passed the remote avatar smoke (2026-07-27).
+- **E2. Custom domain** — optionally route the Worker to `api.crosscue.app`;
+  existing invite links remain on `crosscue.pages.dev/join/...`.
+- **E3. Secrets** — N/A for current code: the Worker uses only `DB`,
+  `AVATARS`, public vars, and rate-limit bindings (SHA-256 hashing, no server
+  secret). Revisit only if HMAC-salted hashing is added later.
+- **E4. Observability — DONE.** Workers observability is enabled per
+  environment with secret/token/invite-URL redaction and request-id
+  correlation.
 - **E5. Worker-runtime tests** — `@cloudflare/vitest-pool-workers` covering bindings, scheduled
   handler, rate-limit behavior, error paths; confirm compat flags match Wrangler.
 

@@ -19,7 +19,9 @@ the first result-submission path:
 - privacy deletion via `DELETE /players/me`;
 - daily scheduled retention purge of `board_events` (14-day UTC window);
 - abuse-dampening rate limits on identity creation and board writes;
-- server-side display-name safety (reserved names + profanity/slur blocklist).
+- server-side display-name safety (reserved names + profanity/slur blocklist);
+- atomic D1 batches for every multi-statement board/player transition, with
+  fault-injection rollback coverage.
 
 Lifetime stats are computed live from retained `challenge_results` (no
 `player_board_stats` rollover in v1), so result rows are intentionally NOT
@@ -31,11 +33,13 @@ The rate-limit blocklist for display names is a small starter list in
 Avatar photos are stored by reference in an R2 bucket (`AVATARS` binding,
 #268) and served from `GET /avatars/<playerId>/<sha256>.png` with a one-year
 immutable cache. `wrangler.toml` binds a local simulated bucket plus separate
-staging and production buckets. Tests can still omit the binding to cover
-legacy inline `data:` URLs, but deployed environments are expected to use R2.
+staging and production buckets. Both remote buckets are provisioned and bound
+in the deployed environments (verified 2026-07-27). Tests can still omit the
+binding to cover legacy inline `data:` URLs.
 
-Out of scope for this slice: native deep links, realtime/live-board
-infrastructure, and paid tiers.
+Out of scope for this slice: the optional `api.crosscue.app` custom domain,
+realtime/live-board infrastructure, an activity feed, and paid tiers. Invite
+deep links already ship through `crosscue.pages.dev`.
 
 ## Local Setup
 
@@ -127,9 +131,9 @@ Both players then submit Daily Mini results against the same board.
 ## Deploying
 
 Requires `npx wrangler login` against the account that owns the D1 databases.
-The `AVATARS` bindings are enabled in source, so the two remote buckets are a
-hard prerequisite. Provision each exactly once (or use `r2 bucket info` to
-confirm it already exists):
+The `AVATARS` bindings are enabled in source and both current remote buckets
+already exist. For a replacement account, provision each exactly once; for the
+current account use `r2 bucket info` to confirm it:
 
 ```sh
 npx wrangler r2 bucket create crosscue-avatars-staging
@@ -161,6 +165,15 @@ The avatar smoke creates one temporary player, uploads a 1×1 PNG, verifies the
 returned HTTPS URL and downloaded image bytes, then deletes the player and
 confirms the avatar URL is gone. Cleanup runs in `finally`, and the auth token
 is never printed.
+
+**Last live verification (2026-07-27):** migration `0007_ops_meta.sql`, both
+environment deploys, and both remote avatar smokes passed. The staging and
+production buckets reported zero objects after smoke cleanup.
+
+R2 has no hard spend-cap switch in the Cloudflare dashboard. An account-wide
+`R2 overage warning` budget alert is configured at `$1 USD`; it is
+informational and does not pause service. Billing procedure and rollback impact
+are documented in the repo-level deployment guide.
 
 Deployed URLs, environment table, migration rules, rollback, and log tailing
 live in the repo-level [DEPLOYMENT.md](../../../DEPLOYMENT.md) ("Backend:

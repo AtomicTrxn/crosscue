@@ -139,6 +139,27 @@ open crosscue/ios/Runner.xcworkspace
 Always use `.xcworkspace`, not `.xcodeproj` — CocoaPods integration requires
 the workspace.
 
+### Swift Package Manager status (Flutter 3.44)
+
+Flutter 3.44 enables Swift Package Manager integration by default and falls
+back to CocoaPods for plugins that do not support SwiftPM. Keep SwiftPM enabled.
+
+- `home_widget` is pinned to `0.9.3`; its Swift package is included in the
+  generated Flutter plugin package.
+- `flutter_secure_storage` is pinned to `10.3.1`; Apple platforms use the
+  unified `flutter_secure_storage_darwin` package. Android retains the existing
+  `crosscue_secure_prefs` namespace and performs the v9→v10 cipher migration
+  with backup recovery enabled.
+- `workmanager_apple 0.9.1+2` remains the only iOS SwiftPM warning: its
+  `Package.swift` omits Flutter's required `FlutterFramework` dependency, so
+  Flutter uses CocoaPods for that plugin.
+- The macOS project still contains CocoaPods integration. Remove it only as a
+  separately reviewed Xcode-project change after confirming every macOS plugin
+  resolves through SwiftPM.
+
+Reference:
+[Flutter's SwiftPM app guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers).
+
 ### Capturing iOS logs
 
 Live stream from a simulator:
@@ -422,6 +443,18 @@ routes; check with `npx wrangler whoami`).
 | staging | `crosscue-challenge-boards-staging` | `crosscue_challenge_boards_staging` | `crosscue-avatars-staging` | `https://crosscue-challenge-boards-staging.tomhess.workers.dev` |
 | production | `crosscue-challenge-boards` | `crosscue_challenge_boards_prod` | `crosscue-avatars` | `https://crosscue-challenge-boards.tomhess.workers.dev` |
 
+**Verified operational state (2026-07-27):**
+
+- R2 is enabled on the Cloudflare account; both remote buckets above exist
+  with the Standard storage class.
+- Migration `0007_ops_meta.sql` is applied to staging and production.
+- Both Workers are deployed with `env.AVATARS` resolved to the matching bucket.
+- The remote avatar round-trip smoke passed in staging and production. It
+  uploaded, read, and deleted a temporary PNG/player; both buckets reported
+  zero objects after cleanup.
+- An account-wide **`R2 overage warning`** budget alert is active at **$1 USD**.
+  It sends email but does not pause requests or cap charges.
+
 The `api.crosscue.app` custom domain is provisioned by uncommenting the
 `routes` block in `wrangler.toml` once the zone exists in the Cloudflare
 account; shipped apps bind to the URL via the `CHALLENGE_API_BASE_URL`
@@ -459,8 +492,9 @@ Migrations are numbered SQL files in `migrations/`, applied in order by
 
 #### R2 avatar activation gate
 
-`wrangler.toml` enables `AVATARS` for every environment. Before the first
-deployment of this configuration, create the two remote buckets once:
+`wrangler.toml` enables `AVATARS` for every environment. The current account's
+two remote buckets are already provisioned. For a replacement account or new
+environment, create each bucket exactly once:
 
 ```bash
 npx wrangler r2 bucket create crosscue-avatars-staging
@@ -527,6 +561,24 @@ Logs never include tokens, recovery/invite secrets, or full invite URLs
 (enforced convention; observability is enabled per-env in `wrangler.toml`).
 The daily cron (`7 3 * * *` UTC) purges `board_events` older than 14 days
 and logs a `purge_board_events` line with the deleted count.
+
+#### R2 billing controls
+
+Cloudflare R2 is usage-billed above its included allowance. As of 2026-07-27,
+the dashboard does not expose a hard spend cap or an "overages off" toggle.
+The configured **`R2 overage warning`** alert fires when account-wide
+usage-based spend reaches **$1 USD** in a billing cycle:
+
+1. Cloudflare Dashboard → **Manage Account → Billing → Billable usage**.
+2. Select **Budget alerts**.
+3. Verify `R2 overage warning`, one recipient, and a `$1.00` budget.
+
+Budget alerts are informational only; Cloudflare processes usage data
+periodically, and an alert does not pause or cap service. Treat it as an early
+warning, not enforcement. Cancelling the R2 subscription or removing the
+bindings would stop the supported avatar-storage path and must be coordinated
+as an application rollback. See the
+[Cloudflare budget-alert documentation](https://developers.cloudflare.com/billing/manage/budget-alerts/).
 
 ### Backups & restore (D1 Time Travel)
 
@@ -733,6 +785,10 @@ and `--dart-define=CHALLENGE_API_BASE_URL=…` (see release.yml). A local
 release build without them runs Challenge Boards in sample mode — fine for
 signing/minification smoke tests, but not representative of the shipped
 challenge experience.
+
+The Release workflow validates `CHALLENGE_API_BASE_URL` in a shared prerequisite
+job before either platform builds. Missing, blank, non-HTTPS, or whitespace-
+containing values fail the workflow without printing the configured URL.
 
 ### Cutting a release
 

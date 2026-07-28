@@ -18,6 +18,7 @@ table is a known trade-off, not a gap.
 | Challenge **auth token** | Platform secure storage (Keychain/Keystore via `SecureKeyValueStore`) | Bearer credential — device-local by design, excluded from sync and OS backup |
 | Challenge **recovery bundle** (player id + recovery secret) | App DB (`app_settings`), synced to the user's own cloud | Credential-equivalent; deliberately survives backup/restore (see privacy.md) |
 | Server data (players, boards, results, events) | Cloudflare D1 | Pseudonymous; secrets stored only as SHA-256 hashes |
+| Challenge avatar PNGs | Cloudflare R2 (`crosscue-avatars` / staging equivalent) | Pseudonymous image data; content-addressed and served by reference |
 | Invite links | User-shared URLs | Capability tokens — possession grants join |
 | Signing/release secrets (keystore, Apple certs, ASC API key, Play service account) | GitHub Actions Secrets | Highest impact — supply-chain |
 
@@ -47,6 +48,7 @@ table is a known trade-off, not a gap.
 | Board-write abuse | Player-keyed rate limit (`RL_WRITE`); board caps (5 boards/player, 20 players/board) |
 | Fabricated solve times (gross) | Elapsed-time floor, future-timestamp rejection, server-side normalization of clean-eligibility (#228/#237) |
 | SQL injection | Parameterized SQL throughout the Worker (verified 2026-06-10 review) |
+| Partial board/account writes after a D1 failure | Multi-statement board/player transitions commit through one D1 batch; fault-injection tests require full rollback, including deletion across multiple boards |
 | Offensive/impersonating handles | Server-side display-name validation: reserved handles + blocklist + normalization (D2) |
 | Secret leakage via logs | Structured JSON logs with an explicit no-secrets/no-invite-URL convention |
 | Supply-chain via mutable action tags | All GitHub Actions pinned to commit SHAs (#238) |
@@ -68,11 +70,10 @@ table is a known trade-off, not a gap.
 
 ## Known gaps (not accepted — tracked)
 
-- **Avatar storage**: R2 by-reference delivery is implemented (#268), and the
-  `AVATARS` bindings are enabled in `wrangler.toml`. Provision both remote
-  buckets, deploy staging then production, and pass the remote avatar smoke
-  gate before considering it active. Tests and legacy unbound deployments
-  retain the PNG-validated inline D1 fallback (#237).
+- **No hard R2 spend cap**: both avatar buckets and bindings are active, and a
+  `$1 USD` account-wide budget alert is configured. Cloudflare budget alerts
+  are informational; they do not pause or cap usage. Revisit if Cloudflare
+  adds enforcement controls or usage approaches the free allowance.
 - **Alerting is pull-based** (`wrangler tail`) — see DEPLOYMENT.md
   "Monitoring & alerting" for the planned push signals.
 

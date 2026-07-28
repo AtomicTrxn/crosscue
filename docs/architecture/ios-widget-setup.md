@@ -26,6 +26,19 @@ identically whether or not the widget extension exists.
   leaderboard) where any row may be absent; families `systemSmall` +
   `accessoryRectangular`.
 
+### Native dependency status (verified 2026-07-27)
+
+- `home_widget 0.9.3` supports SwiftPM and is present in
+  `FlutterGeneratedPluginSwiftPackage`. Its 0.9 migration requirements are
+  satisfied by Crosscue's iOS 16 floor and package-qualified Android imports.
+- `flutter_secure_storage 10.3.1` also resolves through SwiftPM using the
+  unified Darwin plugin. Android preserves the existing secure-storage
+  namespace and migrates v9 ciphertext with backup recovery enabled.
+- `workmanager_apple 0.9.1+2` is the remaining exception. Its Swift package
+  omits Flutter's required `FlutterFramework` dependency, so Flutter 3.44
+  falls back to CocoaPods and prints a warning. Keep SwiftPM enabled; do not
+  disable it to hide this upstream limitation.
+
 ## Shared payload schema (App Group container)
 
 Key `crosscue_widget_v1`, JSON:

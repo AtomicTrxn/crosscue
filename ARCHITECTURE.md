@@ -313,20 +313,26 @@ challenge_boards/
 │       ├── challenge_board_api.dart             # Dio HTTP client (bootstrap-on-demand auth)
 │       ├── challenge_identity_store.dart        # Token in SecureKeyValueStore; recovery bundle in DB
 │       └── challenge_result_outbox.dart         # Offline result queue (app_settings, never synced)
-├── presentation/…                               # Tab, board detail, sheets, avatar widgets
+├── presentation/
+│   ├── challenge_action_error.dart              # Safe API/network error → user feedback mapping
+│   └── …                                        # Tab, board detail, sheets, avatar widgets
 └── sample/sample_data.dart                      # Sample-mode fixtures
 ```
 
 Identity model: anonymous player, bearer token in platform secure storage
 (device-local by design), recovery bundle in the app database so it survives
 OS backup and syncs via the user's own cloud (see `docs/privacy.md`).
+Every network-backed presentation action catches failures and routes them
+through `challenge_action_error.dart`; raw server messages are never displayed.
+The shared mapping covers connectivity/timeouts, invite expiry, board/member
+limits, ownership conflicts, rate limiting, and the `426 client_too_old` gate.
 
 ---
 
 ## Backend: Challenge Boards Worker
 
 The only server component (`crosscue/backend/challenge_boards/`):
-Cloudflare Workers + D1, split into feature modules with `index.ts` as the
+Cloudflare Workers + D1 + R2, split into feature modules with `index.ts` as the
 router:
 
 ```
@@ -337,6 +343,7 @@ src/
 ├── results.ts        # Honor-system result submission (bounded sanity checks)
 ├── leaderboards.ts   # Weekly/lifetime aggregation + ranking
 ├── membership.ts     # Membership lookups, invite verification, audit events
+├── avatars.ts        # R2-backed photo storage + immutable public read route
 ├── retention.ts      # 14-day board_events purge (daily cron)
 └── http/util/validation/constants/types.ts     # Shared plumbing
 ```
@@ -346,6 +353,13 @@ SHA-256 hashes; schema lives in numbered `migrations/`. Trust model and
 endpoint contracts: [`API.md`](crosscue/backend/challenge_boards/API.md);
 environments, migrations, and deploy flow: `DEPLOYMENT.md` ("Backend:
 Challenge Boards Worker").
+
+Multi-statement state transitions use one D1 `batch()` so board creation,
+membership changes, invite regeneration, ownership transfer, and player
+deletion commit or roll back together. Fault-injection tests exercise every
+batch shape, including account deletion across multiple boards. The Flutter
+result outbox similarly preserves submissions enqueued while a flush is in
+flight instead of overwriting concurrent work.
 
 ---
 
@@ -574,4 +588,4 @@ plausibly regresses one as a finding that needs measurement before merge.
 | Grid rendering | One `CustomPainter.paint()` pass per frame; no per-cell widgets at any size up to 21×21 ⚙ (see CONVENTIONS.md → Grid Rendering) |
 | Import | 5 MB file cap enforced in parsers ⚙; parse + persist completes without blocking the UI |
 | Incremental sync (unchanged library) | One manifest GET; entity blobs fetched only when the manifest shows a newer remote version ⚙ |
-| Worker leaderboards | One batched aggregation per request — no per-board N+1 (#241) ⚙; keep board-detail payloads mobile-sized — avatar photos are served by reference from R2 rather than inlined (#268), inert until the `AVATARS` bucket is provisioned (then photos fall back to inline data URLs in D1) |
+| Worker leaderboards | One batched aggregation per request — no per-board N+1 (#241) ⚙; keep board-detail payloads mobile-sized — deployed environments serve avatar photos by reference from their bound R2 buckets rather than inlining them (#268); tests and legacy unbound deployments retain the inline D1 fallback |
