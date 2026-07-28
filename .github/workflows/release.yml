@@ -4,11 +4,12 @@ name: Release
 # (`git tag vX.Y.Z && git push origin vX.Y.Z`), then run this workflow with
 # that tag.
 #
-# Per dispatch: `android` and `ios` build jobs run in parallel; once both
-# finish, `github_release` publishes a GitHub Release with just the APK
-# attached. iOS always builds (verification only); set test_flight: true
-# to additionally upload the IPA to TestFlight. AAB → Play Store is gated
-# on play_store: true.
+# Per dispatch: `android` and `ios` build jobs run in parallel. Once both
+# finish, `github_release` creates or updates a *draft* GitHub Release with
+# the APK attached. iOS always builds (verification only); set test_flight:
+# true to additionally upload the IPA to TestFlight. AAB → Play Store is
+# gated on play_store: true. Publishing the GitHub Release requires a separate
+# explicit dispatch with publish_github_release: true after QA has signed off.
 on:
   workflow_dispatch:
     inputs:
@@ -32,6 +33,10 @@ on:
         description: 'Upload built IPA to TestFlight (IPA is always built for verification)'
         type: boolean
         default: false
+      publish_github_release:
+        description: 'Publish the GitHub draft after signed-build and QA approval'
+        type: boolean
+        default: false
 
 env:
   # Matches ci.yml (#128 / #216): release builds now use the same toolchain CI
@@ -46,22 +51,148 @@ env:
   CHALLENGE_API_BASE_URL: ${{ vars.CHALLENGE_API_BASE_URL }}
 
 jobs:
-  validate_challenge_production_config:
-    name: Validate Challenge production configuration
+  release_context:
+    name: Validate tag and release version
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+
+    outputs:
+      version_name: ${{ steps.version.outputs.name }}
+      version_code: ${{ steps.version.outputs.code }}
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
-      - name: Require an HTTPS Challenge API URL
+      - name: Check out tag
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Validate tag against pubspec version
+        id: version
         shell: bash
         run: |
-          if [[ ! "${CHALLENGE_API_BASE_URL:-}" =~ ^https://[^[:space:]]+$ ]]; then
-            echo "::error::Release builds require CHALLENGE_API_BASE_URL to be a non-empty HTTPS URL."
+          set -euo pipefail
+
+          tag="$RELEASE_TAG"
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Release tag must be a stable semantic version in the form vX.Y.Z."
             exit 1
+          fi
+
+          version="${tag#v}"
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          if (( 10#$minor > 99 || 10#$patch > 99 )); then
+            echo "::error::Minor and patch versions must each be between 0 and 99 for the Android version-code formula."
+            exit 1
+          fi
+          expected_code=$((10#$major * 10000 + 10#$minor * 100 + 10#$patch))
+          if (( expected_code > 2100000000 )); then
+            echo "::error::Computed Android version code exceeds the Play Store limit."
+            exit 1
+          fi
+          expected_pubspec_version="${version}+${expected_code}"
+          pubspec_version="$(awk '/^version:[[:space:]]*/ { sub(/^version:[[:space:]]*/, ""); print; exit }' crosscue/pubspec.yaml)"
+
+          if [[ "$pubspec_version" != "$expected_pubspec_version" ]]; then
+            echo "::error::crosscue/pubspec.yaml version must be ${expected_pubspec_version} for tag ${tag}; found ${pubspec_version:-<missing>}."
+            exit 1
+          fi
+
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$expected_code" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  validate_release_configuration:
+    name: Validate release configuration
+    needs: release_context
+    runs-on: ubuntu-latest
+    env:
+      CHALLENGE_API_BASE_URL: ${{ vars.CHALLENGE_API_BASE_URL }}
+      GOOGLE_OAUTH_SERVER_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }}
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+      APPLE_DEVELOPER_CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_BASE64 }}
+      APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+      APPLE_WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+      PLAY_STORE: ${{ inputs.play_store }}
+      TEST_FLIGHT: ${{ inputs.test_flight }}
+
+    steps:
+      - name: Require release secrets and variables without logging values
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+
+          require() {
+            local name="$1"
+            local value="$2"
+            if [[ -z "$value" ]]; then
+              echo "::error::Required release configuration is missing: $name"
+              missing=1
+            fi
+          }
+
+          require CHALLENGE_API_BASE_URL "$CHALLENGE_API_BASE_URL"
+          require GOOGLE_OAUTH_SERVER_CLIENT_ID "$GOOGLE_OAUTH_SERVER_CLIENT_ID"
+          require KEYSTORE_BASE64 "$KEYSTORE_BASE64"
+          require KEY_ALIAS "$KEY_ALIAS"
+          require KEY_PASSWORD "$KEY_PASSWORD"
+          require STORE_PASSWORD "$STORE_PASSWORD"
+          require APPLE_DEVELOPER_CERTIFICATE_BASE64 "$APPLE_DEVELOPER_CERTIFICATE_BASE64"
+          require APPLE_DEVELOPER_CERTIFICATE_PASSWORD "$APPLE_DEVELOPER_CERTIFICATE_PASSWORD"
+          require APPLE_PROVISIONING_PROFILE_BASE64 "$APPLE_PROVISIONING_PROFILE_BASE64"
+          require APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 "$APPLE_WIDGET_PROVISIONING_PROFILE_BASE64"
+
+          if [[ "$TEST_FLIGHT" == 'true' ]]; then
+            require APPLE_API_KEY "$APPLE_API_KEY"
+            require APPLE_API_KEY_ID "$APPLE_API_KEY_ID"
+            require APPLE_API_ISSUER_ID "$APPLE_API_ISSUER_ID"
+          fi
+          if [[ "$PLAY_STORE" == 'true' ]]; then
+            require PLAY_SERVICE_ACCOUNT_JSON "$PLAY_SERVICE_ACCOUNT_JSON"
+          fi
+          (( missing == 0 )) || exit 1
+
+          if [[ ! "$CHALLENGE_API_BASE_URL" =~ ^https://[^[:space:]]+$ ]]; then
+            echo '::error::Release builds require CHALLENGE_API_BASE_URL to be a non-empty HTTPS URL.'
+            exit 1
+          fi
+          if [[ ! "$GOOGLE_OAUTH_SERVER_CLIENT_ID" =~ ^[^[:space:]]+\.apps\.googleusercontent\.com$ ]]; then
+            echo '::error::Release builds require a valid GOOGLE_OAUTH_SERVER_CLIENT_ID.'
+            exit 1
+          fi
+
+          for encoded_value in \
+            "$KEYSTORE_BASE64" \
+            "$APPLE_DEVELOPER_CERTIFICATE_BASE64" \
+            "$APPLE_PROVISIONING_PROFILE_BASE64" \
+            "$APPLE_WIDGET_PROVISIONING_PROFILE_BASE64"; do
+            printf '%s' "$encoded_value" | base64 --decode >/dev/null
+          done
+          if [[ "$TEST_FLIGHT" == 'true' ]]; then
+            printf '%s' "$APPLE_API_KEY" | base64 --decode >/dev/null
+          fi
+          if [[ "$PLAY_STORE" == 'true' ]]; then
+            if ! jq -e . >/dev/null 2>&1 <<< "$PLAY_SERVICE_ACCOUNT_JSON"; then
+              echo '::error::PLAY_SERVICE_ACCOUNT_JSON must contain valid JSON.'
+              exit 1
+            fi
           fi
 
   android:
     name: Build Android
-    needs: validate_challenge_production_config
+    needs: [release_context, validate_release_configuration]
     runs-on: ubuntu-latest
 
     defaults:
@@ -73,17 +204,6 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
-
-      - name: Parse version
-        id: version
-        run: |
-          TAG="${{ inputs.tag }}"
-          VERSION="${TAG#v}"
-          IFS='.' read -r major minor patch <<< "$VERSION"
-          CODE=$(( major * 10000 + minor * 100 + patch ))
-          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "code=$CODE"    >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG"      >> "$GITHUB_OUTPUT"
 
       - name: Set up Java
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -118,8 +238,8 @@ jobs:
           # them and breaks compileReleaseJavaWithJavac.
           flutter build apk \
             --release \
-            --build-name=${{ steps.version.outputs.name }} \
-            --build-number=${{ steps.version.outputs.code }} \
+            --build-name=${{ needs.release_context.outputs.version_name }} \
+            --build-number=${{ needs.release_context.outputs.version_code }} \
             --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
             --dart-define=CHALLENGE_API_ENV=production \
             --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
@@ -136,16 +256,46 @@ jobs:
           # regenerate GeneratedPluginRegistrant to drop dev-only plugins.
           flutter build appbundle \
             --release \
-            --build-name=${{ steps.version.outputs.name }} \
-            --build-number=${{ steps.version.outputs.code }} \
+            --build-name=${{ needs.release_context.outputs.version_name }} \
+            --build-number=${{ needs.release_context.outputs.version_code }} \
             --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
             --dart-define=CHALLENGE_API_ENV=production \
             --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
 
+      - name: Reject debug-signed Android artifacts
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [[ "$KEY_ALIAS" == 'androiddebugkey' ]]; then
+            echo '::error::The Android debug key alias cannot sign a release artifact.'
+            exit 1
+          fi
+
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -perm -u+x | sort -V | tail -n 1)"
+          if [[ -z "$apksigner_path" ]]; then
+            echo '::error::Android apksigner was not found on the release runner.'
+            exit 1
+          fi
+
+          apk_info="$("$apksigner_path" verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk)"
+          if grep -qi 'Android Debug' <<< "$apk_info"; then
+            echo '::error::Refusing to upload a debug-signed APK.'
+            exit 1
+          fi
+
+          if [[ "${{ inputs.play_store }}" == 'true' ]]; then
+            aab_info="$(keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab)"
+            if grep -qi 'Android Debug' <<< "$aab_info"; then
+              echo '::error::Refusing to upload a debug-signed AAB.'
+              exit 1
+            fi
+          fi
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: crosscue-android-${{ steps.version.outputs.name }}
+          name: crosscue-android-${{ needs.release_context.outputs.version_name }}
           path: crosscue/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
@@ -154,7 +304,7 @@ jobs:
         if: ${{ inputs.play_store == true }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: crosscue-android-aab-${{ steps.version.outputs.name }}
+          name: crosscue-android-aab-${{ needs.release_context.outputs.version_name }}
           path: crosscue/build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
@@ -171,7 +321,7 @@ jobs:
 
   ios:
     name: Build iOS (upload to TestFlight if requested)
-    needs: validate_challenge_production_config
+    needs: [release_context, validate_release_configuration]
     runs-on: macos-latest
 
     defaults:
@@ -183,16 +333,6 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ inputs.tag }}
-
-      - name: Parse version
-        id: version
-        run: |
-          TAG="${{ inputs.tag }}"
-          VERSION="${TAG#v}"
-          IFS='.' read -r major minor patch <<< "$VERSION"
-          CODE=$(( major * 10000 + minor * 100 + patch ))
-          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "code=$CODE"    >> "$GITHUB_OUTPUT"
 
       # macos-latest's default Xcode may lag behind the iOS SDK that our
       # plugins compile against (e.g. device_info_plus 12.4.0 references
@@ -294,8 +434,8 @@ jobs:
           flutter build ipa \
             --release \
             --no-pub \
-            --build-name=${{ steps.version.outputs.name }} \
-            --build-number=${{ steps.version.outputs.code }} \
+            --build-name=${{ needs.release_context.outputs.version_name }} \
+            --build-number=${{ needs.release_context.outputs.version_code }} \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
             --dart-define=CHALLENGE_API_ENV=production \
             --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
@@ -325,9 +465,10 @@ jobs:
             --apiIssuer "$APPLE_API_ISSUER_ID"
 
   github_release:
-    name: Publish GitHub Release
-    needs: [android, ios]
-    # iOS is a verification gate: both jobs must succeed before we publish.
+    name: Create or publish GitHub Release
+    needs: [release_context, android, ios]
+    # iOS is a verification gate: both jobs must succeed before the release
+    # can be created or explicitly published.
     if: ${{ needs.android.result == 'success' && needs.ios.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -341,12 +482,16 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ inputs.tag }}
           name: Crosscue ${{ inputs.tag }}
           generate_release_notes: true
+          # A release dispatch is a build-and-QA step by default. A later,
+          # deliberate dispatch can set publish_github_release=true once the
+          # signed artifacts, TestFlight/Play processing, and device QA pass.
+          draft: ${{ inputs.publish_github_release != true }}
           # Only the APK is user-installable; an AAB is a Play Store publishing
           # format that can't be sideloaded. The AAB still ships to Play and is
           # retained as a CI build artifact — no need to attach it here.

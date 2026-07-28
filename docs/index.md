@@ -9,10 +9,12 @@ holds everything decision-shaped, dated, or operational: ADRs, design docs,
 runbooks, QA checklists, policies, and reviews. Component-local READMEs
 (`crosscue/backend/challenge_boards/`, `deeplinks/`) stay next to their code.
 
-**Status convention:** every doc under `docs/` carries a status line —
-**Living** (kept current; edit in place), **Snapshot (date)** (point-in-time;
-never edited — corrections land in living docs), or **Historical** (plan of
-record for shipped/superseded work).
+**Status convention:** maintained engineering and operational docs under
+`docs/` carry a status line — **Living** (kept current; edit in place),
+**Snapshot (date)** (point-in-time; never edited — corrections land in living
+docs), or **Historical** (plan of record for shipped/superseded work). The two
+published policy pages instead begin with their title and **Effective date**;
+their source-only maintainer notes describe the publishing and review cadence.
 
 ## Product & policy
 

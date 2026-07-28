@@ -6,7 +6,8 @@
 > Android counterpart shipped in #223 (`CrosscueWidgetProvider.kt` +
 > `res/layout/crosscue_widget.xml`), reading the same payload.
 
-The WidgetKit widget for streak + today's puzzle ([#114](https://github.com/AtomicTrxn/crosscue/issues/114)).
+The WidgetKit widget for streak + today's puzzle (implemented under
+[#114](https://github.com/AtomicTrxn/crosscue/issues/114)).
 Like the iCloud and Google Drive setups, the **code ships first and stays
 inert** until the one-time Xcode + Apple-portal wiring below is done:
 `HomeWidgetService.refresh()` swallows every failure, so the app behaves

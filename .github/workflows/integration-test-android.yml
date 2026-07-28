@@ -16,6 +16,9 @@ jobs:
   integration-test:
     name: Android integration tests
     runs-on: ubuntu-latest
+    # A hung simulator or test must fail the release gate, not consume the
+    # GitHub-hosted runner's six-hour default.
+    timeout-minutes: 50
 
     steps:
       - name: Check out repository

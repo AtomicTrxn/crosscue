@@ -490,6 +490,10 @@ class CrosswordGridPainter extends CustomPainter {
             rect: rect,
             properties: SemanticsProperties(
               label: label,
+              // Android requires a direction whenever a semantics node has a
+              // non-empty label. Without this TalkBack rejects the node (and
+              // integration tests fail before exercising the solve surface).
+              textDirection: TextDirection.ltr,
               // Blocked cells aren't fillable: no button role / tap action.
               button: cell.isBlack ? null : true,
               selected: cell.isBlack ? null : focused,

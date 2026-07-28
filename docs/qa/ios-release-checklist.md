@@ -15,12 +15,6 @@ installed.
 - A `.puz` or `.ipuz` file available — easiest: AirDrop one from your Mac, or
   open from Files / Mail / Messages
 
-**Known issues to skip** (these are already filed; don't re-report)
-- **#105** — Tapping outside the rebus modal (or pressing Enter on iOS) shows
-  a red debug-screen. Release builds have assertions stripped, so this only
-  shows up on a debug install. If your TestFlight build still surfaces it,
-  file a new bug.
-
 ---
 
 ## Automated coverage (run this first)
@@ -90,8 +84,8 @@ suite means the manual pass below can focus on these.
   cell shows the rebus correctly, focus advances
 - [ ] Long-press the same cell again → rebus dialog reopens with the current
   rebus content pre-filled (matches NYT pre-fill behavior)
-- [ ] **Skip:** tap-outside-to-save. Known bug #105 — close with the Enter
-  or Cancel button instead.
+- [ ] Dismiss the dialog by tapping outside it → no debug/error screen; the
+  current entry is handled as the dialog indicates
 
 ## 5. Persistence
 
@@ -115,6 +109,8 @@ suite means the manual pass below can focus on these.
 - [ ] Settings → Privacy & Data → Privacy policy → opens the published policy
   in Safari (`https://atomictrxn.github.io/crosscue/privacy.html`)
 - [ ] Any other in-app links resolve to working URLs
+- [ ] `Clear all data` works; if Challenge Boards was used, it reports the
+  server-side deletion (or offers the offline retry path)
 
 ## 8. Visual & accessibility
 
@@ -177,6 +173,34 @@ To force the iOS task during development (instead of waiting for the OS), pause
 in the debugger right after launch and run:
 `e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"dev.tomhess.crosscue.refresh"]`
 
+## 12. Challenge Boards (only on builds with a configured backend)
+
+- [ ] Challenge tab loads real boards rather than sample data
+- [ ] Create or join a board, set a display name, then select a photo avatar →
+  it renders in the board; replace it with a built-in silhouette → the board
+  remains usable and the former photo no longer renders
+- [ ] Submit an eligible daily-mini result → it appears on the board
+- [ ] Open an invite link from Messages/Safari → app opens to the join preview;
+  without the app, the web fallback renders
+- [ ] `Clear all data` after using the feature reports server deletion; confirm
+  the avatar and player cannot be retrieved afterward when a test environment
+  is available
+
+## 13. Sync (only when this build is configured for iCloud)
+
+- [ ] Enable sync → iCloud authorization/status completes without a crash
+- [ ] Sync now succeeds; a second device using the same iCloud account sees
+  the expected library/progress changes
+- [ ] Turn off and remove cloud copy → the app confirms removal; local data
+  behavior matches the choice shown in the UI
+
+## 14. App Intents (Shortcuts / Spotlight / Siri)
+
+- [ ] In Shortcuts, the three Crosscue actions (Today's Puzzle, Stats,
+  Continue) appear and reach the expected screen from both cold and warm start
+- [ ] Spotlight and Siri, where enabled on the test device, surface/run the
+  actions without a stale or incorrect route
+
 ---
 
 ## Reporting bugs found during QA
@@ -187,8 +211,9 @@ For each bug:
 3. Include: device + iOS version, reproduction steps, expected vs. actual,
    the screenshot or recording
 
-Block submitting for review if any item in sections 1-7 fails. Items in 8-10
-are nice-to-have for v1.0 — file as enhancement issues rather than blockers.
+Block submitting for review if any item in sections 1-7 or 12-14 fails. File
+failures in sections 8-10 as enhancements unless they cause a crash, data loss,
+an accessibility regression, or a store-review blocker.
 
 ## After QA passes
 

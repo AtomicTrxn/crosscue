@@ -34,8 +34,8 @@ Avatar photos are stored by reference in an R2 bucket (`AVATARS` binding,
 #268) and served from `GET /avatars/<playerId>/<sha256>.png` with a one-year
 immutable cache. `wrangler.toml` binds a local simulated bucket plus separate
 staging and production buckets. Both remote buckets are provisioned and bound
-in the deployed environments (verified 2026-07-27). Tests can still omit the
-binding to cover legacy inline `data:` URLs.
+in the deployed environments (verified 2026-07-28 UTC). Tests can still omit
+the binding to cover legacy inline `data:` URLs.
 
 Out of scope for this slice: the optional `api.crosscue.app` custom domain,
 realtime/live-board infrastructure, an activity feed, and paid tiers. Invite
@@ -43,8 +43,9 @@ deep links already ship through `crosscue.pages.dev`.
 
 ## Local Setup
 
-1. Replace the placeholder D1 `database_id` values in `wrangler.toml` after
-   creating the local/staging/prod databases with Wrangler.
+1. For the current Cloudflare account, use the checked-in staging/production
+   D1 IDs. For a replacement account, create the databases and replace those
+   IDs in `wrangler.toml` before deploying.
 2. Install dependencies from this directory.
 3. Run local migrations:
 
@@ -166,9 +167,11 @@ returned HTTPS URL and downloaded image bytes, then deletes the player and
 confirms the avatar URL is gone. Cleanup runs in `finally`, and the auth token
 is never printed.
 
-**Last live verification (2026-07-27):** migration `0007_ops_meta.sql`, both
-environment deploys, and both remote avatar smokes passed. The staging and
-production buckets reported zero objects after smoke cleanup.
+**Last live verification (2026-07-28 UTC):** commit `9eb8deb` was deployed
+with `v1.4.4` metadata after both environments reported no pending migrations.
+Both remote avatar smokes passed, cleanup left both buckets empty, and the
+first post-deployment retention cron recorded a fresh `03:07:51Z` heartbeat in
+staging and production.
 
 R2 has no hard spend-cap switch in the Cloudflare dashboard. An account-wide
 `R2 overage warning` budget alert is configured at `$1 USD`; it is

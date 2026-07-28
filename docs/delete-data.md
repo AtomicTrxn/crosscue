@@ -15,7 +15,7 @@
 
 **App:** Crosscue (crossword solver for iOS and Android)
 **Developer:** Tom Hess (AtomicTrxn)
-**Effective date:** June 15, 2026
+**Effective date:** 2026-07-28
 
 This page explains how to delete the data Crosscue stores, what is deleted, what
 is kept, and how long anything is retained. For the full picture of what
@@ -55,6 +55,8 @@ Cloudflare). If you ever created or joined a board, that server holds:
 - an **anonymous player identity** (a random id and access token — not tied to
   your name, email, or any account)
 - your chosen **display name**
+- your chosen **avatar**; a built-in silhouette or, if you selected one, a
+  normalized PNG photo stored in the Crosscue Cloudflare R2 bucket
 - which **boards** you belong to (and board names you created)
 - **solve-result metadata** for eligible daily puzzles (puzzle source and date,
   your elapsed time, completion type, and timestamps)
@@ -65,6 +67,7 @@ request to the server, which:
 
 - removes you from every board (a board with no remaining members is deleted),
 - deletes your challenge solve-result rows,
+- removes any stored avatar photo,
 - anonymizes any residual membership records,
 - and revokes your access token and recovery secret.
 

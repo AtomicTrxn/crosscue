@@ -120,17 +120,23 @@ can't exercise (real share-sheet import, gestures, store install).
   must never show sample boards (#236 makes misconfiguration throw at
   startup; verify it didn't)
 - [ ] Submit an eligible daily-mini result → appears on the board
+- [ ] Set a display name, choose a photo avatar, and verify it renders in the
+  board; replace it with a built-in silhouette → the board remains usable and
+  the former photo no longer renders
 - [ ] Invite link tap (`https://crosscue.pages.dev/join/...` — the live host;
   the `crosscue.app` apex is wired but not registered/served) from a messaging
   app → opens the app to the join preview (App Links `autoVerify`); from a
   browser without the app → `join.html` fallback
 
-## 12. Sync (only once Google Drive OAuth is live — currently inert)
+## 12. Sync (only on a build configured with Google Drive OAuth)
 
 - [ ] Settings → Sync → enable → Google sign-in prompt appears and completes
 - [ ] "Sync now" succeeds; second device sees the data (two-device soak is a
   separate procedure — `sync-icloud-setup.md` Step 5 pattern)
-- [ ] While inert (no OAuth clients): the toggle fails gracefully, no crash
+- [ ] If the release intentionally omits `GOOGLE_OAUTH_SERVER_CLIENT_ID`, the
+  toggle fails gracefully with no crash. Do not treat this as acceptable for a
+  release advertised as supporting Android sync; confirm the OAuth consent
+  screen, Android signing fingerprints, and build variable before QA.
 
 ## 13. Home-screen widget & App Shortcuts
 
@@ -152,7 +158,7 @@ shipped in v1.4 — parity with iOS per ADR-0015.
 
 Same flow as iOS: screenshot/recording → new GitHub issue with device,
 Android version, steps, expected vs. actual. Block the release on failures in
-sections 1–7; file 8–10 findings as enhancements unless severe.
+sections 1–7 and 11–13; file 8–10 findings as enhancements unless severe.
 
 ## After QA passes
 

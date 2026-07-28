@@ -42,6 +42,8 @@
 import 'package:crosscue/features/import/domain/models/import_job_result.dart';
 import 'package:crosscue/features/import/presentation/providers/import_providers.dart';
 import 'package:crosscue/features/settings/presentation/providers/settings_providers.dart';
+import 'package:crosscue/features/solve/presentation/screens/solve_screen.dart';
+import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart';
 import 'package:crosscue/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,11 +111,11 @@ void main() {
       );
       await pumpFor(tester, const Duration(seconds: 6));
 
-      // 7. We're on the solve screen — the clue list and on-screen
-      //    keyboard are visible. ACROSS/DOWN headers from clue_panel.dart
-      //    are stable anchors that exist regardless of progress state.
-      expect(find.text('ACROSS'), findsOneWidget);
-      expect(find.text('DOWN'), findsOneWidget);
+      // 7. We're on the solve screen — the grid, clue, and on-screen keyboard
+      //    are visible. Compact phones intentionally omit the wider
+      //    ACROSS/DOWN section headers, so assert responsive-layout anchors.
+      expect(find.byType(SolveScreen), findsOneWidget);
+      expect(find.byType(CrosswordGrid), findsOneWidget);
       // Clue text from PuzFixtureBuilder.minimal3x3.
       expect(find.text('1-Across'), findsWidgets);
 

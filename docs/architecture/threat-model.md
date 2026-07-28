@@ -74,8 +74,10 @@ table is a known trade-off, not a gap.
   `$1 USD` account-wide budget alert is configured. Cloudflare budget alerts
   are informational; they do not pause or cap usage. Revisit if Cloudflare
   adds enforcement controls or usage approaches the free allowance.
-- **Alerting is pull-based** (`wrangler tail`) — see DEPLOYMENT.md
-  "Monitoring & alerting" for the planned push signals.
+- **Worker exception alerting is still pull-based** (`wrangler tail`): the
+  retention heartbeat and Crosshare canary have push workflows, but the
+  Cloudflare Worker error-rate notification remains an owner setup action.
+  See DEPLOYMENT.md "Monitoring & alerting".
 
 ## Out of scope
 
