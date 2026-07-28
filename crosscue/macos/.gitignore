@@ -1,6 +1,9 @@
 # Flutter-related
 **/Flutter/ephemeral/
 **/Pods/
+**/.swiftpm/
+**/swiftpm/
+**/.build/
 
 # Xcode-related
 **/dgph

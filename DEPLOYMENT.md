@@ -153,9 +153,10 @@ back to CocoaPods for plugins that do not support SwiftPM. Keep SwiftPM enabled.
 - `workmanager_apple 0.9.1+2` remains the only iOS SwiftPM warning: its
   `Package.swift` omits Flutter's required `FlutterFramework` dependency, so
   Flutter uses CocoaPods for that plugin.
-- The macOS project still contains CocoaPods integration. Remove it only as a
-  separately reviewed Xcode-project change after confirming every macOS plugin
-  resolves through SwiftPM.
+- The macOS project is fully SwiftPM-managed. Every current macOS plugin
+  resolves through `FlutterGeneratedPluginSwiftPackage`; the legacy Podfile,
+  Pods xcconfig includes, workspace reference, and build phases were removed
+  for v1.4.4 after an unsigned Xcode Debug build passed.
 
 Reference:
 [Flutter's SwiftPM app guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers).

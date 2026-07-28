@@ -50,7 +50,7 @@ Severity: H = high, M = medium, L = low/hygiene.
 | 21 | M | Several Challenge Boards list/detail/deep-link actions let API exceptions escape without consistent user feedback. | **Fixed (`ede4d82`)** — shared safe error mapping + mounted-guarded snackbars cover every network-backed action; mapping and visible-feedback tests added |
 | 22 | M | Android/iOS release jobs could build with a missing or malformed Challenge API URL. | **Fixed (`af452b6`)** — one prerequisite job rejects blank, whitespace-containing, or non-HTTPS `CHALLENGE_API_BASE_URL` before either platform builds |
 | 23 | H | R2 code existed but the account, buckets, bindings, and remote behavior had not been proven end to end. | **Fixed (`ede4d82`, verified 2026-07-27)** — R2 enabled, both buckets created, staging-first deployment passed, production promoted, token-safe upload/read/delete smokes passed, and cleanup left both buckets empty |
-| 24 | L | Flutter 3.44 SwiftPM migration warned for multiple Apple plugins. | **Improved (`ede4d82`)** — `home_widget 0.9.3` and `flutter_secure_storage 10.3.1` now resolve through SwiftPM; `workmanager_apple 0.9.1+2` remains an upstream CocoaPods fallback because its package omits the required `FlutterFramework` dependency |
+| 24 | L | Flutter 3.44 SwiftPM migration warned for multiple Apple plugins. | **Improved (`ede4d82`, completed for macOS in v1.4.4)** — `home_widget 0.9.3` and `flutter_secure_storage 10.3.1` resolve through SwiftPM; macOS is fully SwiftPM-managed after removing its redundant Pods integration. On iOS, `workmanager_apple 0.9.1+2` remains an upstream CocoaPods fallback because its package omits the required `FlutterFramework` dependency |
 
 ## Notably good (keep doing)
 

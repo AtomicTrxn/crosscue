@@ -1,0 +1,5 @@
+Challenge Boards are more dependable in this update, with clearer error
+messages, safer account and membership changes, and more reliable result
+submissions when connectivity is uneven. Avatar photos now use dedicated
+object storage, and the update also includes dependency and release-pipeline
+hardening.
