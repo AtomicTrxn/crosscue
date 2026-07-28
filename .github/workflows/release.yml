@@ -40,10 +40,28 @@ env:
   # so KGP keeps working. Revisit when we move to AGP 9 (flutter/flutter#184837).
   FLUTTER_VERSION: '3.44.0'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # All Android and iOS release builds target the production Challenge API.
+  # Keep the value in the environment so it can be validated once without
+  # expanding it in shell source or workflow logs.
+  CHALLENGE_API_BASE_URL: ${{ vars.CHALLENGE_API_BASE_URL }}
 
 jobs:
+  validate_challenge_production_config:
+    name: Validate Challenge production configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require an HTTPS Challenge API URL
+        shell: bash
+        run: |
+          if [[ ! "${CHALLENGE_API_BASE_URL:-}" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error::Release builds require CHALLENGE_API_BASE_URL to be a non-empty HTTPS URL."
+            exit 1
+          fi
+
   android:
     name: Build Android
+    needs: validate_challenge_production_config
     runs-on: ubuntu-latest
 
     defaults:
@@ -104,7 +122,7 @@ jobs:
             --build-number=${{ steps.version.outputs.code }} \
             --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
             --dart-define=CHALLENGE_API_ENV=production \
-            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
+            --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
 
       - name: Build release AAB
         if: ${{ inputs.play_store == true }}
@@ -122,7 +140,7 @@ jobs:
             --build-number=${{ steps.version.outputs.code }} \
             --dart-define=GOOGLE_OAUTH_SERVER_CLIENT_ID=${{ vars.GOOGLE_OAUTH_SERVER_CLIENT_ID }} \
             --dart-define=CHALLENGE_API_ENV=production \
-            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
+            --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -153,6 +171,7 @@ jobs:
 
   ios:
     name: Build iOS (upload to TestFlight if requested)
+    needs: validate_challenge_production_config
     runs-on: macos-latest
 
     defaults:
@@ -279,7 +298,7 @@ jobs:
             --build-number=${{ steps.version.outputs.code }} \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
             --dart-define=CHALLENGE_API_ENV=production \
-            --dart-define=CHALLENGE_API_BASE_URL=${{ vars.CHALLENGE_API_BASE_URL }}
+            --dart-define=CHALLENGE_API_BASE_URL="$CHALLENGE_API_BASE_URL"
 
       # Auth via an App Store Connect API key (scoped role, individually
       # revocable) instead of an Apple ID + app-specific password. altool
