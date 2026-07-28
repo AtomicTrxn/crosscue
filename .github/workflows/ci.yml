@@ -38,8 +38,18 @@ jobs:
         working-directory: .
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          # crosscue/ holds the Flutter app *and* the Worker under backend/, so
+          # matching crosscue alone ran the whole app pipeline for worker-only
+          # changes. Exclude backend/ — except contract-fixtures/, the shared
+          # wire-shape source of truth that test/features/challenge_boards/
+          # contract_fixtures_test.dart reads directly, so fixture drift still
+          # has to fail both sides. A pathspec exclude beats any include, so
+          # the fixtures need their own check rather than being re-added above.
           if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
-            crosscue .github/workflows Makefile scripts; then
+               crosscue ':(exclude)crosscue/backend' \
+               .github/workflows Makefile scripts \
+             && git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
+               crosscue/backend/challenge_boards/contract-fixtures; then
             echo "app=false" >> "$GITHUB_OUTPUT"
           else
             echo "app=true" >> "$GITHUB_OUTPUT"
@@ -143,8 +153,18 @@ jobs:
         working-directory: .
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          # crosscue/ holds the Flutter app *and* the Worker under backend/, so
+          # matching crosscue alone ran the whole app pipeline for worker-only
+          # changes. Exclude backend/ — except contract-fixtures/, the shared
+          # wire-shape source of truth that test/features/challenge_boards/
+          # contract_fixtures_test.dart reads directly, so fixture drift still
+          # has to fail both sides. A pathspec exclude beats any include, so
+          # the fixtures need their own check rather than being re-added above.
           if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
-            crosscue .github/workflows Makefile scripts; then
+               crosscue ':(exclude)crosscue/backend' \
+               .github/workflows Makefile scripts \
+             && git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
+               crosscue/backend/challenge_boards/contract-fixtures; then
             echo "app=false" >> "$GITHUB_OUTPUT"
           else
             echo "app=true" >> "$GITHUB_OUTPUT"
