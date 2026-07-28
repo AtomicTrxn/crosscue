@@ -2,7 +2,7 @@
 
 import { deleteAvatarObjects, storeAvatarPhoto } from "./avatars.ts";
 import { ApiError, readBody } from "./http.ts";
-import { activeMemberCount, eventStatement, transferOwnershipIfDeparting } from "./membership.ts";
+import { boardDepartureStatements, requireActiveBoardMember } from "./membership.ts";
 import type { Auth, Env, JsonValue, PlayerRow } from "./types.ts";
 import { randomSecret, sha256, utcNow } from "./util.ts";
 import { dataUrlForAvatar, validateDisplayName, validateRequiredString } from "./validation.ts";
@@ -157,35 +157,19 @@ export async function deletePlayer(env: Env, auth: Auth): Promise<JsonValue> {
     .bind(playerId)
     .all<{ board_id: string }>();
 
-  const leaveStatements: D1PreparedStatement[] = [];
+  // Five active boards max. Each departure contributes at most five
+  // statements, then account cleanup adds three: 28 statements worst-case.
+  const deleteStatements: D1PreparedStatement[] = [];
   for (const { board_id } of activeBoards.results ?? []) {
-    leaveStatements.push(
-      env.DB.prepare(
-        `update memberships
-         set left_at = ?, membership_state = 'left'
-         where board_id = ? and player_id = ? and left_at is null`,
-      ).bind(now, board_id, playerId),
-      eventStatement(env, board_id, playerId, "leave", now),
+    const board = await requireActiveBoardMember(env, playerId, board_id);
+    deleteStatements.push(
+      ...boardDepartureStatements(env, board, playerId, now).statements,
     );
   }
-  if (leaveStatements.length > 0) {
-    await env.DB.batch(leaveStatements);
-  }
 
-  // Auto-delete any board left with no remaining active members; otherwise
-  // pass ownership down if the departing player owned the board.
-  for (const { board_id } of activeBoards.results ?? []) {
-    if ((await activeMemberCount(env, board_id)) === 0) {
-      await env.DB.prepare("update boards set deleted_at = ? where id = ?")
-        .bind(now, board_id)
-        .run();
-    } else {
-      await transferOwnershipIfDeparting(env, board_id, playerId, now);
-    }
-  }
-
-  // Remove the player's solve results and anonymize residual participation data.
-  await env.DB.batch([
+  // Board departures, result deletion, anonymization, and credential
+  // revocation commit or roll back as one request-level D1 transaction.
+  deleteStatements.push(
     env.DB.prepare("delete from challenge_results where player_id = ?").bind(
       playerId,
     ),
@@ -199,7 +183,8 @@ export async function deletePlayer(env: Env, auth: Auth): Promise<JsonValue> {
            avatar_photo_url = null
        where id = ?`,
     ).bind(now, playerId),
-  ]);
+  );
+  await env.DB.batch(deleteStatements);
 
   // Remove any stored avatar objects (no-op when R2 is unbound).
   if (env.AVATARS) {

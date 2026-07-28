@@ -90,39 +90,75 @@ export function eventStatement(
   ).bind(crypto.randomUUID(), boardId, actorPlayerId, eventType, now);
 }
 
-// Ownership passes to the earliest-joined active member when the owner
-// departs (leave or account deletion). Call after the departing player's
-// membership is marked left. No-op when the departing player was not the
-// owner, or when no active members remain (the board is auto-deleted then).
-// Rejoining resets joined_at, so a returning ex-owner queues at the back.
-export async function transferOwnershipIfDeparting(
+/**
+ * Builds every D1 statement needed to depart one board. Callers append these
+ * to the same batch as any route-level cleanup so a failed board deletion or
+ * ownership transfer cannot leave a closed membership behind.
+ *
+ * The statements execute in order: close membership, record leave, soft-delete
+ * an empty board, then (for an owner departure) transfer ownership and record
+ * the new owner. The owner is selected inside the batch after the membership
+ * closes, so the update sees the post-departure active-member set.
+ */
+export function boardDepartureStatements(
   env: Env,
-  boardId: string,
+  board: BoardRow,
   departingPlayerId: string,
   now: string,
-): Promise<void> {
-  const board = await env.DB.prepare(
-    "select owner_player_id from boards where id = ? and deleted_at is null",
-  )
-    .bind(boardId)
-    .first<{ owner_player_id: string | null }>();
-  if (!board || board.owner_player_id !== departingPlayerId) return;
-  const next = await env.DB.prepare(
-    `select player_id from memberships
-     where board_id = ? and left_at is null
-     order by joined_at, player_id
-     limit 1`,
-  )
-    .bind(boardId)
-    .first<{ player_id: string }>();
-  if (!next) return;
-  await env.DB.batch([
-    env.DB.prepare("update boards set owner_player_id = ? where id = ?").bind(
-      next.player_id,
-      boardId,
-    ),
-    eventStatement(env, boardId, next.player_id, "owner_changed", now),
-  ]);
+): { statements: D1PreparedStatement[]; boardDeleted: boolean } {
+  const statements = [
+    env.DB.prepare(
+      `update memberships
+       set left_at = ?, membership_state = 'left'
+       where board_id = ? and player_id = ? and left_at is null`,
+    ).bind(now, board.id, departingPlayerId),
+    eventStatement(env, board.id, departingPlayerId, "leave", now),
+    env.DB.prepare(
+      `update boards
+       set deleted_at = ?
+       where id = ? and deleted_at is null
+         and not exists (
+           select 1 from memberships
+           where board_id = ? and left_at is null
+         )`,
+    ).bind(now, board.id, board.id),
+  ];
+
+  if (board.owner_player_id === departingPlayerId) {
+    statements.push(
+      env.DB.prepare(
+        `update boards
+         set owner_player_id = (
+           select player_id from memberships
+           where board_id = ? and left_at is null
+           order by joined_at, player_id
+           limit 1
+         )
+         where id = ? and deleted_at is null
+           and owner_player_id = ?`,
+      ).bind(board.id, board.id, departingPlayerId),
+      env.DB.prepare(
+        `insert into board_events (
+          id, board_id, actor_player_id, event_type, created_at
+        )
+        select ?, id, owner_player_id, 'owner_changed', ?
+        from boards
+        where id = ? and deleted_at is null
+          and owner_player_id is not null
+          and owner_player_id <> ?`,
+      ).bind(
+        crypto.randomUUID(),
+        now,
+        board.id,
+        departingPlayerId,
+      ),
+    );
+  }
+
+  return {
+    statements,
+    boardDeleted: Number(board.player_count ?? 1) <= 1,
+  };
 }
 
 export function inviteUrl(env: Env, boardId: string, secret: string): string {

@@ -682,7 +682,7 @@ test('deleting a player removes participation and revokes the token', async () =
 test('a mid-batch failure deleting a player rolls back — no partial state', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');
-  await app.fetchJson('/boards', {
+  const created = await app.fetchJson('/boards', {
     method: 'POST',
     token: maya.authToken,
     body: { name: 'Friday Crew' },
@@ -691,8 +691,8 @@ test('a mid-batch failure deleting a player rolls back — no partial state', as
   await app.submitResult(maya.authToken);
 
   // Fault-inject the final `update players ... set deleted_at` statement so
-  // it fails after the first two statements in the same batch (delete
-  // challenge_results, anonymize memberships) would otherwise have run.
+  // it fails after the board departure, result deletion, and membership
+  // anonymization statements in the same request-level batch.
   const realDb = app.env.DB;
   app.env.DB = withBatchFault(
     realDb,
@@ -706,8 +706,13 @@ test('a mid-batch failure deleting a player rolls back — no partial state', as
     status: 500,
   });
 
-  // No partial state: the whole batch — including the two statements ahead
-  // of the injected failure — must have rolled back together.
+  // No partial state: the whole batch — including the board departure and
+  // account cleanup statements ahead of the fault — rolls back together.
+  const board = realDb.db
+    .prepare('select deleted_at from boards where id = ?')
+    .get(created.board.id);
+  assert.equal(board.deleted_at, null, 'sole-member board must remain active');
+
   const results = realDb.db
     .prepare('select count(*) as n from challenge_results where player_id = ?')
     .get(maya.player.id);
@@ -717,6 +722,96 @@ test('a mid-batch failure deleting a player rolls back — no partial state', as
     .prepare('select display_name from memberships where player_id = ?')
     .get(maya.player.id);
   assert.notEqual(membership.display_name, 'Deleted');
+
+  const player = realDb.db
+    .prepare('select deleted_at, display_name from players where id = ?')
+    .get(maya.player.id);
+  assert.equal(player.deleted_at, null);
+  assert.equal(player.display_name, 'Maya');
+});
+
+test('a delete failure on one of multiple boards rolls back every board departure and account cleanup', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const solo = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Solo Board' },
+    status: 201,
+  });
+  const shared = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Shared Board' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: shared.inviteLink },
+  });
+  await app.submitResult(maya.authToken);
+
+  // Fault the shared board's owner-change event. The solo-board deletion,
+  // both membership closes, all departure events, and account cleanup share
+  // this batch and must roll back regardless of statement ordering.
+  const realDb = app.env.DB;
+  app.env.DB = withBatchFault(
+    realDb,
+    (statement) =>
+      /owner_changed/i.test(statement.sql) &&
+      statement.params[2] === shared.board.id,
+    new Error('simulated second-board d1 failure'),
+  );
+
+  await app.fetchJson('/players/me', {
+    method: 'DELETE',
+    token: maya.authToken,
+    status: 500,
+  });
+
+  const boards = realDb.db
+    .prepare(
+      'select id, deleted_at, owner_player_id from boards where id in (?, ?)',
+    )
+    .all(solo.board.id, shared.board.id);
+  assert.equal(boards.length, 2);
+  assert.ok(boards.every((board) => board.deleted_at === null));
+  assert.equal(
+    boards.find((board) => board.id === shared.board.id).owner_player_id,
+    maya.player.id,
+  );
+
+  const memberships = realDb.db
+    .prepare(
+      `select board_id, left_at, membership_state, display_name
+       from memberships where player_id = ?`,
+    )
+    .all(maya.player.id);
+  assert.equal(memberships.length, 2);
+  assert.ok(memberships.every((membership) => membership.left_at === null));
+  assert.ok(
+    memberships.every(
+      (membership) =>
+        membership.membership_state === 'active' &&
+        membership.display_name === 'Maya',
+    ),
+  );
+
+  const departureEvents = realDb.db
+    .prepare(
+      `select count(*) as n from board_events
+       where actor_player_id = ?
+         and event_type in ('leave', 'owner_changed')`,
+    )
+    .get(maya.player.id);
+  assert.equal(departureEvents.n, 0);
+
+  const results = realDb.db
+    .prepare('select count(*) as n from challenge_results where player_id = ?')
+    .get(maya.player.id);
+  assert.equal(results.n, 1);
 
   const player = realDb.db
     .prepare('select deleted_at, display_name from players where id = ?')
@@ -984,7 +1079,7 @@ test('a mid-batch failure regenerating an invite rolls back — no partial state
   assert.equal(events.n, 0, 'no invite_regenerate event should exist');
 });
 
-test('a mid-batch failure transferring ownership rolls back the owner-change batch, but the earlier leave batch already committed', async () => {
+test('a mid-batch failure transferring ownership rolls back the entire board departure', async () => {
   const app = await createApp();
   const maya = await app.bootstrap('Maya');
   const noah = await app.bootstrap('Noah');
@@ -1000,19 +1095,13 @@ test('a mid-batch failure transferring ownership rolls back the owner-change bat
     body: { inviteLink: created.inviteLink },
   });
 
-  // leaveBoard writes its own membership-close + 'leave' event batch, then
-  // separately calls transferOwnershipIfDeparting, which writes its own
-  // owner-update + 'owner_changed' event batch. Both events are inserted
-  // with identical SQL — event_type is a bound param, not part of the SQL
-  // text — so a RegExp on `.sql` can't tell a 'leave' insert from an
-  // 'owner_changed' insert. Use the predicate form and match on the bound
-  // param instead, so only the second batch is faulted.
+  // Both event inserts are in one batch. Match the owner-change statement by
+  // its literal event type so the failure happens after the membership close,
+  // leave event, and owner update would otherwise have executed.
   const realDb = app.env.DB;
   app.env.DB = withBatchFault(
     realDb,
-    (statement) =>
-      /insert into board_events/i.test(statement.sql) &&
-      statement.params[3] === 'owner_changed',
+    /select \?, id, owner_player_id, 'owner_changed'/i,
     new Error('simulated d1 failure'),
   );
 
@@ -1022,8 +1111,8 @@ test('a mid-batch failure transferring ownership rolls back the owner-change bat
     status: 500,
   });
 
-  // No partial state in the owner-change batch itself: the board still
-  // records Maya as owner, and no owner_changed event exists.
+  // The entire departure rolls back: Maya remains both owner and an active
+  // member, and neither departure event survives.
   const board = realDb.db
     .prepare('select owner_player_id from boards where id = ?')
     .get(created.board.id);
@@ -1031,28 +1120,18 @@ test('a mid-batch failure transferring ownership rolls back the owner-change bat
 
   const events = realDb.db
     .prepare(
-      "select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'",
+      "select count(*) as n from board_events where board_id = ? and event_type in ('leave', 'owner_changed')",
     )
     .get(created.board.id);
-  assert.equal(events.n, 0, 'no owner_changed event should exist');
+  assert.equal(events.n, 0, 'no departure event should exist');
 
-  // But leaveBoard's own batch (membership close + 'leave' event) already
-  // committed before transferOwnershipIfDeparting was even called: D1
-  // batches don't span multiple env.DB.batch() calls, so this route is not
-  // atomic end-to-end. Maya's membership really is closed even though the
-  // board still names her as owner — a genuine pre-existing production
-  // characteristic (not a test artifact, and not something to "fix" here).
   const membership = realDb.db
     .prepare(
       'select left_at, membership_state from memberships where board_id = ? and player_id = ?',
     )
     .get(created.board.id, maya.player.id);
-  assert.notEqual(
-    membership.left_at,
-    null,
-    'the earlier leave batch already committed',
-  );
-  assert.equal(membership.membership_state, 'left');
+  assert.equal(membership.left_at, null, 'membership must remain active');
+  assert.equal(membership.membership_state, 'active');
 });
 
 test('scheduled purge removes board events older than 14 days', async () => {

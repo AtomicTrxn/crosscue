@@ -3,7 +3,7 @@
 import { defaultSourceId, inviteExpiryDays, maxBoardsPerPlayer, maxPlayersPerBoard } from "./constants.ts";
 import { ApiError, readBody } from "./http.ts";
 import { boardLeaderboard, boardLeaderboards, lifetimeStats, serializeBoardSummary, serializeLeaderboardEntry } from "./leaderboards.ts";
-import { activeBoardCount, activeMemberCount, eventStatement, invitePreview, inviteUrl, isActiveMember, requireActiveBoardMember, transferOwnershipIfDeparting, verifyInvite } from "./membership.ts";
+import { activeBoardCount, activeMemberCount, boardDepartureStatements, eventStatement, invitePreview, inviteUrl, isActiveMember, requireActiveBoardMember, verifyInvite } from "./membership.ts";
 import type { Auth, BoardRow, Env, JsonValue } from "./types.ts";
 import { addDays, daysUntil, randomSecret, sha256, utcNow } from "./util.ts";
 import { parseInviteLink, validateBoardName, validateRankingMode } from "./validation.ts";
@@ -258,27 +258,17 @@ export async function leaveBoard(
   auth: Auth,
   boardId: string,
 ): Promise<JsonValue> {
-  await requireActiveBoardMember(env, auth.player.id, boardId);
+  const board = await requireActiveBoardMember(env, auth.player.id, boardId);
   const now = utcNow();
-  await env.DB.batch([
-    env.DB.prepare(
-      `update memberships
-       set left_at = ?, membership_state = 'left'
-       where board_id = ? and player_id = ? and left_at is null`,
-    ).bind(now, boardId, auth.player.id),
-    eventStatement(env, boardId, auth.player.id, "leave", now),
-  ]);
+  const departure = boardDepartureStatements(
+    env,
+    board,
+    auth.player.id,
+    now,
+  );
+  await env.DB.batch(departure.statements);
 
-  const remaining = await activeMemberCount(env, boardId);
-  if (remaining === 0) {
-    await env.DB.prepare("update boards set deleted_at = ? where id = ?")
-      .bind(now, boardId)
-      .run();
-  } else {
-    await transferOwnershipIfDeparting(env, boardId, auth.player.id, now);
-  }
-
-  return { ok: true, boardDeleted: remaining === 0 };
+  return { ok: true, boardDeleted: departure.boardDeleted };
 }
 
 // Owner-only. Removal mirrors leaving for the target: results rows are kept,
