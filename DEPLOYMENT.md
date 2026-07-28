@@ -403,8 +403,9 @@ workflow against an explicit tag.
 
 The only server component is the challenge-boards Worker in
 [`crosscue/backend/challenge_boards/`](crosscue/backend/challenge_boards/) —
-Cloudflare Workers + D1 (SQLite), with per-environment rate-limit bindings, a
-daily retention cron, and Workers observability. API reference:
+Cloudflare Workers + D1 (SQLite) + R2 avatar storage, with per-environment
+rate-limit bindings, a daily retention cron, and Workers observability. API
+reference:
 [`API.md`](crosscue/backend/challenge_boards/API.md); local setup and the
 two-emulator test recipe:
 [`README.md`](crosscue/backend/challenge_boards/README.md).
@@ -415,11 +416,11 @@ routes; check with `npx wrangler whoami`).
 
 ### Environments
 
-| Env | Worker | D1 database | URL |
-|-----|--------|-------------|-----|
-| local | `wrangler dev --local` | `.wrangler/state` (disposable) | `http://127.0.0.1:8787` (`10.0.2.2` from the Android emulator) |
-| staging | `crosscue-challenge-boards-staging` | `crosscue_challenge_boards_staging` | `https://crosscue-challenge-boards-staging.tomhess.workers.dev` |
-| production | `crosscue-challenge-boards` | `crosscue_challenge_boards_prod` | `https://crosscue-challenge-boards.tomhess.workers.dev` |
+| Env | Worker | D1 database | R2 avatars | URL |
+|-----|--------|-------------|------------|-----|
+| local | `wrangler dev --local` | `.wrangler/state` (disposable) | `crosscue-avatars-local` (simulated) | `http://127.0.0.1:8787` (`10.0.2.2` from the Android emulator) |
+| staging | `crosscue-challenge-boards-staging` | `crosscue_challenge_boards_staging` | `crosscue-avatars-staging` | `https://crosscue-challenge-boards-staging.tomhess.workers.dev` |
+| production | `crosscue-challenge-boards` | `crosscue_challenge_boards_prod` | `crosscue-avatars` | `https://crosscue-challenge-boards.tomhess.workers.dev` |
 
 The `api.crosscue.app` custom domain is provisioned by uncommenting the
 `routes` block in `wrangler.toml` once the zone exists in the Cloudflare
@@ -440,6 +441,8 @@ npm run typecheck          # tsc --noEmit
 
 `rm -rf .wrangler/state` resets the local database (re-run migrations after).
 Run the app against it with `flutter run --dart-define=CHALLENGE_API_ENV=local`.
+The configured `crosscue-avatars-local` binding is simulated by
+`wrangler dev --local`; no Cloudflare R2 bucket is needed for local development.
 
 ### Schema migrations
 
@@ -454,18 +457,57 @@ Migrations are numbered SQL files in `migrations/`, applied in order by
 
 ### Deploying
 
-Staging first, verify, then production:
+#### R2 avatar activation gate
+
+`wrangler.toml` enables `AVATARS` for every environment. Before the first
+deployment of this configuration, create the two remote buckets once:
 
 ```bash
+npx wrangler r2 bucket create crosscue-avatars-staging
+npx wrangler r2 bucket create crosscue-avatars
+```
+
+Do not recreate existing buckets. Confirm provisioning and validate the
+resolved Worker bindings without deploying:
+
+```bash
+npx wrangler r2 bucket info crosscue-avatars-staging
+npx wrangler deploy --dry-run --env staging
+# dry-run output must include:
+# env.AVATARS (crosscue-avatars-staging)  R2 Bucket
+
+npx wrangler r2 bucket info crosscue-avatars
+npx wrangler deploy --dry-run --env production
+# dry-run output must include:
+# env.AVATARS (crosscue-avatars)  R2 Bucket
+```
+
+No deploy should proceed until its bucket-info and dry-run gates pass.
+
+#### Staging-first deploy and remote smoke
+
+Migrate before deploying. The avatar smoke creates a temporary player, uploads
+a tiny PNG, verifies the by-reference HTTPS response and bytes, then deletes
+the player in `finally` and confirms the object returns 404. It never logs the
+bearer token.
+
+```bash
+# Staging
 npm run d1:migrate:staging
 npx wrangler deploy --env staging
-curl -s https://crosscue-challenge-boards-staging.tomhess.workers.dev/boards
-# expect a structured 401 {"error":{"code":"unauthorized",...}} — router alive
+CHALLENGE_API_BASE_URL=https://crosscue-challenge-boards-staging.tomhess.workers.dev \
+  npm run smoke:avatar:remote
 
+# Production — only after the staging smoke passes
 npm run d1:migrate:prod
 npx wrangler deploy --env production
-curl -s https://crosscue-challenge-boards.tomhess.workers.dev/boards
+CHALLENGE_API_BASE_URL=https://crosscue-challenge-boards.tomhess.workers.dev \
+  npm run smoke:avatar:remote
 ```
+
+If smoke cleanup itself fails, the command exits nonzero and reports cleanup
+failure without exposing credentials; inspect Worker logs and remove the
+temporary `R2Smoke` player/object before retrying.
 
 **Ordering with app releases:** deploy the Worker *before* dispatching the
 app release that depends on it, and keep Worker changes compatible with the
@@ -555,11 +597,10 @@ TODO):
 ### Configuration
 
 No Worker secrets exist: `wrangler.toml` carries only public vars
-(`APP_ENV`, `PUBLIC_APP_URL`), per-env D1 bindings, and the rate-limit
+(`APP_ENV`, `PUBLIC_APP_URL`), per-env D1 and R2 bindings, and the rate-limit
 bindings (`RL_IDENTITY` keyed by IP for anonymous player creation,
-`RL_WRITE` keyed by player id for board writes). Player auth tokens,
-recovery secrets, and invite secrets are stored only as SHA-256 hashes in
-D1.
+`RL_WRITE` keyed by player id for board writes). Player auth tokens, recovery
+secrets, and invite secrets are stored only as SHA-256 hashes in D1.
 
 ---
 

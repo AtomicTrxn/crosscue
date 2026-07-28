@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/challenge_boards/data/repositories/api_challenge_repository.dart';
 import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/challenge_action_error.dart';
 import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
 import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_tab_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/avatar/avatar_picker_sheet.dart';
@@ -67,13 +68,7 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
         error: (_, __) => SampleChallengeFallbacks.lifetime,
         loading: () => SampleChallengeFallbacks.lifetime,
       ),
-      onRefresh: () async {
-        await Future.wait([
-          ref.refresh(challengeBoardsProvider.future),
-          ref.refresh(challengeProfileProvider.future),
-          ref.refresh(challengeLifetimeProvider.future),
-        ]);
-      },
+      onRefresh: () => _refresh(context, ref),
       onEditName: () => _editName(
         context,
         ref,
@@ -113,16 +108,29 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
         final avatar = avatarChoice.photoBytes != null
             ? PlayerAvatar.photoBytes(avatarChoice.photoBytes)
             : PlayerAvatar.silhouette(avatarChoice.look ?? 1);
-        await ref.read(challengeProfileRepositoryProvider).updateAvatar(avatar);
-        _invalidateProfileEverywhere(ref);
-        return avatar;
+        try {
+          await ref
+              .read(challengeProfileRepositoryProvider)
+              .updateAvatar(avatar);
+          _invalidateProfileEverywhere(ref);
+          return avatar;
+        } catch (error) {
+          if (!context.mounted) return null;
+          showChallengeActionError(context, error);
+          return null;
+        }
       },
     );
     if (choice == null) return;
-    await ref
-        .read(challengeProfileRepositoryProvider)
-        .updateDisplayName(choice);
-    _invalidateProfileEverywhere(ref);
+    try {
+      await ref
+          .read(challengeProfileRepositoryProvider)
+          .updateDisplayName(choice);
+      _invalidateProfileEverywhere(ref);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   /// Display name and avatar also appear in every board's leaderboard rows
@@ -144,8 +152,8 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     try {
       await ref.read(challengeProfileRepositoryProvider).rotateRecovery();
       message = 'Recovery code reset';
-    } catch (_) {
-      message = 'Could not reset recovery code. Try again.';
+    } catch (error) {
+      message = challengeActionErrorMessage(error);
     }
     if (!mounted) return;
     // Close the Profile sheet so the result snackbar is visible.
@@ -188,28 +196,33 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
   Future<void> _createBoard(BuildContext context, WidgetRef ref) async {
     final draft = await showCreateBoardSheet(context);
     if (draft == null || draft.name.trim().isEmpty) return;
-    final repository = ref.read(challengeBoardRepositoryProvider);
-    final created = repository is ApiChallengeRepository
-        ? await repository.createBoardWithInvite(draft)
-        : null;
-    final board = created?.board ?? await repository.createBoard(draft);
-    ref.invalidate(challengeBoardsProvider);
-    ref.invalidate(challengeLifetimeProvider);
-    if (!context.mounted) return;
-    final link = created?.inviteLink ??
-        await ref
-            .read(challengeBoardRepositoryProvider)
-            .getInviteLink(board.id);
-    if (!context.mounted) return;
-    await showShareSheet(
-      context,
-      boardName: board.name,
-      link: link,
-      created: true,
-      onRegenerate: () {
-        unawaited(_regenerateInvite(context, ref, board));
-      },
-    );
+    try {
+      final repository = ref.read(challengeBoardRepositoryProvider);
+      final created = repository is ApiChallengeRepository
+          ? await repository.createBoardWithInvite(draft)
+          : null;
+      final board = created?.board ?? await repository.createBoard(draft);
+      ref.invalidate(challengeBoardsProvider);
+      ref.invalidate(challengeLifetimeProvider);
+      if (!context.mounted) return;
+      final link = created?.inviteLink ??
+          await ref
+              .read(challengeBoardRepositoryProvider)
+              .getInviteLink(board.id);
+      if (!context.mounted) return;
+      await showShareSheet(
+        context,
+        boardName: board.name,
+        link: link,
+        created: true,
+        onRegenerate: () {
+          unawaited(_regenerateInvite(context, ref, board));
+        },
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   Future<void> _joinBoard(BuildContext context, WidgetRef ref) async {
@@ -226,16 +239,21 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     WidgetRef ref,
     String link,
   ) async {
-    final repo = ref.read(challengeBoardRepositoryProvider);
-    final preview = await repo.previewInvite(link);
-    if (!context.mounted) return;
-    final shouldJoin = await showInviteSheet(context, preview);
-    if (shouldJoin != true) return;
-    final board = await repo.joinInvite(link);
-    ref.invalidate(challengeBoardsProvider);
-    ref.invalidate(challengeLifetimeProvider);
-    if (context.mounted && board != null) {
-      unawaited(context.push(Routes.challengeBoard(board.id)));
+    try {
+      final repo = ref.read(challengeBoardRepositoryProvider);
+      final preview = await repo.previewInvite(link);
+      if (!context.mounted) return;
+      final shouldJoin = await showInviteSheet(context, preview);
+      if (shouldJoin != true) return;
+      final board = await repo.joinInvite(link);
+      ref.invalidate(challengeBoardsProvider);
+      ref.invalidate(challengeLifetimeProvider);
+      if (context.mounted && board != null) {
+        unawaited(context.push(Routes.challengeBoard(board.id)));
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
     }
   }
 
@@ -244,11 +262,29 @@ class _ChallengeBoardsScreenState extends ConsumerState<ChallengeBoardsScreen> {
     WidgetRef ref,
     Board board,
   ) async {
-    final link = await ref
-        .read(challengeBoardRepositoryProvider)
-        .regenerateInvite(board.id);
-    if (!context.mounted) return;
-    await showShareSheet(context, boardName: board.name, link: link);
+    try {
+      final link = await ref
+          .read(challengeBoardRepositoryProvider)
+          .regenerateInvite(board.id);
+      if (!context.mounted) return;
+      await showShareSheet(context, boardName: board.name, link: link);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
+  }
+
+  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
+    try {
+      await Future.wait([
+        ref.refresh(challengeBoardsProvider.future),
+        ref.refresh(challengeProfileProvider.future),
+        ref.refresh(challengeLifetimeProvider.future),
+      ]);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   Future<Uint8List?> _pickImageBytes() async {

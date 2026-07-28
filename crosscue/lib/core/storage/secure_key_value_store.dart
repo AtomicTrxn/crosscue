@@ -18,15 +18,22 @@ class FlutterSecureKeyValueStore implements SecureKeyValueStore {
   FlutterSecureKeyValueStore([FlutterSecureStorage? storage])
       : _storage = storage ?? _defaultStorage;
 
-  /// The Android preferences file name is pinned so the backup-exclusion
-  /// rules in res/xml can reference it; restoring Keystore-encrypted
+  /// The Android storage namespace is pinned so the backup-exclusion rules in
+  /// res/xml can reference its preferences file; restoring Keystore-encrypted
   /// ciphertext onto another device is useless and can throw on read.
-  static const androidPreferencesName = 'crosscue_secure_prefs';
+  ///
+  /// This deliberately preserves the v9 `sharedPreferencesName` value. The
+  /// secure-storage v10 migration can therefore find the existing Challenge
+  /// token before it replaces the deprecated encrypted-shared-preferences
+  /// implementation with its current cipher implementation.
+  static const androidStorageNamespace = 'crosscue_secure_prefs';
 
   static const _defaultStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      sharedPreferencesName: androidPreferencesName,
+      storageNamespace: androidStorageNamespace,
+      // Keep the automatic v9-to-v10 cipher migration recoverable if the app
+      // is terminated partway through moving the Challenge auth token.
+      migrateWithBackup: true,
     ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,

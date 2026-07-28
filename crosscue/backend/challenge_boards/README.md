@@ -30,9 +30,9 @@ The rate-limit blocklist for display names is a small starter list in
 
 Avatar photos are stored by reference in an R2 bucket (`AVATARS` binding,
 #268) and served from `GET /avatars/<playerId>/<sha256>.png` with a one-year
-immutable cache. The binding is optional: with no bucket (the default until
-it's provisioned — see the commented `r2_buckets` blocks in `wrangler.toml`)
-photos fall back to inline `data:` URLs in D1, so the Worker runs unchanged.
+immutable cache. `wrangler.toml` binds a local simulated bucket plus separate
+staging and production buckets. Tests can still omit the binding to cover
+legacy inline `data:` URLs, but deployed environments are expected to use R2.
 
 Out of scope for this slice: native deep links, realtime/live-board
 infrastructure, and paid tiers.
@@ -63,6 +63,10 @@ npm run smoke:local
 The smoke test bootstraps two players, creates a board, previews and joins an
 invite, submits one clean and one assisted result, and verifies the clean solve
 ranks first.
+
+`wrangler dev --local` simulates the configured `crosscue-avatars-local` R2
+bucket automatically. Uploading a photo while developing locally therefore
+exercises the by-reference path without creating a Cloudflare bucket.
 
 ### Flutter API Configuration
 
@@ -123,12 +127,40 @@ Both players then submit Daily Mini results against the same board.
 ## Deploying
 
 Requires `npx wrangler login` against the account that owns the D1 databases.
-Always migrate before deploying, and stage before production:
+The `AVATARS` bindings are enabled in source, so the two remote buckets are a
+hard prerequisite. Provision each exactly once (or use `r2 bucket info` to
+confirm it already exists):
 
 ```sh
-npm run d1:migrate:staging && npx wrangler deploy --env staging
-npm run d1:migrate:prod    && npx wrangler deploy --env production
+npx wrangler r2 bucket create crosscue-avatars-staging
+npx wrangler r2 bucket create crosscue-avatars
 ```
+
+Then use this staging-first gate. A dry run must list `env.AVATARS`, and the
+remote smoke must pass before advancing:
+
+```sh
+# Staging
+npx wrangler r2 bucket info crosscue-avatars-staging
+npx wrangler deploy --dry-run --env staging
+npm run d1:migrate:staging
+npx wrangler deploy --env staging
+CHALLENGE_API_BASE_URL=https://crosscue-challenge-boards-staging.tomhess.workers.dev \
+  npm run smoke:avatar:remote
+
+# Production — only after staging is green
+npx wrangler r2 bucket info crosscue-avatars
+npx wrangler deploy --dry-run --env production
+npm run d1:migrate:prod
+npx wrangler deploy --env production
+CHALLENGE_API_BASE_URL=https://crosscue-challenge-boards.tomhess.workers.dev \
+  npm run smoke:avatar:remote
+```
+
+The avatar smoke creates one temporary player, uploads a 1×1 PNG, verifies the
+returned HTTPS URL and downloaded image bytes, then deletes the player and
+confirms the avatar URL is gone. Cleanup runs in `finally`, and the auth token
+is never printed.
 
 Deployed URLs, environment table, migration rules, rollback, and log tailing
 live in the repo-level [DEPLOYMENT.md](../../../DEPLOYMENT.md) ("Backend:

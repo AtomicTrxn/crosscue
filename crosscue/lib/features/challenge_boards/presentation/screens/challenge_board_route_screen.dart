@@ -1,4 +1,5 @@
 import 'package:crosscue/features/challenge_boards/domain/models/challenge_models.dart';
+import 'package:crosscue/features/challenge_boards/presentation/challenge_action_error.dart';
 import 'package:crosscue/features/challenge_boards/presentation/providers/challenge_board_providers.dart';
 import 'package:crosscue/features/challenge_boards/presentation/screens/board_detail_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/widgets/board_sheets.dart';
@@ -22,10 +23,7 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
         rankingMode: data.board.rankingMode,
         weekly: data.weekly,
         lifetime: data.lifetime,
-        onRefresh: () async {
-          final _ =
-              await ref.refresh(challengeBoardDetailProvider(boardId).future);
-        },
+        onRefresh: () => _refresh(context, ref),
         onShare: () => _share(context, ref, data.board),
         onRegenerate: () => _regenerate(context, ref, data.board),
         onLeave: () => _leave(context, ref, data.board),
@@ -56,24 +54,34 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
       boardName: board.name,
     );
     if (confirmed != true) return;
-    await ref
-        .read(challengeBoardRepositoryProvider)
-        .removeMember(board.id, player.id);
-    ref.invalidate(challengeBoardDetailProvider(board.id));
-    ref.invalidate(challengeBoardsProvider);
+    try {
+      await ref
+          .read(challengeBoardRepositoryProvider)
+          .removeMember(board.id, player.id);
+      ref.invalidate(challengeBoardDetailProvider(board.id));
+      ref.invalidate(challengeBoardsProvider);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   Future<void> _share(BuildContext context, WidgetRef ref, Board board) async {
-    final link = await ref
-        .read(challengeBoardRepositoryProvider)
-        .getInviteLink(board.id);
-    if (!context.mounted) return;
-    await showShareSheet(
-      context,
-      boardName: board.name,
-      link: link,
-      onRegenerate: () => _regenerate(context, ref, board),
-    );
+    try {
+      final link = await ref
+          .read(challengeBoardRepositoryProvider)
+          .getInviteLink(board.id);
+      if (!context.mounted) return;
+      await showShareSheet(
+        context,
+        boardName: board.name,
+        link: link,
+        onRegenerate: () => _regenerate(context, ref, board),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   Future<void> _regenerate(
@@ -83,18 +91,37 @@ class ChallengeBoardRouteScreen extends ConsumerWidget {
   ) async {
     final confirmed = await showRegenerateDialog(context);
     if (confirmed != true) return;
-    final link = await ref
-        .read(challengeBoardRepositoryProvider)
-        .regenerateInvite(board.id);
-    if (!context.mounted) return;
-    await showShareSheet(context, boardName: board.name, link: link);
+    try {
+      final link = await ref
+          .read(challengeBoardRepositoryProvider)
+          .regenerateInvite(board.id);
+      if (!context.mounted) return;
+      await showShareSheet(context, boardName: board.name, link: link);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 
   Future<void> _leave(BuildContext context, WidgetRef ref, Board board) async {
     final confirmed = await showLeaveDialog(context, board.name);
     if (confirmed != true) return;
-    await ref.read(challengeBoardRepositoryProvider).leaveBoard(board.id);
-    ref.invalidate(challengeBoardsProvider);
-    if (context.mounted) context.pop();
+    try {
+      await ref.read(challengeBoardRepositoryProvider).leaveBoard(board.id);
+      ref.invalidate(challengeBoardsProvider);
+      if (context.mounted) context.pop();
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
+  }
+
+  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
+    try {
+      final _ = await ref.refresh(challengeBoardDetailProvider(boardId).future);
+    } catch (error) {
+      if (!context.mounted) return;
+      showChallengeActionError(context, error);
+    }
   }
 }

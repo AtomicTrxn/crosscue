@@ -44,16 +44,11 @@ type = "ratelimit"
 namespace_id = "1002"
 simple = { limit = 60, period = 60 }
 
-# Avatar photo storage (#268). Until the bucket exists and these are
-# uncommented, env.AVATARS is undefined and photo avatars fall back to inline
-# data URLs in D1 (no behavior change). Provision per env, then uncomment its
-# block:
-#   npx wrangler r2 bucket create crosscue-avatars-local      (or --local for dev)
-#   npx wrangler r2 bucket create crosscue-avatars-staging
-#   npx wrangler r2 bucket create crosscue-avatars
-# [[r2_buckets]]
-# binding = "AVATARS"
-# bucket_name = "crosscue-avatars-local"
+# Avatar photo storage (#268). Local `wrangler dev --local` simulates this
+# bucket; the staging and production buckets must exist before deployment.
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "crosscue-avatars-local"
 
 [env.staging]
 name = "crosscue-challenge-boards-staging"
@@ -83,9 +78,9 @@ type = "ratelimit"
 namespace_id = "2002"
 simple = { limit = 60, period = 60 }
 
-# [[env.staging.r2_buckets]]
-# binding = "AVATARS"
-# bucket_name = "crosscue-avatars-staging"
+[[env.staging.r2_buckets]]
+binding = "AVATARS"
+bucket_name = "crosscue-avatars-staging"
 
 [env.production]
 name = "crosscue-challenge-boards"
@@ -122,6 +117,6 @@ type = "ratelimit"
 namespace_id = "3002"
 simple = { limit = 60, period = 60 }
 
-# [[env.production.r2_buckets]]
-# binding = "AVATARS"
-# bucket_name = "crosscue-avatars"
+[[env.production.r2_buckets]]
+binding = "AVATARS"
+bucket_name = "crosscue-avatars"

@@ -68,10 +68,11 @@ table is a known trade-off, not a gap.
 
 ## Known gaps (not accepted — tracked)
 
-- **Avatar storage**: R2 by-reference delivery is implemented (#268) but
-  **inert until the `AVATARS` bucket is provisioned** — until then photos are
-  base64 PNGs stored inline in D1 (PNG-validated, #237). Provision the bucket
-  + uncomment the binding to activate.
+- **Avatar storage**: R2 by-reference delivery is implemented (#268), and the
+  `AVATARS` bindings are enabled in `wrangler.toml`. Provision both remote
+  buckets, deploy staging then production, and pass the remote avatar smoke
+  gate before considering it active. Tests and legacy unbound deployments
+  retain the PNG-validated inline D1 fallback (#237).
 - **Alerting is pull-based** (`wrangler tail`) — see DEPLOYMENT.md
   "Monitoring & alerting" for the planned push signals.
 

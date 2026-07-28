@@ -3,10 +3,10 @@
 // When the AVATARS bucket is bound, photo uploads are stored in R2 under an
 // immutable content-addressed key and served back by reference via a public
 // GET route — replacing the inline `data:` URLs that otherwise live in D1 and
-// bloat every leaderboard payload. The binding is optional: with no bucket
-// (local/test/not-yet-provisioned) the caller falls back to data URLs, so this
-// ships inert until the bucket exists. Existing data-URL rows keep working
-// forever; a photo migrates to R2 on the player's next avatar change.
+// bloat every leaderboard payload. The binding remains optional at the type
+// boundary so tests and legacy deployments can exercise the inline data-URL
+// fallback. Configured environments bind R2, and existing data-URL rows migrate
+// on the player's next avatar change.
 
 import { corsHeaders } from "./http.ts";
 import { decodeAvatarPng } from "./validation.ts";

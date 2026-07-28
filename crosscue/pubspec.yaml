@@ -49,8 +49,11 @@ dependencies:
   # @immutable et al. in domain models (which must not import Flutter)
   meta: ^1.16.0
 
-  # Challenge Boards auth token at rest (Keychain / Android Keystore-backed)
-  flutter_secure_storage: ^9.2.0
+  # Challenge Boards auth token at rest (Keychain / Android Keystore-backed).
+  # 10.x supplies the Apple SwiftPM package; Android storage is migrated from
+  # the previous encrypted-shared-preferences implementation in
+  # secure_key_value_store.dart.
+  flutter_secure_storage: ^10.3.1
 
   # Date formatting (streak date strings, .ipuz date parsing)
   intl: ^0.20.0
@@ -79,12 +82,18 @@ dependencies:
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
 
   # Home/Lock-screen widget bridge (pushes state to the iOS App Group container
-  # read by the WidgetKit extension). See docs/architecture/ios-widget-setup.md.
-  home_widget: ^0.7.0
+  # read by the WidgetKit extension). 0.9+ provides a SwiftPM package; the
+  # app's iOS 16 floor and qualified Android imports satisfy its migration.
+  # See docs/architecture/ios-widget-setup.md.
+  home_widget: ^0.9.3
 
   # Best-effort daily background refresh of the home-screen widget (#175):
   # iOS BGAppRefreshTask + Android WorkManager via one Dart callback. See
   # lib/core/background/widget_refresh_scheduler.dart.
+  # As of workmanager_apple 0.9.1+2, its Package.swift omits the
+  # FlutterFramework dependency required by Flutter SwiftPM. Flutter therefore
+  # falls back to CocoaPods for this plugin and emits a warning; keep SwiftPM
+  # enabled until upstream completes that migration.
   workmanager: ^0.9.0
 
 dev_dependencies:
