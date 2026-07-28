@@ -1,6 +1,7 @@
-// Challenge Boards Worker — request routing and the scheduled retention job.
-// Handlers live in feature modules: players, boards, results, leaderboards,
-// membership, retention; shared plumbing in http/util/validation/constants.
+// Challenge Boards Worker — request routing and the scheduled retention +
+// reconciliation job. Handlers live in feature modules: players, boards,
+// results, leaderboards, membership, retention, reconcile; shared plumbing
+// in http/util/validation/constants.
 
 import {
   createBoard,
@@ -32,6 +33,7 @@ import {
   updatePlayer,
 } from "./players.ts";
 import { serveAvatar } from "./avatars.ts";
+import { reconcileBoards } from "./reconcile.ts";
 import { submitResult } from "./results.ts";
 import {
   purgeOldBoardEvents,
@@ -163,6 +165,17 @@ export default {
   ): Promise<void> {
     const deleted = await purgeOldBoardEvents(env);
     await recordRetentionHeartbeat(env);
+    // Logged before the sweep runs, so a reconcile failure cannot swallow
+    // the purge result — the heartbeat above would still report healthy.
     console.log(JSON.stringify({ job: "purge_board_events", deleted }));
+    // Backfill sweep (see reconcile.ts): repairs boards left stuck open with
+    // zero active members, or owned by a departed player, before the
+    // departure SQL guarded both writes. Current code cannot produce either.
+    // Logged under its own job name so the purge line keeps the shape any
+    // existing log tooling expects.
+    const { boardsClosed, ownersReassigned } = await reconcileBoards(env);
+    console.log(
+      JSON.stringify({ job: "reconcile_boards", boardsClosed, ownersReassigned }),
+    );
   },
 };

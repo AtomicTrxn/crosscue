@@ -1193,6 +1193,194 @@ test('retention heartbeat endpoint is exempt from the min-client gate (#262)', a
   assert.equal(res.status, 200);
 });
 
+// The routes can no longer produce a board with zero active members and a
+// null deleted_at, or an owner_player_id that isn't an active member —
+// boardDepartureStatements guards both writes in SQL, evaluated inside the
+// batch. These states only exist on rows written before that guarding landed.
+// Simulate them by writing directly to the db, bypassing the routes, the same
+// way the fault-injection tests bypass them to force partial-batch states.
+test('scheduled reconcile closes a board with zero active members', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Solo Board' },
+    status: 201,
+  });
+
+  // Simulate a pre-fix row: the membership closed but the board never got
+  // marked deleted (the guarded departure SQL does both in one batch).
+  app.env.DB.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), created.board.id, maya.player.id);
+
+  const before = app.env.DB.db
+    .prepare('select deleted_at from boards where id = ?')
+    .get(created.board.id);
+  assert.equal(before.deleted_at, null, 'board must start stuck open');
+
+  await app.runScheduled();
+
+  const after = app.env.DB.db
+    .prepare('select deleted_at from boards where id = ?')
+    .get(created.board.id);
+  assert.ok(after.deleted_at, 'empty board must be closed by the sweep');
+});
+
+test('scheduled reconcile reassigns an orphaned owner to the earliest-joined active member and writes an owner_changed event', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  // Simulate a pre-fix row: Maya (the owner) leaves without the ownership
+  // transfer the guarded departure SQL does in the same batch. Noah stays
+  // active, so the board is not empty — only ownership is orphaned.
+  app.env.DB.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), created.board.id, maya.player.id);
+
+  const before = app.env.DB.db
+    .prepare('select owner_player_id, deleted_at from boards where id = ?')
+    .get(created.board.id);
+  assert.equal(before.owner_player_id, maya.player.id, 'owner must start stale');
+  assert.equal(before.deleted_at, null);
+
+  await app.runScheduled();
+
+  const after = app.env.DB.db
+    .prepare('select owner_player_id from boards where id = ?')
+    .get(created.board.id);
+  assert.equal(after.owner_player_id, noah.player.id);
+
+  const ownerChangedEvents = app.env.DB.db
+    .prepare(
+      "select actor_player_id from board_events where board_id = ? and event_type = 'owner_changed'",
+    )
+    .all(created.board.id);
+  assert.equal(ownerChangedEvents.length, 1);
+  assert.equal(ownerChangedEvents[0].actor_player_id, noah.player.id);
+});
+
+test('scheduled reconcile leaves a healthy database untouched — no boards deleted, no owners changed, no spurious events', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Friday Crew' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: created.inviteLink },
+  });
+
+  const snapshot = () => ({
+    board: app.env.DB.db
+      .prepare('select owner_player_id, deleted_at from boards where id = ?')
+      .get(created.board.id),
+    eventCount: app.env.DB.db
+      .prepare('select count(*) as n from board_events')
+      .get().n,
+    ownerChangedCount: app.env.DB.db
+      .prepare("select count(*) as n from board_events where event_type = 'owner_changed'")
+      .get().n,
+  });
+
+  const before = snapshot();
+  assert.equal(before.board.owner_player_id, maya.player.id);
+  assert.equal(before.board.deleted_at, null);
+  assert.equal(before.ownerChangedCount, 0);
+
+  await app.runScheduled();
+  await app.runScheduled();
+
+  assert.deepEqual(snapshot(), before, 'a healthy board must be untouched by the sweep');
+});
+
+test('scheduled reconcile is idempotent — repairs on the first pass, does nothing on the second', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const bree = await app.bootstrap('Bree');
+
+  // Board 1: will be stuck empty (zero active members, deleted_at null).
+  const emptyBoard = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Solo Board' },
+    status: 201,
+  });
+  app.env.DB.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), emptyBoard.board.id, maya.player.id);
+
+  // Board 2: will have an orphaned owner (Noah owns, Bree is the sole
+  // remaining active member and should inherit).
+  const ownerBoard = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { name: 'Trivia Night' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: bree.authToken,
+    body: { inviteLink: ownerBoard.inviteLink },
+  });
+  app.env.DB.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), ownerBoard.board.id, noah.player.id);
+
+  const snapshot = () => ({
+    emptyDeletedAt: app.env.DB.db
+      .prepare('select deleted_at from boards where id = ?')
+      .get(emptyBoard.board.id).deleted_at,
+    owner: app.env.DB.db
+      .prepare('select owner_player_id from boards where id = ?')
+      .get(ownerBoard.board.id).owner_player_id,
+    ownerChangedCount: app.env.DB.db
+      .prepare(
+        "select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'",
+      )
+      .get(ownerBoard.board.id).n,
+  });
+
+  // First pass: both problems get repaired.
+  await app.runScheduled();
+  const afterFirst = snapshot();
+  assert.ok(afterFirst.emptyDeletedAt, 'empty board closed on first pass');
+  assert.equal(afterFirst.owner, bree.player.id, 'ownership reassigned on first pass');
+  assert.equal(afterFirst.ownerChangedCount, 1);
+
+  // Second pass on the same data: nothing left to repair, so nothing changes.
+  await app.runScheduled();
+  const afterSecond = snapshot();
+  assert.deepEqual(afterSecond, afterFirst, 'second pass must be a no-op');
+});
+
 test('display names with reserved or blocked words are rejected', async () => {
   const app = await createApp();
   for (const name of ['admin', 'Cr0sscue', 'fuck', 'sh1t']) {
