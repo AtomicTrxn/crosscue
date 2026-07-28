@@ -164,7 +164,9 @@ void main() {
         nodes[0].properties.label,
         'Row 1, Column 1, selected, empty',
       );
+      expect(nodes[0].properties.textDirection, TextDirection.ltr);
       expect(nodes[1].properties.label, 'Blocked');
+      expect(nodes[1].properties.textDirection, TextDirection.ltr);
     });
 
     test('white cell is a selectable button; black cell is neither', () {

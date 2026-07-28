@@ -5,16 +5,25 @@
 FLUTTER := flutter
 DART    := dart
 DIR     := crosscue
+# Hosted CI and release builds pin this version. Local checks deliberately use
+# the Flutter on PATH, but report it so version drift is visible in logs.
+HOSTED_FLUTTER_VERSION := 3.44.0
 
-.PHONY: ci check static format analyze test generated worker build install-hooks \
-        _require-tag release-github release-testflight release-all \
+.PHONY: ci check toolchain static format analyze test generated worker build install-hooks \
+        _require-tag release-github release-publish-github release-testflight release-all \
         release-play-internal release-play-alpha release-play-beta release-play-production
 
 ## Match the hosted PR CI checks.
 ci: check
 
 ## Run all hosted PR checks.
-check: static test worker
+check: toolchain static test worker
+
+## Report the local Flutter runtime used by Make targets. This is informational:
+## CI/release workflows enforce the pinned version above.
+toolchain:
+	@echo "▶ toolchain (hosted CI/release: $(HOSTED_FLUTTER_VERSION))"
+	@$(FLUTTER) --version | sed -n '1p'
 
 ## Run static checks that share one setup pass in hosted CI.
 static: format analyze generated
@@ -56,8 +65,9 @@ build:
 
 ## ─── Release dispatch ─────────────────────────────────────────────────
 ## All release targets require TAG=vX.Y.Z (must already exist as a git tag
-## on origin). Every release rebuilds from the tag and (re-)publishes the
-## GitHub Release. Store uploads are layered on top.
+## on origin). Every release rebuilds from the tag and creates/updates a
+## *draft* GitHub Release. Store uploads are layered on top. Publish only
+## after signed-build verification and QA using release-publish-github.
 
 TAG ?=
 
@@ -67,13 +77,19 @@ _require-tag:
 		exit 1; \
 	fi
 
-## Mode 1 — GitHub release only (builds Android + iOS, publishes APK;
-## no store uploads — test_flight and play_store both default to false)
+## Mode 1 — build Android + iOS and create/update a draft GitHub Release;
+## no store uploads — test_flight and play_store both default to false.
 release-github: _require-tag
 	@echo "▶ release-github $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG)
 
-## Mode 2 — TestFlight (also (re)publishes GitHub release with APK)
+## Publish an existing draft only after signed-build verification and QA.
+## This repeats the signed build gates but does not upload to either store.
+release-publish-github: _require-tag
+	@echo "▶ release-publish-github $(TAG)"
+	gh workflow run release.yml -f tag=$(TAG) -f publish_github_release=true
+
+## Mode 2 — TestFlight (also creates/updates the draft GitHub release)
 release-testflight: _require-tag
 	@echo "▶ release-testflight $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG) -f test_flight=true
@@ -86,7 +102,7 @@ release-all: _require-tag
 	gh workflow run release.yml -f tag=$(TAG) -f test_flight=true \
 		-f play_store=true -f track=$(TRACK)
 
-## Mode 3 — Play Store only (also (re)publishes GitHub release with APK + AAB)
+## Mode 3 — Play Store only (also creates/updates the draft GitHub release)
 release-play-internal: _require-tag
 	@echo "▶ release-play-internal $(TAG)"
 	gh workflow run release.yml -f tag=$(TAG) -f play_store=true -f track=internal

@@ -1,7 +1,8 @@
 # Google Drive sync — one-time setup (Android)
 
-> **Status:** Living — Google Cloud Console runbook; Android sync stays inert
-> until these steps are done.
+> **Status:** Living — Google Cloud Console runbook. Android sync is inert in
+> any build that omits the required OAuth configuration; verify the configured
+> release path before advertising or submitting Android sync.
 
 The Android counterpart to [`sync-icloud-setup.md`](sync-icloud-setup.md).
 `GoogleDriveSyncTransport` (`core/sync/transport/google_drive_sync_transport.dart`)

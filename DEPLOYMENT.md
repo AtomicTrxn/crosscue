@@ -360,8 +360,9 @@ git checkout -b feature/short-description
 make ci
 ```
 
-This mirrors hosted PR CI. Individual targets exist for iterating on a specific
-failure, but `make ci` must be the final check before any push or PR:
+This covers the same check families as hosted PR CI. Individual targets exist
+for iterating on a specific failure, but `make ci` must be the final check
+before any push or PR:
 
 ```bash
 make format      # formatting check only
@@ -419,6 +420,23 @@ All app checks use Flutter `3.44.0` (pinned in ci.yml and release.yml). CI
 does not build an APK — release artifacts are produced by the release
 workflow against an explicit tag.
 
+`make ci` is the convenient local gate, but hosted CI is slightly stricter:
+the Worker job uses `npm ci` rather than `npm install`, and the generated-file
+job requires the entire worktree to remain clean rather than checking only
+generated Dart filename patterns. If Actions is unavailable, use this
+clean-tree fallback before an explicit admin bypass:
+
+```bash
+make ci
+(cd crosscue && dart run build_runner build && git diff --exit-code)
+(cd crosscue/backend/challenge_boards && \
+  npm ci --no-audit --no-fund && npm test && npm run typecheck)
+```
+
+Local validation cannot populate GitHub's required status-check contexts. Any
+merge or direct push while Actions is unavailable is therefore an exceptional,
+auditable admin bypass, not the normal workflow.
+
 ---
 
 ## Backend: Challenge Boards Worker (Cloudflare)
@@ -444,15 +462,19 @@ routes; check with `npx wrangler whoami`).
 | staging | `crosscue-challenge-boards-staging` | `crosscue_challenge_boards_staging` | `crosscue-avatars-staging` | `https://crosscue-challenge-boards-staging.tomhess.workers.dev` |
 | production | `crosscue-challenge-boards` | `crosscue_challenge_boards_prod` | `crosscue-avatars` | `https://crosscue-challenge-boards.tomhess.workers.dev` |
 
-**Verified operational state (2026-07-27):**
+**Verified operational state (2026-07-28 UTC, `v1.4.4` / `9eb8deb`):**
 
 - R2 is enabled on the Cloudflare account; both remote buckets above exist
   with the Standard storage class.
 - Migration `0007_ops_meta.sql` is applied to staging and production.
-- Both Workers are deployed with `env.AVATARS` resolved to the matching bucket.
+- Both Workers were redeployed from committed `main` with `v1.4.4` version
+  metadata and `env.AVATARS` resolved to the matching bucket.
 - The remote avatar round-trip smoke passed in staging and production. It
   uploaded, read, and deleted a temporary PNG/player; both buckets reported
   zero objects after cleanup.
+- The first post-deployment retention cron completed successfully at
+  `2026-07-28T03:07:51Z` in both environments, and both
+  `GET /health/retention` endpoints expose that fresh heartbeat.
 - An account-wide **`R2 overage warning`** budget alert is active at **$1 USD**.
   It sends email but does not pause requests or cap charges.
 
@@ -638,10 +660,9 @@ TODO):
       `.github/workflows/retention-heartbeat.yml` reads `GET /health/retention`
       weekly (the timestamp the purge cron records in `ops_meta`) and opens an
       issue if it's older than 48 h — a silently-stopped cron is otherwise
-      invisible (unbounded `board_events` growth). Inert until the Worker is
-      deployed with #262: a null/unreachable endpoint is treated as
-      inconclusive, not an alert. After deploying, dispatch it once to confirm
-      a fresh heartbeat reads green.
+      invisible (unbounded `board_events` growth). The first deployed heartbeat
+      was recorded at `2026-07-28T03:07:51Z`; a null/unreachable endpoint is
+      still treated as inconclusive for a newly provisioned environment.
 - [x] **Store-side crash signal**: Play Console → Quality (ANRs/crashes) and
       App Store Connect crash reports, reviewed as part of each release's
       post-rollout monitoring — the only crash telemetry that exists, since
@@ -787,9 +808,10 @@ release build without them runs Challenge Boards in sample mode — fine for
 signing/minification smoke tests, but not representative of the shipped
 challenge experience.
 
-The Release workflow validates `CHALLENGE_API_BASE_URL` in a shared prerequisite
-job before either platform builds. Missing, blank, non-HTTPS, or whitespace-
-containing values fail the workflow without printing the configured URL.
+The Release workflow validates `CHALLENGE_API_BASE_URL` and the Android
+`GOOGLE_OAUTH_SERVER_CLIENT_ID` in a shared prerequisite job before either
+platform builds. Missing or malformed values fail the workflow without
+printing secret material.
 
 ### Cutting a release
 
@@ -810,11 +832,11 @@ containing values fail the workflow without printing the configured URL.
 3. **Dispatch the Release workflow** — use the make aliases from the repo
    root (they wrap `gh workflow run` with the right flags):
    ```bash
-   make release-all TAG=v1.2.3            # TestFlight + Play internal — both platforms
-   make release-all TAG=v1.2.3 TRACK=beta # both platforms, different Play track
-   make release-testflight TAG=v1.2.3     # iOS TestFlight only
-   make release-play-internal TAG=v1.2.3  # Play internal only (also -alpha/-beta/-production)
-   make release-github TAG=v1.2.3         # GitHub Release only, no store uploads
+   make release-all TAG=v1.2.3            # TestFlight + Play internal + draft GitHub release
+   make release-all TAG=v1.2.3 TRACK=beta # same, with a different Play track
+   make release-testflight TAG=v1.2.3     # iOS TestFlight + draft GitHub release
+   make release-play-internal TAG=v1.2.3  # Play internal + draft GitHub release
+   make release-github TAG=v1.2.3         # signed builds + draft GitHub release, no stores
    ```
    Or dispatch manually — remember both store uploads default **off**:
    ```bash
@@ -825,6 +847,30 @@ containing values fail the workflow without printing the configured URL.
 The workflow checks out the **tag** (not whatever branch you dispatched
 from), so main can move between tagging and dispatch without affecting the
 build.
+
+Every command above leaves the GitHub release in **draft** while signed
+artifacts and store uploads are verified. After automated tests, artifact
+signature checks, TestFlight/Play processing, and the applicable manual QA
+checklists pass, publish it explicitly:
+
+```bash
+make release-publish-github TAG=v1.2.3
+```
+
+**Previous rollout snapshot (`v1.4.4`, 2026-07-28 UTC):**
+
+- Tag `v1.4.4` and the Cloudflare deployment metadata identify release commit
+  `9eb8deb`; later documentation-only commits may advance `main`.
+- Hosted PR CI was unavailable; the stricter local fallback above passed
+  (661 Flutter tests passed, one skipped; 44 Worker tests passed; analysis,
+  formatting, generated-tree verification, and typecheck passed).
+- Production-configured Android APK/AAB and unsigned iOS release builds
+  compiled as `1.4.4+10404`.
+- The GitHub release is intentionally **draft**. Do not publish it or upload
+  the locally built Android artifacts: without the release keystore
+  configuration they are debug-signed.
+- TestFlight and Play uploads remain pending release signing, real-device QA,
+  and the store-console privacy/submission checks below.
 
 **Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
 context in the generated release body rather than overloading the title.
@@ -879,7 +925,9 @@ Human review is required before publishing — this is not legal advice.
 > anonymous handle + solve-result metadata are "stored on a Crosscue-operated
 > server" — so a "collects no data" label **contradicts the linked policy**,
 > which is a classic store-review flag. Reconcile before submitting. The
-> developer (not lawyer) recommended answers, for owner confirmation:
+> developer (not lawyer) recommended answers, for owner/legal confirmation.
+> Store taxonomies and the actual console answers can change; verify the
+> current category wording in each console before submitting.
 
 Three distinct data flows, only one of which is developer collection:
 
@@ -889,16 +937,19 @@ Three distinct data flows, only one of which is developer collection:
    developer collection (re-confirm when Drive sync ships, per
    [`sync-googledrive-setup.md`](docs/architecture/sync-googledrive-setup.md)).
 3. **Challenge Boards** (optional, opt-in) — **is** sent to the
-   Crosscue-operated Cloudflare Worker. This must be declared.
+   Crosscue-operated Cloudflare Worker. This must be declared. This includes a
+   selected avatar photo, which is stored in the Crosscue Cloudflare R2 bucket
+   and shown in the relevant private board; built-in silhouettes do not add a
+   user photo upload.
 
 | Question | Answer |
 |----------|--------|
 | Data collected? | **Yes** — only when the user opts into Challenge Boards |
-| Data types | A player handle / anonymous id and chosen display name; gameplay results (solve time, completion type, puzzle source + date) |
-| Data category | App activity / App info & performance; pseudonymous (no name, email, or account) |
+| Data types | A player handle / anonymous id and chosen display name; optional avatar photo; gameplay results (solve time, completion type, puzzle source + date) |
+| Data category | Select the current Play categories that cover the optional photo/avatar and gameplay data (commonly Photos and videos plus App activity); pseudonymous (no name, email, or account). Owner/legal confirmation required. |
 | Shared with third parties? | No (Cloudflare is processing infrastructure, not a recipient) |
 | Encrypted in transit? | Yes (HTTPS) |
-| Users can request deletion? | Yes — `Settings → Privacy & Data → Clear all data` deletes the server record |
+| Users can request deletion? | Yes — `Settings → Privacy & Data → Clear all data` deletes the server record and stored avatar photo |
 | **Delete data URL** (required when the above is "Yes") | `https://atomictrxn.github.io/crosscue/delete-data.html` — the dedicated deletion page ([`docs/delete-data.md`](docs/delete-data.md)), not the privacy policy. Google's review wants the deletion steps to be the prominent focus of the linked page. |
 | Required for core function? | No (Challenge Boards is optional) |
 | Used for tracking / ads? | No |
@@ -906,7 +957,10 @@ Three distinct data flows, only one of which is developer collection:
 ### App content & targeting
 - [x] Confirmed app is **not** targeted at children under 13 in the store listing.
 - [x] Play Console → App Content → Target Audience completed.
-- [x] Data Safety form filed in Play Console (answers above).
+- [ ] **Release owner re-reviewed and saved the Data Safety form after the
+      2026-07-28 avatar-photo disclosure update.** Do not rely on an earlier
+      filing that omitted this optional collection; capture the console review
+      in the release issue.
 - [x] `android:hasFragileUserData="true"` set on the application in
       [AndroidManifest.xml](crosscue/android/app/src/main/AndroidManifest.xml)
       so Android 10+ offers the user a data-preservation prompt on uninstall.
@@ -963,21 +1017,27 @@ Human review is required before publishing — this is not legal advice.
 
 > ⚠️ **Same disclosure as the Data Safety form above — Apple cross-checks the
 > App Privacy "nutrition label" against the linked privacy policy.** The policy
-> says Challenge Boards stores a handle + solve times on a Crosscue server, so
+> says Challenge Boards stores a handle, optional avatar photo, and solve data
+> on a Crosscue server, so
 > the label must not say "no data collected." Recommended answers (owner
 > confirms before submitting):
 
 | Question | Answer |
 |----------|--------|
 | Do you or your third-party partners collect data from this app? | **Yes** — via the optional Challenge Boards feature only |
-| Data Types | **User ID** (anonymous player id + chosen display name); **Gameplay Content / Other Usage Data** (solve time, completion type, puzzle source + date) |
+| Data Types | **User ID / Profile** as the current Apple taxonomy requires (anonymous player id + chosen display name); **Photos** (optional avatar photo); **Gameplay Content / Other Usage Data** (solve time, completion type, puzzle source + date). Owner/legal confirmation required. |
 | Data Used to Track You | None |
 | Data Linked to User | None — the identity is anonymous/pseudonymous (no name, email, or account) |
-| Data Not Linked to User | User ID, Gameplay Content — purpose: **App Functionality** |
+| Data Not Linked to User | User ID/Profile, optional Photos, Gameplay Content — purpose: **App Functionality**; verify the store's current definitions and whether the selected photo is treated as linked before submitting |
 
 The rest of the app (import, solve, archive, stats, settings, sync to the
-user's own cloud) collects nothing — only Challenge Boards' opt-in server
-data is declared above.
+user's own cloud) collects nothing — only Challenge Boards' opt-in server data,
+including an optional avatar photo, is declared above.
+
+- [ ] **Release owner re-reviewed and saved App Privacy after the 2026-07-28
+      avatar-photo disclosure update.** Record the final current-taxonomy
+      choices in the release issue; this checklist is implementation guidance,
+      not legal advice.
 
 ### Export Compliance
 - [x] `ITSAppUsesNonExemptEncryption = false` in `crosscue/ios/Runner/Info.plist`.

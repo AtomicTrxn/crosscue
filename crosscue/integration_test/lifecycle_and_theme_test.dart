@@ -108,7 +108,9 @@ void main() {
         container.read(appRouterProvider).push(Routes.solveFor(puzzleKey)),
       );
       await pumpFor(tester, const Duration(seconds: 6));
-      expect(find.text('ACROSS'), findsOneWidget);
+      expect(find.byType(SolveScreen), findsOneWidget);
+      expect(find.byType(CrosswordGrid), findsOneWidget);
+      expect(find.text('1-Across'), findsWidgets);
 
       // Live family key off the open SolveScreen (gotcha 4).
       final openPuzzleId =
@@ -181,7 +183,8 @@ void main() {
         container.read(appRouterProvider).push(Routes.solveFor(puzzleKey)),
       );
       await pumpFor(tester, const Duration(seconds: 4));
-      expect(find.text('ACROSS'), findsOneWidget);
+      expect(find.byType(SolveScreen), findsOneWidget);
+      expect(find.text('1-Across'), findsWidgets);
       final solveCtx = tester.element(find.byType(CrosswordGrid));
       expect(Theme.of(solveCtx).brightness, Brightness.dark);
 

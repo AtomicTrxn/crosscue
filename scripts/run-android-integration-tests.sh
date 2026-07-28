@@ -20,6 +20,31 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="$REPO_ROOT/crosscue"
+# Each test gets both Flutter's test timeout and a process watchdog. The
+# watchdog covers failures outside the Dart test framework (for example, a
+# device install/attach that never returns). Override for local diagnostics.
+TEST_TIMEOUT_SECONDS="${TEST_TIMEOUT_SECONDS:-600}"
+PROCESS_TIMEOUT_SECONDS="${PROCESS_TIMEOUT_SECONDS:-720}"
+
+run_with_timeout() {
+  "$@" &
+  local test_pid=$!
+  (
+    sleep "$PROCESS_TIMEOUT_SECONDS"
+    if kill -0 "$test_pid" 2>/dev/null; then
+      echo "ERROR: timed out after ${PROCESS_TIMEOUT_SECONDS}s: $*" >&2
+      kill -TERM "$test_pid" 2>/dev/null || true
+      sleep 5
+      kill -KILL "$test_pid" 2>/dev/null || true
+    fi
+  ) &
+  local watchdog_pid=$!
+  local status=0
+  wait "$test_pid" || status=$?
+  kill "$watchdog_pid" 2>/dev/null || true
+  wait "$watchdog_pid" 2>/dev/null || true
+  return "$status"
+}
 
 # Resolve an adb serial from a hint, else the first ready device.
 resolve_device() {
@@ -59,7 +84,7 @@ for test_file in "${tests[@]}"; do
   name="$(basename "$test_file" .dart)"
   echo ""
   echo "──> $name"
-  if flutter test "$test_file" -d "$SERIAL"; then
+  if run_with_timeout flutter test "$test_file" -d "$SERIAL" --timeout "${TEST_TIMEOUT_SECONDS}s"; then
     echo "    PASS: $name"
   else
     echo "    FAIL: $name"
@@ -68,6 +93,11 @@ for test_file in "${tests[@]}"; do
   # Best-effort final-frame screenshot. (Per-step capture would need the
   # integration_test_driver_extended harness — a future enhancement.)
   adb -s "$SERIAL" exec-out screencap -p > "$OUT_DIR/$name.png" 2>/dev/null || true
+  # Subsequent tests cannot make a failing release candidate healthy, and
+  # stopping here keeps CI feedback prompt when the device/test runner breaks.
+  if [[ "$fail" -ne 0 ]]; then
+    break
+  fi
 done
 
 echo ""

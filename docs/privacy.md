@@ -9,7 +9,7 @@
 
 # Privacy Policy for Crosscue
 
-**Effective date:** June 9, 2026
+**Effective date:** 2026-07-28
 
 Crosscue is an offline-first crossword app for iOS and Android. This Privacy
 Policy explains what information Crosscue stores, what information it does not
@@ -30,10 +30,12 @@ collect, and the choices available to you.
   the developer.
 - If you choose to use **Challenge Boards** (optional private friend
   leaderboards), a limited set of data — an anonymous player identity, your
-  chosen display name, which boards you join, and the time/outcome of your
-  solves — is stored on a Crosscue-operated server so friends can compare
-  results. This feature is off until you create or join a board, and you can
-  delete this data at any time. See "Optional Challenge Boards" below.
+  chosen display name, avatar choice, which boards you join, and the
+  time/outcome of your solves — is stored on a Crosscue-operated server so
+  friends can compare results. A photo avatar is optional; it is uploaded only
+  when you select one. This feature is off until you create or join a board,
+  and you can delete this data at any time. See "Optional Challenge Boards"
+  below.
 
 ## Information stored on your device
 
@@ -114,6 +116,11 @@ When you use Challenge Boards, the following is stored on the Crosscue server:
 - an **anonymous player identity** (a random id and access token) created for
   you automatically — it is not tied to your name, email, or any account;
 - your chosen **display name** (up to 10 characters);
+- your chosen **avatar**. You may use a built-in silhouette, or optionally
+  choose a photo. A selected photo is normalized to a PNG and stored in a
+  Cloudflare R2 bucket operated for Crosscue; it is associated with your
+  anonymous player identity and displayed in Challenge Boards to people who
+  can view the relevant board;
 - which **boards** you are a member of, and board names you create;
 - **invite metadata** — only a hash of each board's invite secret, an invite
   version, and its expiry time;
@@ -137,16 +144,17 @@ Time and leaderboards use **UTC**: weekly boards run Monday through Sunday UTC,
 and labels indicate the UTC boundary.
 
 **Retention.** Recent solve results are retained to compute weekly and lifetime
-standings; internal board activity records are kept for a short window (about 14
-days) and then purged automatically. When everyone leaves a board, it is
-deleted.
+standings. An optional avatar photo is kept while it remains your selected
+avatar; replacing it removes the prior stored photo. Internal board activity
+records are kept for a short window (about 14 days) and then purged
+automatically. When everyone leaves a board, it is deleted.
 
 **Deleting your Challenge Boards data.** Using `Settings -> Privacy & Data ->
-Clear all data` deletes your server-side player record, board memberships, and
-solve results in addition to wiping this device. If the server cannot be reached
-at that moment, the app tells you and lets you retry. As with most online
-services, copies may persist briefly in the provider's routine backups before
-they age out.
+Clear all data` deletes your server-side player record, board memberships,
+solve results, and any stored avatar photo in addition to wiping this device.
+If the server cannot be reached at that moment, the app tells you and lets you
+retry. As with most online services, copies may persist briefly in the
+provider's routine backups before they age out.
 
 ## Exporting and importing data
 

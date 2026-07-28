@@ -1,0 +1,3 @@
+This maintenance update improves release reliability and clarifies our privacy
+information. Optional Challenge Boards avatar photos remain your choice and
+can be removed with your Challenge Boards data in the app.

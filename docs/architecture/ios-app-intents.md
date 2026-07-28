@@ -4,7 +4,8 @@
 > counterpart (App Shortcuts, same three actions + route tokens) shipped in
 > #225 (`android/app/src/main/res/xml/shortcuts.xml`).
 
-Three intents shipped in #115, no third-party packages (iOS 16 App Intents).
+Three intents were implemented under #115, with no third-party packages (iOS
+16 App Intents).
 
 | Intent | Token written | Resolves to |
 |---|---|---|

@@ -10,12 +10,14 @@ permissions:
   contents: read
 
 env:
-  FLUTTER_VERSION: '3.41.9'
+  FLUTTER_VERSION: '3.44.0' # matches ci.yml and Android integration tests
 
 jobs:
   integration-test:
     name: iOS integration tests
     runs-on: macos-latest
+    # Bound simulator/build failures; per-test watchdogs live in the script.
+    timeout-minutes: 50
     defaults:
       run:
         working-directory: crosscue

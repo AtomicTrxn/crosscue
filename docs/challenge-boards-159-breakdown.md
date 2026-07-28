@@ -71,6 +71,11 @@ apex), and the optional **D3/D4** activity feed / canonical-source registry.
   HTTPS `CHALLENGE_API_BASE_URL`.
 - R2 has no hard spend-cap toggle. A `$1 USD` account-wide
   `R2 overage warning` alert is active, but alerts are informational only.
+- Commit `9eb8deb` is published on `main` and tagged `v1.4.4`; staging and
+  production were redeployed from that committed source with matching version
+  metadata, and both post-deployment avatar smokes passed.
+- The first post-deployment retention cron completed in both environments at
+  `2026-07-28T03:07:51Z`, closing the final heartbeat activation check.
 
 The remaining infrastructure follow-up is still **E2**, the optional
 `api.crosscue.app` custom domain. The `workers.dev` production URL remains the

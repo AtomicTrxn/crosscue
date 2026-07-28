@@ -106,7 +106,9 @@ void main() {
         container.read(appRouterProvider).push(Routes.solveFor(puzzleKey)),
       );
       await pumpFor(tester, const Duration(seconds: 6));
-      expect(find.text('ACROSS'), findsOneWidget);
+      expect(find.byType(SolveScreen), findsOneWidget);
+      expect(find.byType(CrosswordGrid), findsOneWidget);
+      expect(find.text('1-Across'), findsWidgets);
 
       // 3. §4 — Rebus entry. Long-press the grid (center cell of the all-white
       //    3x3) → contextual menu → "Enter rebus" → RebusDialog.
