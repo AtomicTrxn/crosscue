@@ -8,14 +8,18 @@
   in sync with docs/privacy.md ("Data retention and deletion" / "Optional
   Challenge Boards"): when deletion behavior changes, update both, bump the
   effective date, and verify the live page before the next store submission —
-  see DEPLOYMENT.md store checklists.
+  see DEPLOYMENT.md store checklists. The store support contact is
+  ${APP_PRIVACY_CONTACT_EMAIL}, resolved only from the ignored local submission
+  configuration. Never commit the resolved address.
 -->
 
 # Delete your Crosscue data
 
 **App:** Crosscue (crossword solver for iOS and Android)
-**Developer:** Tom Hess (AtomicTrxn)
-**Effective date:** 2026-07-28
+
+**Developer:** AtomicTrxn
+
+**Effective date:** 2026-07-29
 
 This page explains how to delete the data Crosscue stores, what is deleted, what
 is kept, and how long anything is retained. For the full picture of what
@@ -106,14 +110,13 @@ sync off without choosing "remove cloud copy" leaves the cloud copy in place.)
 
 The in-app steps above are the fastest path and require no account. If you can't
 use the app — for example, you've uninstalled it but want to confirm your
-Challenge Boards data is gone — email **`atomhess@gmail.com`** with the subject
-`Delete my data`. Because the identity is anonymous, please send the request
-from a device that can still open the app (so it can supply your anonymous
-player id), or include any board invite link you still have; we'll help locate
-and remove the associated server record.
+Challenge Boards data is gone — use the Support link on Crosscue's App Store or
+Google Play listing and use the subject `Delete my data`. Because the identity
+is anonymous, please send the request from a device that can still open the app
+(so it can supply your anonymous player id), or include any board invite link
+you still have; we'll help locate and remove the associated server record.
 
 ## Contact
 
-For any question about deleting Crosscue data, contact:
-
-`atomhess@gmail.com`
+For questions about deleting Crosscue data, use the Support link on Crosscue's
+App Store or Google Play listing.

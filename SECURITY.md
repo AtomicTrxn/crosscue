@@ -5,12 +5,19 @@
 Please report security issues **privately** — do not open a public GitHub
 issue for anything exploitable.
 
-- **Email:** `tomhess@tutamail.com` (subject line starting with `[SECURITY]`)
+- Use GitHub's
+  [private vulnerability reporting](https://github.com/AtomicTrxn/crosscue/security/advisories/new).
 - You should receive an acknowledgement within **7 days**. This is a solo
   side project, not a staffed security team — but reports are taken
   seriously and fixes for confirmed issues are prioritized over feature work.
 - There is **no bug bounty**. Credit in the release notes is offered if you
   want it.
+
+<!--
+  Maintainers: the alternate private contact is
+  ${SECURITY_CONTACT_EMAIL}, resolved only from the ignored local submission
+  configuration. Never commit the resolved address.
+-->
 
 ## Scope
 

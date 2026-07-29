@@ -85,7 +85,7 @@ already are, and the loop is a routine, not a dashboard:
 
 - **Inbound channels:** GitHub Issues (public), TestFlight feedback, Play
   Console reviews/ratings, App Store reviews, and direct email
-  (`atomhess@gmail.com`).
+  (`${APP_SUPPORT_EMAIL}`, supplied from the ignored local submission config).
 - **Routine:** triage store reviews + TestFlight feedback when cutting each
   release; convert actionable items to issues tagged by roadmap theme.
 - **In-app signals stay local:** stats the app shows the user (streaks,

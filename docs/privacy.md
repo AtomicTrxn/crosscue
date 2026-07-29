@@ -4,12 +4,14 @@
   https://atomictrxn.github.io/crosscue/privacy.html, the URL filed with both
   app stores. Whenever this file changes: bump the effective date, and after
   the change merges to main, verify the live page updated before the next
-  store submission — see DEPLOYMENT.md store checklists.
+  store submission — see DEPLOYMENT.md store checklists. The store contact is
+  ${APP_PRIVACY_CONTACT_EMAIL}, resolved only from the ignored local submission
+  configuration. Never commit the resolved address.
 -->
 
 # Privacy Policy for Crosscue
 
-**Effective date:** 2026-07-28
+**Effective date:** 2026-07-29
 
 Crosscue is an offline-first crossword app for iOS and Android. This Privacy
 Policy explains what information Crosscue stores, what information it does not
@@ -196,6 +198,5 @@ those changes are released where required.
 
 ## Contact
 
-For privacy questions about Crosscue, contact:
-
-`atomhess@gmail.com`
+For privacy questions about Crosscue, use the Support link on Crosscue's App
+Store or Google Play listing.
