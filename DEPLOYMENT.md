@@ -358,11 +358,14 @@ git checkout -b feature/short-description
 
 ```bash
 make ci
+scripts/check-private-release-values.sh
 ```
 
-This covers the same check families as hosted PR CI. Individual targets exist
-for iterating on a specific failure, but `make ci` must be the final check
-before any push or PR:
+The second command verifies that values from the ignored local store-submission
+config have not leaked into tracked or unignored files. `make ci` covers the
+same check families as hosted PR CI. Individual targets exist for iterating on a
+specific failure, but both commands must be the final checks before any push or
+PR:
 
 ```bash
 make format      # formatting check only

@@ -33,7 +33,8 @@ Two OAuth clients are needed, because the app doesn't ship a
      hidden per-app folder — not the broad Drive scope).
    - While the app is unverified the consent screen stays in **Testing**: add
      your tester Google accounts under **Test users** (only they can sign in).
-     Use `atomhess@gmail.com` (the project's personal account) at minimum.
+     Use `${GOOGLE_DRIVE_TEST_ACCOUNT_EMAIL}` from an ignored local
+     configuration at minimum. Never commit the resolved address.
 
 3. **OAuth 2.0 Client IDs** (APIs & Services → Credentials → Create credentials
    → OAuth client ID). Create **both**:
