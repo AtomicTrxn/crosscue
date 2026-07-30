@@ -1,7 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createApp, currentUtcDateOnly, R2BucketShim, withBatchFault } from './harness.mjs';
+import {
+  reassignOrphanedOwners,
+  reconcileChunkSize,
+  reconcileHeartbeatKey,
+} from '../src/reconcile.ts';
+import {
+  purgeChunkSize,
+  retentionHeartbeatKey,
+} from '../src/retention.ts';
+import {
+  createApp,
+  currentUtcDateOnly,
+  R2BucketShim,
+  withBatchFault,
+  withD1Hooks,
+} from './harness.mjs';
 
 test('invite preview, join, leave, and deleted-board preview flow', async () => {
   const app = await createApp();
@@ -1168,20 +1183,63 @@ test('scheduled purge removes board events older than 14 days', async () => {
   );
 });
 
+test('scheduled purge deletes stale events across chunks without exceeding D1 bind limits', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Retention batch' },
+    status: 201,
+  });
+  const old = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const total = purgeChunkSize + 1;
+  for (let index = 0; index < total; index += 1) {
+    app.env.DB.db
+      .prepare(
+        `insert into board_events (id, board_id, actor_player_id, event_type, created_at)
+         values (?, ?, ?, 'join', ?)`,
+      )
+      .run(`old-event-${index}`, created.board.id, maya.player.id, old);
+  }
+
+  const realDb = app.env.DB;
+  app.env.DB = withD1Hooks(realDb, {
+    beforeRun({ params }) {
+      assert.ok(
+        params.length <= 100,
+        `D1 statement bound ${params.length} values; its per-statement limit is 100`,
+      );
+    },
+  });
+  await app.runScheduled();
+
+  assert.equal(
+    realDb.db.prepare('select count(*) as n from board_events where created_at = ?').get(old).n,
+    0,
+  );
+});
+
 test('retention heartbeat: scheduled run records it; /health/retention exposes it (#262)', async () => {
   const app = await createApp();
 
   // Before any run, the endpoint is reachable (public, ungated) and null.
   const before = await app.fetchJson('/health/retention');
   assert.equal(before.lastPurgeAt, null);
+  assert.equal(before.lastReconcileAt, null);
 
   await app.runScheduled();
 
   const after = await app.fetchJson('/health/retention');
   assert.ok(after.lastPurgeAt, 'heartbeat recorded');
+  assert.ok(after.lastReconcileAt, 'reconciliation heartbeat recorded');
   assert.ok(
     !Number.isNaN(Date.parse(after.lastPurgeAt)),
     'heartbeat is an ISO datetime',
+  );
+  assert.ok(
+    !Number.isNaN(Date.parse(after.lastReconcileAt)),
+    'reconciliation heartbeat is an ISO datetime',
   );
 });
 
@@ -1191,6 +1249,111 @@ test('retention heartbeat endpoint is exempt from the min-client gate (#262)', a
   const app = await createApp({ MIN_SUPPORTED_CLIENT: '99.0.0' });
   const res = await app.fetchRaw('/health/retention');
   assert.equal(res.status, 200);
+});
+
+test('scheduled maintenance still reconciles and records its heartbeat when the purge fails', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Independent maintenance jobs' },
+    status: 201,
+  });
+  const realDb = app.env.DB;
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+
+  let purgeFailed = false;
+  app.env.DB = withD1Hooks(realDb, {
+    beforeRun({ sql }) {
+      if (!purgeFailed && /delete from board_events/i.test(sql)) {
+        purgeFailed = true;
+        throw new Error('purge failed');
+      }
+    },
+  });
+
+  await assert.rejects(app.runScheduled(), /purge failed/);
+  assert.equal(purgeFailed, true);
+  assert.ok(
+    realDb.db.prepare('select deleted_at from boards where id = ?').get(board.board.id).deleted_at,
+    'reconciliation must still close the empty board',
+  );
+  assert.equal(
+    realDb.db.prepare('select value from ops_meta where key = ?').get(retentionHeartbeatKey),
+    undefined,
+    'a failed purge must not advance the purge heartbeat',
+  );
+  assert.ok(
+    realDb.db.prepare('select value from ops_meta where key = ?').get(reconcileHeartbeatKey).value,
+    'the successful reconciliation must advance its own heartbeat',
+  );
+});
+
+test('scheduled maintenance completes both jobs and aggregates failures when both heartbeat writes fail', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Failed maintenance heartbeats' },
+    status: 201,
+  });
+  const realDb = app.env.DB;
+  const old = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  realDb.db
+    .prepare(
+      `insert into board_events (id, board_id, actor_player_id, event_type, created_at)
+       values ('stale-before-heartbeat-failure', ?, ?, 'join', ?)`,
+    )
+    .run(board.board.id, maya.player.id, old);
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+
+  app.env.DB = withD1Hooks(realDb, {
+    beforeRun({ params }) {
+      if (params.includes(retentionHeartbeatKey)) {
+        throw new Error('retention heartbeat failed');
+      }
+      if (params.includes(reconcileHeartbeatKey)) {
+        throw new Error('reconcile heartbeat failed');
+      }
+    },
+  });
+
+  await assert.rejects(app.runScheduled(), (error) => {
+    assert.ok(error instanceof AggregateError);
+    assert.deepEqual(
+      error.errors.map((failure) => failure.message),
+      ['retention heartbeat failed', 'reconcile heartbeat failed'],
+    );
+    return true;
+  });
+  assert.equal(
+    realDb.db
+      .prepare('select count(*) as n from board_events where id = ?')
+      .get('stale-before-heartbeat-failure').n,
+    0,
+    'the purge must commit before its heartbeat failure',
+  );
+  assert.ok(
+    realDb.db.prepare('select deleted_at from boards where id = ?').get(board.board.id).deleted_at,
+    'reconciliation must commit before its heartbeat failure',
+  );
+  assert.equal(
+    realDb.db
+      .prepare('select count(*) as n from ops_meta where key in (?, ?)')
+      .get(retentionHeartbeatKey, reconcileHeartbeatKey).n,
+    0,
+    'failed heartbeat writes must not report either job as healthy',
+  );
 });
 
 // The routes can no longer produce a board with zero active members and a
@@ -1275,6 +1438,52 @@ test('scheduled reconcile reassigns an orphaned owner to the earliest-joined act
     .all(created.board.id);
   assert.equal(ownerChangedEvents.length, 1);
   assert.equal(ownerChangedEvents[0].actor_player_id, noah.player.id);
+});
+
+test('scheduled reconcile repairs a null owner with a deterministic player-id tie-break', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const bree = await app.bootstrap('Bree');
+  const created = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Deterministic owner repair' },
+    status: 201,
+  });
+  for (const player of [noah, bree]) {
+    await app.fetchJson('/invites/join', {
+      method: 'POST',
+      token: player.authToken,
+      body: { inviteLink: created.inviteLink },
+    });
+  }
+
+  const joinedAt = new Date().toISOString();
+  app.env.DB.db
+    .prepare('update memberships set joined_at = ? where board_id = ?')
+    .run(joinedAt, created.board.id);
+  app.env.DB.db
+    .prepare('update boards set owner_player_id = null where id = ?')
+    .run(created.board.id);
+
+  await app.runScheduled();
+
+  const expectedOwnerId = [maya.player.id, noah.player.id, bree.player.id].sort()[0];
+  assert.equal(
+    app.env.DB.db
+      .prepare('select owner_player_id from boards where id = ?')
+      .get(created.board.id).owner_player_id,
+    expectedOwnerId,
+  );
+  assert.equal(
+    app.env.DB.db
+      .prepare(
+        "select actor_player_id from board_events where board_id = ? and event_type = 'owner_changed'",
+      )
+      .get(created.board.id).actor_player_id,
+    expectedOwnerId,
+  );
 });
 
 test('scheduled reconcile leaves a healthy database untouched — no boards deleted, no owners changed, no spurious events', async () => {
@@ -1380,6 +1589,411 @@ test('scheduled reconcile is idempotent — repairs on the first pass, does noth
   const afterSecond = snapshot();
   assert.deepEqual(afterSecond, afterFirst, 'second pass must be a no-op');
 });
+
+test('scheduled reconcile rechecks empty-board state at the repair write and reports only actual closes', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Race-safe empty board' },
+    status: 201,
+  });
+  const realDb = app.env.DB;
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+
+  let joinedImmediatelyBeforeRepair = false;
+  app.env.DB = withD1Hooks(realDb, {
+    beforeBatch({ statements }) {
+      if (
+        !joinedImmediatelyBeforeRepair &&
+        statements.some(
+          (statement) =>
+            /update boards/i.test(statement.sql) &&
+            /deleted_at/i.test(statement.sql),
+        )
+      ) {
+        joinedImmediatelyBeforeRepair = true;
+        realDb.db
+          .prepare(
+            "update memberships set left_at = null, membership_state = 'active' where board_id = ? and player_id = ?",
+          )
+          .run(board.board.id, maya.player.id);
+      }
+    },
+    beforeRun({ sql }) {
+      if (!joinedImmediatelyBeforeRepair && /update boards/i.test(sql) && /deleted_at/i.test(sql)) {
+        joinedImmediatelyBeforeRepair = true;
+        realDb.db
+          .prepare(
+            "update memberships set left_at = null, membership_state = 'active' where board_id = ? and player_id = ?",
+          )
+          .run(board.board.id, maya.player.id);
+      }
+    },
+  });
+
+  const logs = await scheduledLogs(app);
+  assert.equal(joinedImmediatelyBeforeRepair, true, 'test hook must race the repair write');
+  assert.equal(
+    realDb.db.prepare('select deleted_at from boards where id = ?').get(board.board.id).deleted_at,
+    null,
+    'a board that regained a member must not be closed from a stale candidate',
+  );
+  assert.equal(
+    reconcileLog(logs).boardsClosed,
+    0,
+    'the reconcile counter must reflect the conditional update result',
+  );
+});
+
+test('scheduled reconcile rechecks ownership at the repair write and emits no false owner_changed event', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Race-safe owner repair' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: board.inviteLink },
+  });
+  const realDb = app.env.DB;
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+
+  let ownershipRestoredImmediatelyBeforeRepair = false;
+  const restoreOwner = () => {
+    if (ownershipRestoredImmediatelyBeforeRepair) return;
+    ownershipRestoredImmediatelyBeforeRepair = true;
+    realDb.db
+      .prepare(
+        "update memberships set left_at = null, membership_state = 'active' where board_id = ? and player_id = ?",
+      )
+      .run(board.board.id, maya.player.id);
+  };
+  app.env.DB = withD1Hooks(realDb, {
+    beforeBatch({ statements }) {
+      if (statements.some((statement) => /update boards/i.test(statement.sql) && /owner_player_id/i.test(statement.sql))) {
+        restoreOwner();
+      }
+    },
+    beforeRun({ sql }) {
+      if (/update boards/i.test(sql) && /owner_player_id/i.test(sql)) restoreOwner();
+    },
+  });
+
+  const logs = await scheduledLogs(app);
+  assert.equal(ownershipRestoredImmediatelyBeforeRepair, true, 'test hook must race the ownership write');
+  assert.equal(
+    realDb.db.prepare('select owner_player_id from boards where id = ?').get(board.board.id).owner_player_id,
+    maya.player.id,
+    'a valid owner must not be overwritten from a stale candidate',
+  );
+  assert.equal(
+    realDb.db
+      .prepare("select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'")
+      .get(board.board.id).n,
+    0,
+    'a skipped ownership update must not produce an audit event',
+  );
+  assert.equal(reconcileLog(logs).ownersReassigned, 0);
+});
+
+test('scheduled reconcile does not assign a successor who leaves immediately before the repair transaction', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Race-safe successor repair' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: board.inviteLink },
+  });
+  const realDb = app.env.DB;
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+
+  let successorLeftImmediatelyBeforeRepair = false;
+  const leaveSuccessor = () => {
+    if (successorLeftImmediatelyBeforeRepair) return;
+    successorLeftImmediatelyBeforeRepair = true;
+    realDb.db
+      .prepare(
+        "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+      )
+      .run(new Date().toISOString(), board.board.id, noah.player.id);
+  };
+  app.env.DB = withD1Hooks(realDb, {
+    beforeBatch({ statements }) {
+      if (statements.some((statement) => /update boards/i.test(statement.sql) && /owner_player_id/i.test(statement.sql))) {
+        leaveSuccessor();
+      }
+    },
+    beforeRun({ sql }) {
+      if (/update boards/i.test(sql) && /owner_player_id/i.test(sql)) leaveSuccessor();
+    },
+  });
+
+  const logs = await scheduledLogs(app);
+  assert.equal(successorLeftImmediatelyBeforeRepair, true, 'test hook must race the ownership write');
+  assert.equal(
+    realDb.db.prepare('select owner_player_id from boards where id = ?').get(board.board.id).owner_player_id,
+    maya.player.id,
+    'a departed candidate successor must not become the board owner',
+  );
+  assert.equal(
+    realDb.db
+      .prepare("select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'")
+      .get(board.board.id).n,
+    0,
+  );
+  assert.equal(reconcileLog(logs).ownersReassigned, 0);
+});
+
+test('scheduled reconcile rolls back an owner change when its owner_changed event fails', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const board = await app.fetchJson('/boards', {
+    method: 'POST',
+    token: maya.authToken,
+    body: { name: 'Atomic owner repair' },
+    status: 201,
+  });
+  await app.fetchJson('/invites/join', {
+    method: 'POST',
+    token: noah.authToken,
+    body: { inviteLink: board.inviteLink },
+  });
+  const realDb = app.env.DB;
+  realDb.db
+    .prepare(
+      "update memberships set left_at = ?, membership_state = 'left' where board_id = ? and player_id = ?",
+    )
+    .run(new Date().toISOString(), board.board.id, maya.player.id);
+  app.env.DB = withBatchFault(
+    realDb,
+    (statement) =>
+      /insert into board_events/i.test(statement.sql) &&
+      (/owner_changed/i.test(statement.sql) || statement.params.includes('owner_changed')),
+    new Error('owner_changed write failed'),
+  );
+
+  await assert.rejects(app.runScheduled(), /owner_changed write failed/);
+  assert.equal(
+    realDb.db.prepare('select owner_player_id from boards where id = ?').get(board.board.id).owner_player_id,
+    maya.player.id,
+    'the ownership write must roll back with its audit event',
+  );
+  assert.equal(
+    realDb.db
+      .prepare("select count(*) as n from board_events where board_id = ? and event_type = 'owner_changed'")
+      .get(board.board.id).n,
+    0,
+  );
+  assert.ok(
+    realDb.db.prepare('select value from ops_meta where key = ?').get(retentionHeartbeatKey).value,
+    'the successful purge must retain its own heartbeat',
+  );
+  assert.equal(
+    realDb.db.prepare('select value from ops_meta where key = ?').get(reconcileHeartbeatKey),
+    undefined,
+    'a failed reconciliation must not advance its heartbeat',
+  );
+});
+
+test('orphan-owner reconciliation stops after a full unrepairable chunk instead of rescanning it forever', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const now = new Date().toISOString();
+  for (let index = 0; index < reconcileChunkSize; index += 1) {
+    insertLegacyBoard(app.env.DB.db, {
+      id: `unrepairable-${index}`,
+      ownerPlayerId: null,
+      createdByPlayerId: maya.player.id,
+      now,
+    });
+  }
+
+  const realDb = app.env.DB;
+  let batches = 0;
+  app.env.DB = withD1Hooks(realDb, {
+    beforeBatch() {
+      batches += 1;
+      if (batches > 1) {
+        throw new Error('reconciliation retried an unrepairable full chunk');
+      }
+    },
+  });
+
+  assert.equal(await reassignOrphanedOwners(app.env), 0);
+  assert.ok(batches <= 1, 'an unrepairable full chunk must not be retried');
+});
+
+test('scheduled reconciliation stays within the free-plan D1 statement budget for a full repair chunk', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const now = new Date().toISOString();
+  for (let index = 0; index < reconcileChunkSize; index += 1) {
+    const id = `budget-owner-${index}`;
+    insertLegacyBoard(app.env.DB.db, {
+      id,
+      ownerPlayerId: maya.player.id,
+      createdByPlayerId: maya.player.id,
+      now,
+    });
+    app.env.DB.db
+      .prepare(
+        `insert into memberships (board_id, player_id, display_name, joined_at, left_at, membership_state)
+         values (?, ?, ?, ?, null, 'active')`,
+      )
+      .run(id, noah.player.id, noah.player.displayName, now);
+  }
+
+  const realDb = app.env.DB;
+  let statements = 0;
+  app.env.DB = withD1Hooks(realDb, {
+    beforeAll() {
+      statements += 1;
+    },
+    beforeFirst() {
+      statements += 1;
+    },
+    beforeRun() {
+      statements += 1;
+    },
+  });
+  await app.runScheduled();
+
+  assert.ok(
+    statements <= 50,
+    `scheduled reconciliation used ${statements} D1 statements; it must fit the 50-statement free-plan limit`,
+  );
+  assert.equal(
+    realDb.db.prepare('select count(*) as n from boards where owner_player_id = ?').get(noah.player.id).n,
+    reconcileChunkSize,
+  );
+});
+
+test('scheduled reconciliation finishes every owner repair beyond one chunk and logs the actual total', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const noah = await app.bootstrap('Noah');
+  const now = new Date().toISOString();
+  const total = reconcileChunkSize + 1;
+  for (let index = 0; index < total; index += 1) {
+    const id = `beyond-chunk-owner-${index}`;
+    insertLegacyBoard(app.env.DB.db, {
+      id,
+      ownerPlayerId: maya.player.id,
+      createdByPlayerId: maya.player.id,
+      now,
+    });
+    app.env.DB.db
+      .prepare(
+        `insert into memberships (board_id, player_id, display_name, joined_at, left_at, membership_state)
+         values (?, ?, ?, ?, null, 'active')`,
+      )
+      .run(id, noah.player.id, noah.player.displayName, now);
+  }
+
+  const logs = await scheduledLogs(app);
+  assert.equal(
+    app.env.DB.db.prepare('select count(*) as n from boards where owner_player_id = ?').get(noah.player.id).n,
+    total,
+  );
+  assert.equal(
+    app.env.DB.db
+      .prepare("select count(*) as n from board_events where event_type = 'owner_changed'")
+      .get().n,
+    total,
+  );
+  assert.equal(reconcileLog(logs).ownersReassigned, total);
+});
+
+test('scheduled reconciliation closes every empty board beyond one chunk and logs the actual total', async () => {
+  const app = await createApp();
+  const maya = await app.bootstrap('Maya');
+  const now = new Date().toISOString();
+  const total = reconcileChunkSize + 1;
+  for (let index = 0; index < total; index += 1) {
+    insertLegacyBoard(app.env.DB.db, {
+      id: `beyond-chunk-empty-${index}`,
+      ownerPlayerId: maya.player.id,
+      createdByPlayerId: maya.player.id,
+      now,
+    });
+  }
+
+  const logs = await scheduledLogs(app);
+  assert.equal(
+    app.env.DB.db
+      .prepare("select count(*) as n from boards where id like 'beyond-chunk-empty-%' and deleted_at is not null")
+      .get().n,
+    total,
+  );
+  assert.equal(reconcileLog(logs).boardsClosed, total);
+});
+
+function insertLegacyBoard(db, { id, ownerPlayerId, createdByPlayerId, now }) {
+  db.prepare(
+    `insert into boards (
+      id, name, source_id, ranking_mode, invite_code_hash, invite_version,
+      invite_expires_at, invite_rotated_at, created_by_player_id, created_at,
+      owner_player_id
+    ) values (?, ?, 'crosshare_daily_mini', 'average_time', ?, 1, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    id,
+    `invite-${id}`,
+    now,
+    now,
+    createdByPlayerId,
+    now,
+    ownerPlayerId,
+  );
+}
+
+async function scheduledLogs(app) {
+  const originalLog = console.log;
+  const logs = [];
+  console.log = (line) => logs.push(line);
+  try {
+    await app.runScheduled();
+  } finally {
+    console.log = originalLog;
+  }
+  return logs;
+}
+
+function reconcileLog(logs) {
+  const line = logs
+    .map((line) => JSON.parse(line))
+    .find((entry) => entry.job === 'reconcile_boards');
+  assert.ok(line, 'scheduled reconciliation must emit its own structured log line');
+  return line;
+}
 
 test('display names with reserved or blocked words are rejected', async () => {
   const app = await createApp();

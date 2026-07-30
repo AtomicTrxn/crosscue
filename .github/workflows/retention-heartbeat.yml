@@ -1,10 +1,10 @@
-name: Retention heartbeat
+name: Scheduled maintenance heartbeat
 
-# Weekly liveness check for the Worker's daily board_events purge cron (#262).
-# If the cron silently stops, board_events grows unbounded with no error — this
-# catches it by reading the heartbeat the scheduled handler records and exposes
-# at GET /health/retention. Tolerant before the Worker is deployed with #262
-# (null/unreachable → inconclusive, no alert).
+# Weekly liveness check for the Worker's daily board_events purge and board
+# reconciliation cron. Each job records its own successful-run heartbeat at
+# GET /health/retention, so a reconcile failure cannot hide behind a healthy
+# purge. An unreachable endpoint is inconclusive; a missing heartbeat is a
+# failure once this workflow version is active.
 on:
   schedule:
     - cron: '23 7 * * 1' # Mondays 07:23 UTC
@@ -20,11 +20,11 @@ env:
 
 jobs:
   heartbeat:
-    name: Check retention cron liveness
+    name: Check maintenance cron liveness
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Read the retention heartbeat
+      - name: Read the maintenance heartbeats
         id: check
         run: |
           set -uo pipefail
@@ -32,34 +32,59 @@ jobs:
             echo "::notice::$HEALTH_URL unreachable — inconclusive (Worker may predate #262, or transient). Not alerting."
             exit 0
           }
-          last="$(echo "$resp" | jq -r '.lastPurgeAt // empty')"
-          if [ -z "$last" ]; then
-            echo "::notice::lastPurgeAt is null — the cron has not recorded a run yet (deploy + first cron pending). Not alerting."
-            exit 0
+          purge="$(echo "$resp" | jq -r '.lastPurgeAt // empty')"
+          reconcile="$(echo "$resp" | jq -r '.lastReconcileAt // empty')"
+          stale=false
+          if [ -z "$purge" ]; then
+            purge="never"
+            purge_age_h="unknown"
+            stale=true
+          else
+            purge_age_h=$(( ( $(date -u +%s) - $(date -u -d "$purge" +%s) ) / 3600 ))
           fi
-          age_h=$(( ( $(date -u +%s) - $(date -u -d "$last" +%s) ) / 3600 ))
-          echo "last purge: $last (${age_h}h ago)"
-          if [ "$age_h" -gt "$STALE_HOURS" ]; then
+          if [ -z "$reconcile" ]; then
+            reconcile="never"
+            reconcile_age_h="unknown"
+            stale=true
+          else
+            reconcile_age_h=$(( ( $(date -u +%s) - $(date -u -d "$reconcile" +%s) ) / 3600 ))
+          fi
+          echo "last purge: $purge (${purge_age_h}h ago)"
+          echo "last reconcile: $reconcile (${reconcile_age_h}h ago)"
+          if [ "$purge_age_h" != "unknown" ] && [ "$purge_age_h" -gt "$STALE_HOURS" ]; then
+            stale=true
+          fi
+          if [ "$reconcile_age_h" != "unknown" ] && [ "$reconcile_age_h" -gt "$STALE_HOURS" ]; then
+            stale=true
+          fi
+          if [ "$stale" = true ]; then
             echo "stale=true" >> "$GITHUB_OUTPUT"
-            echo "last=$last" >> "$GITHUB_OUTPUT"
-            echo "age_h=$age_h" >> "$GITHUB_OUTPUT"
+            echo "purge=$purge" >> "$GITHUB_OUTPUT"
+            echo "purge_age_h=$purge_age_h" >> "$GITHUB_OUTPUT"
+            echo "reconcile=$reconcile" >> "$GITHUB_OUTPUT"
+            echo "reconcile_age_h=$reconcile_age_h" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Open or update the alert issue
         if: steps.check.outputs.stale == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          LAST: ${{ steps.check.outputs.last }}
-          AGE_H: ${{ steps.check.outputs.age_h }}
+          PURGE: ${{ steps.check.outputs.purge }}
+          PURGE_AGE_H: ${{ steps.check.outputs.purge_age_h }}
+          RECONCILE: ${{ steps.check.outputs.reconcile }}
+          RECONCILE_AGE_H: ${{ steps.check.outputs.reconcile_age_h }}
         run: |
-          title="Retention cron heartbeat is stale"
+          title="Challenge Boards maintenance heartbeat is stale"
           run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          body="The Challenge Boards retention cron's last recorded run was **${LAST}** (${AGE_H}h ago, threshold ${STALE_HOURS}h). The daily \`purge_board_events\` job may have stopped — \`board_events\` will grow unbounded until it resumes.
+          body="One or more Challenge Boards maintenance jobs exceeded the ${STALE_HOURS}h heartbeat threshold.
 
-          Check: \`npx wrangler tail --env production\` for the \`purge_board_events\` log line, and the \`[triggers] crons\` config in \`wrangler.toml\`. Heartbeat run: ${run_url}"
+          - Last purge: **${PURGE}** (${PURGE_AGE_H}h ago)
+          - Last reconcile: **${RECONCILE}** (${RECONCILE_AGE_H}h ago)
+
+          Check \`npx wrangler tail --env production\` for the \`purge_board_events\` and \`reconcile_boards\` log lines, then inspect the \`[triggers] crons\` config in \`wrangler.toml\`. Heartbeat run: ${run_url}"
           existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "Still stale as of this run (last ${LAST}, ${AGE_H}h ago): ${run_url}"
+            gh issue comment "$existing" --body "Still stale as of this run (purge ${PURGE_AGE_H}h, reconcile ${RECONCILE_AGE_H}h): ${run_url}"
           else
             gh issue create --title "$title" --label "bug" --label "area: infrastructure" --body "$body"
           fi
