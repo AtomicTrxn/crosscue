@@ -1,6 +1,7 @@
-// Challenge Boards Worker — request routing and the scheduled retention job.
-// Handlers live in feature modules: players, boards, results, leaderboards,
-// membership, retention; shared plumbing in http/util/validation/constants.
+// Challenge Boards Worker — request routing and the scheduled retention +
+// reconciliation job. Handlers live in feature modules: players, boards,
+// results, leaderboards, membership, retention, reconcile; shared plumbing
+// in http/util/validation/constants.
 
 import {
   createBoard,
@@ -32,6 +33,11 @@ import {
   updatePlayer,
 } from "./players.ts";
 import { serveAvatar } from "./avatars.ts";
+import {
+  reconcileBoards,
+  reconcileHealth,
+  recordReconcileHeartbeat,
+} from "./reconcile.ts";
 import { submitResult } from "./results.ts";
 import {
   purgeOldBoardEvents,
@@ -59,7 +65,11 @@ export default {
         if (avatar) return avatar;
         // Retention heartbeat (#262): liveness for the daily purge cron.
         if (url.pathname === "/health/retention") {
-          return json(await retentionHealth(env), requestId);
+          const [retention, reconcile] = await Promise.all([
+            retentionHealth(env),
+            reconcileHealth(env),
+          ]);
+          return json({ ...retention, ...reconcile }, requestId);
         }
       }
 
@@ -161,8 +171,56 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ): Promise<void> {
-    const deleted = await purgeOldBoardEvents(env);
-    await recordRetentionHeartbeat(env);
-    console.log(JSON.stringify({ job: "purge_board_events", deleted }));
+    const errors: unknown[] = [];
+
+    let purgePhase = "purge";
+    try {
+      const deleted = await purgeOldBoardEvents(env);
+      console.log(JSON.stringify({ job: "purge_board_events", deleted }));
+      purgePhase = "heartbeat";
+      await recordRetentionHeartbeat(env);
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          job: "purge_board_events",
+          phase: purgePhase,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      errors.push(error);
+    }
+
+    // Backfill sweep (see reconcile.ts): repairs boards left stuck open with
+    // zero active members, or owned by a departed player, before the
+    // departure SQL guarded both writes. Current code cannot produce either.
+    let reconcilePhase = "reconcile";
+    try {
+      const { boardsClosed, ownersReassigned } = await reconcileBoards(env);
+      console.log(
+        JSON.stringify({
+          job: "reconcile_boards",
+          boardsClosed,
+          ownersReassigned,
+        }),
+      );
+      reconcilePhase = "heartbeat";
+      await recordReconcileHeartbeat(env);
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          job: "reconcile_boards",
+          phase: reconcilePhase,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      errors.push(error);
+    }
+
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "Scheduled maintenance jobs failed.");
+    }
   },
 };

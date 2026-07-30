@@ -183,6 +183,50 @@ export function withBatchFault(db, matcher, error) {
   };
 }
 
+// Observability and race-injection wrapper for scheduled-maintenance tests.
+// Hooks run around the same prepared statements and batch implementation that
+// production code receives; callers can change the underlying sqlite state
+// after a discovery query or immediately before a transaction commits.
+export function withD1Hooks(db, hooks = {}) {
+  const wrapStatement = (statement) => ({
+    sql: statement.sql,
+    params: statement.params,
+    bind(...params) {
+      return wrapStatement(statement.bind(...params));
+    },
+    async run() {
+      hooks.beforeRun?.({ sql: statement.sql, params: statement.params });
+      const result = await statement.run();
+      hooks.afterRun?.({ sql: statement.sql, params: statement.params, result });
+      return result;
+    },
+    async all() {
+      hooks.beforeAll?.({ sql: statement.sql, params: statement.params });
+      const result = await statement.all();
+      hooks.afterAll?.({ sql: statement.sql, params: statement.params, result });
+      return result;
+    },
+    async first() {
+      hooks.beforeFirst?.({ sql: statement.sql, params: statement.params });
+      const result = await statement.first();
+      hooks.afterFirst?.({ sql: statement.sql, params: statement.params, result });
+      return result;
+    },
+  });
+
+  return {
+    prepare(sql) {
+      return wrapStatement(db.prepare(sql));
+    },
+    async batch(statements) {
+      hooks.beforeBatch?.({ statements });
+      const result = await db.batch(statements);
+      hooks.afterBatch?.({ statements, result });
+      return result;
+    },
+  };
+}
+
 class D1DatabaseShim {
   constructor(db) {
     this.db = db;

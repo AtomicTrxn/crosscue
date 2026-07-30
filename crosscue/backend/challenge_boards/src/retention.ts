@@ -6,6 +6,9 @@ import { addDays, utcNow } from "./util.ts";
 export const boardEventsRetentionDays = 14;
 
 export const purgeChunkSize = 500;
+// Eight set-based deletes purge up to 4,000 events while reserving D1's
+// remaining free-plan query budget for reconciliation and heartbeat writes.
+export const purgeMaxChunks = 8;
 
 // Daily retention for the audit-only board_events table. challenge_results is
 // intentionally retained because lifetime leaderboards are computed live from it
@@ -13,22 +16,22 @@ export const purgeChunkSize = 500;
 export async function purgeOldBoardEvents(env: Env): Promise<number> {
   const cutoff = addDays(utcNow(), -boardEventsRetentionDays);
   let deleted = 0;
-  for (;;) {
-    const batch = await env.DB.prepare(
-      "select id from board_events where created_at < ? limit ?",
+  for (let chunk = 0; chunk < purgeMaxChunks; chunk += 1) {
+    const result = await env.DB.prepare(
+      `delete from board_events
+       where id in (
+         select id
+         from board_events
+         where created_at < ?
+         order by created_at, id
+         limit ?
+       )`,
     )
       .bind(cutoff, purgeChunkSize)
-      .all<{ id: string }>();
-    const ids = (batch.results ?? []).map((row) => row.id);
-    if (ids.length === 0) break;
-    const placeholders = ids.map(() => "?").join(",");
-    await env.DB.prepare(
-      `delete from board_events where id in (${placeholders})`,
-    )
-      .bind(...ids)
       .run();
-    deleted += ids.length;
-    if (ids.length < purgeChunkSize) break;
+    const deletedThisChunk = Number(result.meta.changes ?? 0);
+    deleted += deletedThisChunk;
+    if (deletedThisChunk < purgeChunkSize) break;
   }
   return deleted;
 }
