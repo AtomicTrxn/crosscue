@@ -1,0 +1,6 @@
+Two solver-requested improvements:
+
+• On-screen keyboard toggle — solving with a Bluetooth or physical keyboard? Turn off the on-screen keyboard in Settings to reclaim the screen.
+• Landscape layout — turn your device sideways and the grid now fills the full height on the left, with a scrollable clue list beside it so you can see many clues at once. Great on a tablet.
+
+As always: fully offline, no accounts, no ads, no tracking.
