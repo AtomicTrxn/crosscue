@@ -87,6 +87,23 @@ void main() {
     });
   });
 
+  group('showOnScreenKeyboard', () {
+    test('defaults to true when not set', () async {
+      expect(await repo.getShowOnScreenKeyboard(), isTrue);
+    });
+
+    test('persists false', () async {
+      await repo.setShowOnScreenKeyboard(false);
+      expect(await repo.getShowOnScreenKeyboard(), isFalse);
+    });
+
+    test('returns true after re-enabling', () async {
+      await repo.setShowOnScreenKeyboard(false);
+      await repo.setShowOnScreenKeyboard(true);
+      expect(await repo.getShowOnScreenKeyboard(), isTrue);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // Colorblind mode
   // ---------------------------------------------------------------------------

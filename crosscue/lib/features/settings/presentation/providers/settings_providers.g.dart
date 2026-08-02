@@ -393,6 +393,53 @@ abstract class _$SkipFilledCells extends $Notifier<bool> {
   }
 }
 
+@ProviderFor(ShowOnScreenKeyboard)
+final showOnScreenKeyboardProvider = ShowOnScreenKeyboardProvider._();
+
+final class ShowOnScreenKeyboardProvider
+    extends $NotifierProvider<ShowOnScreenKeyboard, bool> {
+  ShowOnScreenKeyboardProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'showOnScreenKeyboardProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$showOnScreenKeyboardHash();
+
+  @$internal
+  @override
+  ShowOnScreenKeyboard create() => ShowOnScreenKeyboard();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$showOnScreenKeyboardHash() =>
+    r'f168b5ec250af5bf6ad2fabe9aa55c56f408bddc';
+
+abstract class _$ShowOnScreenKeyboard extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<bool, bool>, bool, Object?, Object?>;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(CrashReporting)
 final crashReportingProvider = CrashReportingProvider._();
 

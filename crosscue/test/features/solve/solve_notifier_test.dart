@@ -685,6 +685,7 @@ ProviderContainer _containerFor(
           skipFilledCells: skipFilledCells,
           crashReporting: BootSettings.defaults.crashReporting,
           crosshareAutoDownload: BootSettings.defaults.crosshareAutoDownload,
+          showOnScreenKeyboard: BootSettings.defaults.showOnScreenKeyboard,
         ),
       ),
     ],
@@ -1110,6 +1111,7 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
         skipFilledCells: skipFilledCells,
         crashReporting: false,
         crosshareAutoDownload: true,
+        showOnScreenKeyboard: true,
       );
 
   @override
@@ -1126,6 +1128,9 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<bool> getSkipFilledCells() async => skipFilledCells;
+
+  @override
+  Future<bool> getShowOnScreenKeyboard() async => true;
 
   @override
   Future<bool> getSoundsEnabled() async => false;
@@ -1147,6 +1152,9 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> setSkipFilledCells(bool value) async {}
+
+  @override
+  Future<void> setShowOnScreenKeyboard(bool value) async {}
 
   @override
   Future<void> setSoundsEnabled(bool value) async {}

@@ -562,6 +562,9 @@ final class _PermissiveAppSettings implements AppSettingsRepository {
   Future<bool> getSkipFilledCells() async => false;
 
   @override
+  Future<bool> getShowOnScreenKeyboard() async => true;
+
+  @override
   Future<bool> getSoundsEnabled() async => false;
 
   @override
@@ -581,6 +584,9 @@ final class _PermissiveAppSettings implements AppSettingsRepository {
 
   @override
   Future<void> setSkipFilledCells(bool value) async {}
+
+  @override
+  Future<void> setShowOnScreenKeyboard(bool value) async {}
 
   @override
   Future<void> setSoundsEnabled(bool value) async {}

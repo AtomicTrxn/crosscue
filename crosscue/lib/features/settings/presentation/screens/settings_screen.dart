@@ -108,6 +108,14 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Skip filled cells',
             subtitle: 'Jump over filled letters while typing',
           ),
+          SettingsSwitchRow(
+            value: ref.watch(showOnScreenKeyboardProvider),
+            onChanged: (_) =>
+                ref.read(showOnScreenKeyboardProvider.notifier).toggle(),
+            leading: Icons.keyboard_hide_outlined,
+            title: 'On-screen keyboard',
+            subtitle: 'Turn off if you use a physical or Bluetooth keyboard',
+          ),
 
           // ── Puzzles ────────────────────────────────────────────────────────
           const SettingsSectionHeader('Puzzles'),

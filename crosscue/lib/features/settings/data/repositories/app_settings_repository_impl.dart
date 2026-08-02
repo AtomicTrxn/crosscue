@@ -20,6 +20,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const _keyColorblindMode = 'colorblind_mode';
   static const _keySoundsEnabled = 'sounds_enabled';
   static const _keySkipFilledCells = 'skip_filled_cells';
+  static const _keyShowOnScreenKeyboard = 'show_on_screen_keyboard';
   static const _keyCrashReporting = 'crash_reporting';
   static const _keyCrosshareAutoDownload = 'crosshare_auto_download_enabled';
   static const _keyCrosshareLastDownloadedDate =
@@ -44,6 +45,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       getSkipFilledCells(),
       getCrashReporting(),
       getCrosshareAutoDownload(),
+      getShowOnScreenKeyboard(),
     ]);
     return BootSettings(
       hasSeenOnboarding: results[0] as bool,
@@ -54,6 +56,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       skipFilledCells: results[5] as bool,
       crashReporting: results[6] as bool,
       crosshareAutoDownload: results[7] as bool,
+      showOnScreenKeyboard: results[8] as bool,
     );
   }
 
@@ -132,6 +135,17 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   @override
   Future<void> setSkipFilledCells(bool value) =>
       _setBool(_keySkipFilledCells, value);
+
+  /// Defaults to true if not set.
+  @override
+  Future<bool> getShowOnScreenKeyboard() async {
+    final v = await dao.getValue(_keyShowOnScreenKeyboard);
+    return v != 'false';
+  }
+
+  @override
+  Future<void> setShowOnScreenKeyboard(bool value) =>
+      dao.setValue(_keyShowOnScreenKeyboard, value.toString());
 
   @override
   Future<bool> getCrashReporting() => _getBool(_keyCrashReporting);
