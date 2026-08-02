@@ -860,24 +860,33 @@ checklists pass, publish it explicitly:
 make release-publish-github TAG=v1.2.3
 ```
 
-**Current rollout snapshot (`v1.4.5`, 2026-07-28 UTC):**
+**Current rollout snapshot (`v1.5.0`, 2026-08-02 UTC):**
 
-- Tag `v1.4.5` identifies release commit `9d7ae89`; later documentation-only
-  commits may advance `main`.
-- Hosted PR CI passed (661 Flutter tests passed, one intentional skip; 44
-  Worker tests passed; analysis, formatting, generated-tree verification, and
-  typecheck passed).
-- The complete five-flow integration suite passed on Pixel 8 and iPhone 17
-  Pro simulators. Import/solve and Challenge Boards also passed on Pixel
-  Tablet and iPad Pro 13-inch simulators.
-- Release workflow run `30330871940` built `1.4.5+10405`, rejected any Android
+- Tag `v1.5.0` identifies release commit `d2c73bd`. An Android edge-to-edge
+  fix (`97a38cf`, #294, clears a Play Console advisory for SDK 35) merged to
+  `main` **after** this tag — it is not in the build currently under store
+  review and will ship with the next release.
+- Hosted PR CI passed on both PRs that shipped this release (668 Flutter
+  tests, one intentional skip; 60 Worker tests; analysis, formatting,
+  generated-tree verification, and typecheck all passed); `make ci` also
+  verified locally before each push.
+- The Flutter `integration_test` suite passed via `workflow_dispatch` on both
+  `integration-test-android.yml` (23m35s) and `integration-test-ios.yml`
+  (16m51s). The landscape layout and on-screen-keyboard toggle were also
+  manually verified on a Pixel Tablet emulator and an iPad Air 11" simulator,
+  and the actual signed release APK (not just debug) was spot-checked for
+  R8-related startup issues.
+- The Challenge Boards Worker's new scheduled-reconciliation sweep (#291) was
+  deployed staging-first, smoke-tested on both, and confirmed via a read-only
+  production query to be a no-op on current data before shipping.
+- Release workflow run `30761074186` built `1.5.0+10500`, rejected any Android
   debug certificate, uploaded the signed IPA to TestFlight, and uploaded the
-  signed AAB to Play internal testing.
-- Release workflow run `30331453111` repeated the signed artifact gates and
-  published the GitHub release with the signed APK.
-- Store-console privacy answers and the remaining physical-device checks in
-  the platform QA lists still require release-owner confirmation before a
-  production App Store/Play rollout.
+  signed AAB to Play internal testing. Run `30764927479` repeated the signed
+  artifact gates and published the GitHub release with the signed APK.
+- The Play internal build was promoted to the production track (not a fresh
+  upload — Play rejects re-uploading an already-used version code to a
+  different track) and the TestFlight build was submitted for App Store
+  review. Both are now pending store review.
 
 **Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
 context in the generated release body rather than overloading the title.
