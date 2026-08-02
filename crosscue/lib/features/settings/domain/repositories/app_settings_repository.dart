@@ -30,6 +30,11 @@ abstract interface class AppSettingsRepository {
   Future<bool> getSkipFilledCells();
   Future<void> setSkipFilledCells(bool value);
 
+  /// Whether the custom on-screen QWERTY keyboard is shown on the solve
+  /// screen. Defaults to true when no value is stored.
+  Future<bool> getShowOnScreenKeyboard();
+  Future<void> setShowOnScreenKeyboard(bool value);
+
   Future<bool> getCrashReporting();
   Future<void> setCrashReporting(bool value);
 

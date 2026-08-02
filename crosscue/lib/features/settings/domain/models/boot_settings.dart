@@ -21,6 +21,7 @@ class BootSettings {
     required this.skipFilledCells,
     required this.crashReporting,
     required this.crosshareAutoDownload,
+    required this.showOnScreenKeyboard,
   });
 
   /// The values a fresh install boots with (and the values clear-all resets to).
@@ -36,6 +37,7 @@ class BootSettings {
     skipFilledCells: false,
     crashReporting: false,
     crosshareAutoDownload: false,
+    showOnScreenKeyboard: true,
   );
 
   final bool hasSeenOnboarding;
@@ -46,4 +48,10 @@ class BootSettings {
   final bool skipFilledCells;
   final bool crashReporting;
   final bool crosshareAutoDownload;
+
+  /// Whether the app's custom on-screen QWERTY keyboard is shown on the solve
+  /// screen. Defaults to true; solvers using a physical/Bluetooth keyboard can
+  /// turn it off to reclaim screen space — physical keyboard input is wired
+  /// independently via `FocusNode.onKeyEvent` and keeps working either way.
+  final bool showOnScreenKeyboard;
 }

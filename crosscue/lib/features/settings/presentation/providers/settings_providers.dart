@@ -146,6 +146,22 @@ class SkipFilledCells extends _$SkipFilledCells {
 }
 
 @Riverpod(keepAlive: true)
+class ShowOnScreenKeyboard extends _$ShowOnScreenKeyboard {
+  @override
+  bool build() => ref.watch(bootSettingsProvider).showOnScreenKeyboard;
+
+  Future<void> toggle() async {
+    state = !state;
+    await ref.read(appSettingsProvider).setShowOnScreenKeyboard(state);
+  }
+
+  Future<void> reset() async {
+    state = BootSettings.defaults.showOnScreenKeyboard;
+    await ref.read(appSettingsProvider).setShowOnScreenKeyboard(state);
+  }
+}
+
+@Riverpod(keepAlive: true)
 class CrashReporting extends _$CrashReporting {
   @override
   bool build() => ref.watch(bootSettingsProvider).crashReporting;
@@ -223,6 +239,7 @@ Future<void> resetAllSettings(WidgetRef ref) async {
     ref.read(soundsEnabledProvider.notifier).reset(),
     ref.read(colorblindModeProvider.notifier).reset(),
     ref.read(skipFilledCellsProvider.notifier).reset(),
+    ref.read(showOnScreenKeyboardProvider.notifier).reset(),
     ref.read(crashReportingProvider.notifier).reset(),
     ref.read(crosshareAutoDownloadProvider.notifier).reset(),
   ]);
