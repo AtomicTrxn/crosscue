@@ -37,7 +37,6 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sourceLabel = sourceLabelFor(solveState.puzzle.metadata.sourceId);
-    final showOnScreenKeyboard = ref.watch(showOnScreenKeyboardProvider);
     // The AppBar is the only widget that needs the per-second tick.
     // Watching the dedicated elapsed-seconds provider keeps the rest of
     // the solve screen out of the per-tick rebuild path. See #119.
@@ -125,19 +124,10 @@ class SolveAppBar extends ConsumerWidget implements PreferredSizeWidget {
             onPressed: () =>
                 showPuzzleInfoSheet(context, solveState.puzzle.metadata),
           ),
-        // Escape hatch for the "on-screen keyboard" setting: without it, a
-        // solver who turns the keyboard off by mistake (or unplugs their
-        // Bluetooth keyboard mid-solve) would have no way to type — the
-        // hidden TextField suppresses the system keyboard unconditionally
-        // (see CrosswordGrid), and the setting itself lives one level deep
-        // in Settings. One tap here brings the on-screen keyboard back.
-        if (!isComplete && !showOnScreenKeyboard)
-          IconButton(
-            icon: const Icon(Icons.keyboard_outlined),
-            tooltip: 'Show on-screen keyboard',
-            onPressed: () =>
-                ref.read(showOnScreenKeyboardProvider.notifier).toggle(),
-          ),
+        // The old "bring the keyboard back" escape hatch lived here — it's
+        // now KeyboardHiddenControls, an always-in-context floating control
+        // on the solve screen itself rather than one gated behind a
+        // Settings toggle that no longer exists (#298).
         if (isComplete)
           IconButton(
             icon: const Icon(Icons.restart_alt),

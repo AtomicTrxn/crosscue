@@ -10,6 +10,7 @@ import 'package:crosscue/core/domain/models/grid.dart';
 import 'package:crosscue/core/domain/models/puzzle.dart';
 import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
+import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/features/solve/domain/models/cell_progress.dart';
 import 'package:crosscue/features/solve/domain/models/focus_position.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
@@ -112,6 +113,7 @@ void main() {
         ClueListPanel(
           clues: state.sortedClues,
           activeClue: null,
+          crossClue: null,
           solveState: state,
           onSelectClue: (_) {},
         ),
@@ -141,6 +143,7 @@ void main() {
         ClueListPanel(
           clues: state.sortedClues,
           activeClue: null,
+          crossClue: null,
           solveState: state,
           onSelectClue: (_) {},
         ),
@@ -172,6 +175,7 @@ void main() {
         ClueListPanel(
           clues: state.sortedClues,
           activeClue: null,
+          crossClue: null,
           solveState: state,
           onSelectClue: (c) => selected = c,
         ),
@@ -200,6 +204,7 @@ void main() {
         ClueListPanel(
           clues: state.sortedClues,
           activeClue: acrossClue,
+          crossClue: null,
           solveState: state,
           onSelectClue: (_) {},
         ),
@@ -210,6 +215,49 @@ void main() {
     expect(
       tester.getSemantics(find.bySemanticsLabel('1 Across, Across clue')),
       isSemantics(label: '1 Across, Across clue', isSelected: true),
+    );
+
+    handle.dispose();
+  });
+
+  testWidgets(
+      'the cross clue row is tinted with the Color Guide cross-row token '
+      'but not marked selected', (tester) async {
+    final handle = tester.ensureSemantics();
+    final downClue = puzzle.clues.firstWhere(
+      (c) => c.direction == Direction.down && c.number == 1,
+    );
+    final progress = Grid<CellProgress>(
+      width: 2,
+      height: 1,
+      cells: const [CellProgress.blank, CellProgress.blank],
+    );
+    final state = _stateWith(progress);
+
+    await tester.pumpWidget(
+      _wrap(
+        ClueListPanel(
+          clues: state.sortedClues,
+          activeClue: acrossClue,
+          crossClue: downClue,
+          solveState: state,
+          onSelectClue: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Material &&
+            w.color == CrosswordTheme.light().cluePanelCrossRowBg,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('1 Down, A down')),
+      isSemantics(label: '1 Down, A down', isSelected: false),
     );
 
     handle.dispose();

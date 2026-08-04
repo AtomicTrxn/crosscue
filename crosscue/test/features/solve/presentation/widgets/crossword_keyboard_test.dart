@@ -19,6 +19,7 @@ void main() {
           onCheckWord: () {},
           onRebus: () {},
           onFeedbackSound: () {},
+          onHideKeyboard: () {},
         ),
       ),
     );
@@ -35,6 +36,7 @@ void main() {
           onCheckWord: () {},
           onRebus: () => tapped++,
           onFeedbackSound: () {},
+          onHideKeyboard: () {},
           hapticsEnabled: false,
         ),
       ),
@@ -57,6 +59,7 @@ void main() {
           onCheckWord: () {},
           onRebus: () {},
           onFeedbackSound: () {},
+          onHideKeyboard: () {},
           isSmallPuzzle: true,
         ),
       ),
@@ -77,6 +80,7 @@ void main() {
           onCheckWord: () {},
           onRebus: () {},
           onFeedbackSound: () {},
+          onHideKeyboard: () {},
         ),
       ),
     );
@@ -86,6 +90,35 @@ void main() {
     expect(find.bySemanticsLabel('Enter rebus'), findsOneWidget);
     // A representative letter key exposes its letter as its label.
     expect(find.bySemanticsLabel('Q'), findsOneWidget);
+
+    handle.dispose();
+  });
+
+  // #298: the on-screen keyboard's own hide-keyboard control, now folded
+  // into the bottom key row as a same-height special key (screen-reader
+  // labeled, like ⌫/✓/Rebus — see issue #179) rather than a separate
+  // tooltip-only button row.
+  testWidgets('tapping the hide-keyboard control fires the callback',
+      (tester) async {
+    var hidden = 0;
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      wrap(
+        CrosswordKeyboard(
+          onLetter: (_) {},
+          onBackspace: () {},
+          onCheckWord: () {},
+          onRebus: () {},
+          onFeedbackSound: () {},
+          onHideKeyboard: () => hidden++,
+          hapticsEnabled: false,
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Hide keyboard'));
+    await tester.pump();
+    expect(hidden, 1);
 
     handle.dispose();
   });

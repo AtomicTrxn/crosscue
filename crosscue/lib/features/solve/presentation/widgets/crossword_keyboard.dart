@@ -13,11 +13,15 @@ import 'package:flutter/services.dart';
 ///   5dp radius, 16px w500 #1A1A1A, shadow 0 1px 1px rgba(0,0,0,0.15)
 /// - Small puzzles: height 54dp, 17px text
 /// - ⌫ / ✓ keys: responsive width, #B0BEC5 / #1565C0 bg, white text
-/// - Rebus key: responsive width, neutral (keyDefault) bg, w600 label,
-///   bottom-right corner — matches the NYT Games convention so that the
-///   key is recognizable to solvers coming from other apps. See
+/// - Rebus key: responsive width, neutral (keyDefault) bg, w600 label +
+///   small icon — matches the NYT Games convention so that the key is
+///   recognizable to solvers coming from other apps. See
 ///   `docs/architecture/rebus-entry.md`.
-/// - Three rows: QWERTYUIOP / ASDFGHJKL / ⌫ZXCVBNM✓Rebus
+/// - Hide-keyboard key: responsive width, primary bg, icon-only — rightmost
+///   key, collapses back to the floating `KeyboardHiddenControls` cluster
+///   (#298). Rides along in the bottom row rather than a separate control
+///   row above the QWERTY rows, so it costs zero extra keyboard height.
+/// - Three rows: QWERTYUIOP / ASDFGHJKL / ⌫ZXCVBNM✓RebusHide
 ///
 /// Physical keyboard input is still handled via the hidden [TextField] in
 /// [CrosswordGrid]; this widget handles soft-keyboard input only.
@@ -29,6 +33,7 @@ class CrosswordKeyboard extends StatelessWidget {
     required this.onCheckWord,
     required this.onRebus,
     required this.onFeedbackSound,
+    required this.onHideKeyboard,
     this.isSmallPuzzle = false,
     this.hapticsEnabled = true,
     this.soundsEnabled = false,
@@ -44,6 +49,12 @@ class CrosswordKeyboard extends StatelessWidget {
   final VoidCallback onRebus;
 
   final VoidCallback onFeedbackSound;
+
+  /// Collapses this keyboard back to the floating [KeyboardHiddenControls]
+  /// cluster (#298) — the show/hide control now lives with the keyboard
+  /// itself rather than in Settings or the app bar.
+  final VoidCallback onHideKeyboard;
+
   final bool isSmallPuzzle;
   final bool hapticsEnabled;
   final bool soundsEnabled;
@@ -95,6 +106,10 @@ class CrosswordKeyboard extends StatelessWidget {
             onRebus: () {
               if (hapticsEnabled) HapticFeedback.lightImpact();
               onRebus();
+            },
+            onHideKeyboard: () {
+              if (hapticsEnabled) HapticFeedback.selectionClick();
+              onHideKeyboard();
             },
             xwTheme: xwTheme,
             metrics: metrics,
@@ -165,6 +180,7 @@ class _BottomKeyRow extends StatelessWidget {
     required this.onBackspace,
     required this.onCheckWord,
     required this.onRebus,
+    required this.onHideKeyboard,
     required this.xwTheme,
     required this.metrics,
   });
@@ -174,6 +190,7 @@ class _BottomKeyRow extends StatelessWidget {
   final VoidCallback onBackspace;
   final VoidCallback onCheckWord;
   final VoidCallback onRebus;
+  final VoidCallback onHideKeyboard;
   final CrosswordTheme xwTheme;
   final _KeyMetrics metrics;
 
@@ -183,13 +200,19 @@ class _BottomKeyRow extends StatelessWidget {
       builder: (context, constraints) {
         // Layout budget on the bottom row:
         //   ⌫ (1.3u) + 7 letters (1u each) + ✓ (1.3u) + Rebus (1.7u)
+        //   + hide-keyboard (1.3u)
         // Rebus is wider than ⌫/✓ to fit the four-letter label without
-        // crowding. Three specials + N letters → unit math:
+        // crowding. The hide-keyboard key rides along here (rather than a
+        // separate control row above) so a Row's max-of-children height
+        // rule means it costs zero extra vertical space (#298 landscape
+        // overflow fix). Four specials + N letters → unit math:
         const backspaceUnits = 1.3;
         const checkUnits = 1.3;
         const rebusUnits = 1.7;
-        const specialUnitsTotal = backspaceUnits + checkUnits + rebusUnits;
-        const numSpecials = 3;
+        const hideUnits = 1.3;
+        const specialUnitsTotal =
+            backspaceUnits + checkUnits + rebusUnits + hideUnits;
+        const numSpecials = 4;
         final gapTotal = (keys.length + numSpecials - 1) * 3;
         final unit = (constraints.maxWidth - gapTotal) /
             (keys.length + specialUnitsTotal);
@@ -197,6 +220,7 @@ class _BottomKeyRow extends StatelessWidget {
         final backspaceWidth = unit * backspaceUnits;
         final checkWidth = unit * checkUnits;
         final rebusWidth = unit * rebusUnits;
+        final hideWidth = unit * hideUnits;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -239,6 +263,18 @@ class _BottomKeyRow extends StatelessWidget {
               onTap: onRebus,
               semanticLabel: 'Enter rebus',
               fontSize: 12,
+              icon: Icons.edit_note,
+            ),
+            const SizedBox(width: 3),
+            _SpecialKey(
+              label: '',
+              width: hideWidth,
+              color: Theme.of(context).colorScheme.primary,
+              textColor: Colors.white,
+              metrics: metrics,
+              onTap: onHideKeyboard,
+              semanticLabel: 'Hide keyboard',
+              icon: Icons.keyboard_hide,
             ),
           ],
         );
@@ -318,6 +354,7 @@ class _SpecialKey extends StatelessWidget {
     required this.onTap,
     required this.semanticLabel,
     this.fontSize = 14,
+    this.icon,
   });
 
   final String label;
@@ -332,6 +369,14 @@ class _SpecialKey extends StatelessWidget {
   /// instead (issue #179).
   final String semanticLabel;
   final double fontSize;
+
+  /// Optional icon shown alongside (or instead of) [label]. Null keeps the
+  /// original text-only rendering (⌫ / ✓). An empty [label] with an icon
+  /// renders icon-only, centered (the hide-keyboard key). A non-empty
+  /// [label] with an icon renders icon + text side by side (Rebus, #298 —
+  /// mirrors the floating cluster's Rebus icon so hiding the keyboard
+  /// doesn't change which symbol represents it).
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -356,16 +401,42 @@ class _SpecialKey extends StatelessWidget {
             ],
           ),
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-              height: 1,
-            ),
-          ),
+          child: _buildContent(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    final textStyle = TextStyle(
+      fontSize: fontSize,
+      fontWeight: FontWeight.w600,
+      color: textColor,
+      height: 1,
+    );
+
+    if (icon == null) {
+      return Text(label, style: textStyle);
+    }
+
+    if (label.isEmpty) {
+      return Icon(icon, size: 16, color: textColor);
+    }
+
+    // FittedBox guards against the label overflowing its allocated width —
+    // the row-math budgets a fixed share of the keyboard's width per key,
+    // but glyph metrics vary by platform font (e.g. San Francisco renders
+    // "Rebus" wider than Roboto at the same font size), so a fixed-size Row
+    // can overflow by a few pixels on some devices.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: textColor),
+          const SizedBox(width: 3),
+          Text(label, style: textStyle),
+        ],
       ),
     );
   }

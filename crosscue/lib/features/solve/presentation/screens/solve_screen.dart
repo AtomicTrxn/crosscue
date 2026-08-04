@@ -15,12 +15,14 @@ import 'package:crosscue/features/solve/domain/models/solve_errors.dart';
 import 'package:crosscue/features/solve/domain/services/solve_focus_navigator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_notifier.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/clue_columns_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_list_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/clue_panel.dart';
 import 'package:crosscue/features/solve/presentation/widgets/completion_sheet.dart';
 import 'package:crosscue/features/solve/presentation/widgets/crossword_grid.dart'
     show CrosswordGrid, showRebusDialogForFocus;
 import 'package:crosscue/features/solve/presentation/widgets/crossword_keyboard.dart';
+import 'package:crosscue/features/solve/presentation/widgets/keyboard_hidden_controls.dart';
 import 'package:crosscue/features/solve/presentation/widgets/pause_overlay.dart';
 import 'package:crosscue/features/solve/presentation/widgets/solve_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +48,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   Clue? _selectedCrossClue;
   bool _hapticsEnabled = true;
   bool _soundsEnabled = false;
+
+  /// Bottom space reserved in the clue panel/list when
+  /// [KeyboardHiddenControls] is floating over that same corner — tall
+  /// enough for its single row of 40dp buttons plus its bottom offset
+  /// (#298; the cluster is a horizontal `Row` now, not a stacked `Column`,
+  /// so it needs far less clearance than before).
+  static const _hiddenControlsReserve = 70.0;
+
+  /// Material's tablet breakpoint (shortest side, orientation-independent —
+  /// unlike `constraints.maxWidth`, which flips with rotation). Landscape
+  /// tablets get to keep the two-column [ClueColumnsPanel] permanently (see
+  /// [_buildLandscapeBody]); phones don't have the width to spare once the
+  /// keyboard is also on screen, so they keep toggling to the compact
+  /// [CluePanel] bar as before.
+  static const _kTabletShortestSide = 600.0;
 
   @override
   void initState() {
@@ -391,6 +408,38 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                   children: [
                     body,
 
+                    // Floating show-keyboard/Rebus cluster — the only way
+                    // back to the keyboard once it's hidden, now that the
+                    // old Settings toggle and app-bar escape hatch are gone
+                    // (#298). The right/bottom offsets deliberately match
+                    // CrosswordKeyboard's own Container padding
+                    // (EdgeInsets.fromLTRB(4, 6, 4, 8) — right:4, bottom:8)
+                    // so this cluster lands in essentially the same spot as
+                    // the Rebus/hide-keyboard keys it replaces when the
+                    // keyboard is visible — toggling reads as those two
+                    // buttons staying in place, not jumping corners.
+                    // MediaQuery insets are still added on top (both bottom
+                    // and right, since a rotated notch/Dynamic Island in
+                    // landscape encroaches from the side) rather than
+                    // nesting in a SafeArea, matching how the landscape body
+                    // already handles this.
+                    if (!isComplete && !showOnScreenKeyboard)
+                      Positioned(
+                        right: 4 + MediaQuery.of(context).padding.right,
+                        bottom: 8 + MediaQuery.of(context).padding.bottom,
+                        child: KeyboardHiddenControls(
+                          onShowKeyboard: () => ref
+                              .read(showOnScreenKeyboardProvider.notifier)
+                              .toggle(),
+                          onRebus: () => _openRebusDialog(
+                            context: context,
+                            solveState: solveState,
+                            hapticsEnabled: hapticsEnabled,
+                            soundsEnabled: soundsEnabled,
+                          ),
+                        ),
+                      ),
+
                     // Pause overlay — shown when paused and puzzle not yet complete
                     if (solveState.isPaused && !isComplete)
                       PauseOverlay(
@@ -434,6 +483,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     required bool soundsEnabled,
     required bool showOnScreenKeyboard,
   }) {
+    final isTablet =
+        MediaQuery.of(context).size.shortestSide >= _kTabletShortestSide;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -452,21 +504,27 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           ),
         ),
 
-        // Clue display — Across (top) + Down (bottom) at the focused cell,
-        // both full. Active is highlighted with ‹ › arrows; tap the other to
-        // switch. Expanded with no flex competitors so it takes exactly the
-        // space between grid and keyboard, leaving zero free space that
-        // could float the keyboard up.
+        // Clue display — see _buildClueArea (#298). Expanded with no flex
+        // competitors so it takes exactly the space between grid and
+        // keyboard, leaving zero free space that could float the keyboard
+        // up. Phones keep the compact bar even with the keyboard hidden — a
+        // portrait phone doesn't have the width for a scrollable list to
+        // earn its keep. Tablets get the same permanent two-column
+        // [ClueColumnsPanel] as landscape (#298 follow-up) — a portrait
+        // tablet has the width for two columns just as much as landscape
+        // does, so there's no reason to collapse to a single list or the
+        // compact bar here either.
         Expanded(
-          child: CluePanel(
-            activeClue: selectedActiveClue,
-            crossClue: selectedCrossClue,
-            onSelectClue: (clue) =>
-                _onClueSelected(solveState, clue, hapticsEnabled),
-            onPrev: () =>
-                _stepClue(solveState, selectedActiveClue, -1, hapticsEnabled),
-            onNext: () =>
-                _stepClue(solveState, selectedActiveClue, 1, hapticsEnabled),
+          child: _buildClueArea(
+            solveState: solveState,
+            selectedActiveClue: selectedActiveClue,
+            selectedCrossClue: selectedCrossClue,
+            isComplete: isComplete,
+            hapticsEnabled: hapticsEnabled,
+            showOnScreenKeyboard: showOnScreenKeyboard,
+            twoColumn: isTablet,
+            forceFullClueArea: isTablet,
+            forceCompactClueArea: !isTablet,
           ),
         ),
 
@@ -500,6 +558,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     required bool showOnScreenKeyboard,
   }) {
     final puzzle = solveState.puzzle;
+    final isTablet =
+        MediaQuery.of(context).size.shortestSide >= _kTabletShortestSide;
 
     // Left/right only — top is already covered by the AppBar and bottom is
     // handled by the manual padding below (matches the portrait layout's
@@ -536,52 +596,21 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                     );
                   },
                 ),
+                // Same compact-bar-vs-full-list toggle as portrait (#298) —
+                // a phone-width landscape window doesn't have room for both
+                // the CluePanel bar and a scrollable list above the keyboard
+                // at once, so only one shows at a time here too, exactly as
+                // it already did in portrait.
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Capped, not fixed: on a short landscape window (small
-                      // phone with the on-screen keyboard also showing) 120
-                      // may not fit — a hard SizedBox would overflow, this
-                      // shrinks instead (CluePanel itself scrolls/collapses
-                      // to the active clue only below its own threshold).
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 120),
-                        child: CluePanel(
-                          activeClue: selectedActiveClue,
-                          crossClue: selectedCrossClue,
-                          onSelectClue: (clue) => _onClueSelected(
-                            solveState,
-                            clue,
-                            hapticsEnabled,
-                          ),
-                          onPrev: () => _stepClue(
-                            solveState,
-                            selectedActiveClue,
-                            -1,
-                            hapticsEnabled,
-                          ),
-                          onNext: () => _stepClue(
-                            solveState,
-                            selectedActiveClue,
-                            1,
-                            hapticsEnabled,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ClueListPanel(
-                          clues: solveState.sortedClues,
-                          activeClue: selectedActiveClue,
-                          solveState: solveState,
-                          onSelectClue: (clue) => _onClueSelected(
-                            solveState,
-                            clue,
-                            hapticsEnabled,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: _buildClueArea(
+                    solveState: solveState,
+                    selectedActiveClue: selectedActiveClue,
+                    selectedCrossClue: selectedCrossClue,
+                    isComplete: isComplete,
+                    hapticsEnabled: hapticsEnabled,
+                    showOnScreenKeyboard: showOnScreenKeyboard,
+                    twoColumn: true,
+                    forceFullClueArea: isTablet,
                   ),
                 ),
               ],
@@ -599,6 +628,95 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
           SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
+    );
+  }
+
+  /// Clue display, shared by portrait and landscape — toggles between the
+  /// compact active/cross [CluePanel] bar (keyboard visible — screen space
+  /// is tight, and the ‹ › arrows are the primary way to move between
+  /// clues) and a full clue list (keyboard hidden — the freed-up room is
+  /// put to use showing every clue at once, tap-to-jump). Landscape used to
+  /// show the CluePanel bar and a list simultaneously, but a phone-width
+  /// landscape window doesn't have room for both plus the keyboard without
+  /// clipping (#298) — this makes the behavior identical in both
+  /// orientations instead. Caller wraps the result in `Expanded`.
+  ///
+  /// [twoColumn] picks which full-list widget shows when the keyboard is
+  /// hidden: tablets (both orientations) have the width for
+  /// [ClueColumnsPanel] — independently scrollable Across/Down columns that
+  /// keep the active clue *and* its cross clue both visible at once,
+  /// reviving the app's original two-column clue panel (removed in #154 for
+  /// the compact bar). Phones don't have the width for two columns, so they
+  /// keep the single-list [ClueListPanel] (landscape) or, per
+  /// [forceCompactClueArea] below, never reach the list at all (portrait).
+  ///
+  /// [forceFullClueArea] keeps that full-list widget showing even while the
+  /// keyboard is visible — set for tablets (both orientations), which have
+  /// room for [ClueColumnsPanel] plus the keyboard at once and shouldn't
+  /// collapse to the compact [CluePanel] bar just because the keyboard is up.
+  ///
+  /// [forceCompactClueArea] is the opposite override: keeps the compact
+  /// [CluePanel] bar showing even while the keyboard is hidden — set for
+  /// portrait phones, which don't have the width to make a scrollable list
+  /// worthwhile the way a tablet's two-column view does. Landscape phones
+  /// leave this false and keep the prior toggle-to-list-when-hidden
+  /// behavior. The two overrides are keyed off the same tablet/phone check
+  /// and never both apply to the same call site.
+  Widget _buildClueArea({
+    required SolveState solveState,
+    required Clue? selectedActiveClue,
+    required Clue? selectedCrossClue,
+    required bool isComplete,
+    required bool hapticsEnabled,
+    required bool showOnScreenKeyboard,
+    required bool twoColumn,
+    bool forceFullClueArea = false,
+    bool forceCompactClueArea = false,
+  }) {
+    assert(!(forceFullClueArea && forceCompactClueArea));
+    if ((!showOnScreenKeyboard && !forceCompactClueArea) ||
+        forceFullClueArea) {
+      return Padding(
+        // Reserves room at the bottom so the floating KeyboardHiddenControls
+        // cluster (which shares this same bottom-right corner) never sits on
+        // top of live clue text (#298) — it floats in genuinely empty space
+        // instead. Matches the cluster's own render condition exactly: the
+        // cluster only ever renders when the keyboard is hidden, regardless
+        // of forceFullClueArea, so the reserve stays tied to that.
+        padding: EdgeInsets.only(
+          bottom: !isComplete && !showOnScreenKeyboard
+              ? _hiddenControlsReserve
+              : 0,
+        ),
+        child: twoColumn
+            ? ClueColumnsPanel(
+                clues: solveState.sortedClues,
+                activeClue: selectedActiveClue,
+                crossClue: selectedCrossClue,
+                solveState: solveState,
+                onSelectClue: (clue) =>
+                    _onClueSelected(solveState, clue, hapticsEnabled),
+              )
+            : ClueListPanel(
+                clues: solveState.sortedClues,
+                activeClue: selectedActiveClue,
+                crossClue: selectedCrossClue,
+                solveState: solveState,
+                onSelectClue: (clue) =>
+                    _onClueSelected(solveState, clue, hapticsEnabled),
+              ),
+      );
+    }
+
+    return CluePanel(
+      activeClue: selectedActiveClue,
+      crossClue: selectedCrossClue,
+      onSelectClue: (clue) =>
+          _onClueSelected(solveState, clue, hapticsEnabled),
+      onPrev: () =>
+          _stepClue(solveState, selectedActiveClue, -1, hapticsEnabled),
+      onNext: () =>
+          _stepClue(solveState, selectedActiveClue, 1, hapticsEnabled),
     );
   }
 
@@ -642,6 +760,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         hapticsEnabled: hapticsEnabled,
         soundsEnabled: soundsEnabled,
       ),
+      onHideKeyboard: () =>
+          ref.read(showOnScreenKeyboardProvider.notifier).toggle(),
     );
   }
 

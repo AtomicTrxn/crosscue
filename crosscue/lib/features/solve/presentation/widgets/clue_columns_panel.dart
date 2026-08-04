@@ -6,13 +6,22 @@ import 'package:crosscue/features/solve/domain/services/clue_progress_calculator
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
 import 'package:flutter/material.dart';
 
-/// Scrollable Across/Down clue list for the landscape solve layout — lets a
-/// solver scan and jump to any clue instead of stepping one at a time via the
-/// grid, freeing up the extra horizontal room landscape (esp. tablet)
-/// provides. See [CluePanel] for the compact active/cross clue bar this
-/// complements.
-class ClueListPanel extends StatefulWidget {
-  const ClueListPanel({
+/// Two independently scrollable Across / Down clue lists, side by side —
+/// the landscape-only counterpart to [ClueListPanel]'s single merged list.
+///
+/// This is a revival of the app's original two-column clue panel (removed
+/// in #154 when the solve screen's clue area became the compact two-clue
+/// [CluePanel] bar) — brought back because a single merged list can't show
+/// the active clue and its cross clue at once without scrolling between
+/// Across and Down sections. Landscape has the width to spare for two
+/// columns; portrait doesn't, so it keeps the single-list [ClueListPanel].
+///
+/// Each column tracks whichever of [activeClue] / [crossClue] belongs to
+/// its own direction and auto-scrolls to keep it in view — so selecting a
+/// clue in one column (tap-to-jump, same as [ClueListPanel]) scrolls the
+/// *other* column to reveal the resulting cross clue.
+class ClueColumnsPanel extends StatelessWidget {
+  const ClueColumnsPanel({
     super.key,
     required this.clues,
     required this.activeClue,
@@ -23,63 +32,107 @@ class ClueListPanel extends StatefulWidget {
 
   /// All clues, sorted (see `SolveState.sortedClues`).
   final List<Clue> clues;
-
-  /// The clue currently being filled — highlighted and auto-scrolled to.
   final Clue? activeClue;
-
-  /// The perpendicular clue at the focused cell, if any — tinted with the
-  /// Color Guide's dedicated `cluePanelCrossRow` token, same as [CluePanel]'s
-  /// cross row.
   final Clue? crossClue;
-
   final SolveState solveState;
   final ValueChanged<Clue> onSelectClue;
 
   @override
-  State<ClueListPanel> createState() => _ClueListPanelState();
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _ClueColumn(
+            direction: Direction.across,
+            label: 'Across',
+            clues: clues,
+            activeClue: activeClue,
+            crossClue: crossClue,
+            solveState: solveState,
+            onSelectClue: onSelectClue,
+          ),
+        ),
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: context.crosscueDivider,
+        ),
+        Expanded(
+          child: _ClueColumn(
+            direction: Direction.down,
+            label: 'Down',
+            clues: clues,
+            activeClue: activeClue,
+            crossClue: crossClue,
+            solveState: solveState,
+            onSelectClue: onSelectClue,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-/// Uniform row height for every list entry (section headers included) so the
-/// active clue's scroll offset can be computed directly from its index
-/// instead of relying on `Scrollable.ensureVisible`, which silently no-ops
-/// for rows the lazy `ListView` hasn't mounted yet — the common case for a
-/// full-size (15×15+) puzzle where the active clue is far from the top.
 const double _rowExtent = 56;
 
-sealed class _ListEntry {
-  const _ListEntry();
-}
+class _ClueColumn extends StatefulWidget {
+  const _ClueColumn({
+    required this.direction,
+    required this.label,
+    required this.clues,
+    required this.activeClue,
+    required this.crossClue,
+    required this.solveState,
+    required this.onSelectClue,
+  });
 
-class _HeaderEntry extends _ListEntry {
-  const _HeaderEntry(this.label);
+  final Direction direction;
   final String label;
+  final List<Clue> clues;
+  final Clue? activeClue;
+  final Clue? crossClue;
+  final SolveState solveState;
+  final ValueChanged<Clue> onSelectClue;
+
+  @override
+  State<_ClueColumn> createState() => _ClueColumnState();
 }
 
-class _ClueEntry extends _ListEntry {
-  const _ClueEntry(this.clue);
-  final Clue clue;
-}
-
-class _ClueListPanelState extends State<ClueListPanel> {
+class _ClueColumnState extends State<_ClueColumn> {
   final _scrollController = ScrollController();
+
+  /// The clue this column should track and keep in view — [activeClue] if
+  /// it's this column's direction (the solver is filling this direction),
+  /// otherwise [crossClue] if that's this column's direction (the solver
+  /// is filling the *other* direction and this column shows where their
+  /// current cell crosses into this one).
+  Clue? get _tracked {
+    final active = widget.activeClue;
+    if (active != null && active.direction == widget.direction) return active;
+    final cross = widget.crossClue;
+    if (cross != null && cross.direction == widget.direction) return cross;
+    return null;
+  }
+
+  List<Clue> get _columnClues =>
+      widget.clues.where((c) => c.direction == widget.direction).toList();
 
   @override
   void initState() {
     super.initState();
-    // Land on the active clue on first build too (e.g. rotating into
-    // landscape mid-puzzle), not just on later changes.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToActive());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTracked());
   }
 
   @override
-  void didUpdateWidget(covariant ClueListPanel oldWidget) {
+  void didUpdateWidget(covariant _ClueColumn oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final active = widget.activeClue;
-    final changed = active != null &&
-        (oldWidget.activeClue?.number != active.number ||
-            oldWidget.activeClue?.direction != active.direction);
+    final old = _trackedFor(oldWidget);
+    final current = _tracked;
+    final changed = current != null &&
+        (old?.number != current.number || old?.direction != current.direction);
     if (changed) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToActive());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTracked());
     }
   }
 
@@ -89,28 +142,22 @@ class _ClueListPanelState extends State<ClueListPanel> {
     super.dispose();
   }
 
-  List<_ListEntry> _buildEntries() {
-    final across = widget.clues.where((c) => c.direction == Direction.across);
-    final down = widget.clues.where((c) => c.direction == Direction.down);
-    return [
-      if (across.isNotEmpty) const _HeaderEntry('Across'),
-      for (final clue in across) _ClueEntry(clue),
-      if (down.isNotEmpty) const _HeaderEntry('Down'),
-      for (final clue in down) _ClueEntry(clue),
-    ];
+  Clue? _trackedFor(_ClueColumn widget) {
+    final active = widget.activeClue;
+    if (active != null && active.direction == widget.direction) return active;
+    final cross = widget.crossClue;
+    if (cross != null && cross.direction == widget.direction) return cross;
+    return null;
   }
 
-  void _scrollToActive() {
+  void _scrollToTracked() {
     if (!mounted || !_scrollController.hasClients) return;
-    final active = widget.activeClue;
-    if (active == null) return;
+    final tracked = _tracked;
+    if (tracked == null) return;
 
-    final entries = _buildEntries();
-    final index = entries.indexWhere(
-      (e) =>
-          e is _ClueEntry &&
-          e.clue.number == active.number &&
-          e.clue.direction == active.direction,
+    final columnClues = _columnClues;
+    final index = columnClues.indexWhere(
+      (c) => c.number == tracked.number && c.direction == tracked.direction,
     );
     if (index < 0) return;
 
@@ -126,20 +173,22 @@ class _ClueListPanelState extends State<ClueListPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final entries = _buildEntries();
+    final columnClues = _columnClues;
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemExtent: _rowExtent,
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return switch (entry) {
-          _HeaderEntry(:final label) => _SectionHeader(label),
-          _ClueEntry(:final clue) => _row(clue),
-        };
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ColumnHeader(widget.label),
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemExtent: _rowExtent,
+            itemCount: columnClues.length,
+            itemBuilder: (context, index) => _row(columnClues[index]),
+          ),
+        ),
+      ],
     );
   }
 
@@ -149,11 +198,11 @@ class _ClueListPanelState extends State<ClueListPanel> {
     final crossActive = !active &&
         widget.crossClue?.number == clue.number &&
         widget.crossClue?.direction == clue.direction;
-    // "Filled", not "correct" — this is a progress marker, not a free
-    // checker. Using solution-correctness here would silently tell the
-    // solver an answer is right without them ever using Check/Reveal.
+    // "Filled", not "correct" — a progress marker, not a free checker. Using
+    // solution-correctness would silently tell the solver an answer is right
+    // without them ever using Check/Reveal.
     final filled = _isClueFilled(widget.solveState, clue);
-    return _ClueListRow(
+    return _ClueColumnRow(
       clue: clue,
       active: active,
       crossActive: crossActive,
@@ -170,8 +219,8 @@ class _ClueListPanelState extends State<ClueListPanel> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
+class _ColumnHeader extends StatelessWidget {
+  const _ColumnHeader(this.label);
 
   final String label;
 
@@ -182,7 +231,7 @@ class _SectionHeader extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(
-          label,
+          label.toUpperCase(),
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,
@@ -195,8 +244,8 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _ClueListRow extends StatelessWidget {
-  const _ClueListRow({
+class _ClueColumnRow extends StatelessWidget {
+  const _ClueColumnRow({
     required this.clue,
     required this.active,
     required this.crossActive,
@@ -206,9 +255,6 @@ class _ClueListRow extends StatelessWidget {
 
   final Clue clue;
   final bool active;
-
-  /// The perpendicular clue at the focused cell — tinted, not fully
-  /// highlighted, so it reads as secondary to [active].
   final bool crossActive;
   final bool filled;
   final VoidCallback onTap;
@@ -241,7 +287,7 @@ class _ClueListRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: 28,
+                  width: 22,
                   child: Text(
                     '${clue.number}',
                     style: TextStyle(

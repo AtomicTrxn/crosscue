@@ -108,14 +108,11 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Skip filled cells',
             subtitle: 'Jump over filled letters while typing',
           ),
-          SettingsSwitchRow(
-            value: ref.watch(showOnScreenKeyboardProvider),
-            onChanged: (_) =>
-                ref.read(showOnScreenKeyboardProvider.notifier).toggle(),
-            leading: Icons.keyboard_hide_outlined,
-            title: 'On-screen keyboard',
-            subtitle: 'Turn off if you use a physical or Bluetooth keyboard',
-          ),
+          // On-screen keyboard visibility moved out of Settings (#298) — it's
+          // now an always-in-context control on the solve screen itself
+          // (embedded in the keyboard when shown, floating when hidden), so
+          // Bluetooth-keyboard solvers don't have to leave the puzzle to
+          // toggle it. showOnScreenKeyboardProvider still backs it.
 
           // ── Puzzles ────────────────────────────────────────────────────────
           const SettingsSectionHeader('Puzzles'),

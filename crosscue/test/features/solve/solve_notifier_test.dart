@@ -214,6 +214,87 @@ void main() {
     );
   });
 
+  // ----------------------------------------------------------------------
+  // Physical-keyboard arrow-key navigation — moveFocusStep (#298)
+  // ----------------------------------------------------------------------
+
+  test('moveFocusStep skips over a single black square', () async {
+    final puzzle = _blackSquarePuzzle();
+    final container = _containerFor(puzzle, _blackSquareBlankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.moveFocusTo(0, 3, Direction.across); // 'B', just past col1-2 black
+    final focus = notifier.moveFocusStep(0, 1, Direction.across);
+
+    // col4 is black; the next white cell is col5 ('C').
+    expect(focus, const FocusPosition(row: 0, col: 5, direction: Direction.across));
+  });
+
+  test('moveFocusStep skips over multiple consecutive black squares',
+      () async {
+    final puzzle = _blackSquarePuzzle();
+    final container = _containerFor(puzzle, _blackSquareBlankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.moveFocusTo(0, 0, Direction.across); // 'A'; col1 and col2 are black
+    final focus = notifier.moveFocusStep(0, 1, Direction.across);
+
+    expect(focus, const FocusPosition(row: 0, col: 3, direction: Direction.across));
+  });
+
+  test('moveFocusStep returns null when it runs off the grid edge', () async {
+    final puzzle = _blackSquarePuzzle();
+    final container = _containerFor(puzzle, _blackSquareBlankProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    notifier.moveFocusTo(0, 5, Direction.across); // last cell, 'C'
+    final focus = notifier.moveFocusStep(0, 1, Direction.across);
+
+    expect(focus, isNull);
+    // Focus itself is unchanged — matches moveFocusTo's existing
+    // out-of-bounds behavior.
+    final solveState = container.read(provider).value!;
+    expect(
+      solveState.focus,
+      const FocusPosition(row: 0, col: 5, direction: Direction.across),
+    );
+  });
+
+  // ----------------------------------------------------------------------
+  // Physical-keyboard direction toggle — space bar (#298)
+  // ----------------------------------------------------------------------
+
+  test('toggleDirection flips Across to Down at the current cell', () async {
+    final puzzle = _crossingPuzzle();
+    final container = _containerFor(puzzle, _crossingProgress());
+    addTearDown(container.dispose);
+
+    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+    await container.read(provider.future);
+
+    final notifier = container.read(provider.notifier);
+    // (0, 1) is covered by both the across clue and the down clue.
+    notifier.moveFocusTo(0, 1, Direction.across);
+    notifier.toggleDirection();
+
+    final solveState = container.read(provider).value!;
+    expect(solveState.focus.direction, Direction.down);
+    expect(solveState.focus.row, 0);
+    expect(solveState.focus.col, 1);
+  });
+
   test('completing a word advances to the next incomplete clue', () async {
     final puzzle = _twoWordPuzzle();
     final container = _containerFor(puzzle, _twoWordAlmostCompleteProgress());
@@ -925,6 +1006,81 @@ Grid<CellProgress> _skipWrapProgress() {
     height: 1,
     cells: const [
       CellProgress(letter: 'A'),
+      CellProgress.blank,
+      CellProgress.blank,
+    ],
+  );
+}
+
+/// Single row with two black squares breaking it into three separate
+/// one-letter across words: A | ■ ■ | B | ■ | C. Backs the arrow-key
+/// traversal tests (#298) — the single gap between B/C exercises stepping
+/// over one black square, the double gap between A/B exercises stepping
+/// over consecutive black squares, and stepping right from C exercises
+/// running off the grid edge with no landing cell.
+Puzzle _blackSquarePuzzle() {
+  return Puzzle(
+    metadata: PuzzleMetadata(
+      id: 'test:black-square',
+      sourceId: 'test',
+      title: 'Black Square',
+      author: 'Tester',
+      copyright: '',
+      format: PuzzleFormat.puz,
+      width: 6,
+      height: 1,
+      importedAt: DateTime.utc(2026),
+    ),
+    grid: Grid(
+      width: 6,
+      height: 1,
+      cells: const [
+        SolutionCell(solution: 'A', number: 1),
+        SolutionCell.black,
+        SolutionCell.black,
+        SolutionCell(solution: 'B', number: 2),
+        SolutionCell.black,
+        SolutionCell(solution: 'C', number: 3),
+      ],
+    ),
+    clues: const [
+      Clue(
+        number: 1,
+        direction: Direction.across,
+        text: 'A',
+        startRow: 0,
+        startCol: 0,
+        length: 1,
+      ),
+      Clue(
+        number: 2,
+        direction: Direction.across,
+        text: 'B',
+        startRow: 0,
+        startCol: 3,
+        length: 1,
+      ),
+      Clue(
+        number: 3,
+        direction: Direction.across,
+        text: 'C',
+        startRow: 0,
+        startCol: 5,
+        length: 1,
+      ),
+    ],
+  );
+}
+
+Grid<CellProgress> _blackSquareBlankProgress() {
+  return Grid(
+    width: 6,
+    height: 1,
+    cells: const [
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
+      CellProgress.blank,
       CellProgress.blank,
       CellProgress.blank,
     ],

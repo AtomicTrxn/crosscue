@@ -178,9 +178,13 @@ extension _CrosswordGridInput on _CrosswordGridState {
         final focus = clue == null ? null : notifier.focusClue(clue);
         if (focus != null) widget.onGridFocusSelected?.call(focus);
       } else {
-        final focus = notifier.moveFocusTo(
-              currentFocus.row + arrowMove.$1,
-              currentFocus.col + arrowMove.$2,
+        // Steps in the arrow's direction, skipping over black squares,
+        // rather than stopping at the first one (#298). Falls back to
+        // flipping direction in place when the step runs off the grid
+        // edge with no white cell found — same as before this fix.
+        final focus = notifier.moveFocusStep(
+              arrowMove.$1,
+              arrowMove.$2,
               arrowMove.$3,
             ) ??
             notifier.moveFocusTo(
@@ -190,6 +194,14 @@ extension _CrosswordGridInput on _CrosswordGridState {
             );
         if (focus != null) widget.onGridFocusSelected?.call(focus);
       }
+      return KeyEventResult.handled;
+    }
+
+    // Toggles Across/Down at the current cell — matches NYT-style crossword
+    // UIs, and is the only way a Bluetooth-only solver (no touchscreen tap)
+    // can flip direction without moving (#298).
+    if (event.logicalKey == LogicalKeyboardKey.space) {
+      if (event is! KeyRepeatEvent) notifier.toggleDirection();
       return KeyEventResult.handled;
     }
 
@@ -403,19 +415,29 @@ class _RebusDialogState extends State<RebusDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Enter rebus'),
+      // Scrollable so the dialog fits above the keyboard in phone landscape
+      // (#298). No title — the field's label carries the context, leaving
+      // just two rows: the field, then the buttons.
+      //
+      // Keep the buttons in `actions`: the app's FilledButton theme sets
+      // minimumSize: Size.fromHeight(46) (= infinite min width), which under
+      // AlertDialog's IntrinsicWidth + SingleChildScrollView throws
+      // "BoxConstraints forces an infinite width" — a silently blank dialog
+      // in release. Same reason the Enter button overrides minimumSize below,
+      // without which OverflowBar stacks the two actions vertically.
+      scrollable: true,
       content: TextField(
         controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.characters,
         maxLength: SolveNotifier.rebusMaxLength,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(_rebusFilterRe),
-        ],
+        inputFormatters: [FilteringTextInputFormatter.allow(_rebusFilterRe)],
         decoration: const InputDecoration(
+          isDense: true,
+          counterText: '',
           labelText: 'Cell answer',
           // Mention "/" so users discover bidirectional rebuses.
-          hintText: 'Example: EST  (or PB/AU for bidirectional)',
+          hintText: 'EST  (or PB/AU)',
         ),
         onSubmitted: (value) =>
             Navigator.of(context).pop(RebusOutcomeEntered(value)),
@@ -427,6 +449,10 @@ class _RebusDialogState extends State<RebusDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 46),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+          ),
           onPressed: () =>
               Navigator.of(context).pop(RebusOutcomeEntered(_controller.text)),
           child: const Text('Enter'),

@@ -80,4 +80,28 @@ mixin _SolveNavigation on _$SolveNotifier {
     state = AsyncData(s.copyWith(focus: focus));
     return focus;
   }
+
+  /// Steps focus from the current cell by ([dRow], [dCol]) repeatedly,
+  /// skipping over black cells, and lands on the first white cell found.
+  /// Backs arrow-key navigation (#298) — a physical/Bluetooth keyboard's
+  /// arrow keys must traverse over black squares the way NYT-style
+  /// crossword UIs do, not stop dead at the first one.
+  ///
+  /// Returns null (leaving focus unchanged) if the grid edge is reached
+  /// with no white cell found, matching [moveFocusTo]'s existing
+  /// out-of-bounds behavior.
+  FocusPosition? moveFocusStep(int dRow, int dCol, Direction direction) {
+    final s = _s;
+    if (s == null) return null;
+    var row = s.focus.row + dRow;
+    var col = s.focus.col + dCol;
+    while (s.puzzle.grid.inBounds(row, col)) {
+      if (!s.puzzle.grid.cell(row, col).isBlack) {
+        return moveFocusTo(row, col, direction);
+      }
+      row += dRow;
+      col += dCol;
+    }
+    return null;
+  }
 }
