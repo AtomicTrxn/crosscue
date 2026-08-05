@@ -8,6 +8,7 @@ import 'package:crosscue/core/domain/models/puzzle_metadata.dart';
 import 'package:crosscue/core/domain/models/solution_cell.dart';
 import 'package:crosscue/core/utils/result.dart';
 import 'package:crosscue/features/home/presentation/notifiers/past_puzzles_notifier.dart';
+import 'package:crosscue/features/home/presentation/notifiers/past_puzzles_state.dart';
 import 'package:crosscue/features/home/presentation/providers/home_providers.dart';
 import 'package:crosscue/features/import/data/downloaders/crosshare_downloader.dart';
 import 'package:crosscue/features/import/domain/models/crosshare_entry.dart';
@@ -235,6 +236,49 @@ void main() {
       container.read(pastPuzzlesProvider.future),
       throwsA(anything),
     );
+  });
+
+  test(
+      'retry after a failed initial load succeeds instead of throwing '
+      'LateInitializationError', () async {
+    // Regression test for a real crash found in on-device review: the
+    // Retry button on a failed initial load calls
+    // `ref.invalidate(pastPuzzlesProvider)` (past_puzzles_section.dart).
+    // With an active listener still watching the provider (as the real
+    // "Today" screen does), Riverpod re-invokes build() on the *same*
+    // Notifier instance rather than creating a fresh one — a `late final`
+    // field assigned in build() throws on that second assignment. Keeping
+    // a listener open below is what makes this test exercise that path
+    // instead of Riverpod just handing back a fresh, unaffected instance.
+    downloader.monthResponses[(2026, 5)] =
+        const Err(CrosshareFetchMonthError.networkError);
+
+    final container = _container(downloader: downloader, repo: repo);
+    addTearDown(container.dispose);
+    // Keep a listener open across the retry, the same way the real "Today"
+    // screen's `ref.watch(pastPuzzlesProvider)` does — without one, this
+    // autoDispose provider has zero listeners between statements and
+    // `invalidate()` just recreates a fresh, unaffected instance instead of
+    // rebuilding the existing one, silently failing to exercise the bug.
+    final events = <AsyncValue<PastPuzzlesState>>[];
+    final sub = container.listen(
+      pastPuzzlesProvider,
+      (_, next) => events.add(next),
+      fireImmediately: true,
+    );
+    addTearDown(sub.close);
+
+    await pumpEventQueue();
+    expect(events.last.hasError, isTrue);
+
+    downloader.monthResponses[(2026, 5)] = Ok([
+      _entry(id: 'yest', date: DateTime(2026, 5, 13)),
+    ]);
+    container.invalidate(pastPuzzlesProvider);
+    await pumpEventQueue();
+
+    final state = events.last.requireValue;
+    expect(state.items.map((i) => i.entry.id), ['yest']);
   });
 
   test('loadMore: appends the previous month', () async {
