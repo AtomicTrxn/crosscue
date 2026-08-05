@@ -129,7 +129,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   }
 
   void _maybeShowCompletionSheet(SolveState solveState) {
-    final isComplete = solveState.status == PuzzleStatus.solved ||
+    final isComplete =
+        solveState.status == PuzzleStatus.solved ||
         solveState.status == PuzzleStatus.solvedWithHelp ||
         solveState.status == PuzzleStatus.solvedWithReveal ||
         solveState.status == PuzzleStatus.revealed;
@@ -273,10 +274,11 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     bool hapticsEnabled,
   ) {
     if (active == null) return;
-    final clues = solveState.puzzle.clues
-        .where((c) => c.direction == active.direction)
-        .toList()
-      ..sort((a, b) => a.number.compareTo(b.number));
+    final clues =
+        solveState.puzzle.clues
+            .where((c) => c.direction == active.direction)
+            .toList()
+          ..sort((a, b) => a.number.compareTo(b.number));
     if (clues.isEmpty) return;
     final i = clues.indexWhere(
       (c) => c.number == active.number && c.direction == active.direction,
@@ -312,9 +314,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     final showOnScreenKeyboard = ref.watch(showOnScreenKeyboardProvider);
 
     return solveAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) {
         final message = switch (e) {
           PuzzleNotFoundError() =>
@@ -333,10 +334,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                 children: [
                   const Icon(Icons.error_outline, size: 48),
                   const SizedBox(height: 16),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(message, textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => context.canPop()
@@ -354,7 +352,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         final puzzle = solveState.puzzle;
         final selectedActiveClue = _selectedActiveClue ?? solveState.activeClue;
         final selectedCrossClue = _selectedCrossClue ?? solveState.crossClue;
-        final isComplete = solveState.status == PuzzleStatus.solved ||
+        final isComplete =
+            solveState.status == PuzzleStatus.solved ||
             solveState.status == PuzzleStatus.solvedWithHelp ||
             solveState.status == PuzzleStatus.solvedWithReveal ||
             solveState.status == PuzzleStatus.revealed;
@@ -493,9 +492,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         // min(width/cols, height/rows) so it renders correctly within any
         // tight height bound.
         ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: constraints.maxHeight * 0.55,
-          ),
+          constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.55),
           child: CrosswordGrid(
             puzzleId: widget.puzzleId,
             solveState: solveState,
@@ -583,8 +580,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
                         availableHeight * puzzle.width / puzzle.height;
                     // Cap so the clue list always keeps meaningful room, even
                     // for a near-square puzzle in a narrow landscape window.
-                    final gridWidth =
-                        math.min(aspectWidth, constraints.maxWidth * 0.6);
+                    final gridWidth = math.min(
+                      aspectWidth,
+                      constraints.maxWidth * 0.6,
+                    );
                     return SizedBox(
                       width: gridWidth,
                       child: CrosswordGrid(
@@ -674,8 +673,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     bool forceCompactClueArea = false,
   }) {
     assert(!(forceFullClueArea && forceCompactClueArea));
-    if ((!showOnScreenKeyboard && !forceCompactClueArea) ||
-        forceFullClueArea) {
+    if ((!showOnScreenKeyboard && !forceCompactClueArea) || forceFullClueArea) {
       return Padding(
         // Reserves room at the bottom so the floating KeyboardHiddenControls
         // cluster (which shares this same bottom-right corner) never sits on
@@ -711,8 +709,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     return CluePanel(
       activeClue: selectedActiveClue,
       crossClue: selectedCrossClue,
-      onSelectClue: (clue) =>
-          _onClueSelected(solveState, clue, hapticsEnabled),
+      onSelectClue: (clue) => _onClueSelected(solveState, clue, hapticsEnabled),
       onPrev: () =>
           _stepClue(solveState, selectedActiveClue, -1, hapticsEnabled),
       onNext: () =>
@@ -733,8 +730,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       soundsEnabled: soundsEnabled,
       onFeedbackSound: () => _playFeedbackSound(soundsEnabled: soundsEnabled),
       onLetter: (l) {
-        final wordComplete =
-            ref.read(solveProvider(widget.puzzleId).notifier).inputLetter(l);
+        final wordComplete = ref
+            .read(solveProvider(widget.puzzleId).notifier)
+            .inputLetter(l);
         if (wordComplete && hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
@@ -745,8 +743,9 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       onBackspace: () =>
           ref.read(solveProvider(widget.puzzleId).notifier).backspace(),
       onCheckWord: () {
-        final result =
-            ref.read(solveProvider(widget.puzzleId).notifier).checkWord();
+        final result = ref
+            .read(solveProvider(widget.puzzleId).notifier)
+            .checkWord();
         if (result.shouldVibrate && hapticsEnabled) {
           HapticFeedback.vibrate();
         }

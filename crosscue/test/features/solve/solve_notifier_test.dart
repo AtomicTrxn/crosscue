@@ -48,8 +48,7 @@ void main() {
     );
   });
 
-  test(
-      'flips to PuzzleNotFoundError when its puzzle is deleted while open '
+  test('flips to PuzzleNotFoundError when its puzzle is deleted while open '
       '(reactive-teardown regression)', () async {
     final puzzle = _puzzle();
     final exists = StreamController<bool>();
@@ -77,48 +76,52 @@ void main() {
     expect(state.error, isA<PuzzleNotFoundError>());
   });
 
-  test('backspace clears current cell before retreating within the word',
-      () async {
-    final puzzle = _puzzle();
-    final container = _containerFor(puzzle, _blankProgress());
-    addTearDown(container.dispose);
+  test(
+    'backspace clears current cell before retreating within the word',
+    () async {
+      final puzzle = _puzzle();
+      final container = _containerFor(puzzle, _blankProgress());
+      addTearDown(container.dispose);
 
-    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
-    await container.read(provider.future);
+      final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+      await container.read(provider.future);
 
-    final notifier = container.read(provider.notifier);
-    notifier.inputLetter('A');
-    notifier.inputLetter('X');
+      final notifier = container.read(provider.notifier);
+      notifier.inputLetter('A');
+      notifier.inputLetter('X');
 
-    notifier.backspace();
-    var solveState = container.read(provider).value!;
-    expect(
-      solveState.focus,
-      const FocusPosition(row: 0, col: 1, direction: Direction.across),
-    );
-    expect(solveState.progress.cell(0, 1).letter, isEmpty);
-    expect(solveState.progress.cell(0, 0).letter, equals('A'));
+      notifier.backspace();
+      var solveState = container.read(provider).value!;
+      expect(
+        solveState.focus,
+        const FocusPosition(row: 0, col: 1, direction: Direction.across),
+      );
+      expect(solveState.progress.cell(0, 1).letter, isEmpty);
+      expect(solveState.progress.cell(0, 0).letter, equals('A'));
 
-    notifier.backspace();
-    solveState = container.read(provider).value!;
-    expect(
-      solveState.focus,
-      const FocusPosition(row: 0, col: 0, direction: Direction.across),
-    );
-    expect(solveState.progress.cell(0, 0).letter, isEmpty);
-  });
+      notifier.backspace();
+      solveState = container.read(provider).value!;
+      expect(
+        solveState.focus,
+        const FocusPosition(row: 0, col: 0, direction: Direction.across),
+      );
+      expect(solveState.progress.cell(0, 0).letter, isEmpty);
+    },
+  );
 
   test('checking final correct grid completes the puzzle as checked', () async {
     final puzzle = _puzzle();
     final solveRepository = _FakeSolveRepository(_filledProgress());
     final container = ProviderContainer(
       overrides: [
-        importRepositoryProvider
-            .overrideWithValue(_FakeImportRepository(puzzle)),
+        importRepositoryProvider.overrideWithValue(
+          _FakeImportRepository(puzzle),
+        ),
         solveRepositoryProvider.overrideWithValue(solveRepository),
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-        appSettingsProvider
-            .overrideWithValue(const _FakeAppSettingsRepository()),
+        appSettingsProvider.overrideWithValue(
+          const _FakeAppSettingsRepository(),
+        ),
         bootSettingsProvider.overrideWithValue(BootSettings.defaults),
       ],
     );
@@ -150,10 +153,7 @@ void main() {
 
     final solveState = container.read(provider).value!;
     expect(solveState.progress.cell(0, 0).letter, equals('A'));
-    expect(
-      solveState.progress.cell(0, 0).state,
-      CellState.checkedCorrect,
-    );
+    expect(solveState.progress.cell(0, 0).state, CellState.checkedCorrect);
   });
 
   test('tapping filled cells keeps focus on the tapped cell', () async {
@@ -172,22 +172,24 @@ void main() {
     );
   });
 
-  test('tapping a checked-correct cell moves to perpendicular open cell',
-      () async {
-    final puzzle = _crossingPuzzle();
-    final container = _containerFor(puzzle, _checkedCrossingProgress());
-    addTearDown(container.dispose);
+  test(
+    'tapping a checked-correct cell moves to perpendicular open cell',
+    () async {
+      final puzzle = _crossingPuzzle();
+      final container = _containerFor(puzzle, _checkedCrossingProgress());
+      addTearDown(container.dispose);
 
-    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
-    await container.read(provider.future);
+      final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+      await container.read(provider.future);
 
-    final focus = container.read(provider.notifier).tapCell(0, 1);
+      final focus = container.read(provider.notifier).tapCell(0, 1);
 
-    expect(
-      focus,
-      const FocusPosition(row: 1, col: 1, direction: Direction.down),
-    );
-  });
+      expect(
+        focus,
+        const FocusPosition(row: 1, col: 1, direction: Direction.down),
+      );
+    },
+  );
 
   test('skip filled cells wraps within the active word', () async {
     final puzzle = _threeCellPuzzle();
@@ -231,11 +233,13 @@ void main() {
     final focus = notifier.moveFocusStep(0, 1, Direction.across);
 
     // col4 is black; the next white cell is col5 ('C').
-    expect(focus, const FocusPosition(row: 0, col: 5, direction: Direction.across));
+    expect(
+      focus,
+      const FocusPosition(row: 0, col: 5, direction: Direction.across),
+    );
   });
 
-  test('moveFocusStep skips over multiple consecutive black squares',
-      () async {
+  test('moveFocusStep skips over multiple consecutive black squares', () async {
     final puzzle = _blackSquarePuzzle();
     final container = _containerFor(puzzle, _blackSquareBlankProgress());
     addTearDown(container.dispose);
@@ -244,10 +248,17 @@ void main() {
     await container.read(provider.future);
 
     final notifier = container.read(provider.notifier);
-    notifier.moveFocusTo(0, 0, Direction.across); // 'A'; col1 and col2 are black
+    notifier.moveFocusTo(
+      0,
+      0,
+      Direction.across,
+    ); // 'A'; col1 and col2 are black
     final focus = notifier.moveFocusStep(0, 1, Direction.across);
 
-    expect(focus, const FocusPosition(row: 0, col: 3, direction: Direction.across));
+    expect(
+      focus,
+      const FocusPosition(row: 0, col: 3, direction: Direction.across),
+    );
   });
 
   test('moveFocusStep returns null when it runs off the grid edge', () async {
@@ -412,12 +423,14 @@ void main() {
     final solveRepository = _FakeSolveRepository(_blankProgress2x1());
     final container = ProviderContainer(
       overrides: [
-        importRepositoryProvider
-            .overrideWithValue(_FakeImportRepository(puzzle)),
+        importRepositoryProvider.overrideWithValue(
+          _FakeImportRepository(puzzle),
+        ),
         solveRepositoryProvider.overrideWithValue(solveRepository),
         statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-        appSettingsProvider
-            .overrideWithValue(const _FakeAppSettingsRepository()),
+        appSettingsProvider.overrideWithValue(
+          const _FakeAppSettingsRepository(),
+        ),
         bootSettingsProvider.overrideWithValue(BootSettings.defaults),
       ],
     );
@@ -473,7 +486,8 @@ void main() {
       expect(
         initialState,
         isNotNull,
-        reason: 'SolveNotifier.build did not complete after '
+        reason:
+            'SolveNotifier.build did not complete after '
             'flushMicrotasks; test fakes may be using real-time async.',
       );
       expect(initialState!.elapsedSeconds, 0);
@@ -491,7 +505,8 @@ void main() {
       expect(
         afterTickState.elapsedSeconds,
         0,
-        reason: 'SolveState.elapsedSeconds must not advance on wall-clock '
+        reason:
+            'SolveState.elapsedSeconds must not advance on wall-clock '
             'ticks — broadcasts moved to solveElapsedSecondsProvider',
       );
       expect(
@@ -536,7 +551,8 @@ void main() {
       expect(
         container.read(elapsedProvider),
         greaterThan(0),
-        reason: 'elapsed clock must keep ticking after the AppBar subscribes '
+        reason:
+            'elapsed clock must keep ticking after the AppBar subscribes '
             '— build() must hold the auto-dispose provider alive',
       );
     });
@@ -553,12 +569,14 @@ void main() {
       final solveRepo = _FakeSolveRepository(_blankProgress());
       final container = ProviderContainer(
         overrides: [
-          importRepositoryProvider
-              .overrideWithValue(_FakeImportRepository(puzzle)),
+          importRepositoryProvider.overrideWithValue(
+            _FakeImportRepository(puzzle),
+          ),
           solveRepositoryProvider.overrideWithValue(solveRepo),
           statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-          appSettingsProvider
-              .overrideWithValue(const _FakeAppSettingsRepository()),
+          appSettingsProvider.overrideWithValue(
+            const _FakeAppSettingsRepository(),
+          ),
           bootSettingsProvider.overrideWithValue(BootSettings.defaults),
         ],
       );
@@ -602,12 +620,14 @@ void main() {
       final solveRepo = _FakeSolveRepository(_blankProgress());
       final container = ProviderContainer(
         overrides: [
-          importRepositoryProvider
-              .overrideWithValue(_FakeImportRepository(puzzle)),
+          importRepositoryProvider.overrideWithValue(
+            _FakeImportRepository(puzzle),
+          ),
           solveRepositoryProvider.overrideWithValue(solveRepo),
           statsRepositoryProvider.overrideWithValue(_FakeStatsRepository()),
-          appSettingsProvider
-              .overrideWithValue(const _FakeAppSettingsRepository()),
+          appSettingsProvider.overrideWithValue(
+            const _FakeAppSettingsRepository(),
+          ),
           bootSettingsProvider.overrideWithValue(BootSettings.defaults),
         ],
       );
@@ -641,25 +661,26 @@ void main() {
   // --------------------------------------------------------------------
 
   test(
-      'completionSheetShown defaults false and markCompletionSheetShown sets it',
-      () async {
-    final puzzle = _puzzle();
-    final container = _containerFor(puzzle, _blankProgress());
-    addTearDown(container.dispose);
+    'completionSheetShown defaults false and markCompletionSheetShown sets it',
+    () async {
+      final puzzle = _puzzle();
+      final container = _containerFor(puzzle, _blankProgress());
+      addTearDown(container.dispose);
 
-    final provider = solveProvider(Uri.encodeComponent(puzzle.id));
-    await container.read(provider.future);
+      final provider = solveProvider(Uri.encodeComponent(puzzle.id));
+      await container.read(provider.future);
 
-    expect(container.read(provider).value!.completionSheetShown, isFalse);
+      expect(container.read(provider).value!.completionSheetShown, isFalse);
 
-    container.read(provider.notifier).markCompletionSheetShown();
-    expect(container.read(provider).value!.completionSheetShown, isTrue);
+      container.read(provider.notifier).markCompletionSheetShown();
+      expect(container.read(provider).value!.completionSheetShown, isTrue);
 
-    // Idempotent — a second call doesn't churn state identity.
-    final before = container.read(provider).value!;
-    container.read(provider.notifier).markCompletionSheetShown();
-    expect(identical(container.read(provider).value, before), isTrue);
-  });
+      // Idempotent — a second call doesn't churn state identity.
+      final before = container.read(provider).value!;
+      container.read(provider.notifier).markCompletionSheetShown();
+      expect(identical(container.read(provider).value, before), isTrue);
+    },
+  );
 
   test('resetPuzzle clears completionSheetShown', () async {
     final puzzle = _puzzle();
@@ -733,10 +754,7 @@ Grid<CellProgress> _blankProgress2x1() {
   return Grid(
     width: 2,
     height: 1,
-    cells: const [
-      CellProgress.blank,
-      CellProgress.blank,
-    ],
+    cells: const [CellProgress.blank, CellProgress.blank],
   );
 }
 
@@ -849,10 +867,7 @@ Grid<CellProgress> _blankProgress() {
   return Grid(
     width: 2,
     height: 1,
-    cells: const [
-      CellProgress.blank,
-      CellProgress.blank,
-    ],
+    cells: const [CellProgress.blank, CellProgress.blank],
   );
 }
 
@@ -1146,7 +1161,7 @@ Grid<CellProgress> _twoWordAlmostCompleteProgress() {
 
 final class _FakeImportRepository implements ImportRepository {
   _FakeImportRepository(this.puzzle, {Stream<bool>? existsStream})
-      : _existsStream = existsStream;
+    : _existsStream = existsStream;
 
   final Puzzle puzzle;
   final Stream<bool>? _existsStream;
@@ -1174,8 +1189,7 @@ final class _FakeImportRepository implements ImportRepository {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
     DateTime? publishDate,
-  }) async =>
-      ImportJobResult.success(puzzle);
+  }) async => ImportJobResult.success(puzzle);
 }
 
 final class _FakeSolveRepository implements SolveRepository {
@@ -1219,10 +1233,7 @@ final class _FakeSolveRepository implements SolveRepository {
     required bool cleanSolveEligible,
   }) async {
     completed.complete(
-      _CompletedStatus(
-        status: status,
-        completionType: completionType,
-      ),
+      _CompletedStatus(status: status, completionType: completionType),
     );
   }
 
@@ -1259,16 +1270,16 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<BootSettings> loadBootSettings() async => BootSettings(
-        hasSeenOnboarding: true,
-        themeMode: BootSettings.defaults.themeMode,
-        hapticsEnabled: true,
-        soundsEnabled: false,
-        colorblindMode: BootSettings.defaults.colorblindMode,
-        skipFilledCells: skipFilledCells,
-        crashReporting: false,
-        crosshareAutoDownload: true,
-        showOnScreenKeyboard: true,
-      );
+    hasSeenOnboarding: true,
+    themeMode: BootSettings.defaults.themeMode,
+    hapticsEnabled: true,
+    soundsEnabled: false,
+    colorblindMode: BootSettings.defaults.colorblindMode,
+    skipFilledCells: skipFilledCells,
+    crashReporting: false,
+    crosshareAutoDownload: true,
+    showOnScreenKeyboard: true,
+  );
 
   @override
   Future<bool> getCrashReporting() async => false;
@@ -1344,10 +1355,7 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 }
 
 final class _CompletedStatus {
-  const _CompletedStatus({
-    required this.status,
-    required this.completionType,
-  });
+  const _CompletedStatus({required this.status, required this.completionType});
 
   final PuzzleStatus status;
   final CompletionType completionType;
