@@ -3,9 +3,11 @@
 > **Status:** Living. Cold-start and warm-start delivery verified on the
 > iPhone 17 Simulator (share a `.puz`/`.ipuz` file → app imports it and
 > lands on the solve screen, both from a terminated and a running app).
-> **Release signing is not yet configured** — see "One-time setup remaining"
-> below; Debug/Simulator builds work today, App Store builds will fail to
-> export until that's done.
+> **Release signing is configured** (App ID, App Groups, `Crosscue Share
+> Extension App Store` profile, and the `APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64`
+> secret are all in place; `release.yml` wires them in) — not yet verified
+> against an actual signed release build, so treat the next `flutter build
+> ipa` / release dispatch as the real confirmation.
 
 Lets a user share a `.puz`/`.ipuz` file into Crosscue from any app's OS
 share sheet (Files, Mail, a browser download, etc.) via a real iOS Share
@@ -71,27 +73,32 @@ Debug builds already work end-to-end in the Simulator.
   re-asserts the correct destination the same declarative way it already
   handles the onboarding gate, regardless of which async event lands last.
 
-## One-time setup remaining (Apple Developer portal + CI secret)
+## One-time setup (done — Apple Developer portal + CI secret)
 
-Not agent-doable — needs a human with access to the Apple Developer account
-and this repo's GitHub Actions secrets. Debug/Simulator builds work without
-this; **release/App Store builds will fail to export until it's done**
-(`.github/workflows/release.yml`'s `ExportOptions.plist` only lists the
-Runner and widget bundle ids today).
+Completed 2026-08-05, mirroring the widget App ID/profile setup:
 
-1. Register a new App ID for `dev.tomhess.crosscue.CrosscueShareExtension`
-   in the Apple Developer portal (mirroring how
-   `dev.tomhess.crosscue.CrosscueWidget` is set up).
-2. Enable the App Groups capability on it, attached to the **existing**
-   `group.dev.tomhess.crosscue` group — no new group needed.
-3. Generate and download a Distribution provisioning profile for it
-   (mirrors "Crosscue Widget App Store" — the pbxproj's Release config
-   already expects a profile named `"Crosscue Share Extension App Store"`,
-   adjust if a different name is chosen).
-4. Base64-encode it, add it as a new GitHub Actions secret, following the
-   existing widget-profile secret's naming convention in `release.yml`.
-5. Update `release.yml`'s profile-writing steps and `ExportOptions.plist`
-   generation to include the new bundle id/profile.
+1. [x] Registered App ID `dev.tomhess.crosscue.CrosscueShareExtension` in
+   the Apple Developer portal (team `ZS9BL7472D`).
+2. [x] Enabled the App Groups capability on it, attached to the **existing**
+   `group.dev.tomhess.crosscue` group — no new group was created.
+3. [x] Generated a Distribution provisioning profile named
+   `Crosscue Share Extension App Store` (matches the pbxproj's Release
+   config `PROVISIONING_PROFILE_SPECIFIER`) — verified via `security cms -D`
+   that the exported profile's `application-identifier` and
+   `com.apple.security.application-groups` match before it was used.
+4. [x] Base64-encoded it and added it as the
+   `APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64` GitHub Actions
+   secret, following the existing widget-profile secret's naming
+   convention.
+5. [x] Updated `release.yml`'s env/require/decode-validation blocks, the
+   "Install provisioning profiles" step (writes
+   `shareextension.mobileprovision`), and the `ExportOptions.plist`
+   generation to map `dev.tomhess.crosscue.CrosscueShareExtension` →
+   `Crosscue Share Extension App Store`.
+
+Not yet done: an actual signed release build (`flutter build ipa` via
+`release.yml`) has not been run against this configuration yet — the next
+release dispatch is the real end-to-end confirmation that export succeeds.
 
 ## Verify
 

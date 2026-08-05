@@ -120,6 +120,7 @@ jobs:
       APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
       APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
       APPLE_WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
+      APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
       PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
       APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -153,6 +154,7 @@ jobs:
           require APPLE_DEVELOPER_CERTIFICATE_PASSWORD "$APPLE_DEVELOPER_CERTIFICATE_PASSWORD"
           require APPLE_PROVISIONING_PROFILE_BASE64 "$APPLE_PROVISIONING_PROFILE_BASE64"
           require APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 "$APPLE_WIDGET_PROVISIONING_PROFILE_BASE64"
+          require APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64 "$APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64"
 
           if [[ "$TEST_FLIGHT" == 'true' ]]; then
             require APPLE_API_KEY "$APPLE_API_KEY"
@@ -177,7 +179,8 @@ jobs:
             "$KEYSTORE_BASE64" \
             "$APPLE_DEVELOPER_CERTIFICATE_BASE64" \
             "$APPLE_PROVISIONING_PROFILE_BASE64" \
-            "$APPLE_WIDGET_PROVISIONING_PROFILE_BASE64"; do
+            "$APPLE_WIDGET_PROVISIONING_PROFILE_BASE64" \
+            "$APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64"; do
             printf '%s' "$encoded_value" | base64 --decode >/dev/null
           done
           if [[ "$TEST_FLIGHT" == 'true' ]]; then
@@ -385,6 +388,7 @@ jobs:
         env:
           PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
           WIDGET_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE_BASE64 }}
+          SHARE_EXTENSION_PROFILE_BASE64: ${{ secrets.APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
         working-directory: .
         run: |
           PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
@@ -393,6 +397,8 @@ jobs:
             > "$PROFILE_DIR/release.mobileprovision"
           echo "$WIDGET_PROFILE_BASE64" | base64 --decode \
             > "$PROFILE_DIR/widget.mobileprovision"
+          echo "$SHARE_EXTENSION_PROFILE_BASE64" | base64 --decode \
+            > "$PROFILE_DIR/shareextension.mobileprovision"
 
       # Flutter's auto-generated ExportOptions.plist uses automatic signing,
       # which fails on CI (no Apple ID) and can't tell xcodebuild that the
@@ -420,6 +426,8 @@ jobs:
                   <string>Crosscue App Store</string>
                   <key>dev.tomhess.crosscue.CrosscueWidget</key>
                   <string>Crosscue Widget App Store</string>
+                  <key>dev.tomhess.crosscue.CrosscueShareExtension</key>
+                  <string>Crosscue Share Extension App Store</string>
               </dict>
               <key>uploadSymbols</key>
               <true/>

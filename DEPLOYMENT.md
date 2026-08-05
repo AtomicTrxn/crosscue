@@ -829,6 +829,13 @@ this is merged.
    profile named exactly `Crosscue Widget App Store` and store it as
    `APPLE_WIDGET_PROVISIONING_PROFILE_BASE64`. The widget extension's Release
    config signs manually against this profile name.
+5c. **Share Extension App ID + profile**: register
+   `dev.tomhess.crosscue.CrosscueShareExtension` with the App Groups
+   capability (same group), then issue an App Store profile named exactly
+   `Crosscue Share Extension App Store` and store it as
+   `APPLE_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64`. See
+   [docs/architecture/ios-share-extension.md](docs/architecture/ios-share-extension.md)
+   for the full setup record.
 6. **App Store Connect API key** at
    https://appstoreconnect.apple.com/access/integrations/api → Team Keys.
    Create a key with the **App Manager** role, download the `.p8` once (it is
