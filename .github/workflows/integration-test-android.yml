@@ -62,10 +62,13 @@ jobs:
           disable-animations: true
           script: bash scripts/run-android-integration-tests.sh
 
-      - name: Upload screenshots
+      - name: Upload screenshots and failure diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: android-integration-screenshots
+          name: android-integration-diagnostics
+          # Screenshots always; a failed test also adds *.logcat.txt / *.ps.txt
+          # (scripts/run-android-integration-tests.sh) to explain a hang that
+          # produced no Dart-side output.
           path: design/qa/android-*/
           if-no-files-found: ignore

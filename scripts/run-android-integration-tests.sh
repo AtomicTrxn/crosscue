@@ -84,11 +84,19 @@ for test_file in "${tests[@]}"; do
   name="$(basename "$test_file" .dart)"
   echo ""
   echo "──> $name"
+  # Scope logcat to this test only, so a failure's dump isn't drowned in
+  # noise from earlier tests or emulator boot.
+  adb -s "$SERIAL" logcat -c 2>/dev/null || true
   if run_with_timeout flutter test "$test_file" -d "$SERIAL" --timeout "${TEST_TIMEOUT_SECONDS}s"; then
     echo "    PASS: $name"
   else
     echo "    FAIL: $name"
     fail=1
+    # A hang here has no Dart-side output to explain it (e.g. the app never
+    # reached the VM service handshake) — the device-side logcat and process
+    # list are the only signal for what actually happened.
+    adb -s "$SERIAL" logcat -d > "$OUT_DIR/$name.logcat.txt" 2>&1 || true
+    adb -s "$SERIAL" shell ps -A > "$OUT_DIR/$name.ps.txt" 2>&1 || true
   fi
   # Best-effort final-frame screenshot. (Per-step capture would need the
   # integration_test_driver_extended harness — a future enhancement.)
