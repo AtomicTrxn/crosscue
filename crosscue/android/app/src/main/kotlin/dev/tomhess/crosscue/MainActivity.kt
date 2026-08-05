@@ -11,11 +11,17 @@ import io.flutter.embedding.android.FlutterActivity
 // androidx.activity.ComponentActivity, so the androidx.activity
 // enableEdgeToEdge() convenience helper doesn't apply here (receiver type
 // mismatch) — WindowCompat.setDecorFitsSystemWindows is the same underlying
-// mechanism and works on any Activity's Window. Must run before
-// super.onCreate() so it's in effect before the Flutter view is attached.
+// mechanism and works on any Activity's Window. Must run after
+// super.onCreate(): accessing `window` first forces DecorView creation
+// (setDecorFitsSystemWindows requires it), which resolves the theme's
+// windowBackground (@drawable/launch_background) before the Activity has
+// finished attaching — that crashed every cold start with
+// Resources$NotFoundException (caught via the Android integration_test
+// suite, not by any unit test). Calling it after super.onCreate() still
+// applies well before the Flutter view is drawn.
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 }
