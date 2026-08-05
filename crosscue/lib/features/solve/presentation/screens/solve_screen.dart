@@ -129,8 +129,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
   }
 
   void _maybeShowCompletionSheet(SolveState solveState) {
-    final isComplete =
-        solveState.status == PuzzleStatus.solved ||
+    final isComplete = solveState.status == PuzzleStatus.solved ||
         solveState.status == PuzzleStatus.solvedWithHelp ||
         solveState.status == PuzzleStatus.solvedWithReveal ||
         solveState.status == PuzzleStatus.revealed;
@@ -274,11 +273,10 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
     bool hapticsEnabled,
   ) {
     if (active == null) return;
-    final clues =
-        solveState.puzzle.clues
-            .where((c) => c.direction == active.direction)
-            .toList()
-          ..sort((a, b) => a.number.compareTo(b.number));
+    final clues = solveState.puzzle.clues
+        .where((c) => c.direction == active.direction)
+        .toList()
+      ..sort((a, b) => a.number.compareTo(b.number));
     if (clues.isEmpty) return;
     final i = clues.indexWhere(
       (c) => c.number == active.number && c.direction == active.direction,
@@ -352,8 +350,7 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         final puzzle = solveState.puzzle;
         final selectedActiveClue = _selectedActiveClue ?? solveState.activeClue;
         final selectedCrossClue = _selectedCrossClue ?? solveState.crossClue;
-        final isComplete =
-            solveState.status == PuzzleStatus.solved ||
+        final isComplete = solveState.status == PuzzleStatus.solved ||
             solveState.status == PuzzleStatus.solvedWithHelp ||
             solveState.status == PuzzleStatus.solvedWithReveal ||
             solveState.status == PuzzleStatus.revealed;
@@ -682,9 +679,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
         // cluster only ever renders when the keyboard is hidden, regardless
         // of forceFullClueArea, so the reserve stays tied to that.
         padding: EdgeInsets.only(
-          bottom: !isComplete && !showOnScreenKeyboard
-              ? _hiddenControlsReserve
-              : 0,
+          bottom:
+              !isComplete && !showOnScreenKeyboard ? _hiddenControlsReserve : 0,
         ),
         child: twoColumn
             ? ClueColumnsPanel(
@@ -730,9 +726,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       soundsEnabled: soundsEnabled,
       onFeedbackSound: () => _playFeedbackSound(soundsEnabled: soundsEnabled),
       onLetter: (l) {
-        final wordComplete = ref
-            .read(solveProvider(widget.puzzleId).notifier)
-            .inputLetter(l);
+        final wordComplete =
+            ref.read(solveProvider(widget.puzzleId).notifier).inputLetter(l);
         if (wordComplete && hapticsEnabled) {
           HapticFeedback.mediumImpact();
         }
@@ -743,9 +738,8 @@ class _SolveScreenState extends ConsumerState<SolveScreen>
       onBackspace: () =>
           ref.read(solveProvider(widget.puzzleId).notifier).backspace(),
       onCheckWord: () {
-        final result = ref
-            .read(solveProvider(widget.puzzleId).notifier)
-            .checkWord();
+        final result =
+            ref.read(solveProvider(widget.puzzleId).notifier).checkWord();
         if (result.shouldVibrate && hapticsEnabled) {
           HapticFeedback.vibrate();
         }

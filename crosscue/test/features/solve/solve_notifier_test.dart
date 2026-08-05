@@ -48,7 +48,8 @@ void main() {
     );
   });
 
-  test('flips to PuzzleNotFoundError when its puzzle is deleted while open '
+  test(
+      'flips to PuzzleNotFoundError when its puzzle is deleted while open '
       '(reactive-teardown regression)', () async {
     final puzzle = _puzzle();
     final exists = StreamController<bool>();
@@ -486,8 +487,7 @@ void main() {
       expect(
         initialState,
         isNotNull,
-        reason:
-            'SolveNotifier.build did not complete after '
+        reason: 'SolveNotifier.build did not complete after '
             'flushMicrotasks; test fakes may be using real-time async.',
       );
       expect(initialState!.elapsedSeconds, 0);
@@ -505,8 +505,7 @@ void main() {
       expect(
         afterTickState.elapsedSeconds,
         0,
-        reason:
-            'SolveState.elapsedSeconds must not advance on wall-clock '
+        reason: 'SolveState.elapsedSeconds must not advance on wall-clock '
             'ticks — broadcasts moved to solveElapsedSecondsProvider',
       );
       expect(
@@ -551,8 +550,7 @@ void main() {
       expect(
         container.read(elapsedProvider),
         greaterThan(0),
-        reason:
-            'elapsed clock must keep ticking after the AppBar subscribes '
+        reason: 'elapsed clock must keep ticking after the AppBar subscribes '
             '— build() must hold the auto-dispose provider alive',
       );
     });
@@ -1161,7 +1159,7 @@ Grid<CellProgress> _twoWordAlmostCompleteProgress() {
 
 final class _FakeImportRepository implements ImportRepository {
   _FakeImportRepository(this.puzzle, {Stream<bool>? existsStream})
-    : _existsStream = existsStream;
+      : _existsStream = existsStream;
 
   final Puzzle puzzle;
   final Stream<bool>? _existsStream;
@@ -1189,7 +1187,8 @@ final class _FakeImportRepository implements ImportRepository {
     String sourceId = 'local_import',
     String? sourcePuzzleId,
     DateTime? publishDate,
-  }) async => ImportJobResult.success(puzzle);
+  }) async =>
+      ImportJobResult.success(puzzle);
 }
 
 final class _FakeSolveRepository implements SolveRepository {
@@ -1270,16 +1269,16 @@ final class _FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<BootSettings> loadBootSettings() async => BootSettings(
-    hasSeenOnboarding: true,
-    themeMode: BootSettings.defaults.themeMode,
-    hapticsEnabled: true,
-    soundsEnabled: false,
-    colorblindMode: BootSettings.defaults.colorblindMode,
-    skipFilledCells: skipFilledCells,
-    crashReporting: false,
-    crosshareAutoDownload: true,
-    showOnScreenKeyboard: true,
-  );
+        hasSeenOnboarding: true,
+        themeMode: BootSettings.defaults.themeMode,
+        hapticsEnabled: true,
+        soundsEnabled: false,
+        colorblindMode: BootSettings.defaults.colorblindMode,
+        skipFilledCells: skipFilledCells,
+        crashReporting: false,
+        crosshareAutoDownload: true,
+        showOnScreenKeyboard: true,
+      );
 
   @override
   Future<bool> getCrashReporting() async => false;
