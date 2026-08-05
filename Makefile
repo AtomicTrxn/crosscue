@@ -5,16 +5,30 @@
 FLUTTER := flutter
 DART    := dart
 DIR     := crosscue
-# Hosted CI and release builds pin this version. Local checks deliberately use
-# the Flutter on PATH, but report it so version drift is visible in logs.
+# Hosted CI and release builds pin this version (kept in sync with
+# .github/workflows/ci.yml's FLUTTER_VERSION by scripts/ci-flutter.sh, which
+# parses it directly rather than duplicating it here). Individual targets
+# below (format/analyze/test/generated) default to whatever Flutter is on
+# PATH for fast dev-loop iteration; `make ci` overrides FLUTTER/DART to the
+# pinned SDK so the pre-push gate can't silently diverge from hosted CI.
 HOSTED_FLUTTER_VERSION := 3.44.0
 
 .PHONY: ci check toolchain static format analyze test generated worker build install-hooks \
         _require-tag release-github release-publish-github release-testflight release-all \
         release-play-internal release-play-alpha release-play-beta release-play-production
 
-## Match the hosted PR CI checks.
-ci: check
+## Match the hosted PR CI checks — using the *pinned* Flutter SDK hosted CI
+## enforces (scripts/ci-flutter.sh), not whatever's on PATH. `make format` /
+## `make analyze` / etc. below still use PATH Flutter for fast dev-loop
+## iteration; `ci` is the pre-push gate and must match hosted CI exactly, or
+## a local-only toolchain drift (e.g. a `dart format`/build_runner output
+## change between Dart patch versions) passes here and only fails after
+## you've already pushed and burned a hosted Actions run. See
+## DEPLOYMENT.md § Verify locally.
+ci:
+	@PINNED_BIN=$$(scripts/ci-flutter.sh) && \
+		(cd $(DIR) && $$PINNED_BIN/flutter pub get) && \
+		$(MAKE) check FLUTTER=$$PINNED_BIN/flutter DART=$$PINNED_BIN/dart
 
 ## Run all hosted PR checks.
 check: toolchain static test worker

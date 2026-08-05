@@ -381,6 +381,56 @@ unblocked — `make ci` must be run manually before opening a PR.
 
 To bypass the hook in an emergency: `git push --no-verify`
 
+#### Why `make ci` must run the pinned Flutter SDK, not whatever's on PATH
+
+`make ci` runs `format`/`analyze`/`test`/`generated`/`worker` against the
+exact Flutter version `.github/workflows/ci.yml` pins (`FLUTTER_VERSION`),
+via `scripts/ci-flutter.sh` — **not** the `flutter`/`dart` on your `PATH`,
+even if that looks like basically the same version.
+
+This matters because `dart format`'s and `build_runner`'s output can differ
+across Dart *patch* versions (observed firsthand: Dart 3.12.1 vs. hosted
+CI's pinned 3.12.0 produced different formatting for the same source, and a
+stale local `.dart_tool/package_config.json` from a different SDK checkout
+broke `flutter analyze` in a way that had nothing to do with the code being
+checked). Any of that can pass clean on your machine and then fail hosted
+CI on push — burning a real Actions run to tell you something a local check
+should have caught for free. `make ci` closes that gap: it resolves (and
+caches, so this only happens once) the pinned SDK — reusing a `git
+worktree` off a local Flutter checkout if you have the tag already, else a
+shallow clone — at `~/.cache/crosscue/flutter-<version>`, runs `pub get`
+against it, then runs every check through that toolchain. `make format` /
+`make analyze` / etc. run standalone still use `PATH` Flutter, for fast
+iteration while you're mid-fix; only `make ci` — the thing you run right
+before pushing — is held to the hosted-CI-exact standard.
+
+If `.github/workflows/ci.yml`'s `FLUTTER_VERSION` bumps, the next `make ci`
+sets up the new pinned SDK automatically (parsed straight from the workflow
+file, not duplicated). To force a re-setup (e.g. a corrupted cache), delete
+`~/.cache/crosscue/flutter-<version>` and rerun.
+
+#### Don't burn hosted Actions minutes finding out CI would have failed
+
+The same principle extends past `make ci`: run the cheap, local checks
+before triggering anything that costs real Actions runtime.
+
+- **Before pushing / opening a PR:** `make ci` (above) — seconds after the
+  first cache warm-up, and it catches formatting, analysis, generated-file
+  drift, and unit test failures without touching a hosted runner at all.
+- **Before dispatching `integration-test-ios.yml` / `integration-test-android.yml`**
+  (each a ~15-25 minute hosted run): make sure `make ci` is green on the
+  exact commit you're about to dispatch against. A red `make ci` means the
+  integration run will almost certainly fail too — dispatching first just
+  spends 20 minutes of hosted runtime to relearn what a 10-second local
+  check already knew. If a dispatched integration run does fail, check
+  whether it's an actual regression before treating it as done — GitHub's
+  Android emulator/`adb` startup is occasionally flaky (`Unable to connect
+  to adb daemon`) and worth one re-dispatch before digging further.
+- **Before dispatching `release.yml`** (builds signed IPA/AAB and can
+  upload to TestFlight/Play): only after CI is green on the tagged commit
+  and, ideally, after the integration suites have passed too — this
+  workflow is the most expensive and most consequential to get wrong.
+
 ### Commit and push
 
 Run from the repo root:
