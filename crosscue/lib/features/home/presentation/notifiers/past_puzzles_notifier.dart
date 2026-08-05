@@ -24,8 +24,15 @@ const _crosshareSourceId = 'crosshare_daily_mini';
 /// download/solve state.
 @riverpod
 class PastPuzzlesNotifier extends _$PastPuzzlesNotifier {
-  late final CrosshareDownloader _downloader;
-  late final ImportRepository _importRepo;
+  // `late` (not `late final`): Riverpod can legitimately re-invoke build()
+  // on this same Notifier instance (e.g. a watched dependency changing), and
+  // `late final` throws LateInitializationError on that second assignment —
+  // reproduced via a real cold start where this crashed "Today"'s puzzle
+  // fetch outright. Plain `late` tolerates a rebuild; ref.read() still only
+  // runs once per build() (never after an await), preserving the original
+  // intent.
+  late CrosshareDownloader _downloader;
+  late ImportRepository _importRepo;
 
   @override
   Future<PastPuzzlesState> build() async {

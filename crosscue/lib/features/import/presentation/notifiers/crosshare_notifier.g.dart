@@ -41,7 +41,7 @@ final class CrosshareNotifierProvider
   }
 }
 
-String _$crosshareNotifierHash() => r'2465ee08fcfa43af3c1784c58338a08de19f4adb';
+String _$crosshareNotifierHash() => r'2dd677774191ece88f5813e80c6fc3629949dbac';
 
 abstract class _$CrosshareNotifier extends $Notifier<CrosshareState> {
   CrosshareState build();

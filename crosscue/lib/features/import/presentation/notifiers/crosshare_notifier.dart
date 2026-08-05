@@ -40,14 +40,21 @@ class CrosshareState with _$CrosshareState {
 
 @riverpod
 class CrosshareNotifier extends _$CrosshareNotifier {
-  // Dependencies are resolved once in build() and held as fields so they are
+  // Dependencies are resolved once per build() and held as fields so they are
   // never accessed via ref.read() after an await suspension point. Calling
   // ref.read() mid-async on an isAutoDispose notifier risks a StateError if
   // the ref is invalidated between suspension points.
-  late final CrosshareDownloader _downloader;
-  late final ImportRepository _importRepo;
-  late final AppSettingsRepository _settings;
-  late final CrashReporter _crashReporter;
+  //
+  // `late` (not `late final`): Riverpod can legitimately re-invoke build()
+  // on this same Notifier instance (e.g. a watched dependency changing), and
+  // `late final` throws LateInitializationError on that second assignment —
+  // reproduced via a real cold start (see past_puzzles_notifier.dart, which
+  // hit the same crash fetching today's puzzle). Plain `late` tolerates a
+  // rebuild.
+  late CrosshareDownloader _downloader;
+  late ImportRepository _importRepo;
+  late AppSettingsRepository _settings;
+  late CrashReporter _crashReporter;
 
   @override
   CrosshareState build() {
