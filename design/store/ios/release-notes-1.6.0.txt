@@ -1,0 +1,6 @@
+Two more solver-requested improvements:
+
+• Share a puzzle straight into Crosscue — from Files, Mail, or any app's share sheet, share a .puz/.ipuz file and it opens directly on the solve screen.
+• Landscape gets a real layout — the grid fills the height on the left with a scrollable two-column clue list beside it, and the perpendicular clue is now highlighted separately from the active one. Also fixes a rebus-entry dialog glitch.
+
+As always: fully offline, no accounts, no ads, no tracking.

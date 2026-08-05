@@ -1,0 +1,37 @@
+App Review notes — Crosscue v1.6.0
+(paste into App Store Connect → App Review Information → Notes)
+
+No sign-in or demo account is required. Crosscue is offline-first: import a
+.puz/.ipuz file or download a daily mini in-app, then solve. All core
+features (solving, import, archive, stats, settings) work without an account
+or network connection.
+
+New in this release:
+- Share a .puz/.ipuz file into Crosscue from another app's share sheet (Files,
+  Mail, a browser download, etc.) via a standard iOS Share Extension. It opens
+  the shared file directly on the solve screen. No new account, permission, or
+  data flow — it reuses the app's existing on-device import pipeline.
+- A two-column clue layout and perpendicular-clue highlight in landscape, and
+  a fix to the rebus-entry dialog. Visual/layout changes only.
+
+Challenge Boards (optional, in the "Challenge" tab) is anonymous and
+invite-only — no account, just a chosen handle. It lets friends compare
+daily-mini solve times via a private invite link. Because it requires a
+second participant/device to be meaningful, a fresh install shows a
+"create or join a board" empty state; that is expected, not a defect.
+To exercise it: tap "Challenge" → create a board → it produces an invite
+link to share.
+
+Permissions: Camera and Photo Library are used only if you choose a custom
+photo for your Challenge Boards avatar. The app declares a location-usage
+string because a bundled photo-picker component references location APIs to
+read photo metadata — Crosscue never requests or records your location, and
+no location prompt is shown.
+
+Privacy: no ads, no analytics, no tracking. The only data sent to a
+Crosscue-operated server is optional Challenge Boards data: an anonymous
+player identifier, chosen handle, solve-result metadata, and—only when you
+select one—an avatar image. Avatar images are stored only to show the avatar
+within Challenge Boards and are deleted when you clear Challenge Boards data
+in Settings → Privacy & Data → Clear all data. These practices are disclosed
+in the App Privacy section and privacy policy.
