@@ -33,6 +33,20 @@ target 'Runner' do
   target 'RunnerTests' do
     inherit! :search_paths
   end
+
+  # share_handler addition start
+  # share_handler_ios_models is a transitive native-only pod (shared code
+  # between the host app and the Share Extension target) that isn't part of
+  # the Dart dependency graph, so CocoaPods can't resolve it automatically —
+  # this line is required or `pod install` fails with "Unable to find a
+  # specification for `share_handler_ios_models`". Mirrors share_handler's
+  # own example Podfile (share_handler-0.0.25/example/ios/Podfile). Target
+  # name must match the CrosscueShareExtension Xcode target added in Phase 2.
+  target 'CrosscueShareExtension' do
+    inherit! :search_paths
+    pod 'share_handler_ios_models', :path => '.symlinks/plugins/share_handler_ios/ios/Models'
+  end
+  # share_handler addition end
 end
 
 post_install do |installer|

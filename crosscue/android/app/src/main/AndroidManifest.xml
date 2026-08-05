@@ -59,6 +59,30 @@
             <meta-data
                 android:name="flutter_deeplinking_enabled"
                 android:value="true"/>
+            <!-- Share-to-Crosscue (#296 Phase 3): single-file share target for
+                 .puz/.ipuz files shared from Files, Mail, browsers, etc. via
+                 share_handler. .puz/.ipuz have no registered MIME type, so we
+                 deliberately start narrower than `*/*` — an ACTION_SEND
+                 mimeType filter controls whether Crosscue shows up in every
+                 user's share sheet for every photo, link, and text snippet on
+                 their device, not just our own picker dialog. Cover
+                 application/octet-stream (the generic fallback most senders
+                 use for an unrecognised extension) and application/json
+                 (.ipuz is JSON) for now; widen only if real-world sharing
+                 apps send these files under other MIME types. Content is
+                 verified server-side by ImportRepositoryImpl's magic-byte
+                 sniffing regardless of what MIME type the sender claims, so a
+                 wrong/missing MIME type from the sender fails safely with a
+                 message rather than importing garbage.
+                 Deliberately ACTION_SEND (single file) only — no
+                 ACTION_SEND_MULTIPLE — matching iOS's single-attachment
+                 Share Extension activation rule. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="application/octet-stream"/>
+                <data android:mimeType="application/json"/>
+            </intent-filter>
         </activity>
 
         <!-- Home-screen widget (#204): streak + today's puzzle, parity with the

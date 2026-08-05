@@ -43,6 +43,10 @@ dependencies:
   # with file_picker 11 through incompatible win32 constraints.
   share_plus: ^12.0.0
 
+  # Share-to-Crosscue: receives shared puzzle files from the OS share sheet
+  # (iOS Share Extension target + Android ACTION_SEND intent-filter).
+  share_handler: ^0.0.25
+
   # Puzzle ID generation
   crypto: ^3.0.0
 

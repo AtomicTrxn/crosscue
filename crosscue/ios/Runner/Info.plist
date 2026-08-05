@@ -9,6 +9,13 @@
 	     See deeplinks/README.md (issue #203). -->
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
+	<!-- Required by share_handler's iOS side: ShareHandlerIosViewController
+	     falls back to "group.<bundle id>" if this key is absent, which would
+	     coincidentally match here, but set it explicitly (matches this repo's
+	     convention of literal App Group strings, no xcconfig indirection —
+	     see HomeWidgetService.appGroupId / CrosscueWidgetExtension.entitlements). -->
+	<key>AppGroupId</key>
+	<string>group.dev.tomhess.crosscue</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -74,6 +81,17 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>crosscue</string>
+			</array>
+		</dict>
+		<!-- Redirect scheme used by share_handler's Share Extension to hand
+		     control back to the host app after copying shared files into the
+		     App Group container. See docs/architecture/ios-share-extension.md. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			</array>
 		</dict>
 	</array>

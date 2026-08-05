@@ -88,21 +88,9 @@ class ImportNotifier extends _$ImportNotifier {
       case JobDuplicate():
         state = ImportDuplicate(fileName: file.name);
       case JobFailure(:final error):
-        state = ImportFailure(message: _errorMessage(error));
+        state = ImportFailure(message: error.userMessage);
     }
   }
 
   void reset() => state = const ImportIdle();
-
-  String _errorMessage(ParseError error) {
-    return switch (error) {
-      ParseError.unsupportedFormat =>
-        'This puzzle is scrambled or locked and cannot be imported.',
-      ParseError.invalidFormat =>
-        'Unrecognised puzzle format. Only .puz and .ipuz files are supported.',
-      ParseError.missingData =>
-        'The puzzle file appears to be incomplete or corrupted.',
-      _ => 'Import failed. Please try a different file.',
-    };
-  }
 }

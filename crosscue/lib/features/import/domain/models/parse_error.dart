@@ -21,3 +21,20 @@ enum ParseError {
   /// Something unexpected happened during parsing.
   unknown,
 }
+
+/// Human-readable copy for a [ParseError], shown to the user when an import
+/// fails. Single source of truth for this mapping — reused by
+/// [ImportNotifier] (manual file-picker imports) and
+/// [SharedPuzzleImportService] (OS share-sheet imports) so the two entry
+/// points never drift into showing different wording for the same error.
+extension ParseErrorMessage on ParseError {
+  String get userMessage => switch (this) {
+        ParseError.unsupportedFormat =>
+          'This puzzle is scrambled or locked and cannot be imported.',
+        ParseError.invalidFormat =>
+          'Unrecognised puzzle format. Only .puz and .ipuz files are supported.',
+        ParseError.missingData =>
+          'The puzzle file appears to be incomplete or corrupted.',
+        _ => 'Import failed. Please try a different file.',
+      };
+}

@@ -1,4 +1,5 @@
 import 'package:crosscue/core/routing/app_shell.dart';
+import 'package:crosscue/core/routing/pending_share_route.dart';
 import 'package:crosscue/core/routing/routes.dart';
 import 'package:crosscue/features/archive/presentation/screens/archive_screen.dart';
 import 'package:crosscue/features/challenge_boards/presentation/screens/challenge_board_route_screen.dart';
@@ -34,6 +35,19 @@ GoRouter appRouter(Ref ref) {
 
       if (!hasOnboarded && !onOnboarding) return Routes.onboarding;
       if (hasOnboarded && onOnboarding) return Routes.home;
+
+      // A share-sheet puzzle import may resolve its solve route slightly
+      // after (or slightly before) iOS's own stray platform-route delivery
+      // for the Share Extension's redirect URL — see pending_share_route.dart
+      // for the full race. Re-assert the correct destination here so it wins
+      // regardless of ordering, whenever this evaluation isn't already
+      // heading there.
+      final pendingShare = peekPendingShareRoute();
+      if (pendingShare != null && pendingShare != state.matchedLocation) {
+        clearPendingShareRoute();
+        return pendingShare;
+      }
+
       return null;
     },
     routes: [

@@ -8,9 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		2BAE80BC95DA72BBA869546C /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2197929CAF14D095B293EF0C /* ShareViewController.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
+		36945A202F8364BC8AD76F06 /* CrosscueShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 174EC93B71E20DB84A6381BC /* CrosscueShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		75FF93DE4D593FDB2D640190 /* Pods_CrosscueShareExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C145F2825F7B933A7E7120D /* Pods_CrosscueShareExtension.framework */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 		7AC10D5B2EC3CC0700C636F2 /* ICloudSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC10D5A2EC3CC0400C636F2 /* ICloudSyncHandler.swift */; };
@@ -22,6 +25,7 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B9316EAEB9D11623184FDE68 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DAD01993DEF3D58DDDA56C94 /* Pods_Runner.framework */; };
+		E1050EAF96793182CC82695E /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 29052256B4DFF0EBC45EC14F /* MainInterface.storyboard */; };
 		F6BBB3E85991C2AFE8C2C55E /* CrosscueAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6DDFA45C5E95D174B89980 /* CrosscueAppIntents.swift */; };
 		F9C3BF378B05DF06AA7D0F2E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE24AEDA0643007F1991681D /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
@@ -33,6 +37,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+		5813CE4391D9C299D78D7364 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DBDA3157658BB3BCF11D83CF;
+			remoteInfo = CrosscueShareExtension;
 		};
 		811374BB2FD1163900EFEEEA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -51,6 +62,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				811374BD2FD1163900EFEEEA /* CrosscueWidgetExtension.appex in Embed Foundation Extensions */,
+				36945A202F8364BC8AD76F06 /* CrosscueShareExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -70,13 +82,18 @@
 /* Begin PBXFileReference section */
 		0BCF0093B1DF8C400C62830D /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0D978E6136A7B5D7764EB23A /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		12989BE8CE0A389A9C047B2C /* Pods-CrosscueShareExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CrosscueShareExtension.profile.xcconfig"; path = "Target Support Files/Pods-CrosscueShareExtension/Pods-CrosscueShareExtension.profile.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		1730286E1254091B544F2FCB /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		174EC93B71E20DB84A6381BC /* CrosscueShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = CrosscueShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C145F2825F7B933A7E7120D /* Pods_CrosscueShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CrosscueShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		20D8774D6A3B4663565AA4A7 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
+		2197929CAF14D095B293EF0C /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		5E5BF9DC22DFE23A7D13DB1B /* Base */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -97,9 +114,13 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9E6DDFA45C5E95D174B89980 /* CrosscueAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrosscueAppIntents.swift; sourceTree = "<group>"; };
+		A8A4D0E40AD0A60658CF45D4 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AE24AEDA0643007F1991681D /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFBC361545EC510B448ADA11 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		C084A87B7C9CA51D820F65FE /* Pods-CrosscueShareExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CrosscueShareExtension.debug.xcconfig"; path = "Target Support Files/Pods-CrosscueShareExtension/Pods-CrosscueShareExtension.debug.xcconfig"; sourceTree = "<group>"; };
 		DAD01993DEF3D58DDDA56C94 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E9D51E1385A4E3C47E5AC7E4 /* Pods-CrosscueShareExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CrosscueShareExtension.release.xcconfig"; path = "Target Support Files/Pods-CrosscueShareExtension/Pods-CrosscueShareExtension.release.xcconfig"; sourceTree = "<group>"; };
+		F273E283381637E6B70C2B82 /* CrosscueShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = CrosscueShareExtension.entitlements; sourceTree = "<group>"; };
 		FAB85B91996D3C8358942CC5 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -129,6 +150,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		45C8E63417F999FCED8489EB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75FF93DE4D593FDB2D640190 /* Pods_CrosscueShareExtension.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6AA35FA557E9E2D0C1D6895D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -173,8 +202,20 @@
 				AE24AEDA0643007F1991681D /* Pods_RunnerTests.framework */,
 				811374AD2FD1163800EFEEEA /* WidgetKit.framework */,
 				811374AF2FD1163800EFEEEA /* SwiftUI.framework */,
+				1C145F2825F7B933A7E7120D /* Pods_CrosscueShareExtension.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		69947214315D88DE79912EA9 /* CrosscueShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				2197929CAF14D095B293EF0C /* ShareViewController.swift */,
+				29052256B4DFF0EBC45EC14F /* MainInterface.storyboard */,
+				A8A4D0E40AD0A60658CF45D4 /* Info.plist */,
+			);
+			name = CrosscueShareExtension;
+			path = CrosscueShareExtension;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -200,6 +241,8 @@
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				99B6BECC7A74C0F80DF41B2C /* Pods */,
 				4AC202EE4E2B318A9BB1A176 /* Frameworks */,
+				F273E283381637E6B70C2B82 /* CrosscueShareExtension.entitlements */,
+				69947214315D88DE79912EA9 /* CrosscueShareExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -209,6 +252,7 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				811374AC2FD1163800EFEEEA /* CrosscueWidgetExtension.appex */,
+				174EC93B71E20DB84A6381BC /* CrosscueShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -242,6 +286,9 @@
 				BFBC361545EC510B448ADA11 /* Pods-RunnerTests.debug.xcconfig */,
 				20D8774D6A3B4663565AA4A7 /* Pods-RunnerTests.release.xcconfig */,
 				FAB85B91996D3C8358942CC5 /* Pods-RunnerTests.profile.xcconfig */,
+				C084A87B7C9CA51D820F65FE /* Pods-CrosscueShareExtension.debug.xcconfig */,
+				E9D51E1385A4E3C47E5AC7E4 /* Pods-CrosscueShareExtension.release.xcconfig */,
+				12989BE8CE0A389A9C047B2C /* Pods-CrosscueShareExtension.profile.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -306,6 +353,7 @@
 			);
 			dependencies = (
 				811374BC2FD1163900EFEEEA /* PBXTargetDependency */,
+				91024A00AA74D0772F08302F /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -314,6 +362,24 @@
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DBDA3157658BB3BCF11D83CF /* CrosscueShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9D8B03C88E077D368954A908 /* Build configuration list for PBXNativeTarget "CrosscueShareExtension" */;
+			buildPhases = (
+				3750301D9CB82420DC3421F7 /* [CP] Check Pods Manifest.lock */,
+				BBA03D8F79CC1F23DA7CCCDC /* Sources */,
+				45C8E63417F999FCED8489EB /* Frameworks */,
+				4ADFA82979D55CFF174B8DD3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CrosscueShareExtension;
+			productName = CrosscueShareExtension;
+			productReference = 174EC93B71E20DB84A6381BC /* CrosscueShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -337,6 +403,9 @@
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
 					};
+					DBDA3157658BB3BCF11D83CF = {
+						CreatedOnToolsVersion = 26.5;
+					};
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
@@ -358,6 +427,7 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				811374AB2FD1163800EFEEEA /* CrosscueWidgetExtension */,
+				DBDA3157658BB3BCF11D83CF /* CrosscueShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -367,6 +437,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4ADFA82979D55CFF174B8DD3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1050EAF96793182CC82695E /* MainInterface.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,6 +502,28 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-Runner-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		3750301D9CB82420DC3421F7 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-CrosscueShareExtension-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -514,6 +614,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBA03D8F79CC1F23DA7CCCDC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2BAE80BC95DA72BBA869546C /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -527,9 +635,23 @@
 			target = 811374AB2FD1163800EFEEEA /* CrosscueWidgetExtension */;
 			targetProxy = 811374BB2FD1163900EFEEEA /* PBXContainerItemProxy */;
 		};
+		91024A00AA74D0772F08302F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CrosscueShareExtension;
+			target = DBDA3157658BB3BCF11D83CF /* CrosscueShareExtension */;
+			targetProxy = 5813CE4391D9C299D78D7364 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		29052256B4DFF0EBC45EC14F /* MainInterface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5E5BF9DC22DFE23A7D13DB1B /* Base */,
+			);
+			name = MainInterface.storyboard;
+			sourceTree = "<group>";
+		};
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -549,6 +671,47 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		16C3F1262BA71587E92FA224 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 12989BE8CE0A389A9C047B2C /* Pods-CrosscueShareExtension.profile.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = CrosscueShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZS9BL7472D;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CrosscueShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CrosscueShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tomhess.crosscue.CrosscueShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Profile;
+		};
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -676,6 +839,50 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
 			name = Profile;
+		};
+		6E89AD4AB724F27082767DC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C084A87B7C9CA51D820F65FE /* Pods-CrosscueShareExtension.debug.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = CrosscueShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZS9BL7472D;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CrosscueShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CrosscueShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tomhess.crosscue.CrosscueShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
 		};
 		811374BF2FD1163900EFEEEA /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -969,6 +1176,49 @@
 			};
 			name = Release;
 		};
+		D5F627F5FF55F7A089BE3A95 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E9D51E1385A4E3C47E5AC7E4 /* Pods-CrosscueShareExtension.release.xcconfig */;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = CrosscueShareExtension.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZS9BL7472D;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CrosscueShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CrosscueShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tomhess.crosscue.CrosscueShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Crosscue Share Extension App Store";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1008,6 +1258,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9D8B03C88E077D368954A908 /* Build configuration list for PBXNativeTarget "CrosscueShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E89AD4AB724F27082767DC2 /* Debug */,
+				D5F627F5FF55F7A089BE3A95 /* Release */,
+				16C3F1262BA71587E92FA224 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
