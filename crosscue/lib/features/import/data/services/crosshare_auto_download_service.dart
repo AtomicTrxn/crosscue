@@ -116,9 +116,20 @@ class CrosshareAutoDownloadService {
     if (lastDate == today) return; // Already downloaded today
 
     _emit(CrosshareAutoDownloadPhase.inProgress);
-    final terminal = await _download(today);
-    _onStatusChanged?.call();
-    _emit(terminal);
+    try {
+      final terminal = await _download(today);
+      _onStatusChanged?.call();
+      _emit(terminal);
+    } catch (_) {
+      // Safety net: an unexpected exception here (e.g. a concurrent import
+      // of the same puzzle from another entry point) must not leave the
+      // phase stuck at inProgress for the rest of the session — the banner
+      // would show a permanent, unrecoverable "Fetching…" with no retry
+      // affordance. Rethrow so the existing global error handler
+      // (PlatformDispatcher.instance.onError in app.dart) still reports it.
+      _emit(CrosshareAutoDownloadPhase.failed);
+      rethrow;
+    }
   }
 
   /// Runs the download with retry + exponential backoff. Returns the terminal

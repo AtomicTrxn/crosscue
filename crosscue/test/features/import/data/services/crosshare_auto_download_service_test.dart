@@ -92,6 +92,25 @@ class _FakeImportRepo implements ImportRepository {
       throw UnimplementedError('${invocation.memberName} not stubbed');
 }
 
+/// Import repo that throws instead of returning an [ImportJobResult] —
+/// simulates an unexpected failure (e.g. a concurrent import racing this
+/// same puzzle) rather than the normal, already-handled Err/JobFailure path.
+class _ThrowingImportRepo implements ImportRepository {
+  @override
+  Future<ImportJobResult> importBytes(
+    Uint8List bytes, {
+    String sourceId = 'local_import',
+    String? sourcePuzzleId,
+    DateTime? publishDate,
+  }) async {
+    throw StateError('boom');
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} not stubbed');
+}
+
 Uint8List _bytes() => Uint8List.fromList(const [1, 2, 3]);
 
 Result<Uint8List, CrosshareDownloadError> _ok() => Ok(_bytes());
@@ -124,7 +143,7 @@ void main() {
   CrosshareAutoDownloadService build({
     required _FakeDownloader downloader,
     ImportJobResult importResult = const JobDuplicate(),
-    _FakeImportRepo? importRepo,
+    ImportRepository? importRepo,
     int maxAttempts = 3,
   }) {
     final repo = importRepo ?? _FakeImportRepo(importResult);
@@ -241,6 +260,29 @@ void main() {
       expect(dl.calls, 3);
       expect(phases.last, CrosshareAutoDownloadPhase.idle);
       expect(await settings.getCrosshareLastDownloadedDate(), today());
+    });
+  });
+
+  group('unexpected exception', () {
+    setUp(() => settings.setCrosshareAutoDownload(true));
+
+    test(
+        'reaches a terminal failed phase (not stuck at inProgress) and '
+        'rethrows for the global handler', () async {
+      final dl = _FakeDownloader([_ok()]);
+      final future = build(
+        downloader: dl,
+        importRepo: _ThrowingImportRepo(),
+      ).attemptIfNeeded();
+
+      await expectLater(future, throwsA(isA<StateError>()));
+      expect(phases, [
+        CrosshareAutoDownloadPhase.inProgress,
+        CrosshareAutoDownloadPhase.failed,
+      ]);
+      // Not recorded as downloaded — a later attempt (next launch, or after
+      // the user enables auto-download again) should still retry it.
+      expect(await settings.getCrosshareLastDownloadedDate(), isNot(today()));
     });
   });
 
