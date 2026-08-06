@@ -414,50 +414,66 @@ class _RebusDialogState extends State<RebusDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Single row — field and buttons side by side — instead of stacking the
+    // field above `actions`. Two stacked rows plus the on-screen keyboard
+    // left too little vertical room in landscape on a tablet (#reported in
+    // manual QA); one row is short regardless of orientation.
+    //
+    // Everything (field + buttons) lives in `content` inside a fixed-width
+    // SizedBox, not `actions`: that SizedBox is what makes `Expanded` valid
+    // here despite AlertDialog wrapping `content` in IntrinsicWidth, and
+    // gives a concrete width for IntrinsicWidth to report instead of trying
+    // to measure an unbounded Row. The Enter button still needs its own
+    // minimumSize override below — the app's FilledButton theme sets
+    // minimumSize: Size.fromHeight(46) (= infinite min width), which a Row
+    // cell can't satisfy either way (a bare TextButton is fine; it has no
+    // such override).
+    final dialogWidth =
+        (MediaQuery.sizeOf(context).width - 80).clamp(240.0, 360.0);
     return AlertDialog(
-      // Scrollable so the dialog fits above the keyboard in phone landscape
-      // (#298). No title — the field's label carries the context, leaving
-      // just two rows: the field, then the buttons.
-      //
-      // Keep the buttons in `actions`: the app's FilledButton theme sets
-      // minimumSize: Size.fromHeight(46) (= infinite min width), which under
-      // AlertDialog's IntrinsicWidth + SingleChildScrollView throws
-      // "BoxConstraints forces an infinite width" — a silently blank dialog
-      // in release. Same reason the Enter button overrides minimumSize below,
-      // without which OverflowBar stacks the two actions vertically.
-      scrollable: true,
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textCapitalization: TextCapitalization.characters,
-        maxLength: SolveNotifier.rebusMaxLength,
-        inputFormatters: [FilteringTextInputFormatter.allow(_rebusFilterRe)],
-        decoration: const InputDecoration(
-          isDense: true,
-          counterText: '',
-          labelText: 'Cell answer',
-          // Mention "/" so users discover bidirectional rebuses.
-          hintText: 'EST  (or PB/AU)',
+      content: SizedBox(
+        width: dialogWidth,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                maxLength: SolveNotifier.rebusMaxLength,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(_rebusFilterRe),
+                ],
+                decoration: const InputDecoration(
+                  isDense: true,
+                  counterText: '',
+                  labelText: 'Cell answer',
+                  // Mention "/" so users discover bidirectional rebuses.
+                  hintText: 'EST  (or PB/AU)',
+                ),
+                onSubmitted: (value) =>
+                    Navigator.of(context).pop(RebusOutcomeEntered(value)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(const RebusOutcomeCancelled()),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 46),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+              ),
+              onPressed: () => Navigator.of(context)
+                  .pop(RebusOutcomeEntered(_controller.text)),
+              child: const Text('Enter'),
+            ),
+          ],
         ),
-        onSubmitted: (value) =>
-            Navigator.of(context).pop(RebusOutcomeEntered(value)),
       ),
-      actions: [
-        TextButton(
-          onPressed: () =>
-              Navigator.of(context).pop(const RebusOutcomeCancelled()),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(0, 46),
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-          ),
-          onPressed: () =>
-              Navigator.of(context).pop(RebusOutcomeEntered(_controller.text)),
-          child: const Text('Enter'),
-        ),
-      ],
     );
   }
 }
