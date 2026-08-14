@@ -4,6 +4,7 @@ import 'package:crosscue/core/theme/crossword_theme.dart';
 import 'package:crosscue/core/theme/theme_colors.dart';
 import 'package:crosscue/features/solve/domain/services/clue_progress_calculator.dart';
 import 'package:crosscue/features/solve/presentation/notifiers/solve_state.dart';
+import 'package:crosscue/features/solve/presentation/widgets/clue_row_metrics.dart';
 import 'package:flutter/material.dart';
 
 /// Scrollable Across/Down clue list for the landscape solve layout — lets a
@@ -39,13 +40,6 @@ class ClueListPanel extends StatefulWidget {
   State<ClueListPanel> createState() => _ClueListPanelState();
 }
 
-/// Uniform row height for every list entry (section headers included) so the
-/// active clue's scroll offset can be computed directly from its index
-/// instead of relying on `Scrollable.ensureVisible`, which silently no-ops
-/// for rows the lazy `ListView` hasn't mounted yet — the common case for a
-/// full-size (15×15+) puzzle where the active clue is far from the top.
-const double _rowExtent = 56;
-
 sealed class _ListEntry {
   const _ListEntry();
 }
@@ -62,6 +56,13 @@ class _ClueEntry extends _ListEntry {
 
 class _ClueListPanelState extends State<ClueListPanel> {
   final _scrollController = ScrollController();
+
+  /// The uniform row extent computed during the most recent [build] (inside
+  /// its [LayoutBuilder], where the available text width is known). Cached
+  /// so [_scrollToActive] — which runs in a post-frame callback, after
+  /// build, with no access to that width — can reuse the same value rather
+  /// than recomputing it without knowing the text width.
+  double _rowExtent = 56;
 
   @override
   void initState() {
@@ -128,17 +129,28 @@ class _ClueListPanelState extends State<ClueListPanel> {
   Widget build(BuildContext context) {
     final entries = _buildEntries();
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemExtent: _rowExtent,
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return switch (entry) {
-          _HeaderEntry(:final label) => _SectionHeader(label),
-          _ClueEntry(:final clue) => _row(clue),
-        };
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 12+12 horizontal Row padding, 28 clue-number box.
+        final textWidth = constraints.maxWidth - 24 - 28;
+        _rowExtent = clueRowExtent(
+          context,
+          texts: entries.whereType<_ClueEntry>().map((e) => e.clue.text),
+          textWidth: textWidth,
+        );
+        return ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          itemExtent: _rowExtent,
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            return switch (entry) {
+              _HeaderEntry(:final label) => _SectionHeader(label),
+              _ClueEntry(:final clue) => _row(clue),
+            };
+          },
+        );
       },
     );
   }
@@ -242,22 +254,26 @@ class _ClueListRow extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 28,
-                  child: Text(
-                    '${clue.number}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: active
-                          ? xwTheme.clueBarDirection
-                          : context.crosscueOnSurface3,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${clue.number}',
+                      maxLines: 1,
+                      softWrap: false,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: active
+                            ? xwTheme.clueBarDirection
+                            : context.crosscueOnSurface3,
+                      ),
                     ),
                   ),
                 ),
                 Expanded(
                   child: Text(
                     clue.text,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.3,

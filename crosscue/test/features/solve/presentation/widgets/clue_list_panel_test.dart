@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // 2x1 grid: "AB", clued as 1-Across "AB", 1-Down "A", 2-Down "B".
-Puzzle _puzzle() {
+Puzzle _puzzle({int acrossNumber = 1, String acrossText = 'Across clue'}) {
   return Puzzle(
     metadata: PuzzleMetadata(
       id: 'test:puzzle',
@@ -40,16 +40,16 @@ Puzzle _puzzle() {
         SolutionCell(solution: 'B', number: 2),
       ],
     ),
-    clues: const [
+    clues: [
       Clue(
-        number: 1,
+        number: acrossNumber,
         direction: Direction.across,
-        text: 'Across clue',
+        text: acrossText,
         startRow: 0,
         startCol: 0,
         length: 2,
       ),
-      Clue(
+      const Clue(
         number: 1,
         direction: Direction.down,
         text: 'A down',
@@ -57,7 +57,7 @@ Puzzle _puzzle() {
         startCol: 0,
         length: 1,
       ),
-      Clue(
+      const Clue(
         number: 2,
         direction: Direction.down,
         text: 'B down',
@@ -69,8 +69,12 @@ Puzzle _puzzle() {
   );
 }
 
-SolveState _stateWith(Grid<CellProgress> progress) {
-  final puzzle = _puzzle();
+SolveState _stateWith(
+  Grid<CellProgress> progress, {
+  int acrossNumber = 1,
+  String acrossText = 'Across clue',
+}) {
+  final puzzle = _puzzle(acrossNumber: acrossNumber, acrossText: acrossText);
   return SolveState(
     puzzle: puzzle,
     progress: progress,
@@ -80,9 +84,9 @@ SolveState _stateWith(Grid<CellProgress> progress) {
   );
 }
 
-Widget _wrap(Widget child) => MaterialApp(
+Widget _wrap(Widget child, {double? width, double height = 400}) => MaterialApp(
       home: Scaffold(
-        body: SizedBox(height: 400, child: child),
+        body: SizedBox(height: height, width: width, child: child),
       ),
     );
 
@@ -261,5 +265,157 @@ void main() {
     );
 
     handle.dispose();
+  });
+
+  testWidgets(
+      'a two-digit clue number renders on a single line without overflow',
+      (tester) async {
+    final progress = Grid<CellProgress>(
+      width: 2,
+      height: 1,
+      cells: const [CellProgress.blank, CellProgress.blank],
+    );
+    final state = _stateWith(progress, acrossNumber: 18);
+
+    await tester.pumpWidget(
+      _wrap(
+        ClueListPanel(
+          clues: state.sortedClues,
+          activeClue: null,
+          crossClue: null,
+          solveState: state,
+          onSelectClue: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('18'), findsOneWidget);
+    final numberText = tester.widget<Text>(find.text('18'));
+    expect(numberText.maxLines, 1);
+  });
+
+  testWidgets(
+      'a clue that wraps to two lines does not overflow a narrow column',
+      (tester) async {
+    const longText =
+        'A considerably long clue whose text should wrap across two '
+        'lines inside a narrow column';
+    final progress = Grid<CellProgress>(
+      width: 2,
+      height: 1,
+      cells: const [CellProgress.blank, CellProgress.blank],
+    );
+    final state = _stateWith(progress, acrossText: longText);
+
+    await tester.pumpWidget(
+      _wrap(
+        ClueListPanel(
+          clues: state.sortedClues,
+          activeClue: null,
+          crossClue: null,
+          solveState: state,
+          onSelectClue: (_) {},
+        ),
+        width: 200,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'the row height grows at a larger text scale instead of staying fixed '
+      '(so a 2nd wrapped line is not clipped)', (tester) async {
+    final progress = Grid<CellProgress>(
+      width: 2,
+      height: 1,
+      cells: const [CellProgress.blank, CellProgress.blank],
+    );
+    final state = _stateWith(progress);
+
+    Widget buildAt(TextScaler scaler) => _wrap(
+          MediaQuery(
+            data: MediaQueryData(textScaler: scaler),
+            child: ClueListPanel(
+              clues: state.sortedClues,
+              activeClue: null,
+              crossClue: null,
+              solveState: state,
+              onSelectClue: (_) {},
+            ),
+          ),
+          width: 200,
+        );
+
+    await tester.pumpWidget(buildAt(TextScaler.noScaling));
+    await tester.pumpAndSettle();
+    final defaultExtent =
+        tester.widget<ListView>(find.byType(ListView).first).itemExtent;
+    expect(defaultExtent, isNotNull);
+
+    await tester.pumpWidget(buildAt(const TextScaler.linear(1.6)));
+    await tester.pumpAndSettle();
+    final scaledExtent =
+        tester.widget<ListView>(find.byType(ListView).first).itemExtent;
+
+    // A hardcoded row height (the pre-fix bug) would stay 56 regardless of
+    // text scale, silently clipping a 2nd wrapped line under Row's
+    // cross-axis overflow (which — unlike main-axis overflow — never throws
+    // a RenderFlex error, so an exception-only assertion can't catch this).
+    expect(scaledExtent, greaterThan(defaultExtent!));
+  });
+
+  testWidgets(
+      'clue text needing 3+ lines is never truncated, at any text scale',
+      (tester) async {
+    const longText =
+        'A considerably long clue whose text should wrap across two '
+        'lines inside a narrow column and then some more text so that '
+        'it needs a third line to fit at a larger text scale';
+    final progress = Grid<CellProgress>(
+      width: 2,
+      height: 1,
+      cells: const [CellProgress.blank, CellProgress.blank],
+    );
+    final state = _stateWith(progress, acrossText: longText);
+
+    // The 'Across' header shares this list's uniform itemExtent, so at 2x
+    // text scale it grows tall too — tall enough that the ordinary test
+    // surface would push the clue row (index 1, after the header) out of
+    // the ListView's built/cached range before it ever mounts. A plain
+    // SizedBox height doesn't help — it gets clamped back down to the
+    // ambient test surface size — so grow the surface itself instead.
+    tester.view.physicalSize = const Size(400, 6000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _wrap(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: ClueListPanel(
+            clues: state.sortedClues,
+            activeClue: null,
+            crossClue: null,
+            solveState: state,
+            onSelectClue: (_) {},
+          ),
+        ),
+        width: 200,
+        height: 6000,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    // find.text requires an exact match — if the clue got ellipsized this
+    // fails, which is exactly the truncation regression this test guards.
+    expect(find.text(longText), findsOneWidget);
+    final clueTextWidget = tester.widget<Text>(find.text(longText));
+    expect(clueTextWidget.maxLines, isNull);
   });
 }
