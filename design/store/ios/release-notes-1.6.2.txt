@@ -1,0 +1,3 @@
+Crosscue 1.6.2 is a small fix for the two-column clue list (landscape and iPad): two-digit clue numbers could render stacked instead of side by side, and a long clue could get clipped or truncated. Both are fixed — clue text now always wraps to fit, however many lines it needs.
+
+As always: fully offline, no accounts, no ads, no tracking.
