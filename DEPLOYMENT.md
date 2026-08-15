@@ -917,33 +917,24 @@ checklists pass, publish it explicitly:
 make release-publish-github TAG=v1.2.3
 ```
 
-**Current rollout snapshot (`v1.5.0`, 2026-08-02 UTC):**
+**Current rollout snapshot (`v1.6.2`, 2026-08-14 UTC):**
 
-- Tag `v1.5.0` identifies release commit `d2c73bd`. An Android edge-to-edge
-  fix (`97a38cf`, #294, clears a Play Console advisory for SDK 35) merged to
-  `main` **after** this tag — it is not in the build currently under store
-  review and will ship with the next release.
-- Hosted PR CI passed on both PRs that shipped this release (668 Flutter
-  tests, one intentional skip; 60 Worker tests; analysis, formatting,
-  generated-tree verification, and typecheck all passed); `make ci` also
-  verified locally before each push.
-- The Flutter `integration_test` suite passed via `workflow_dispatch` on both
-  `integration-test-android.yml` (23m35s) and `integration-test-ios.yml`
-  (16m51s). The landscape layout and on-screen-keyboard toggle were also
-  manually verified on a Pixel Tablet emulator and an iPad Air 11" simulator,
-  and the actual signed release APK (not just debug) was spot-checked for
-  R8-related startup issues.
-- The Challenge Boards Worker's new scheduled-reconciliation sweep (#291) was
-  deployed staging-first, smoke-tested on both, and confirmed via a read-only
-  production query to be a no-op on current data before shipping.
-- Release workflow run `30761074186` built `1.5.0+10500`, rejected any Android
-  debug certificate, uploaded the signed IPA to TestFlight, and uploaded the
-  signed AAB to Play internal testing. Run `30764927479` repeated the signed
-  artifact gates and published the GitHub release with the signed APK.
-- The Play internal build was promoted to the production track (not a fresh
-  upload — Play rejects re-uploading an already-used version code to a
-  different track) and the TestFlight build was submitted for App Store
-  review. Both are now pending store review.
+- Tag `v1.6.2` identifies release commit `cc113d6`, one commit after the fix
+  it ships (`b616c39`) — a two-column clue list bug (landscape and iPad):
+  two-digit clue numbers could render stacked instead of side by side, and a
+  long clue could get clipped or truncated instead of wrapping to fit. Pushed
+  directly to `main` (no PR); `make ci` passed locally before push.
+- The fix was manually verified — both orientations, keyboard shown and
+  hidden, at 1.3x and 2.0x system text scale — on a Pixel Tablet emulator, a
+  Pixel 8 emulator, an iPad Pro 11" (M5) simulator, and an iPad Air 11" (M4)
+  simulator. The hosted `integration_test` suites were not separately
+  dispatched for this release.
+- Release workflow run `31858599402` (`make release-all TAG=v1.6.2`) built
+  `1.6.2+10602`, rejected any Android debug certificate, uploaded the signed
+  IPA to TestFlight, uploaded the signed AAB to Play internal testing, and
+  created the draft GitHub release with the signed APK — all in one dispatch.
+- Promoting the Play internal build to production and submitting the
+  TestFlight build for App Store review are still outstanding manual steps.
 
 **Release title:** the workflow publishes `Crosscue v1.2.3`. Keep release
 context in the generated release body rather than overloading the title.

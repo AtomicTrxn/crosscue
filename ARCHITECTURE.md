@@ -176,15 +176,22 @@ solve/
     │   ├── solve_notifier.dart        # @riverpod AsyncNotifier family (puzzleId: String) — orchestrator
     │   └── solve_elapsed_notifier.dart # SolveElapsedSeconds — per-second tick isolated off the rebuild path (#130)
     ├── screens/
-    │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + CluePanel + completion sheet
+    │   └── solve_screen.dart     # Scaffold: AppBar + CrosswordGrid + clue display + completion sheet
     └── widgets/
         ├── crossword_grid.dart         # ConsumerStatefulWidget — tap + long-press
         ├── crossword_grid_input.dart   # Physical + soft-keyboard input plumbing
         ├── crossword_grid_painter.dart # CustomPainter — cell rendering
         ├── crossword_grid_effects.dart # Completion / verification visual effects
+        ├── crossword_grid_semantics.dart # Pure screen-reader label builder for a grid cell (#179)
         ├── crossword_keyboard.dart     # On-screen keyboard (incl. Rebus key)
-        ├── clue_panel.dart             # Active clue + cross clue display
+        ├── keyboard_hidden_controls.dart # Floating Rebus + show-keyboard controls when the tray is hidden (#298)
+        ├── keyboard_icon_button.dart   # Mini-FAB icon button shared by KeyboardHiddenControls
+        ├── clue_panel.dart             # Compact active clue + cross clue bar (portrait phone, or keyboard visible)
+        ├── clue_columns_panel.dart     # Two-column Across/Down clue list (tablet; landscape w/ keyboard hidden)
+        ├── clue_list_panel.dart        # Single merged Across/Down clue list — landscape-phone counterpart to the two-column view
+        ├── clue_row_metrics.dart       # Measures live clue text so list rows size to fit — never truncates
         ├── solve_app_bar.dart          # AppBar: title, timer, pause, check/reveal menu
+        ├── puzzle_info_sheet.dart      # Puzzle metadata bottom sheet (title, author, source link)
         ├── pause_overlay.dart          # Pause scrim over the grid
         └── completion_sheet.dart       # Post-solve summary (time, method, PB, confetti)
 ```
