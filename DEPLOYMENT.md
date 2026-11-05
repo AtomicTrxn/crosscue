@@ -980,6 +980,16 @@ Human review is required before publishing — this is not legal advice.
       merges to main. There is no separate copy to update; just confirm the
       published page renders the new effective date.
 
+### Play Console — Trader status (EU/UK)
+- [x] Account declared **Non-trader** (2026-11-05) in Play Console → Manage
+      account → Account details → About you
+      ([Google help](https://support.google.com/googleplay/android-developer/answer/17594752)).
+      Basis: no monetization ([ADR-0013](docs/architecture/decisions/0013-no-monetization.md)).
+- [ ] **If monetization is ever added** (e.g. a supporter unlock) or a paid /
+      ad-supported app joins this account: switch to **Trader** and add a
+      Terms of Service link per app (Policy and programs → App content). On a
+      personal account, Trader status publicly shows phone number and address.
+
 ### Play Console — Data Safety form
 
 > ⚠️ **Must disclose Challenge Boards before the next submission.** The forms
